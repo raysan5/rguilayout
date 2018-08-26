@@ -1164,7 +1164,7 @@ int main()
                 if (loadedTexture.id > 0) UnloadTexture(loadedTexture);
                 loadedTexture = LoadTexture(droppedFileName);
                 
-                if (loadedTexture.width == 64 && loadedTexture.height == 16) GuiLoadStyleImage(droppedFileName);
+                if (loadedTexture.width == 64 && loadedTexture.height == 16) GuiLoadStylePaletteImage(droppedFileName);
                 else
                 {
                     if (tracemap.id > 0) UnloadTexture(tracemap);
@@ -1763,7 +1763,7 @@ static void ShowSaveLayoutDialog(void)
     // Save layout.controls file (text or binary)
     if (fileName != NULL)
     {
-        char outFileName[64] = { 0 };
+        char outFileName[256] = { 0 };
         strcpy(outFileName, fileName);
         if (GetExtension(fileName) == NULL) strcat(outFileName, ".rgl\0");     // No extension provided
         SaveLayoutRGL(outFileName, false);
@@ -1781,7 +1781,7 @@ static void ShowExportLayoutDialog(GuiLayoutConfig config)
 
     if (fileName != NULL)
     {
-        char outFileName[64] = { 0 };
+        char outFileName[256] = { 0 };
         strcpy(outFileName, fileName);
         if (GetExtension(fileName) == NULL) strcat(outFileName, ".c\0");     // No extension provided
         GenerateCode(outFileName, config);
