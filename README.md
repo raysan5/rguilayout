@@ -1,7 +1,7 @@
 <img align="left" src="logo/rguilayout_256x256.png" width=256>
 
 # rGuiLayout
-A simple and easy-to-use tool to create raygui-based layouts. Useful for fast tools development. The perfect companion for [rGuiStyler](https://github.com/raysan5/raygui/tree/master/tools/rGuiStyler) tool.
+A simple and easy-to-use tool to create raygui-based layouts. Useful for fast tools development. The perfect companion for [rGuiStyler](https://github.com/raysan5/rguistyler) tool.
 
 <br>
 <br>
@@ -14,7 +14,7 @@ A simple and easy-to-use tool to create raygui-based layouts. Useful for fast to
  - Place controls visually and move/scale them freely
  - Snap to grid mode for maximum precission
  - Save/Load your layout as **.rgl (text or binary mode)**
- - Import **.rgs** files ([rGuiStyler](https://github.com/raysan5/raygui/tree/master/tools/rGuiStyler)) to customize visual style (drag&drop)
+ - Import **.rgs** files ([rGuiStyler](https://github.com/raysan5/rguistyler)) to customize visual style (drag&drop)
  - **Export layout directly as plain C code, ready to edit and compile!**
  - Multiple code generation options to customize exported code
  - Supports image loading to be used as tracemap
@@ -34,7 +34,7 @@ To compile the code, you need raygui library (single-file header-only) and rayli
  
 ## Screenshots
 
-![rGuiLayout](screenshots/screenshot000.png)
+![rGuiLayout](screenshots/rguilayout_v100_shot03.png)
 
 ## License
 
@@ -42,4 +42,4 @@ rGuiLayout is free and open source software. rGuiLayout source code is licensed 
 
 Despite being completely free, consider a small donation for the development efforts or contributing to raylib patreon to help the author keep working on free software for games development.
 
-*Copyright (c) 2017-2018 raylib technologies ([@raysan5](https://twitter.com/raysan5))*
+*Copyright (c) 2017-2018 raylib technologies ([@raylibtech](https://twitter.com/raylibtech))*
