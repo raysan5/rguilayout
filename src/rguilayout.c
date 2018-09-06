@@ -36,17 +36,18 @@
 
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_STYLE_SAVE_LOAD
-//#define RAYGUI_STYLE_DEFAULT_DARK
-#include "raygui.h"
+#include "raygui.h"                         // Required for: IMGUI controls
 
-#include "external/easings.h"
-#include "external/tinyfiledialogs.h"   // Open/Save file dialogs
+#include "external/easings.h"               // Required for: Easing animations math
+#include "external/tinyfiledialogs.h"       // Required for: Open/Save file dialogs
 
-#include <stdlib.h>
+#include <stdlib.h>                         // Required for: malloc(), free()
 
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
+#define RGUILAYOUT_VERSION     "1.1"        // Tool version string
+
 #define MAX_GUI_CONTROLS        256         // Maximum number of gui controls
 #define MAX_ANCHOR_POINTS         8         // Maximum number of anchor points
 #define ANCHOR_RADIUS            20         // Default anchor radius
@@ -143,7 +144,8 @@ const char *controlTypeNameLow[] = { "WindowBox", "GroupBox", "Line", "Panel", "
 const char *controlTypeNameShort[] = { "wdwbox", "grpbox", "lne", "pnl", "lbl", "btn", "tgl", "tglgrp", "chkbox", "combox", "ddwnbox", "spnr", "vlbox", "txtbox", "sldr", "sldrb", "prgssb", "stsb", "lstvw", "clrpckr", "dmyrc" };
 
 static bool cancelSave = false;
-static char loadedFileName[128] = "\0";
+static char loadedFileName[256] = "\0";
+
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
 //----------------------------------------------------------------------------------
@@ -153,6 +155,7 @@ static void SaveLayoutRGL(const char *fileName, bool binary);           // Save 
 static void LoadLayoutRGL(const char *fileName);                        // Load gui layout project information
 static void GenerateCode(const char *fileName, GuiLayoutConfig config); // Generate C code for gui layout
 static void GenerateCodeFromRGL(const char *fileName);                  // Generate C code from .rgl file
+
 static char *GetControlAnchorRec(int anchorId, Rectangle controlRec, GuiLayoutConfig config);   // Get control rectangle
 
 //----------------------------------------------------------------------------------
@@ -160,10 +163,26 @@ static char *GetControlAnchorRec(int anchorId, Rectangle controlRec, GuiLayoutCo
 //----------------------------------------------------------------------------------
 int main()
 {
-    // Initialization
+    // Command-line usage mode
+    //--------------------------------------------------------------------------------------
+    if (argc > 1)
+    {
+        if (IsFileExtension(argv[1], ".rgl"))
+        {
+            // TODO: Support .rlg layout processing to generate .c
+        }
+        else
+        {
+            ShowUsageInfo();
+        }
+        
+        return 0;
+    }
+    
+    // GUI usage mode - Initialization
     //--------------------------------------------------------------------------------------
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(screenWidth, screenHeight, "rGuiLayout v1.1");
+    InitWindow(screenWidth, screenHeight, FormatText("rGuiLayout v%s", RGUILAYOUT_VERSION));
     SetExitKey(0);
 
     // General app variables
@@ -323,7 +342,7 @@ int main()
     config.width = 800;
     config.height = 600;
     strcpy(config.name, "layout_file_name");
-    strcpy(config.version, "1.0-dev");
+    strcpy(config.version, RGUILAYOUT_VERSION);
     strcpy(config.company, "raylib technologies");
     strcpy(config.description, "tool description");
     config.defineRecs = false;
@@ -2336,7 +2355,7 @@ static void GenerateCodeFromRGL(const char *fileName)
         config.width = 800;
         config.height = 600;
         strcpy(config.name, "layout_file_name");
-        strcpy(config.version, "1.0-dev");
+        strcpy(config.version, RGUILAYOUT_VERSION);
         strcpy(config.company, "raylib technologies");
         strcpy(config.description, "tool description");
         config.defineRecs = false;
