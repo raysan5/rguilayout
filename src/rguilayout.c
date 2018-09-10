@@ -149,6 +149,8 @@ static char loadedFileName[256] = "\0";
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
 //----------------------------------------------------------------------------------
+static void ShowUsageInfo(void);    // Show command line usage info
+
 static void ShowSaveLayoutDialog(void);                                 // Show save layout dialog
 static void ShowExportLayoutDialog(GuiLayoutConfig config);             // Show export layout dialog
 static void SaveLayoutRGL(const char *fileName, bool binary);           // Save gui layout project information
@@ -159,7 +161,7 @@ static void GenerateCodeFromRGL(const char *fileName);                  // Gener
 static char *GetControlAnchorRec(int anchorId, Rectangle controlRec, GuiLayoutConfig config);   // Get control rectangle
 
 //----------------------------------------------------------------------------------
-// Main Entry point
+// Program main entry point
 //----------------------------------------------------------------------------------
 int main()
 {
@@ -1770,8 +1772,20 @@ int main()
 }
 
 //----------------------------------------------------------------------------------
-// Module specific Functions Definition
+// Module Functions Definitions (local)
 //----------------------------------------------------------------------------------
+
+// Show command line usage info
+static void ShowUsageInfo(void)
+{
+    printf("\nrGuiLayout v%s - raygui layouts editor\n", RGUILAYOUT_VERSION);
+    printf("Powered by raylib v2.0 and raygui v2.0\n\n");
+    printf("LICENSE: zlib/libpng\n");
+    printf("Copyright (c) 2017-2018 raylib technologies (@raylibtech).\n\n");
+
+    printf("USAGE: rguilayout [--version] [--help] [--input <filename.rgl>]\n");
+    printf("       [--output <filename.c>] [--format <format>]\n");
+}
 
 // Show save layout dialog
 static void ShowSaveLayoutDialog(void)
@@ -1974,7 +1988,7 @@ static char *GetControlAnchorRec(int anchorId, Rectangle controlRec, GuiLayoutCo
     return text;
 }
 
-static char *ExportFullVariables(int controlType, char *name, GuiLayoutConfig config)
+static char *FormatExportVariables(int controlType, char *name, GuiLayoutConfig config)
 {
     static char text[512];
     memset(text, 0, 512);
@@ -2218,27 +2232,27 @@ static void GenerateCode(const char *fileName, GuiLayoutConfig config)
                 case BUTTON: fprintf(ftool, "            if (GuiButton(%s, \"%s\")) %s(); \n\n", GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].text, layout.controls[i].name); break;
                 case VALUEBOX: fprintf(ftool, "            %sValue = GuiValueBox(%s, %sValue, 100);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name); break;
                 case TOGGLE: fprintf(ftool, "            %sActive = GuiToggleButton(%s, \"%s\", %sActive);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].text, layout.controls[i].name); break;
-                case TOGGLEGROUP: fprintf(ftool, "            %sActive = GuiToggleGroup(%s, %sTextList, %s, %sActive);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].name); break;
+                case TOGGLEGROUP: fprintf(ftool, "            %sActive = GuiToggleGroup(%s, %sTextList, %s, %sActive);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].name); break;
                 case SLIDER: 
                 {
-                    if (layout.controls[i].text[0] != '\0') fprintf(ftool, "            %sValue = GuiSliderEx(%s, %sValue, %s, \"%s\", true);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].text);
-                    else fprintf(ftool, "            %sValue = GuiSlider(%s, %sValue, %s);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config));
+                    if (layout.controls[i].text[0] != '\0') fprintf(ftool, "            %sValue = GuiSliderEx(%s, %sValue, %s, \"%s\", true);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].text);
+                    else fprintf(ftool, "            %sValue = GuiSlider(%s, %sValue, %s);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config));
                 } break;
                 case SLIDERBAR: 
                 {
-                    if (layout.controls[i].text[0] != '\0') fprintf(ftool, "            %sValue = GuiSliderBarEx(%s, %sValue, %s, \"%s\", true);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].text);
-                    else fprintf(ftool, "            %sValue = GuiSliderBar(%s, %sValue, %s);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config));
+                    if (layout.controls[i].text[0] != '\0') fprintf(ftool, "            %sValue = GuiSliderBarEx(%s, %sValue, %s, \"%s\", true);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].text);
+                    else fprintf(ftool, "            %sValue = GuiSliderBar(%s, %sValue, %s);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config));
                 } break;
                 case PROGRESSBAR: fprintf(ftool, "            %sValue = GuiProgressBarEx(%s, %sValue, 0, 100, true);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name); break;
                 case SPINNER: fprintf(ftool, "            %sValue = GuiSpinner(%s, %sValue, 100, 25);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name); break;
-                case COMBOBOX: fprintf(ftool, "            %sActive = GuiComboBox(%s, %sTextList, %s, %sActive);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].name); break;
+                case COMBOBOX: fprintf(ftool, "            %sActive = GuiComboBox(%s, %sTextList, %s, %sActive);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].name); break;
                 case CHECKBOX: 
                 {
                     if (layout.controls[i].text[0] != '\0') fprintf(ftool, "            %sChecked = GuiCheckBoxEx(%s, %sChecked, \"%s\");\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, layout.controls[i].text);
                     else fprintf(ftool, "            %sChecked = GuiCheckBox(%s, %sChecked); \n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name);
                 } break;
-                case LISTVIEW: fprintf(ftool, "            %sActive = GuiListView(%s, %sTextList, %s, %sActive);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].name); break;
-                case TEXTBOX: fprintf(ftool, "            GuiTextBox(%s, %sText, %s, true);\n", GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config)); break;
+                case LISTVIEW: fprintf(ftool, "            %sActive = GuiListView(%s, %sTextList, %s, %sActive);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].name); break;
+                case TEXTBOX: fprintf(ftool, "            GuiTextBox(%s, %sText, %s, true);\n", GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config)); break;
                 case GROUPBOX: fprintf(ftool, "            GuiGroupBox(%s, \"%s\");\n", GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].text); break;
                 case WINDOWBOX:
                 {
@@ -2247,7 +2261,7 @@ static void GenerateCode(const char *fileName, GuiLayoutConfig config)
                     fprintf(ftool, "            }\n");
                 }break;
                 case DUMMYREC: fprintf(ftool, "            GuiDummyRec(%s, \"%s\");\n", GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].text); break;
-                case DROPDOWNBOX: fprintf(ftool, "            %sActive = GuiDropdownBox(%s, %sTextList, %s, %sActive);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].name); break;
+                case DROPDOWNBOX: fprintf(ftool, "            %sActive = GuiDropdownBox(%s, %sTextList, %s, %sActive);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].name); break;
                 case STATUSBAR: fprintf(ftool, "            GuiStatusBar(%s, %sText, 10);\n", GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name); break;
                 case COLORPICKER: fprintf(ftool, "            %sValue = GuiColorPicker(%s, %sValue);\n", layout.controls[i].name, GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config), layout.controls[i].name); break;
                 case LINE: fprintf(ftool, "            GuiLine(%s, 1);\n", GetControlAnchorRec(layout.controls[i].ap->id, layout.controls[i].rec, config)); break;
@@ -2271,27 +2285,27 @@ static void GenerateCode(const char *fileName, GuiLayoutConfig config)
                 case BUTTON: fprintf(ftool, "            if (GuiButton(layoutRecs[%i], \"%s\")) %s();\n\n", i, layout.controls[i].text, layout.controls[i].name); break;
                 case VALUEBOX: fprintf(ftool, "            %sValue = GuiValueBox(layoutRecs[%i], %sValue, 100);\n",layout.controls[i].name, i, layout.controls[i].name); break;
                 case TOGGLE: fprintf(ftool, "            %sActive = GuiToggleButton(layoutRecs[%i], \"%s\", %sActive);\n", layout.controls[i].name, i, layout.controls[i].text, layout.controls[i].name); break;
-                case TOGGLEGROUP: fprintf(ftool, "            %sActive = GuiToggleGroup(layoutRecs[%i], %sTextList, %s, %sActive);\n", layout.controls[i].name, i, layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].name); break;
+                case TOGGLEGROUP: fprintf(ftool, "            %sActive = GuiToggleGroup(layoutRecs[%i], %sTextList, %s, %sActive);\n", layout.controls[i].name, i, layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].name); break;
                 case SLIDER:
                 {
-                    if (layout.controls[i].text[0] != '\0') fprintf(ftool, "            %sValue = GuiSliderEx(layoutRecs[%i], %sValue, %s, \"%s\", true);\n", layout.controls[i].name, i, layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].text);
-                    else fprintf(ftool, "            %sValue = GuiSlider(layoutRecs[%i], %sValue, %s);\n", layout.controls[i].name, i, layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config));
+                    if (layout.controls[i].text[0] != '\0') fprintf(ftool, "            %sValue = GuiSliderEx(layoutRecs[%i], %sValue, %s, \"%s\", true);\n", layout.controls[i].name, i, layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].text);
+                    else fprintf(ftool, "            %sValue = GuiSlider(layoutRecs[%i], %sValue, %s);\n", layout.controls[i].name, i, layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config));
                 } break;
                 case SLIDERBAR: 
                 {
-                    if (layout.controls[i].text[0] != '\0') fprintf(ftool, "            %sValue = GuiSliderBarEx(layoutRecs[%i], %sValue, %s, \"%s\", true);\n", layout.controls[i].name, i, layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].text);
-                    else fprintf(ftool, "            %sValue = GuiSliderBar(layoutRecs[%i], %sValue, %s);\n", layout.controls[i].name, i, layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config));
+                    if (layout.controls[i].text[0] != '\0') fprintf(ftool, "            %sValue = GuiSliderBarEx(layoutRecs[%i], %sValue, %s, \"%s\", true);\n", layout.controls[i].name, i, layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].text);
+                    else fprintf(ftool, "            %sValue = GuiSliderBar(layoutRecs[%i], %sValue, %s);\n", layout.controls[i].name, i, layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config));
                 } break;
-                case PROGRESSBAR: fprintf(ftool, "            %sValue = GuiProgressBarEx(layoutRecs[%i], %sValue, %s, true);\n", layout.controls[i].name, i, layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config)); break;
+                case PROGRESSBAR: fprintf(ftool, "            %sValue = GuiProgressBarEx(layoutRecs[%i], %sValue, %s, true);\n", layout.controls[i].name, i, layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config)); break;
                 case SPINNER: fprintf(ftool, "            %sValue = GuiSpinner(layoutRecs[%i], %sValue, 100, 25);\n", layout.controls[i].name, i, layout.controls[i].name); break;
-                case COMBOBOX: fprintf(ftool, "            %sActive = GuiComboBox(layoutRecs[%i], %sTextList, %s, %sActive);\n", layout.controls[i].name, i, layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].name); break;
+                case COMBOBOX: fprintf(ftool, "            %sActive = GuiComboBox(layoutRecs[%i], %sTextList, %s, %sActive);\n", layout.controls[i].name, i, layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].name); break;
                 case CHECKBOX:
                 {
                     if (layout.controls[i].text[0] != '\0') fprintf(ftool, "            %sChecked = GuiCheckBoxEx(layoutRecs[%i], %sChecked, \"%s\");\n", layout.controls[i].name, i, layout.controls[i].name, layout.controls[i].text);
                     else fprintf(ftool, "            %sChecked = GuiCheckBox(layoutRecs[%i], %sChecked);\n", layout.controls[i].name, i, layout.controls[i].name);
                 } break;
-                case LISTVIEW: fprintf(ftool, "            %sActive = GuiListView(layoutRecs[%i], %sTextList, %s, %sActive);\n", layout.controls[i].name, i, layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].name); break;
-                case TEXTBOX: fprintf(ftool, "            GuiTextBox(layoutRecs[%i], %sText, %s, true);\n", i, layout.controls[i].name, ExportFullVariables(layout.controls[i].type, layout.controls[i].name, config)); break;
+                case LISTVIEW: fprintf(ftool, "            %sActive = GuiListView(layoutRecs[%i], %sTextList, %s, %sActive);\n", layout.controls[i].name, i, layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config), layout.controls[i].name); break;
+                case TEXTBOX: fprintf(ftool, "            GuiTextBox(layoutRecs[%i], %sText, %s, true);\n", i, layout.controls[i].name, FormatExportVariables(layout.controls[i].type, layout.controls[i].name, config)); break;
                 case GROUPBOX: fprintf(ftool, "            GuiGroupBox(layoutRecs[%i], \"%s\");\n", i, layout.controls[i].text); break;
                 case WINDOWBOX:
                 {
