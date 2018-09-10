@@ -163,7 +163,7 @@ static char *GetControlAnchorRec(int anchorId, Rectangle controlRec, GuiLayoutCo
 //----------------------------------------------------------------------------------
 // Program main entry point
 //----------------------------------------------------------------------------------
-int main()
+int main(int argc, char *argv[])
 {
     // Command-line usage mode
     //--------------------------------------------------------------------------------------
