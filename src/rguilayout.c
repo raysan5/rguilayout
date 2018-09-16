@@ -95,7 +95,7 @@ typedef struct {
     int y;
     bool enabled;
     bool hidding;
-} AnchorPoint;
+} GuiAnchorPoint;
 
 // Gui control type
 typedef struct {
@@ -104,17 +104,17 @@ typedef struct {
     Rectangle rec;
     unsigned char name[MAX_CONTROL_NAME_LENGTH];
     unsigned char text[MAX_CONTROL_TEXT_LENGTH];
-    AnchorPoint *ap;
+    GuiAnchorPoint *ap;
 } GuiControl;
 
 // Gui layout type
 typedef struct {
     int controlsCount;
-    AnchorPoint anchors[MAX_ANCHOR_POINTS];
     GuiControl controls[MAX_GUI_CONTROLS];
+    GuiAnchorPoint anchors[MAX_ANCHOR_POINTS];
 } GuiLayout;
 
-// Gui layout configuration type
+// Gui layout configuration for code exportation
 typedef struct {
     int width;
     int height;
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
     const char *listViewData[4] = { "WINDOWBOX", "GROUPBOX", "LINE", "PANEL" }; // ListView default data
 
     // Anchors control variables
-    AnchorPoint auxAnchor = { 9, 0, 0, 0 };
+    GuiAnchorPoint auxAnchor = { 9, 0, 0, 0 };
     bool anchorMode = false;
     bool anchorLinkMode = false;
     bool anchorLockMode = false;
