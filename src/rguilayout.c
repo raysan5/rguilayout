@@ -1,6 +1,6 @@
 /*******************************************************************************************
 *
-*   rGuiLayout v1.1 - raygui layout editor
+*   rGuiLayout v1.2 - raygui layout editor
 *
 *   Compile this program using:
 *       gcc -o rguilayout.exe rguilayout.c external/tinyfiledialogs.c -I..\.. \ 
@@ -13,7 +13,7 @@
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2014-2018 raylib technologies (@raysan5)
+*   Copyright (c) 2018 raylib technologies (@raysan5)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -46,7 +46,7 @@
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
-#define RGUILAYOUT_VERSION     "1.1"        // Tool version string
+#define RGUILAYOUT_VERSION     "1.2"        // Tool version string
 
 #define MAX_GUI_CONTROLS        256         // Maximum number of gui controls
 #define MAX_ANCHOR_POINTS         8         // Maximum number of anchor points
@@ -153,10 +153,9 @@ static void ShowUsageInfo(void);    // Show command line usage info
 
 static void ShowSaveLayoutDialog(void);                                 // Show save layout dialog
 static void ShowExportLayoutDialog(GuiLayoutConfig config);             // Show export layout dialog
-static void SaveLayoutRGL(const char *fileName, bool binary);           // Save gui layout project information
-static void LoadLayoutRGL(const char *fileName);                        // Load gui layout project information
+static void SaveLayout(const char *fileName, bool binary);              // Save raygui layout (.rgl), text or binary
+static void LoadLayout(const char *fileName);                           // Load raygui layout (.rgl), text or binary
 static void GenerateCode(const char *fileName, GuiLayoutConfig config); // Generate C code for gui layout
-static void GenerateCodeFromRGL(const char *fileName);                  // Generate C code from .rgl file
 
 static char *GetControlAnchorRec(int anchorId, Rectangle controlRec, GuiLayoutConfig config);   // Get control rectangle
 
@@ -169,16 +168,105 @@ int main(int argc, char *argv[])
     //--------------------------------------------------------------------------------------
     if (argc > 1)
     {
-        if (IsFileExtension(argv[1], ".rgl"))
+        bool showUsageInfo = false;     // Toggle command line usage info
+        
+        char inFileName[128] = "\0";    // Input file name
+        char outFileName[128] = "\0";   // Output file name
+        
+        int sampleRate = 44100;         // Default conversion sample rate
+        int sampleSize = 16;            // Default conversion sample size
+        int channels = 1;               // Default conversion channels number
+        
+        bool playWave = false;         // Play input/output wave
+
+        if (argc == 2)  // One file dropped over the executable or just one argument
         {
-            // TODO: Support .rlg layout processing to generate .c
+            if (IsFileExtension(argv[1], ".rgl"))
+            {
+                // Open file with graphic interface
+                strcpy(inFileName, argv[1]);        // Read input filename
+            }
+            else 
+            {
+                ShowUsageInfo();                    // Show command line usage info
+                return 0;
+            }
         }
         else
         {
-            ShowUsageInfo();
+            // Process command line arguments
+            for (int i = 1; i < argc; i++)
+            {
+                if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0))
+                {
+                    showUsageInfo = true;
+                }
+                else if ((strcmp(argv[i], "-i") == 0) || (strcmp(argv[i], "--input") == 0))
+                {                   
+                    // Verify an image is provided with a supported extension
+                    // Check that no "--" is comming after --input
+                    if (((i + 1) < argc) && (argv[i + 1][0] != '-') && (IsFileExtension(argv[i + 1], ".rgl")))
+                    {
+                        strcpy(inFileName, argv[i + 1]);    // Read input filename
+                        i++;
+                    }
+                    else printf("WARNING: Input file extension not recognized\n");
+                }
+                else if ((strcmp(argv[i], "-o") == 0) || (strcmp(argv[i], "--output") == 0))
+                {
+                    if (((i + 1) < argc) && (argv[i + 1][0] != '-') && (IsFileExtension(argv[i + 1], ".c"))) 
+                    {
+                        strcpy(outFileName, argv[i + 1]);   // Read output filename
+                        i++;
+                    }
+                    else printf("WARNING: Output file extension not recognized\n");
+                }
+                else if ((strcmp(argv[i], "-f") == 0) || (strcmp(argv[i], "--format") == 0))
+                {
+
+                }
+            }
+
+            // Process input file
+            if (inFileName[0] != '\0')
+            {
+                if (outFileName[0] == '\0') strcpy(outFileName, "output.c");  // Set a default name for output in case not provided
+                
+                printf("\nInput file:       %s", inFileName);
+                printf("\nOutput file:      %s", outFileName);
+                //printf("\nOutput params:    %i Hz, %i bits, %s\n\n", sampleRate, sampleSize, (channels == 1) ? "Mono" : "Stereo");
+                
+                // Support .rlg layout processing to generate .c
+                LoadLayout(argv[1]);    // Updates global: layout.controls
+                
+                int len = strlen(argv[1]);
+                char outName[256] = { 0 };
+                strcpy(outName, argv[1]);
+                outName[len - 3] = 'c';
+                outName[len - 2] = '\0';
+                
+                GuiLayoutConfig config;
+                memset(&config, 0, sizeof(GuiLayoutConfig));
+                
+                config.width = 800;
+                config.height = 600;
+                strcpy(config.name, "layout_file_name");
+                strcpy(config.version, RGUILAYOUT_VERSION);
+                strcpy(config.company, "raylib technologies");
+                strcpy(config.description, "tool description");
+                config.defineRecs = false;
+                config.exportAnchors = true;
+                config.exportAnchor0 = false;
+                config.fullComments = true;
+                
+                // Generate C code for gui layout.controls
+                GenerateCode(outName, config);
+            }
+            
+            if (showUsageInfo) ShowUsageInfo();
+            
+            return 0;
         }
-        
-        return 0;
     }
     
     // GUI usage mode - Initialization
@@ -1175,9 +1263,9 @@ int main(int argc, char *argv[])
             if (IsFileExtension(droppedFileName, ".rgl")) 
             {
                 selectedControl = -1;
-                LoadLayoutRGL(droppedFileName);
+                LoadLayout(droppedFileName);
                 strcpy(loadedFileName, droppedFileName);
-                SetWindowTitle(FormatText("rGuiLayout v1.1 - %s", GetFileName(loadedFileName)));
+                SetWindowTitle(FormatText("rGuiLayout v%s - %s", RGUILAYOUT_VERSION, GetFileName(loadedFileName)));
             }
             else if (IsFileExtension(droppedFileName, ".rgs")) GuiLoadStyle(droppedFileName);
             else if (IsFileExtension(droppedFileName, ".png"))
@@ -1224,7 +1312,7 @@ int main(int argc, char *argv[])
         else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) 
         {
             if (loadedFileName[0] == '\0') ShowSaveLayoutDialog();
-            else SaveLayoutRGL(loadedFileName, false);
+            else SaveLayout(loadedFileName, false);
         }
         
         // Open laout file dialog logic
@@ -1234,7 +1322,7 @@ int main(int argc, char *argv[])
             const char *filters[] = { "*.rgl" };
             const char *fileName = tinyfd_openFileDialog("Load raygui layout file", "", 1, filters, "raygui Layout Files (*.rgl)", 0);
             
-            if (fileName != NULL) LoadLayoutRGL(fileName);
+            if (fileName != NULL) LoadLayout(fileName);
         }
         
         // Activate code generation export window
@@ -1374,7 +1462,7 @@ int main(int argc, char *argv[])
                 layout.anchors[i].hidding = false;
             }
             
-            SetWindowTitle("rGuiLayout v1.1");
+            SetWindowTitle(FormatText("rGuiLayout v%s", RGUILAYOUT_VERSION));
             strcpy(loadedFileName, "\0");
             layout.controlsCount = 0;
             resetWindowActive = false;
@@ -1778,13 +1866,19 @@ int main(int argc, char *argv[])
 // Show command line usage info
 static void ShowUsageInfo(void)
 {
-    printf("\nrGuiLayout v%s - raygui layouts editor\n", RGUILAYOUT_VERSION);
-    printf("Powered by raylib v2.0 and raygui v2.0\n\n");
-    printf("LICENSE: zlib/libpng\n");
-    printf("Copyright (c) 2017-2018 raylib technologies (@raylibtech).\n\n");
+    printf("\n//////////////////////////////////////////////////////////////////////////////////\n");
+    printf("//                                                                              //\n");
+    printf("// rGuiLayout v%s - A simple and easy-to-use raygui layout editor              //\n", RGUILAYOUT_VERSION);
+    printf("// powered by raylib v2.0 (www.raylib.com) and raygui v2.0                      //\n");
+    printf("// more info and bugs-report: github.com/raysan5/rguilayout                     //\n");
+    printf("//                                                                              //\n");
+    printf("// Copyright (c) 2018 raylib technologies (@raylibtech)                         //\n");
+    printf("//                                                                              //\n");
+    printf("//////////////////////////////////////////////////////////////////////////////////\n\n");
 
-    printf("USAGE: rguilayout [--version] [--help] [--input <filename.rgl>]\n");
-    printf("       [--output <filename.c>] [--format <format>]\n");
+    printf("USAGE:\n\n");
+    printf("    > rguilayout [--version] [--help] --input <filename.ext> [--output <filename.c>]\n");
+    printf("             [--format <sample_rate> <sample_size> <channels>] [--play]\n");
 }
 
 // Show save layout dialog
@@ -1799,9 +1893,9 @@ static void ShowSaveLayoutDialog(void)
         char outFileName[256] = { 0 };
         strcpy(outFileName, fileName);
         if (GetExtension(fileName) == NULL) strcat(outFileName, ".rgl\0");     // No extension provided
-        SaveLayoutRGL(outFileName, false);
+        SaveLayout(outFileName, false);
         strcpy(loadedFileName, outFileName);
-        SetWindowTitle(FormatText("rGuiLayout v1.1 - %s", GetFileName(loadedFileName)));
+        SetWindowTitle(FormatText("rGuiLayout v%s - %s", RGUILAYOUT_VERSION, GetFileName(loadedFileName)));
         cancelSave = true;
     }
 }
@@ -1822,7 +1916,7 @@ static void ShowExportLayoutDialog(GuiLayoutConfig config)
 }
 
 // Save gui layout information
-static void SaveLayoutRGL(const char *fileName, bool binary)
+static void SaveLayout(const char *fileName, bool binary)
 {
     if (binary)
     {
@@ -1881,7 +1975,7 @@ static void SaveLayoutRGL(const char *fileName, bool binary)
 
 // Import gui layout information
 // NOTE: Updates global variable: layout
-static void LoadLayoutRGL(const char *fileName)
+static void LoadLayout(const char *fileName)
 {
     char buffer[256];
     bool tryBinary = false;
@@ -2348,37 +2442,4 @@ static void GenerateCode(const char *fileName, GuiLayoutConfig config)
     }
 
     fclose(ftool);
-}
-
-// Generate C code from .rgl file
-static void GenerateCodeFromRGL(const char *fileName)
-{
-    if (IsFileExtension(fileName, ".rgl"))
-    {
-        LoadLayoutRGL(fileName);    // Updates global: layout.controls
-        
-        int len = strlen(fileName);
-        char outName[256] = { 0 };
-        strcpy(outName, fileName);
-        outName[len - 3] = 'c';
-        outName[len - 2] = '\0';
-        
-        GuiLayoutConfig config;
-        memset(&config, 0, sizeof(GuiLayoutConfig));
-        
-        config.width = 800;
-        config.height = 600;
-        strcpy(config.name, "layout_file_name");
-        strcpy(config.version, RGUILAYOUT_VERSION);
-        strcpy(config.company, "raylib technologies");
-        strcpy(config.description, "tool description");
-        config.defineRecs = false;
-        config.exportAnchors = true;
-        config.exportAnchor0 = false;
-        config.fullComments = true;
-        
-        // Generate C code for gui layout.controls
-        GenerateCode(outName, config);
-    }
-    else printf("Input RGL file not valid\n");
 }
