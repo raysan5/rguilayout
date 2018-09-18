@@ -1,7 +1,9 @@
 <img align="left" src="logo/rguilayout_256x256.png" width=256>
 
 # rGuiLayout
-A simple and easy-to-use tool to create raygui-based layouts. Useful for fast tools development. The perfect companion for [rGuiStyler](https://github.com/raysan5/rguistyler) tool.
+A simple and easy-to-use raygui layouts editor. 
+
+Useful for fast tools development. The perfect companion for [rGuiStyler](https://github.com/raysan5/rguistyler) tool.
 
 <br>
 <br>
