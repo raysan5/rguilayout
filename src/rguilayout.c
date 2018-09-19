@@ -1,19 +1,33 @@
 /*******************************************************************************************
 *
-*   rGuiLayout v1.2 - raygui layout editor
+*   rGuiLayout v1.2 - A simple and easy-to-use raygui layouts editor
 *
-*   Compile this program using:
-*       gcc -o rguilayout.exe rguilayout.c external/tinyfiledialogs.c -I..\.. \ 
-*       -lraylib -lopengl32 -lgdi32 -lcomdlg32 -lole32 -std=c99 -Wall
+*   CONFIGURATION:
 *
-*   CONTRIBUTORS:
-*       Ramon Santamaria:   Supervision, review, design, update and maintenance...
-*       Adria Arranz:       Design and implementation (2018)
-*       Jordi Jorba:        Design and implementation (2018)
+*   #define ENABLE_PRO_FEATURES
+*       Enable PRO features for the tool. Usually command-line and export options related.
+*
+*   DEPENDENCIES:
+*       raylib 2.0              - Windowing/input management and drawing.
+*       raygui 2.0              - IMGUI controls (based on raylib).
+*       tinyfiledialogs 3.3.7   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs.
+*
+*   COMPILATION (Windows - MinGW):
+*       gcc -o rguilayout.exe rguilayout.c external/tinyfiledialogs.c -s -Iexternal / 
+*           -lraylib -lopengl32 -lgdi32 -lcomdlg32 -lole32 -std=c99
+* 
+*   COMPILATION (Linux - GCC):
+*       gcc -o rguilayout rguilayout.c external/tinyfiledialogs.c -s -Iexternal -no-pie -D_DEFAULT_SOURCE /
+*           -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+*
+*   DEVELOPERS:
+*       Ramon Santamaria (@raysan5):  Supervision, design and maintenance.
+*       Adria Arranz (@Adri102):      Developer and designer (2018)
+*       Jordi Jorba (@KoroBli):       Developer and designer (2018)
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2018 raylib technologies (@raysan5)
+*   Copyright (c) 2018 raylib technologies (@raysan5).
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -46,7 +60,9 @@
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
-#define RGUILAYOUT_VERSION     "1.2"        // Tool version string
+#define ENABLE_PRO_FEATURES                 // Enable PRO version features
+
+#define TOOL_VERSION_TEXT     "1.2"         // Tool version string
 
 #define MAX_GUI_CONTROLS        256         // Maximum number of gui controls
 #define MAX_ANCHOR_POINTS         8         // Maximum number of anchor points
@@ -251,7 +267,7 @@ int main(int argc, char *argv[])
                 config.width = 800;
                 config.height = 600;
                 strcpy(config.name, "layout_file_name");
-                strcpy(config.version, RGUILAYOUT_VERSION);
+                strcpy(config.version, TOOL_VERSION_TEXT);
                 strcpy(config.company, "raylib technologies");
                 strcpy(config.description, "tool description");
                 config.defineRecs = false;
@@ -272,7 +288,7 @@ int main(int argc, char *argv[])
     // GUI usage mode - Initialization
     //--------------------------------------------------------------------------------------
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(screenWidth, screenHeight, FormatText("rGuiLayout v%s", RGUILAYOUT_VERSION));
+    InitWindow(screenWidth, screenHeight, FormatText("rGuiLayout v%s - A simple and easy-to-use raygui layouts editor", TOOL_VERSION_TEXT));
     SetExitKey(0);
 
     // General app variables
@@ -432,7 +448,7 @@ int main(int argc, char *argv[])
     config.width = 800;
     config.height = 600;
     strcpy(config.name, "layout_file_name");
-    strcpy(config.version, RGUILAYOUT_VERSION);
+    strcpy(config.version, TOOL_VERSION_TEXT);
     strcpy(config.company, "raylib technologies");
     strcpy(config.description, "tool description");
     config.defineRecs = false;
@@ -1265,7 +1281,7 @@ int main(int argc, char *argv[])
                 selectedControl = -1;
                 LoadLayout(droppedFileName);
                 strcpy(loadedFileName, droppedFileName);
-                SetWindowTitle(FormatText("rGuiLayout v%s - %s", RGUILAYOUT_VERSION, GetFileName(loadedFileName)));
+                SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
             }
             else if (IsFileExtension(droppedFileName, ".rgs")) GuiLoadStyle(droppedFileName);
             else if (IsFileExtension(droppedFileName, ".png"))
@@ -1462,7 +1478,7 @@ int main(int argc, char *argv[])
                 layout.anchors[i].hidding = false;
             }
             
-            SetWindowTitle(FormatText("rGuiLayout v%s", RGUILAYOUT_VERSION));
+            SetWindowTitle(FormatText("rGuiLayout v%s", TOOL_VERSION_TEXT));
             strcpy(loadedFileName, "\0");
             layout.controlsCount = 0;
             resetWindowActive = false;
@@ -1868,7 +1884,7 @@ static void ShowUsageInfo(void)
 {
     printf("\n//////////////////////////////////////////////////////////////////////////////////\n");
     printf("//                                                                              //\n");
-    printf("// rGuiLayout v%s - A simple and easy-to-use raygui layout editor              //\n", RGUILAYOUT_VERSION);
+    printf("// rGuiLayout v%s - A simple and easy-to-use raygui layout editor              //\n", TOOL_VERSION_TEXT);
     printf("// powered by raylib v2.0 (www.raylib.com) and raygui v2.0                      //\n");
     printf("// more info and bugs-report: github.com/raysan5/rguilayout                     //\n");
     printf("//                                                                              //\n");
@@ -1895,7 +1911,7 @@ static void ShowSaveLayoutDialog(void)
         if (GetExtension(fileName) == NULL) strcat(outFileName, ".rgl\0");     // No extension provided
         SaveLayout(outFileName, false);
         strcpy(loadedFileName, outFileName);
-        SetWindowTitle(FormatText("rGuiLayout v%s - %s", RGUILAYOUT_VERSION, GetFileName(loadedFileName)));
+        SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
         cancelSave = true;
     }
 }
