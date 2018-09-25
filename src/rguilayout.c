@@ -1892,9 +1892,33 @@ static void ShowUsageInfo(void)
     printf("//                                                                              //\n");
     printf("//////////////////////////////////////////////////////////////////////////////////\n\n");
 
+#if defined(ENABLE_PRO_FEATURES)
     printf("USAGE:\n\n");
-    printf("    > rguilayout [--version] [--help] --input <filename.ext> [--output <filename.c>]\n");
-    printf("             [--format <sample_rate> <sample_size> <channels>] [--play]\n");
+    printf("    > rguilayout [--version] [--help] --input <filename.ext> [--output <filename.ext>]\n");
+    printf("                 [--format <styleformat>] [--edit-prop <property> <value>]\n");
+    
+    printf("\nOPTIONS:\n\n");
+    printf("    -v, --version                   : Show tool version and info\n");
+    printf("    -h, --help                      : Show command line usage help\n");
+    printf("    -i, --input <filename.ext>      : Define input file.\n");
+    printf("                                      Supported extensions: .rgs, .png\n");
+    printf("    -o, --output <filename.ext>     : Define output file.\n");
+    printf("                                      Supported extensions: .rgs, .png, .h\n");
+    printf("                                      NOTE: Extension could be modified depending on format\n\n");
+    printf("    -f, --format <type_value>       : Define output file format to export style data.\n");
+    printf("                                      Supported values:\n");
+    printf("                                          0 - Style text format (.rgs)  \n");          
+    printf("                                          1 - Style binary format (.rgs)\n");    
+    printf("                                          2 - Palette image (.png)\n");
+    printf("                                          3 - Palette as int array (.h)\n");
+    printf("                                          4 - Controls table image (.png)\n\n");
+    printf("    -e, --edit-prop <property> <value>\n");
+    printf("                                    : Edit specific property from input to output.\n");
+    
+    printf("\nEXAMPLES:\n\n");
+    printf("    > rguilayout --input tools.rgl --output tools.png\n");
+    // Style formats: STYLE_TEXT, STYLE_BINARY, PALETTE_IMAGE, CONTROLS_TABLE_IMAGE, PALETTE_CODE
+#endif
 }
 
 // Show save layout dialog
