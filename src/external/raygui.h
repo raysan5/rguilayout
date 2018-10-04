@@ -108,14 +108,14 @@
     #include "raylib.h"
 #endif
 
-#define RAYGUI_STATIC
+// #define RAYGUI_STATIC
 #ifdef RAYGUI_STATIC
     #define RAYGUIDEF static            // Functions just visible to module including this file
 #else
     #ifdef __cplusplus
         #define RAYGUIDEF extern "C"    // Functions visible from other files (no name mangling of functions in C++)
     #else
-        #define RAYGUIDEF extern        // Functions visible from other files
+        #define RAYGUIDEF __declspec(dllexport) extern        // Functions visible from other files
     #endif
 #endif
 
@@ -450,7 +450,7 @@ typedef enum GuiControlState {
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-static int guiState = NORMAL;
+static GuiControlState guiState = NORMAL;
 static float guiAlpha = 1.0f;
 
 // Current GUI style (light or dark)
@@ -1295,8 +1295,6 @@ RAYGUIDEF bool GuiToggleButton(Rectangle bounds, const char *text, bool active)
                 active = !active;
             }
             else state = FOCUSED;
-            
-            // TODO: DrawTextureV(texCursor, mousePoint, WHITE);
         }
     }
     //--------------------------------------------------------------------
@@ -1615,8 +1613,7 @@ RAYGUIDEF int GuiDropdownBox(Rectangle bounds, const char **text, int count, int
     #define DROPDOWNBOX_ARROW_RIGHT_PADDING    16
     
     GuiControlState state = guiState;
-    bool dropActive = false;
-    static bool clicked = false;
+    static bool dropOpen = false;
    
     int textWidth = MeasureText(text[active], style[DEFAULT_TEXT_SIZE]);
     int textHeight = style[DEFAULT_TEXT_SIZE];
@@ -1632,16 +1629,21 @@ RAYGUIDEF int GuiDropdownBox(Rectangle bounds, const char **text, int count, int
     {
         Vector2 mousePoint = GetMousePosition();
         
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mousePoint, bounds))
-        {
-            clicked = true;
-        }
-        else if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) clicked = false;
+        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mousePoint, bounds)) dropOpen = true;
         
-        if (clicked)
+        if (dropOpen)
         {
+            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+            {
+                for (int i = 1; i < (count + 1); i++)
+                {
+                    if (CheckCollisionPointRec(mousePoint, (Rectangle){ bounds.x, bounds.y + i*bounds.height, bounds.width, bounds.height })) active = i - 1;
+                }
+                
+                dropOpen = false;
+            }
+            
             bounds.height *= (count + 1);
-            dropActive = true;
         }
 
         if (CheckCollisionPointRec(mousePoint, bounds))
@@ -1650,14 +1652,6 @@ RAYGUIDEF int GuiDropdownBox(Rectangle bounds, const char **text, int count, int
             else state = FOCUSED;
         }
         else state = NORMAL;
-        
-        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
-        {
-            for (int i = 1; i < (count + 1); i++)
-            {
-                if (CheckCollisionPointRec(mousePoint, (Rectangle){ bounds.x, bounds.y + i*bounds.height, bounds.width, bounds.height })) active = i - 1;
-            }
-        }
     }
     //--------------------------------------------------------------------
 
@@ -1667,7 +1661,7 @@ RAYGUIDEF int GuiDropdownBox(Rectangle bounds, const char **text, int count, int
     {
         case NORMAL:
         {
-            if (dropActive) GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height/(count + 1) }, text[active], true);
+            if (dropOpen) GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height/(count + 1) }, text[active], true);
             else 
             {
                 DrawRectangle(bounds.x, bounds.y, bounds.width, bounds.height, Fade(GetColor(style[DEFAULT_BASE_COLOR_NORMAL]), guiAlpha));
@@ -1681,7 +1675,7 @@ RAYGUIDEF int GuiDropdownBox(Rectangle bounds, const char **text, int count, int
         } break;
         case FOCUSED:
         {
-            if (dropActive) GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height/(count + 1) }, text[active], true);
+            if (dropOpen) GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height/(count + 1) }, text[active], true);
             else GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height }, text[active], true);
             
             DrawTriangle((Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING, bounds.y + boundsHeight0/2 - 2 }, 
@@ -1691,17 +1685,16 @@ RAYGUIDEF int GuiDropdownBox(Rectangle bounds, const char **text, int count, int
         case PRESSED:
         {
             GuiPanel(bounds);
-            if (dropActive) GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height/(count + 1) }, text[active], true);
+            if (dropOpen) GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height/(count + 1) }, text[active], true);
             else GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height }, text[active], true);
 
-            if (clicked)
+            if (dropOpen)
             {
                 for(int i = 0; i < count; i++)
                 {
                     GuiListElement((Rectangle){ bounds.x, bounds.y + bounds.height/(count + 1)*(i+1) + DROPDOWNBOX_PADDING, bounds.width, bounds.height/(count + 1) - DROPDOWNBOX_PADDING }, text[i], false);
                 }
             }
-            
             
             DrawTriangle((Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING, bounds.y + boundsHeight0/2 - 2 }, 
                          (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 5, bounds.y + boundsHeight0/2 - 2 + 5 }, 
@@ -3049,7 +3042,7 @@ RAYGUIDEF bool GuiMessageBox(Rectangle bounds, const char *windowTitle, const ch
 // NOTE: Returns mouse position on grid
 RAYGUIDEF Vector2 GuiGrid(Rectangle bounds, int spacing, int subdivs, bool snap)
 {
-    #define GRID_COLOR_ALPHA    0.1f        // Grid lines alpha amount
+    #define GRID_COLOR_ALPHA    0.15f        // Grid lines alpha amount
     
     GuiControlState state = guiState;
     Vector2 mousePoint = GetMousePosition();
@@ -3061,7 +3054,18 @@ RAYGUIDEF Vector2 GuiGrid(Rectangle bounds, int spacing, int subdivs, bool snap)
         // Check mouse position if snap
         if (snap)
         {
-            // TODO: Mouse point snap
+            // Mouse snap to grid points
+            // NOTE: Point changes when spacing/2 has been surpassed in X and Y
+            int offsetX = (int)mousePoint.x%spacing;
+            int offsetY = (int)mousePoint.y%spacing;
+            
+            if (offsetX >= spacing/2) mousePoint.x += (spacing - offsetX);
+            else mousePoint.x -= offsetX;
+            
+            if (offsetY >= spacing/2) mousePoint.y += (spacing - offsetY);
+            else mousePoint.y -= offsetY;
+            
+            SetMousePosition(mousePoint);
         }
     }
     //--------------------------------------------------------------------
@@ -3075,14 +3079,16 @@ RAYGUIDEF Vector2 GuiGrid(Rectangle bounds, int spacing, int subdivs, bool snap)
             // Draw vertical grid lines
             for (int i = 0; i < (bounds.width/spacing + 1)*subdivs; i++)
             {
-                DrawRectangle(bounds.y + spacing*i, 0, 1, bounds.height, ((i%subdivs) == 0) ? Fade(BLACK, GRID_COLOR_ALPHA*2) : Fade(GRAY, GRID_COLOR_ALPHA));
+                DrawRectangle(bounds.x + spacing*i, bounds.y, 1, bounds.height, ((i%subdivs) == 0) ? Fade(GetColor(style[DEFAULT_LINES_COLOR]), GRID_COLOR_ALPHA*4) : Fade(GetColor(style[DEFAULT_LINES_COLOR]), GRID_COLOR_ALPHA));
             }
 
             // Draw horizontal grid lines
             for (int i = 0; i < (bounds.height/spacing + 1)*subdivs; i++)
             {
-                DrawRectangle(0, bounds.x + spacing*i, bounds.width, 1, ((i%subdivs) == 0) ? Fade(BLACK, GRID_COLOR_ALPHA*2) : Fade(GRAY, GRID_COLOR_ALPHA));
+                DrawRectangle(bounds.x, bounds.y + spacing*i, bounds.width, 1, ((i%subdivs) == 0) ? Fade(GetColor(style[DEFAULT_LINES_COLOR]), GRID_COLOR_ALPHA*4) : Fade(GetColor(style[DEFAULT_LINES_COLOR]), GRID_COLOR_ALPHA));
             }
+            
+            if (snap) DrawRectangle(mousePoint.x - 1, mousePoint.y - 1, 2, 2, MAROON);
         } break;
         default: break;
     }
@@ -3621,6 +3627,6 @@ static const char *FormatText(const char *text, ...)
 
     return buffer;
 }
-#endif
+#endif      // RAYGUI_STANDALONE
 
-#endif // RAYGUI_IMPLEMENTATION
+#endif      // RAYGUI_IMPLEMENTATION

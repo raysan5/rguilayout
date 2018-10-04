@@ -466,7 +466,7 @@ int main(int argc, char *argv[])
     //--------------------------------------------------------------------------------------
 
     // Main game loop
-    while (!exitWindow)    // Detect window close button or ESC key
+    while (!exitWindow)
     {
         // Update
         //----------------------------------------------------------------------------------
@@ -692,8 +692,7 @@ int main(int argc, char *argv[])
             }
         }
         
-
-        
+        // Controls mouse movement logic
         if (selectedControl != -1 && !textEditMode && !nameEditMode && !anchorMode)
         {
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
@@ -887,7 +886,7 @@ int main(int argc, char *argv[])
             else defaultRec[selectedType].y -= offsetY;      
         }
         
-        // Resize the controller aplying the snap
+        // Resize the controller with snap
         if ((IsKeyDown(KEY_LEFT_CONTROL)) && (!textEditMode) && (!nameEditMode) && (IsKeyPressed(KEY_R)) && (selectedControl != -1))
         {
             int offsetX = (int)layout.controls[selectedControl].rec.width%GRID_LINE_SPACING;
@@ -908,6 +907,7 @@ int main(int argc, char *argv[])
             int key = GetKeyPressed();
             int keyCount = strlen(layout.controls[selectedControl].text); // Keeps track of text length
 
+            // TODO: Move cursor properly on text edition
             if (IsKeyPressed(KEY_LEFT)) textArrayPos--;
             else if (IsKeyPressed(KEY_RIGHT)) textArrayPos++;
             
@@ -2196,7 +2196,7 @@ static void GenerateCode(const char *fileName, GuiLayoutConfig config)
     fprintf(ftool, "    // %s: controls initialization\n", config.name);
     fprintf(ftool, "    //----------------------------------------------------------------------------------\n");
 
-    // TODO: Use config.exportAnchors and config.exportAnchor0
+    // TODO: Use config.exportAnchors
     if (config.exportAnchors)
     {
         fprintf(ftool, "    // Anchor points\n");
@@ -2218,7 +2218,6 @@ static void GenerateCode(const char *fileName, GuiLayoutConfig config)
     if (!config.fullComments) fprintf(ftool, "\n");
 
     // Define controls variables
-    // TODO: Use config.fullComments
     for (int i = 0; i < layout.controlsCount; i++)
     {
         switch (layout.controls[i].type)
