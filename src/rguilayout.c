@@ -62,20 +62,19 @@
 //----------------------------------------------------------------------------------
 #define ENABLE_PRO_FEATURES                 // Enable PRO version features
 
-#define TOOL_VERSION_TEXT     "1.2"         // Tool version string
+#define TOOL_VERSION_TEXT         "1.2"     // Tool version string
 
-#define MAX_GUI_CONTROLS        256         // Maximum number of gui controls
-#define MAX_ANCHOR_POINTS         8         // Maximum number of anchor points
-#define ANCHOR_RADIUS            20         // Default anchor radius
+#define MAX_GUI_CONTROLS           256      // Maximum number of gui controls
+#define MAX_ANCHOR_POINTS            8      // Maximum number of anchor points
+#define ANCHOR_RADIUS               20      // Default anchor radius
 
-#define MAX_CONTROL_TEXT_LENGTH  64         // Maximum length of control text
-#define MAX_CONTROL_NAME_LENGTH  32         // Maximum length of control name (used on code generation)
+#define MAX_CONTROL_TEXT_LENGTH     64      // Maximum length of control text
+#define MAX_CONTROL_NAME_LENGTH     32      // Maximum length of control name (used on code generation)
 
-#define GRID_LINE_SPACING         5         // Grid line spacing in pixels
+#define GRID_LINE_SPACING            5      // Grid line spacing in pixels
 
-#define MOVEMENT_FRAME_SPEED     10         // Controls movement speed in pixels per frame
-
-#define PALETTE_EASING_FRAMES    30         // Controls the easing time in frames     
+#define MOVEMENT_FRAME_SPEED        10      // Controls movement speed in pixels per frame
+#define PALETTE_EASING_FRAMES       30      // Controls the easing time in frames     
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -150,9 +149,6 @@ typedef struct {
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-static int screenWidth = 800;
-static int screenHeight = 600;
-
 static GuiLayout layout = { 0 };
 
 const char *controlTypeName[] = { "WINDOWBOX", "GROUPBOX", "LINE", "PANEL", "LABEL", "BUTTON", "TOGGLE", "TOGGLEGROUP", "CHECKBOX", "COMBOBOX", "DROPDOWNBOX", "SPINNER", "VALUEBOX", "TEXTBOX", "SLIDER", "SLIDERBAR", "PROGRESSBAR", "STATUSBAR", "LISTVIEW", "COLORPICKER", "DUMMYREC" };
@@ -160,19 +156,21 @@ const char *controlTypeNameLow[] = { "WindowBox", "GroupBox", "Line", "Panel", "
 const char *controlTypeNameShort[] = { "wdwbox", "grpbox", "lne", "pnl", "lbl", "btn", "tgl", "tglgrp", "chkbox", "combox", "ddwnbox", "spnr", "vlbox", "txtbox", "sldr", "sldrb", "prgssb", "stsb", "lstvw", "clrpckr", "dmyrc" };
 
 static bool cancelSave = false;
-static char loadedFileName[256] = "\0";
+static char loadedFileName[256] = { 0 };    // Loaded layout file name
 
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
 //----------------------------------------------------------------------------------
-static void ShowUsageInfo(void);    // Show command line usage info
+static void ShowUsageInfo(void);            // Show command line usage info
 
-static void ShowSaveLayoutDialog(void);                                 // Show save layout dialog
-static void ShowExportLayoutDialog(GuiLayoutConfig config);             // Show export layout dialog
-static void SaveLayout(const char *fileName, bool binary);              // Save raygui layout (.rgl), text or binary
+// Load/Save/Export data functions
 static void LoadLayout(const char *fileName);                           // Load raygui layout (.rgl), text or binary
+static void SaveLayout(const char *fileName, bool binary);              // Save raygui layout (.rgl), text or binary
 static void GenerateCode(const char *fileName, GuiLayoutConfig config); // Generate C code for gui layout
+static void DialogSaveLayout(void);                                     // Show save layout dialog (.rgl)
+static void DialogExportLayout(GuiLayoutConfig config);                 // Show export layout dialog (.c)
 
+// Auxiliar functions
 static char *GetControlAnchorRec(int anchorId, Rectangle controlRec, GuiLayoutConfig config);   // Get control rectangle
 
 //----------------------------------------------------------------------------------
@@ -180,20 +178,16 @@ static char *GetControlAnchorRec(int anchorId, Rectangle controlRec, GuiLayoutCo
 //----------------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
+    char inFileName[256] = { 0 };       // Input file name (required in case of drag & drop over executable)
+
     // Command-line usage mode
     //--------------------------------------------------------------------------------------
     if (argc > 1)
     {
+        // CLI required variables
         bool showUsageInfo = false;     // Toggle command line usage info
-        
-        char inFileName[128] = "\0";    // Input file name
-        char outFileName[128] = "\0";   // Output file name
-        
-        int sampleRate = 44100;         // Default conversion sample rate
-        int sampleSize = 16;            // Default conversion sample size
-        int channels = 1;               // Default conversion channels number
-        
-        bool playWave = false;         // Play input/output wave
+
+        char outFileName[128] = { 0 };  // Output file name
 
         if (argc == 2)  // One file dropped over the executable or just one argument
         {
@@ -287,8 +281,13 @@ int main(int argc, char *argv[])
     
     // GUI usage mode - Initialization
     //--------------------------------------------------------------------------------------
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    const int screenWidth = 800;
+    const int screenHeight = 800;
+
+    SetTraceLog(0);                             // Disable trace log messsages
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);      // Window configuration flags
     InitWindow(screenWidth, screenHeight, FormatText("rGuiLayout v%s - A simple and easy-to-use raygui layouts editor", TOOL_VERSION_TEXT));
+    SetWindowMinSize(800, 800);
     SetExitKey(0);
 
     // General app variables
@@ -466,13 +465,62 @@ int main(int argc, char *argv[])
     //--------------------------------------------------------------------------------------
 
     // Main game loop
-    while (!exitWindow)
+    while (!exitWindow)             // Detect window close button
     {
-        // Update
+        // Dropped files logic
+        //----------------------------------------------------------------------------------
+        if (IsFileDropped())
+        {
+            int fileCount = 0;
+            char **droppedFiles = { 0 };
+            char droppedFileName[256]; 
+            droppedFiles = GetDroppedFiles(&fileCount);
+            strcpy(droppedFileName, droppedFiles[0]);
+            
+            if (IsFileExtension(droppedFileName, ".rgl")) 
+            {
+                selectedControl = -1;
+                LoadLayout(droppedFileName);
+                strcpy(loadedFileName, droppedFileName);
+                SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
+            }
+            else if (IsFileExtension(droppedFileName, ".rgs")) GuiLoadStyle(droppedFileName);
+            else if (IsFileExtension(droppedFileName, ".png"))
+            {
+                if (loadedTexture.id > 0) UnloadTexture(loadedTexture);
+                loadedTexture = LoadTexture(droppedFileName);
+                
+                if (loadedTexture.width == 64 && loadedTexture.height == 16) GuiLoadStylePaletteImage(droppedFileName);
+                else
+                {
+                    if (tracemap.id > 0) UnloadTexture(tracemap);
+                    tracemap = LoadTexture(droppedFileName);
+                }
+                
+                UnloadTexture(loadedTexture);
+                SetTextureFilter(tracemap, FILTER_BILINEAR);
+                
+                tracemapRec.width = tracemap.width;
+                tracemapRec.height = tracemap.height; 
+            }
+
+            ClearDroppedFiles();
+        }
+        //----------------------------------------------------------------------------------
+
+        // Keyboard shortcuts
+        //----------------------------------------------------------------------------------
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) BtnSaveStyle(false);    // Show save style dialog (.rgs text)
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O)) BtnLoadStyle();         // Show load style dialog (.rgs)
+        //if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) BtnExportStyle(wave);   // Show export style dialog (.rgs, .png, .h)
+        // TODO: Support style name definition!
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) ExportStyle("style_table.png", CONTROLS_TABLE_IMAGE);
+        //----------------------------------------------------------------------------------
+        
+        // Basic program flow logic
         //----------------------------------------------------------------------------------
         framesCounterSnap++;
         mouse = GetMousePosition();
-
         if (WindowShouldClose()) exitWindow = true;
         
         // Show save layout message window on ESC
@@ -1267,46 +1315,6 @@ int main(int argc, char *argv[])
         // Shows or hides the grid
         if (IsKeyPressed(KEY_G) && (!nameEditMode) && (!textEditMode) && (!generateWindowActive)) showGrid = !showGrid;
         
-        // Drop files logic
-        if (IsFileDropped())
-        {
-            int fileCount = 0;
-            char **droppedFiles = { 0 };
-            char droppedFileName[256]; 
-            droppedFiles = GetDroppedFiles(&fileCount);
-            strcpy(droppedFileName, droppedFiles[0]);
-            
-            if (IsFileExtension(droppedFileName, ".rgl")) 
-            {
-                selectedControl = -1;
-                LoadLayout(droppedFileName);
-                strcpy(loadedFileName, droppedFileName);
-                SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
-            }
-            else if (IsFileExtension(droppedFileName, ".rgs")) GuiLoadStyle(droppedFileName);
-            else if (IsFileExtension(droppedFileName, ".png"))
-            {
-                if (loadedTexture.id > 0) UnloadTexture(loadedTexture);
-                loadedTexture = LoadTexture(droppedFileName);
-                
-                if (loadedTexture.width == 64 && loadedTexture.height == 16) GuiLoadStylePaletteImage(droppedFileName);
-                else
-                {
-                    if (tracemap.id > 0) UnloadTexture(tracemap);
-                    tracemap = LoadTexture(droppedFileName);
-                }
-                
-                UnloadTexture(loadedTexture);
-                
-                SetTextureFilter(tracemap, FILTER_BILINEAR);
-                
-                tracemapRec.width = tracemap.width;
-                tracemapRec.height = tracemap.height; 
-            }
-
-            ClearDroppedFiles();
-        }
-        
         // Duplicate selected control
         if ((IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_D)) && (selectedControl != -1) && !anchorMode)
         {
@@ -1324,10 +1332,10 @@ int main(int argc, char *argv[])
         }
      
         // Save layout file dialog logic
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_S)) ShowSaveLayoutDialog();
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_S)) DialogSaveLayout();
         else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) 
         {
-            if (loadedFileName[0] == '\0') ShowSaveLayoutDialog();
+            if (loadedFileName[0] == '\0') DialogSaveLayout();
             else SaveLayout(loadedFileName, false);
         }
         
@@ -1815,7 +1823,7 @@ int main(int argc, char *argv[])
 
                 if (GuiButton((Rectangle){ exportWindowPos.x + 275, exportWindowPos.y + 185, 115, 30 }, "Generate Code"))
                 {
-                    ShowExportLayoutDialog(config);
+                    DialogExportLayout(config);
                     generateWindowActive = false;
                 }
             }
@@ -1838,7 +1846,7 @@ int main(int argc, char *argv[])
                 if (GuiButton((Rectangle){ GetScreenWidth()/2 - 94, GetScreenHeight()/2 + 10, 85, 25 }, "Yes")) 
                 { 
                     cancelSave = false;
-                    ShowSaveLayoutDialog();
+                    DialogSaveLayout();
                     if (cancelSave) exitWindow = true;
                 }
                 else if (GuiButton((Rectangle){ GetScreenWidth()/2 + 10, GetScreenHeight()/2 + 10, 85, 25 }, "No")) { exitWindow = true; }
@@ -1855,7 +1863,7 @@ int main(int argc, char *argv[])
                 if (GuiButton((Rectangle){ GetScreenWidth()/2 - 94, GetScreenHeight()/2 + 10, 85, 25 }, "Yes")) 
                 { 
                     cancelSave = false;
-                    ShowSaveLayoutDialog();
+                    DialogSaveLayout();
                     if (cancelSave) resetLayout = true;
                 }
                 else if (GuiButton((Rectangle){ GetScreenWidth()/2 + 10, GetScreenHeight()/2 + 10, 85, 25 }, "No")) { resetLayout = true; }
@@ -1922,7 +1930,7 @@ static void ShowUsageInfo(void)
 }
 
 // Show save layout dialog
-static void ShowSaveLayoutDialog(void)
+static void DialogSaveLayout(void)
 {
     const char *filters[] = { "*.rgl" };
     const char *fileName = tinyfd_saveFileDialog("Save raygui layout text file", "", 1, filters, "raygui Layout Files (*.rgl)");
@@ -1941,7 +1949,7 @@ static void ShowSaveLayoutDialog(void)
 }
 
 // Show save layout dialog
-static void ShowExportLayoutDialog(GuiLayoutConfig config)
+static void DialogExportLayout(GuiLayoutConfig config)
 {
     const char *filters[] = { "*.c", "*.go", "*.lua" };
     const char *fileName = tinyfd_saveFileDialog("Generate code file", config.name, 3, filters, "Code file");
