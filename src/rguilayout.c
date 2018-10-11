@@ -164,14 +164,16 @@ static char loadedFileName[256] = { 0 };    // Loaded layout file name
 static void ShowUsageInfo(void);            // Show command line usage info
 
 // Load/Save/Export data functions
-static void LoadLayout(const char *fileName);                           // Load raygui layout (.rgl), text or binary
-static void SaveLayout(const char *fileName, bool binary);              // Save raygui layout (.rgl), text or binary
-static void GenerateCode(const char *fileName, GuiLayoutConfig config); // Generate C code for gui layout
-static void DialogSaveLayout(void);                                     // Show save layout dialog (.rgl)
-static void DialogExportLayout(GuiLayoutConfig config);                 // Show export layout dialog (.c)
+static void LoadLayout(const char *fileName);                   // Load raygui layout (.rgl), text or binary
+static void SaveLayout(const char *fileName, bool binary);      // Save raygui layout (.rgl), text or binary
+
+static void DialogSaveLayout(void);                             // Show save layout dialog (.rgl)
+static void DialogExportLayout(GuiLayoutConfig config);         // Show export layout dialog (.c)
 
 // Auxiliar functions
 static char *GetControlAnchorRec(int anchorId, Rectangle controlRec, GuiLayoutConfig config);   // Get control rectangle
+static char *FormatExportVariables(int controlType, char *name, GuiLayoutConfig config);        // Format code text variables to export
+static void GenerateCode(const char *fileName, GuiLayoutConfig config);                         // Generate C code for gui layout
 
 //----------------------------------------------------------------------------------
 // Program main entry point
@@ -291,7 +293,7 @@ int main(int argc, char *argv[])
     SetExitKey(0);
 
     // General app variables
-    Vector2 mouse;
+    Vector2 mouse = { -1, -1 };         // Mouse position
     bool exitWindow = false;            // Exit window flag
     bool snapMode = false;              // Snap mode flag (KEY_S)
     bool showGrid = true;               // Show grid flag (KEY_G)
@@ -510,11 +512,13 @@ int main(int argc, char *argv[])
 
         // Keyboard shortcuts
         //----------------------------------------------------------------------------------
+        /*
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) BtnSaveStyle(false);    // Show save style dialog (.rgs text)
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O)) BtnLoadStyle();         // Show load style dialog (.rgs)
         //if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) BtnExportStyle(wave);   // Show export style dialog (.rgs, .png, .h)
         // TODO: Support style name definition!
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) ExportStyle("style_table.png", CONTROLS_TABLE_IMAGE);
+        */
         //----------------------------------------------------------------------------------
         
         // Basic program flow logic
@@ -1902,12 +1906,11 @@ static void ShowUsageInfo(void)
 
 #if defined(ENABLE_PRO_FEATURES)
     printf("USAGE:\n\n");
-    printf("    > rguilayout [--version] [--help] --input <filename.ext> [--output <filename.ext>]\n");
+    printf("    > rguilayout [--help] --input <filename.ext> [--output <filename.ext>]\n");
     printf("                 [--format <styleformat>] [--edit-prop <property> <value>]\n");
     
     printf("\nOPTIONS:\n\n");
-    printf("    -v, --version                   : Show tool version and info\n");
-    printf("    -h, --help                      : Show command line usage help\n");
+    printf("    -h, --help                      : Show tool version and command line usage help\n");
     printf("    -i, --input <filename.ext>      : Define input file.\n");
     printf("                                      Supported extensions: .rgs, .png\n");
     printf("    -o, --output <filename.ext>     : Define output file.\n");
@@ -1929,97 +1932,9 @@ static void ShowUsageInfo(void)
 #endif
 }
 
-// Show save layout dialog
-static void DialogSaveLayout(void)
-{
-    const char *filters[] = { "*.rgl" };
-    const char *fileName = tinyfd_saveFileDialog("Save raygui layout text file", "", 1, filters, "raygui Layout Files (*.rgl)");
-
-    // Save layout.controls file (text or binary)
-    if (fileName != NULL)
-    {
-        char outFileName[256] = { 0 };
-        strcpy(outFileName, fileName);
-        if (GetExtension(fileName) == NULL) strcat(outFileName, ".rgl\0");     // No extension provided
-        SaveLayout(outFileName, false);
-        strcpy(loadedFileName, outFileName);
-        SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
-        cancelSave = true;
-    }
-}
-
-// Show save layout dialog
-static void DialogExportLayout(GuiLayoutConfig config)
-{
-    const char *filters[] = { "*.c", "*.go", "*.lua" };
-    const char *fileName = tinyfd_saveFileDialog("Generate code file", config.name, 3, filters, "Code file");
-
-    if (fileName != NULL)
-    {
-        char outFileName[256] = { 0 };
-        strcpy(outFileName, fileName);
-        if (GetExtension(fileName) == NULL) strcat(outFileName, ".c\0");     // No extension provided
-        GenerateCode(outFileName, config);
-    }
-}
-
-// Save gui layout information
-static void SaveLayout(const char *fileName, bool binary)
-{
-    if (binary)
-    {
-        #define RGL_FILE_VERSION_BINARY 100
-        
-        FILE *rglFile = fopen(fileName, "wb");
-
-        if (rglFile != NULL)
-        {
-            // Write some header info (12 bytes)
-            // id: "RGL "       - 4 bytes
-            // version: 100     - 2 bytes
-            // reserved         - 2 bytes
-            
-            char signature[5] = "RGL ";
-            short version = RGL_FILE_VERSION_BINARY;
-            short reserved = 0;
-
-            fwrite(signature, 1, 4, rglFile);
-            fwrite(&version, 1, sizeof(short), rglFile);
-            fwrite(&reserved, 1, sizeof(short), rglFile);
-            
-            fwrite(&layout, 1, sizeof(GuiLayout), rglFile);
-
-            fclose(rglFile);  
-        }
-    }
-    else 
-    {
-        #define RGL_FILE_VERSION_TEXT "1.0"
-        
-        FILE *rglFile = fopen(fileName, "wt");
-
-        if (rglFile != NULL)
-        {
-             // Write some description comments
-            fprintf(rglFile, "#\n# rgl text file (v%s) - raygui layout text file generated using rGuiLayout\n#\n", RGL_FILE_VERSION_TEXT);
-            fprintf(rglFile, "# Total number of controls:     %i\n", layout.controlsCount);
-            fprintf(rglFile, "# Anchor info:   a <id> <posx> <posy> <enabled>\n");
-            fprintf(rglFile, "# Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>\n#\n");
-
-            for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
-            {
-                fprintf(rglFile, "a %03i %i %i %i\n", layout.anchors[i].id, layout.anchors[i].x, layout.anchors[i].y, layout.anchors[i].enabled);
-            }
-            
-            for (int i = 0; i < layout.controlsCount; i++)
-            {
-                fprintf(rglFile, "c %03i %i %s %i %i %i %i %i %s\n", layout.controls[i].id, layout.controls[i].type, layout.controls[i].name, (int)layout.controls[i].rec.x, (int)layout.controls[i].rec.y, (int)layout.controls[i].rec.width, (int)layout.controls[i].rec.height, layout.controls[i].ap->id, layout.controls[i].text);
-            }
-
-            fclose(rglFile);
-        }
-    }
-}
+//--------------------------------------------------------------------------------------------
+// Load/Save/Export data functions
+//--------------------------------------------------------------------------------------------
 
 // Import gui layout information
 // NOTE: Updates global variable: layout
@@ -2108,6 +2023,104 @@ static void LoadLayout(const char *fileName)
     printf("[GuiLayout] Layout data loaded successfully\n");
 }
 
+// Save gui layout information
+static void SaveLayout(const char *fileName, bool binary)
+{
+    if (binary)
+    {
+        #define RGL_FILE_VERSION_BINARY 100
+        
+        FILE *rglFile = fopen(fileName, "wb");
+
+        if (rglFile != NULL)
+        {
+            // Write some header info (12 bytes)
+            // id: "RGL "       - 4 bytes
+            // version: 100     - 2 bytes
+            // reserved         - 2 bytes
+            
+            char signature[5] = "RGL ";
+            short version = RGL_FILE_VERSION_BINARY;
+            short reserved = 0;
+
+            fwrite(signature, 1, 4, rglFile);
+            fwrite(&version, 1, sizeof(short), rglFile);
+            fwrite(&reserved, 1, sizeof(short), rglFile);
+            
+            fwrite(&layout, 1, sizeof(GuiLayout), rglFile);
+
+            fclose(rglFile);  
+        }
+    }
+    else 
+    {
+        #define RGL_FILE_VERSION_TEXT "1.0"
+        
+        FILE *rglFile = fopen(fileName, "wt");
+
+        if (rglFile != NULL)
+        {
+             // Write some description comments
+            fprintf(rglFile, "#\n# rgl text file (v%s) - raygui layout text file generated using rGuiLayout\n#\n", RGL_FILE_VERSION_TEXT);
+            fprintf(rglFile, "# Total number of controls:     %i\n", layout.controlsCount);
+            fprintf(rglFile, "# Anchor info:   a <id> <posx> <posy> <enabled>\n");
+            fprintf(rglFile, "# Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>\n#\n");
+
+            for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
+            {
+                fprintf(rglFile, "a %03i %i %i %i\n", layout.anchors[i].id, layout.anchors[i].x, layout.anchors[i].y, layout.anchors[i].enabled);
+            }
+            
+            for (int i = 0; i < layout.controlsCount; i++)
+            {
+                fprintf(rglFile, "c %03i %i %s %i %i %i %i %i %s\n", layout.controls[i].id, layout.controls[i].type, layout.controls[i].name, (int)layout.controls[i].rec.x, (int)layout.controls[i].rec.y, (int)layout.controls[i].rec.width, (int)layout.controls[i].rec.height, layout.controls[i].ap->id, layout.controls[i].text);
+            }
+
+            fclose(rglFile);
+        }
+    }
+}
+
+// Show save layout dialog
+static void DialogSaveLayout(void)
+{
+    const char *filters[] = { "*.rgl" };
+    const char *fileName = tinyfd_saveFileDialog("Save raygui layout text file", "", 1, filters, "raygui Layout Files (*.rgl)");
+
+    // Save layout.controls file (text or binary)
+    if (fileName != NULL)
+    {
+        char outFileName[256] = { 0 };
+        strcpy(outFileName, fileName);
+        if (GetExtension(fileName) == NULL) strcat(outFileName, ".rgl\0");     // No extension provided
+        SaveLayout(outFileName, false);
+        strcpy(loadedFileName, outFileName);
+        SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
+        cancelSave = true;
+    }
+}
+
+// Show save layout dialog
+static void DialogExportLayout(GuiLayoutConfig config)
+{
+    const char *filters[] = { "*.c", "*.go", "*.lua" };
+    const char *fileName = tinyfd_saveFileDialog("Generate code file", config.name, 3, filters, "Code file");
+
+    if (fileName != NULL)
+    {
+        char outFileName[256] = { 0 };
+        strcpy(outFileName, fileName);
+        if (GetExtension(fileName) == NULL) strcat(outFileName, ".c\0");     // No extension provided
+        GenerateCode(outFileName, config);
+    }
+}
+
+
+//--------------------------------------------------------------------------------------------
+// Auxiliar functions
+//--------------------------------------------------------------------------------------------
+
+// Get control rectangle code text considering anchor
 static char *GetControlAnchorRec(int anchorId, Rectangle controlRec, GuiLayoutConfig config)
 {
     static char text[512];
@@ -2130,6 +2143,7 @@ static char *GetControlAnchorRec(int anchorId, Rectangle controlRec, GuiLayoutCo
     return text;
 }
 
+// Format code text variables to export
 static char *FormatExportVariables(int controlType, char *name, GuiLayoutConfig config)
 {
     static char text[512];
