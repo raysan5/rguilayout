@@ -161,14 +161,17 @@ static char loadedFileName[256] = { 0 };    // Loaded layout file name
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
 //----------------------------------------------------------------------------------
-static void ShowUsageInfo(void);            // Show command line usage info
+#if defined(ENABLE_PRO_FEATURES)
+static void ShowCommandLineInfo(void);                      // Show command line usage info
+static void ProcessCommandLine(int argc, char *argv[]);     // Process command line input
+#endif
 
 // Load/Save/Export data functions
 static void LoadLayout(const char *fileName);                   // Load raygui layout (.rgl), text or binary
 static void SaveLayout(const char *fileName, bool binary);      // Save raygui layout (.rgl), text or binary
 
-static void DialogSaveLayout(void);                             // Show save layout dialog (.rgl)
-static void DialogExportLayout(GuiLayoutConfig config);         // Show export layout dialog (.c)
+static void DialogSaveLayout(void);                             // Show dialog: save layout file (.rgl)
+static void DialogExportLayout(GuiLayoutConfig config);         // Show dialog: export layout file (.c)
 
 // Auxiliar functions
 static char *GetControlAnchorRec(int anchorId, Rectangle controlRec, GuiLayoutConfig config);   // Get control rectangle
@@ -186,99 +189,23 @@ int main(int argc, char *argv[])
     //--------------------------------------------------------------------------------------
     if (argc > 1)
     {
-        // CLI required variables
-        bool showUsageInfo = false;     // Toggle command line usage info
-
-        char outFileName[128] = { 0 };  // Output file name
-
-        if (argc == 2)  // One file dropped over the executable or just one argument
+        if ((argc == 2) &&  
+            (strcmp(argv[1], "-h") != 0) && 
+            (strcmp(argv[1], "--help") != 0))       // One argument (file dropped over executable?)
         {
             if (IsFileExtension(argv[1], ".rgl"))
             {
                 // Open file with graphic interface
                 strcpy(inFileName, argv[1]);        // Read input filename
             }
-            else 
-            {
-                ShowUsageInfo();                    // Show command line usage info
-                return 0;
-            }
         }
-        else
+#if defined(ENABLE_PRO_FEATURES)
+        else 
         {
-            // Process command line arguments
-            for (int i = 1; i < argc; i++)
-            {
-                if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0))
-                {
-                    showUsageInfo = true;
-                }
-                else if ((strcmp(argv[i], "-i") == 0) || (strcmp(argv[i], "--input") == 0))
-                {                   
-                    // Verify an image is provided with a supported extension
-                    // Check that no "--" is comming after --input
-                    if (((i + 1) < argc) && (argv[i + 1][0] != '-') && (IsFileExtension(argv[i + 1], ".rgl")))
-                    {
-                        strcpy(inFileName, argv[i + 1]);    // Read input filename
-                        i++;
-                    }
-                    else printf("WARNING: Input file extension not recognized\n");
-                }
-                else if ((strcmp(argv[i], "-o") == 0) || (strcmp(argv[i], "--output") == 0))
-                {
-                    if (((i + 1) < argc) && (argv[i + 1][0] != '-') && (IsFileExtension(argv[i + 1], ".c"))) 
-                    {
-                        strcpy(outFileName, argv[i + 1]);   // Read output filename
-                        i++;
-                    }
-                    else printf("WARNING: Output file extension not recognized\n");
-                }
-                else if ((strcmp(argv[i], "-f") == 0) || (strcmp(argv[i], "--format") == 0))
-                {
-
-                }
-            }
-
-            // Process input file
-            if (inFileName[0] != '\0')
-            {
-                if (outFileName[0] == '\0') strcpy(outFileName, "output.c");  // Set a default name for output in case not provided
-                
-                printf("\nInput file:       %s", inFileName);
-                printf("\nOutput file:      %s", outFileName);
-                //printf("\nOutput params:    %i Hz, %i bits, %s\n\n", sampleRate, sampleSize, (channels == 1) ? "Mono" : "Stereo");
-                
-                // Support .rlg layout processing to generate .c
-                LoadLayout(argv[1]);    // Updates global: layout.controls
-                
-                int len = strlen(argv[1]);
-                char outName[256] = { 0 };
-                strcpy(outName, argv[1]);
-                outName[len - 3] = 'c';
-                outName[len - 2] = '\0';
-                
-                GuiLayoutConfig config;
-                memset(&config, 0, sizeof(GuiLayoutConfig));
-                
-                config.width = 800;
-                config.height = 600;
-                strcpy(config.name, "layout_file_name");
-                strcpy(config.version, TOOL_VERSION_TEXT);
-                strcpy(config.company, "raylib technologies");
-                strcpy(config.description, "tool description");
-                config.defineRecs = false;
-                config.exportAnchors = true;
-                config.exportAnchor0 = false;
-                config.fullComments = true;
-                
-                // Generate C code for gui layout.controls
-                GenerateCode(outName, config);
-            }
-            
-            if (showUsageInfo) ShowUsageInfo();
-            
+            ProcessCommandLine(argc, argv);
             return 0;
         }
+#endif      // ENABLE_PRO_FEATURES
     }
     
     // GUI usage mode - Initialization
@@ -1891,8 +1818,9 @@ int main(int argc, char *argv[])
 // Module Functions Definitions (local)
 //----------------------------------------------------------------------------------
 
+#if defined(ENABLE_PRO_FEATURES)
 // Show command line usage info
-static void ShowUsageInfo(void)
+static void ShowCommandLineInfo(void)
 {
     printf("\n//////////////////////////////////////////////////////////////////////////////////\n");
     printf("//                                                                              //\n");
@@ -1904,7 +1832,6 @@ static void ShowUsageInfo(void)
     printf("//                                                                              //\n");
     printf("//////////////////////////////////////////////////////////////////////////////////\n\n");
 
-#if defined(ENABLE_PRO_FEATURES)
     printf("USAGE:\n\n");
     printf("    > rguilayout [--help] --input <filename.ext> [--output <filename.ext>]\n");
     printf("                 [--format <styleformat>] [--edit-prop <property> <value>]\n");
@@ -1928,9 +1855,90 @@ static void ShowUsageInfo(void)
     
     printf("\nEXAMPLES:\n\n");
     printf("    > rguilayout --input tools.rgl --output tools.png\n");
-    // Style formats: STYLE_TEXT, STYLE_BINARY, PALETTE_IMAGE, CONTROLS_TABLE_IMAGE, PALETTE_CODE
-#endif
 }
+
+// Process command line input
+static void ProcessCommandLine(int argc, char *argv[])
+{
+    // CLI required variables
+    bool showUsageInfo = false;     // Toggle command line usage info
+    
+    char inFileName[256] = { 0 };   // Input file name
+    char outFileName[256] = { 0 };  // Output file name
+    int outputFormat = 0;           // Supported output formats
+    
+    // Process command line arguments
+    for (int i = 1; i < argc; i++)
+    {
+        if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0))
+        {
+            showUsageInfo = true;
+        }
+        else if ((strcmp(argv[i], "-i") == 0) || (strcmp(argv[i], "--input") == 0))
+        {                   
+            // Verify an image is provided with a supported extension
+            // Check that no "--" is comming after --input
+            if (((i + 1) < argc) && (argv[i + 1][0] != '-') && (IsFileExtension(argv[i + 1], ".rgl")))
+            {
+                strcpy(inFileName, argv[i + 1]);    // Read input filename
+                i++;
+            }
+            else printf("WARNING: Input file extension not recognized\n");
+        }
+        else if ((strcmp(argv[i], "-o") == 0) || (strcmp(argv[i], "--output") == 0))
+        {
+            if (((i + 1) < argc) && (argv[i + 1][0] != '-') && (IsFileExtension(argv[i + 1], ".c"))) 
+            {
+                strcpy(outFileName, argv[i + 1]);   // Read output filename
+                i++;
+            }
+            else printf("WARNING: Output file extension not recognized\n");
+        }
+        else if ((strcmp(argv[i], "-f") == 0) || (strcmp(argv[i], "--format") == 0))
+        {
+
+        }
+    }
+
+    // Process input file
+    if (inFileName[0] != '\0')
+    {
+        if (outFileName[0] == '\0') strcpy(outFileName, "output.c");  // Set a default name for output in case not provided
+        
+        printf("\nInput file:       %s", inFileName);
+        printf("\nOutput file:      %s", outFileName);
+        //printf("\nOutput params:    %i Hz, %i bits, %s\n\n", sampleRate, sampleSize, (channels == 1) ? "Mono" : "Stereo");
+        
+        // Support .rlg layout processing to generate .c
+        LoadLayout(argv[1]);    // Updates global: layout.controls
+        
+        int len = strlen(argv[1]);
+        char outName[256] = { 0 };
+        strcpy(outName, argv[1]);
+        outName[len - 3] = 'c';
+        outName[len - 2] = '\0';
+        
+        GuiLayoutConfig config;
+        memset(&config, 0, sizeof(GuiLayoutConfig));
+        
+        config.width = 800;
+        config.height = 600;
+        strcpy(config.name, "layout_file_name");
+        strcpy(config.version, TOOL_VERSION_TEXT);
+        strcpy(config.company, "raylib technologies");
+        strcpy(config.description, "tool description");
+        config.defineRecs = false;
+        config.exportAnchors = true;
+        config.exportAnchor0 = false;
+        config.fullComments = true;
+        
+        // Generate C code for gui layout.controls
+        GenerateCode(outName, config);
+    }
+    
+    if (showUsageInfo) ShowCommandLineInfo();
+}
+#endif      // ENABLE_PRO_FEATURES
 
 //--------------------------------------------------------------------------------------------
 // Load/Save/Export data functions
