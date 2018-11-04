@@ -108,24 +108,32 @@
     #include "raylib.h"
 #endif
 
-// #define RAYGUI_STATIC
-#ifdef RAYGUI_STATIC
-    #define RAYGUIDEF static            // Functions just visible to module including this file
-#else
-    #ifdef __cplusplus
-        #define RAYGUIDEF extern "C"    // Functions visible from other files (no name mangling of functions in C++)
+#if defined(RAYGUI_IMPLEMENTATION)
+    #if defined(_WIN32) && defined(BUILD_LIBTYPE_SHARED)
+        #define RAYGUIDEF __declspec(dllexport) extern  // We are building raygui as a Win32 shared library (.dll).
+    #elif defined(_WIN32) && defined(USE_LIBTYPE_SHARED) 
+        #define RAYGUIDEF __declspec(dllimport)         // We are using raygui as a Win32 shared library (.dll)
     #else
-        #define RAYGUIDEF __declspec(dllexport) extern        // Functions visible from other files
+        #ifdef __cplusplus
+            #define RAYGUIDEF extern "C"    // Functions visible from other files (no name mangling of functions in C++)
+        #else
+            #define RAYGUIDEF extern        // Functions visible from other files
+        #endif
     #endif
+#elif defined(RAYGUI_STATIC)
+    #define RAYGUIDEF static                // Functions just visible to module including this file
 #endif
 
-#include <stdlib.h>                     // Required for: atoi()
+#include <stdlib.h>                         // Required for: atoi()
 
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
-#define NUM_PROPERTIES            155
-#define VALIGN_OFFSET(h)    ((int)h%2)  // Vertical alignment for pixel perfect
+#define NUM_PROPERTIES              156
+#define VALIGN_OFFSET(h)           ((int)h%2)  // Vertical alignment for pixel perfect
+#define LINE_BLINK_FRAMES           20
+#define DEFAULT_TEXT_PADDING        4
+#define DEFAULT_TEXT_LINE_PADDING   5
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -178,6 +186,7 @@ typedef enum GuiProperty {
     DEFAULT_LINES_COLOR,
     DEFAULT_TEXT_FONT,
     DEFAULT_TEXT_SIZE,
+    DEFAULT_TEXT_SPACING,
     DEFAULT_BORDER_WIDTH,
     DEFAULT_BORDER_COLOR_NORMAL,
     DEFAULT_BASE_COLOR_NORMAL,
@@ -356,6 +365,10 @@ typedef enum GuiProperty {
 // Global gui modification functions
 RAYGUIDEF void GuiEnable(void);                                         // Enable gui controls (global state)
 RAYGUIDEF void GuiDisable(void);                                        // Disable gui controls (global state)
+RAYGUIDEF void GuiLock(void);                                           // Lock gui controls (global state)
+RAYGUIDEF void GuiUnlock(void);                                         // Unlock gui controls (global state)
+RAYGUIDEF void GuiState(int state);                         // Set gui state (global state)
+RAYGUIDEF void GuiFont(Font font);                                      // Define custom gui font (global state)
 RAYGUIDEF void GuiFade(float alpha);                                    // Set gui controls alpha (global state), alpha goes from 0.0f to 1.0f
 
 // Style set/get functions
@@ -369,7 +382,6 @@ RAYGUIDEF void GuiLine(Rectangle bounds, int thick);                            
 RAYGUIDEF void GuiPanel(Rectangle bounds);                                                              // Panel control, useful to group controls
 RAYGUIDEF Vector2 GuiScrollPanel(Rectangle bounds, Rectangle content, Vector2 viewScroll);              // Scroll Panel control
 
-
 // Basic controls set
 RAYGUIDEF void GuiLabel(Rectangle bounds, const char *text);                                            // Label control, shows text
 RAYGUIDEF bool GuiButton(Rectangle bounds, const char *text);                                           // Button control, returns true when clicked
@@ -381,29 +393,30 @@ RAYGUIDEF int GuiToggleGroup(Rectangle bounds, const char **text, int count, int
 RAYGUIDEF bool GuiCheckBox(Rectangle bounds, bool checked);                                             // Check Box control, returns true when active
 RAYGUIDEF bool GuiCheckBoxEx(Rectangle bounds, bool checked, const char *text);                         // Check Box control with text, returns true when active
 RAYGUIDEF int GuiComboBox(Rectangle bounds, const char **text, int count, int active);                  // Combo Box control, returns selected item index
-RAYGUIDEF int GuiDropdownBox(Rectangle bounds, const char **text, int count, int active);               // Dropdown Box control, returns selected item
-RAYGUIDEF int GuiSpinner(Rectangle bounds, int value, int maxValue, int btnWidth);                      // Spinner control, returns selected value
-RAYGUIDEF int GuiValueBox(Rectangle bounds, int value, int maxValue);                                   // Value Box control, updates input text with numbers
+RAYGUIDEF bool GuiDropdownBox(Rectangle bounds, const char **text, int count, int *active, bool editMode);  // Dropdown Box control, returns selected item
+RAYGUIDEF bool GuiSpinner(Rectangle bounds, int *value, int minValue, int maxValue, int btnWidth, bool editMode);   // Spinner control, returns selected value
+RAYGUIDEF bool GuiValueBox(Rectangle bounds, int *value, int minValue, int maxValue, bool editMode);                // Value Box control, updates input text with numbers
 RAYGUIDEF bool GuiTextBox(Rectangle bounds, char *text, int textSize, bool freeEdit);                   // Text Box control, updates input text
-RAYGUIDEF bool GuiTextBoxMulti(Rectangle bounds, char *text, int textSize, bool editMode);          // Text Box control with multiple lines
+RAYGUIDEF bool GuiTextBoxMulti(Rectangle bounds, char *text, int textSize, bool editMode);              // Text Box control with multiple lines
 RAYGUIDEF float GuiSlider(Rectangle bounds, float value, float minValue, float maxValue);               // Slider control, returns selected value
-RAYGUIDEF float GuiSliderEx(Rectangle bounds, float value, float minValue, float maxValue, const char *text, bool showValue); // Slider control, returns selected value
+RAYGUIDEF float GuiSliderEx(Rectangle bounds, float value, float minValue, float maxValue, const char *text, bool showValue);       // Slider control, returns selected value
 RAYGUIDEF float GuiSliderBar(Rectangle bounds, float value, float minValue, float maxValue);            // Slider Bar control, returns selected value
-RAYGUIDEF float GuiSliderBarEx(Rectangle bounds, float value, float minValue, float maxValue, const char *text, bool showValue); // Slider Bar control, returns selected value
+RAYGUIDEF float GuiSliderBarEx(Rectangle bounds, float value, float minValue, float maxValue, const char *text, bool showValue);    // Slider Bar control, returns selected value
 RAYGUIDEF float GuiProgressBar(Rectangle bounds, float value, float minValue, float maxValue);          // Progress Bar control, shows current progress value
-RAYGUIDEF float GuiProgressBarEx(Rectangle bounds, float value, float minValue, float maxValue, bool showValue); // Progress Bar control, shows current progress value
+RAYGUIDEF float GuiProgressBarEx(Rectangle bounds, float value, float minValue, float maxValue, bool showValue);    // Progress Bar control, shows current progress value
 RAYGUIDEF void GuiStatusBar(Rectangle bounds, const char *text, int offsetX);                           // Status Bar control, shows info text
 RAYGUIDEF void GuiDummyRec(Rectangle bounds, const char *text);                                         // Dummy control for placeholders
 
 // Advance controls set
-RAYGUIDEF int GuiListView(Rectangle bounds, const char **text, int count, int active);                  // List View control, returns selected list element index
+RAYGUIDEF bool GuiListView(Rectangle bounds, const char **text, int count, int*scrollIndex, int *active, bool editMode);                     // List View control, returns selected list element index
+RAYGUIDEF bool GuiListViewEx(Rectangle bounds, const char **text, int *enabledElements, int count, int *scrollIndex, int *active, int*focus, bool editMode);
 RAYGUIDEF Color GuiColorPicker(Rectangle bounds, Color color);                                          // Color Picker control
 RAYGUIDEF bool GuiMessageBox(Rectangle bounds, const char *windowTitle, const char *message);           // Message Box control, displays a message
 
 #if defined(RAYGUI_STYLE_SAVE_LOAD)
 RAYGUIDEF void GuiSaveStyle(const char *fileName, bool binary);         // Save style file (.rgs), text or binary
 RAYGUIDEF void GuiLoadStyle(const char *fileName);                      // Load style file (.rgs), text or binary
-RAYGUIDEF void GuiLoadStylePalette(int *palette);                       // Load style from a color palette array (14 values required)
+RAYGUIDEF void GuiLoadStylePalette(const int *palette);                 // Load style from a color palette array (14 values required)
 RAYGUIDEF void GuiLoadStylePaletteImage(const char *fileName);          // Load style from an image palette file (64x16)
 
 RAYGUIDEF void GuiUpdateStyleComplete(void);                            // Updates full style properties set with generic values
@@ -444,23 +457,27 @@ typedef enum GuiControlState {
     DISABLED = 0, 
     NORMAL, 
     FOCUSED, 
-    PRESSED 
+    PRESSED,
+    WASPRESSED
 } GuiControlState;
 
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
 static GuiControlState guiState = NORMAL;
+static bool guiLocked = false;
 static float guiAlpha = 1.0f;
+static Font guiFont = { 0 };
 
 // Current GUI style (light or dark)
-static int style[NUM_PROPERTIES] = {
+static unsigned int style[NUM_PROPERTIES] = {
 #if defined(RAYGUI_STYLE_DEFAULT_LIGHT)
     //----------------------------------------------
     0xf5f5f5ff,     // DEFAULT_BACKGROUND_COLOR
     0x90abb5ff,     // DEFAULT_LINES_COLOR
     0,              // DEFAULT_TEXT_FONT
     10,             // DEFAULT_TEXT_SIZE
+    1,              // DEFAULT_TEXT_SPACING                  WARNING!!!!!!!!!!!!! need to update rguilayout!!!!
     1,              // DEFAULT_BORDER_WIDTH
     0x838383ff,     // DEFAULT_BORDER_COLOR_NORMAL
     0xc9c9c9ff,     // DEFAULT_BASE_COLOR_NORMAL
@@ -619,6 +636,7 @@ static int style[NUM_PROPERTIES] = {
     0x638465ff,     // DEFAULT_LINES_COLOR
     0,              // DEFAULT_TEXT_FONT
     10,             // DEFAULT_TEXT_SIZE
+    0,              // DEFAULT_TEXT_SPACING                  WARNING!!!!!!!!!!!!! need to update rguilayout!!!!
     1,              // DEFAULT_BORDER_WIDTH
     0x60827dff,     // DEFAULT_BORDER_COLOR_NORMAL
     0x2c3334ff,     // DEFAULT_BASE_COLOR_NORMAL
@@ -756,7 +774,7 @@ static int style[NUM_PROPERTIES] = {
     0x97af81ff,     // COLORPICKER_BASE_COLOR_PRESSED ----> DEFAULT_TEXT_COLOR_PRESSED
     0x5b6462ff,     // COLORPICKER_BORDER_COLOR_DISABLED ----> DEFAULT_BORDER_COLOR_DISABLED
     0x2c3334ff,     // COLORPICKER_BASE_COLOR_DISABLED ----> DEFAULT_BASE_COLOR_DISABLED
-    0x1e,           // LISTVIEW_ELEMENTS_HEIGHT
+    0x1a,           // LISTVIEW_ELEMENTS_HEIGHT
     0x2,            // LISTVIEW_ELEMENTS_PADDING
     0xa,            // LISTVIEW_BAR_WIDTH
     0x60827dff,     // LISTVIEW_BORDER_COLOR_NORMAL ----> DEFAULT_BORDER_COLOR_NORMAL
@@ -775,7 +793,7 @@ static int style[NUM_PROPERTIES] = {
 };
 
 //----------------------------------------------------------------------------------
-// Module specific Functions Declaration
+// Standalone Mode Functions Declaration
 //----------------------------------------------------------------------------------
 #if defined(RAYGUI_STANDALONE)
 
@@ -793,7 +811,6 @@ static int style[NUM_PROPERTIES] = {
 
 #define WHITE      CLITERAL{ 255, 255, 255, 255 }   // White
 #define BLACK      CLITERAL{ 0, 0, 0, 255 }         // Black
-#define LIGHTGRAY  CLITERAL{ 200, 200, 200, 255 }   // Light Gray
 #define RAYWHITE   CLITERAL{ 245, 245, 245, 255 }   // My own White (raylib logo)
 
 // This functions are directly implemented in raygui
@@ -806,8 +823,9 @@ static const char *FormatText(const char *text, ...);   // Formatting of text wi
 // raygui depend on some raylib input and drawing functions
 // NOTE: To use raygui as standalone library, below functions must be defined by the user
 
-static int MeasureText(const char *text, int fontSize) { /* TODO */ return 0; }
-static void DrawText(const char *text, int posX, int posY, int fontSize, Color color) { /* TODO */ }
+static Vector2 MeasureTextEx(Font font, const char *text, float fontSize, float spacing) { }    // Measure string size for Font
+static void DrawTextEx(Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint) { 0 } // Draw text using font and additional parameters
+
 static void DrawRectangle(int x, int y, int width, int height, Color color) { /* TODO */ }
 static void DrawRectangleRec(Rectangle rec, Color color) { DrawRectangle(rec.x, rec.y, rec.width, rec.height, color); }
 
@@ -837,10 +855,32 @@ static void UnloadImage(Image image);               // -- GuiLoadStylePaletteIma
 
 #endif      // RAYGUI_STANDALONE
 
-static bool GuiListElement(Rectangle bounds, const char *text, bool active);    // List Element control, returns element state
+
+//----------------------------------------------------------------------------------
+// Module specific Functions Declaration
+//----------------------------------------------------------------------------------
+
+static bool GuiListElement(Rectangle bounds, const char *text, bool active, bool editMode);    // List Element control, returns element state
 
 static Vector3 ConvertHSVtoRGB(Vector3 hsv);        // Convert color data from HSV to RGB
 static Vector3 ConvertRGBtoHSV(Vector3 rgb);        // Convert color data from RGB to HSV
+
+
+static void GuiDrawText(const char *text, int posX, int posY, Color tint)
+{
+    if (guiFont.texture.id == 0) guiFont = GetFontDefault();
+    
+    DrawTextEx(guiFont, text, (Vector2){ posX, posY }, style[DEFAULT_TEXT_SIZE], style[DEFAULT_TEXT_SPACING], tint);
+}
+
+static int GuiTextWidth(const char *text)
+{
+    if (guiFont.texture.id == 0) guiFont = GetFontDefault();
+    
+    Vector2 size = MeasureTextEx(guiFont, text, style[DEFAULT_TEXT_SIZE], style[DEFAULT_TEXT_SPACING]);
+    
+    return (int)size.x;
+}
 
 //----------------------------------------------------------------------------------
 // Module Functions Definition
@@ -851,6 +891,26 @@ RAYGUIDEF void GuiEnable(void) { guiState = NORMAL; }
 
 // Disable gui global state
 RAYGUIDEF void GuiDisable(void) { guiState = DISABLED; }
+
+// Lock gui global state
+RAYGUIDEF void GuiLock(void) { guiLocked = true; }
+
+// Unlock gui global state
+RAYGUIDEF void GuiUnlock(void) { guiLocked = false; }
+
+// Set gui state (global state)
+RAYGUIDEF void GuiState(int state) { guiState = (GuiControlState)state; }
+
+// Define custom gui font
+RAYGUIDEF void GuiFont(Font font)
+{ 
+    if (font.texture.id > 0) 
+    {
+        guiFont = font;
+        style[DEFAULT_TEXT_SIZE] = font.baseSize;
+        style[DEFAULT_TEXT_SPACING] = 1;
+    }
+}
 
 // Set gui controls alpha global state
 RAYGUIDEF void GuiFade(float alpha)
@@ -877,7 +937,7 @@ RAYGUIDEF bool GuiWindowBox(Rectangle bounds, const char *text)
     GuiControlState state = guiState;
 
     int offsetX = 10;
-    int textWidth = MeasureText(text, style[DEFAULT_TEXT_SIZE]);
+    int textWidth = GuiTextWidth(text);
     //int textHeight = style[DEFAULT_TEXT_SIZE];
 
     if (bounds.width < textWidth + offsetX*2 + 16) bounds.width = textWidth + offsetX*2 + 16;
@@ -886,7 +946,7 @@ RAYGUIDEF bool GuiWindowBox(Rectangle bounds, const char *text)
     
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
@@ -910,7 +970,7 @@ RAYGUIDEF bool GuiWindowBox(Rectangle bounds, const char *text)
             DrawRectangleRec((Rectangle){ bounds.x + WINDOWBOX_BORDER_WIDTH, bounds.y + WINDOWBOX_BORDER_WIDTH, bounds.width - WINDOWBOX_BORDER_WIDTH*2, bounds.height - WINDOWBOX_BORDER_WIDTH*2 }, Fade(GetColor(style[DEFAULT_BACKGROUND_COLOR]), guiAlpha));
             GuiStatusBar(statusBar, text, offsetX);
             DrawRectangleRec((Rectangle){statusBar.x + statusBar.width - 27 + WINDOWBOX_PADDING*2, statusBar.y + 1 + WINDOWBOX_PADDING, 25 - WINDOWBOX_PADDING*3, statusBar.height - 2 - WINDOWBOX_PADDING*2}, Fade(GetColor(style[DEFAULT_BASE_COLOR_NORMAL]), guiAlpha));
-            DrawText("x", statusBar.x + statusBar.width - 16, statusBar.y + statusBar.height/2 - style[DEFAULT_TEXT_SIZE]/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_NORMAL]), guiAlpha));
+            GuiDrawText("x", statusBar.x + statusBar.width - 16, statusBar.y + statusBar.height/2 - style[DEFAULT_TEXT_SIZE]/2, Fade(GetColor(style[DEFAULT_TEXT_COLOR_NORMAL]), guiAlpha));
         } break;   
         case FOCUSED:
         {
@@ -918,7 +978,7 @@ RAYGUIDEF bool GuiWindowBox(Rectangle bounds, const char *text)
             DrawRectangleRec((Rectangle){ bounds.x + WINDOWBOX_BORDER_WIDTH, bounds.y + WINDOWBOX_BORDER_WIDTH, bounds.width - WINDOWBOX_BORDER_WIDTH*2, bounds.height - WINDOWBOX_BORDER_WIDTH*2 }, Fade(GetColor(style[DEFAULT_BACKGROUND_COLOR]), guiAlpha));
             GuiStatusBar(statusBar, text, offsetX);
             DrawRectangleRec((Rectangle){statusBar.x + statusBar.width - 27 + WINDOWBOX_PADDING*2, statusBar.y + 1 + WINDOWBOX_PADDING, 25 - WINDOWBOX_PADDING*3, statusBar.height - 2 - WINDOWBOX_PADDING*2}, Fade(GetColor(style[DEFAULT_BASE_COLOR_FOCUSED]), guiAlpha));
-            DrawText("x", statusBar.x + statusBar.width - 16, statusBar.y + statusBar.height/2 - style[DEFAULT_TEXT_SIZE]/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_FOCUSED]), guiAlpha));
+            GuiDrawText("x", statusBar.x + statusBar.width - 16, statusBar.y + statusBar.height/2 - style[DEFAULT_TEXT_SIZE]/2, Fade(GetColor(style[DEFAULT_TEXT_COLOR_FOCUSED]), guiAlpha));
         } break;   
         case PRESSED:
         {
@@ -926,7 +986,7 @@ RAYGUIDEF bool GuiWindowBox(Rectangle bounds, const char *text)
             DrawRectangleRec((Rectangle){ bounds.x + WINDOWBOX_BORDER_WIDTH, bounds.y + WINDOWBOX_BORDER_WIDTH, bounds.width - WINDOWBOX_BORDER_WIDTH*2, bounds.height - WINDOWBOX_BORDER_WIDTH*2 }, Fade(GetColor(style[DEFAULT_BACKGROUND_COLOR]), guiAlpha));
             GuiStatusBar(statusBar, text, offsetX); 
             DrawRectangleRec((Rectangle){statusBar.x + statusBar.width - 27 + WINDOWBOX_PADDING*2, statusBar.y + 1 + WINDOWBOX_PADDING, 25 - WINDOWBOX_PADDING*3, statusBar.height - 2 - WINDOWBOX_PADDING*2}, Fade(GetColor(style[DEFAULT_BASE_COLOR_PRESSED]), guiAlpha));
-            DrawText("x", statusBar.x + statusBar.width - 16, statusBar.y + statusBar.height/2 - style[DEFAULT_TEXT_SIZE]/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_PRESSED]), guiAlpha));
+            GuiDrawText("x", statusBar.x + statusBar.width - 16, statusBar.y + statusBar.height/2 - style[DEFAULT_TEXT_SIZE]/2, Fade(GetColor(style[DEFAULT_TEXT_COLOR_PRESSED]), guiAlpha));
         } break;   
         case DISABLED:
         {
@@ -934,7 +994,7 @@ RAYGUIDEF bool GuiWindowBox(Rectangle bounds, const char *text)
             DrawRectangleRec((Rectangle){ bounds.x + WINDOWBOX_BORDER_WIDTH, bounds.y + WINDOWBOX_BORDER_WIDTH, bounds.width - WINDOWBOX_BORDER_WIDTH*2, bounds.height - WINDOWBOX_BORDER_WIDTH*2 }, Fade(GetColor(style[DEFAULT_BACKGROUND_COLOR]), guiAlpha));
             GuiStatusBar(statusBar, text, offsetX);
             DrawRectangleRec((Rectangle){statusBar.x + statusBar.width - 27 + WINDOWBOX_PADDING*2, statusBar.y + 1 + WINDOWBOX_PADDING, 25 - WINDOWBOX_PADDING*3, statusBar.height - 2 - WINDOWBOX_PADDING*2}, Fade(GetColor(style[DEFAULT_BASE_COLOR_DISABLED]), guiAlpha));
-            DrawText("x", statusBar.x + statusBar.width - 16, statusBar.y + statusBar.height/2 - style[DEFAULT_TEXT_SIZE]/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));
+            GuiDrawText("x", statusBar.x + statusBar.width - 16, statusBar.y + statusBar.height/2 - style[DEFAULT_TEXT_SIZE]/2, Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));
        } break;
         default: break;
     }
@@ -958,7 +1018,6 @@ RAYGUIDEF void GuiGroupBox(Rectangle bounds, const char *text)
     {
         case NORMAL:
         {
-            
             DrawRectangle(bounds.x, bounds.y, GROUPBOX_LINE_THICK, bounds.height, Fade(GetColor(style[DEFAULT_LINES_COLOR]), guiAlpha));
             DrawRectangle(bounds.x, bounds.y + bounds.height - 1, bounds.width, GROUPBOX_LINE_THICK, Fade(GetColor(style[DEFAULT_LINES_COLOR]), guiAlpha));
             DrawRectangle(bounds.x + bounds.width - 1, bounds.y, GROUPBOX_LINE_THICK, bounds.height, Fade(GetColor(style[DEFAULT_LINES_COLOR]), guiAlpha));
@@ -966,8 +1025,8 @@ RAYGUIDEF void GuiGroupBox(Rectangle bounds, const char *text)
             else 
             {
                 DrawRectangle(bounds.x, bounds.y, GROUPBOX_TEXT_PADDING, GROUPBOX_LINE_THICK, Fade(GetColor(style[DEFAULT_LINES_COLOR]), guiAlpha));
-                DrawRectangle(bounds.x + 2*GROUPBOX_TEXT_PADDING + MeasureText(text, style[DEFAULT_TEXT_SIZE]), bounds.y, bounds.width - 2*GROUPBOX_TEXT_PADDING - MeasureText(text, style[DEFAULT_TEXT_SIZE]), GROUPBOX_LINE_THICK, Fade(GetColor(style[DEFAULT_LINES_COLOR]), guiAlpha));
-                DrawText(text, bounds.x + GROUPBOX_TEXT_PADDING + 2*GROUPBOX_PADDING, bounds.y - 2*GROUPBOX_PADDING - GROUPBOX_LINE_THICK, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[LABEL_TEXT_COLOR_NORMAL]), guiAlpha));
+                DrawRectangle(bounds.x + 2*GROUPBOX_TEXT_PADDING + GuiTextWidth(text), bounds.y, bounds.width - 2*GROUPBOX_TEXT_PADDING - GuiTextWidth(text), GROUPBOX_LINE_THICK, Fade(GetColor(style[DEFAULT_LINES_COLOR]), guiAlpha));
+                GuiDrawText(text, bounds.x + GROUPBOX_TEXT_PADDING + 2*GROUPBOX_PADDING, bounds.y - 2*GROUPBOX_PADDING - GROUPBOX_LINE_THICK, Fade(GetColor(style[LABEL_TEXT_COLOR_NORMAL]), guiAlpha));
             }
         } break;
         case FOCUSED: break; // NOTE: State not used on this control
@@ -981,8 +1040,8 @@ RAYGUIDEF void GuiGroupBox(Rectangle bounds, const char *text)
             else 
             {
                 DrawRectangle(bounds.x, bounds.y, GROUPBOX_TEXT_PADDING, GROUPBOX_LINE_THICK, Fade(GetColor(style[DEFAULT_BORDER_COLOR_DISABLED]), guiAlpha));
-                DrawRectangle(bounds.x + 2*GROUPBOX_TEXT_PADDING + MeasureText(text, style[DEFAULT_TEXT_SIZE]), bounds.y, bounds.width - 2*GROUPBOX_TEXT_PADDING - MeasureText(text, style[DEFAULT_TEXT_SIZE]), GROUPBOX_LINE_THICK, Fade(GetColor(style[DEFAULT_BORDER_COLOR_DISABLED]), guiAlpha));
-                DrawText(text, bounds.x + GROUPBOX_TEXT_PADDING + 2*GROUPBOX_PADDING, bounds.y - 2*GROUPBOX_PADDING - GROUPBOX_LINE_THICK, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[LABEL_TEXT_COLOR_DISABLED]), guiAlpha));
+                DrawRectangle(bounds.x + 2*GROUPBOX_TEXT_PADDING + GuiTextWidth(text), bounds.y, bounds.width - 2*GROUPBOX_TEXT_PADDING - GuiTextWidth(text), GROUPBOX_LINE_THICK, Fade(GetColor(style[DEFAULT_BORDER_COLOR_DISABLED]), guiAlpha));
+                GuiDrawText(text, bounds.x + GROUPBOX_TEXT_PADDING + 2*GROUPBOX_PADDING, bounds.y - 2*GROUPBOX_PADDING - GROUPBOX_LINE_THICK, Fade(GetColor(style[LABEL_TEXT_COLOR_DISABLED]), guiAlpha));
             }
         } break;
         default: break;
@@ -1053,7 +1112,7 @@ RAYGUIDEF void GuiLabel(Rectangle bounds, const char *text)
 {
     GuiControlState state = guiState;
 
-    int textWidth = MeasureText(text, style[DEFAULT_TEXT_SIZE]);
+    int textWidth = GuiTextWidth(text);
     int textHeight = style[DEFAULT_TEXT_SIZE];
 
     if (bounds.width < textWidth) bounds.width = textWidth;
@@ -1068,10 +1127,10 @@ RAYGUIDEF void GuiLabel(Rectangle bounds, const char *text)
     //--------------------------------------------------------------------
     switch (state)
     {
-        case NORMAL: 
+        case NORMAL:
         case FOCUSED:
-        case PRESSED: DrawText(text, bounds.x, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[LABEL_TEXT_COLOR_NORMAL]), guiAlpha)); break;
-        case DISABLED: DrawText(text, bounds.x, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[LABEL_TEXT_COLOR_DISABLED]), guiAlpha)); break;
+        case PRESSED: GuiDrawText(text, bounds.x, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[LABEL_TEXT_COLOR_NORMAL]), guiAlpha)); break;
+        case DISABLED: GuiDrawText(text, bounds.x, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[LABEL_TEXT_COLOR_DISABLED]), guiAlpha)); break;
         default: break;
     }
     //--------------------------------------------------------------------
@@ -1081,9 +1140,9 @@ RAYGUIDEF void GuiLabel(Rectangle bounds, const char *text)
 RAYGUIDEF bool GuiButton(Rectangle bounds, const char *text)
 {
     GuiControlState state = guiState;
-    bool clicked = false;
+    bool pressed = false;
     
-    int textWidth = MeasureText(text, style[DEFAULT_TEXT_SIZE]);
+    int textWidth = GuiTextWidth(text);
     int textHeight = style[DEFAULT_TEXT_SIZE];
     
     if (bounds.width < textWidth) bounds.width = textWidth;
@@ -1091,7 +1150,7 @@ RAYGUIDEF bool GuiButton(Rectangle bounds, const char *text)
 
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
@@ -1099,8 +1158,9 @@ RAYGUIDEF bool GuiButton(Rectangle bounds, const char *text)
         if (CheckCollisionPointRec(mousePoint, bounds))
         {
             if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) state = PRESSED;
-            else if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) clicked = true;
             else state = FOCUSED;
+            
+            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) pressed = true;
         }
     }
     //--------------------------------------------------------------------
@@ -1108,45 +1168,45 @@ RAYGUIDEF bool GuiButton(Rectangle bounds, const char *text)
     // Draw control
     //--------------------------------------------------------------------
     switch (state)
-    {
+    {        
         case NORMAL:
         {
             DrawRectangleLinesEx(bounds, style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BORDER_COLOR_NORMAL]), guiAlpha));
             DrawRectangle(bounds.x + style[BUTTON_BORDER_WIDTH], bounds.y + style[BUTTON_BORDER_WIDTH], bounds.width - 2*style[BUTTON_BORDER_WIDTH], bounds.height - 2*style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BASE_COLOR_NORMAL]), guiAlpha));
-            DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[BUTTON_TEXT_COLOR_NORMAL]), guiAlpha));
+            GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[BUTTON_TEXT_COLOR_NORMAL]), guiAlpha));
         } break;
         case FOCUSED:
         {
             DrawRectangleLinesEx(bounds, style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BORDER_COLOR_FOCUSED]), guiAlpha));
             DrawRectangle(bounds.x + style[BUTTON_BORDER_WIDTH], bounds.y + style[BUTTON_BORDER_WIDTH], bounds.width - 2*style[BUTTON_BORDER_WIDTH], bounds.height - 2*style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BASE_COLOR_FOCUSED]), guiAlpha));
-            DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[BUTTON_TEXT_COLOR_FOCUSED]), guiAlpha));
+            GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[BUTTON_TEXT_COLOR_FOCUSED]), guiAlpha));
         } break;
         case PRESSED:
         {
             DrawRectangleLinesEx(bounds, style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BORDER_COLOR_PRESSED]), guiAlpha));
             DrawRectangle(bounds.x + style[BUTTON_BORDER_WIDTH], bounds.y + style[BUTTON_BORDER_WIDTH], bounds.width - 2*style[BUTTON_BORDER_WIDTH], bounds.height - 2*style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BASE_COLOR_PRESSED]), guiAlpha));
-            DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[BUTTON_TEXT_COLOR_PRESSED]), guiAlpha));
+            GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[BUTTON_TEXT_COLOR_PRESSED]), guiAlpha));
         } break;
         case DISABLED:
         {
             DrawRectangleLinesEx(bounds, style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BORDER_COLOR_DISABLED]), guiAlpha));
             DrawRectangle(bounds.x + style[BUTTON_BORDER_WIDTH], bounds.y + style[BUTTON_BORDER_WIDTH], bounds.width - 2*style[BUTTON_BORDER_WIDTH], bounds.height - 2*style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BASE_COLOR_DISABLED]), guiAlpha));
-            DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[BUTTON_TEXT_COLOR_DISABLED]), guiAlpha));
+            GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[BUTTON_TEXT_COLOR_DISABLED]), guiAlpha));
         } break;
         default: break;
     }
     //------------------------------------------------------------------
 
-    return clicked;
+    return pressed;
 }
 
 // Label button control
 RAYGUIDEF bool GuiLabelButton(Rectangle bounds, const char *text)
 {
     GuiControlState state = guiState;
-    bool clicked = false;
+    bool pressed = false;
     
-    int textWidth = MeasureText(text, style[DEFAULT_TEXT_SIZE]);
+    int textWidth = GuiTextWidth(text);
     int textHeight = style[DEFAULT_TEXT_SIZE];
 
     if (bounds.width < textWidth) bounds.width = textWidth;
@@ -1154,16 +1214,17 @@ RAYGUIDEF bool GuiLabelButton(Rectangle bounds, const char *text)
 
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
-        // Check label state
+        // Check checkbox state
         if (CheckCollisionPointRec(mousePoint, bounds))
         {
             if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) state = PRESSED;
-            else if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) clicked = true;
             else state = FOCUSED;
+            
+            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) pressed = true;
         }
     }
     //--------------------------------------------------------------------
@@ -1172,15 +1233,15 @@ RAYGUIDEF bool GuiLabelButton(Rectangle bounds, const char *text)
     //--------------------------------------------------------------------
     switch (state)
     {
-        case NORMAL: DrawText(text, bounds.x, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[LABEL_TEXT_COLOR_NORMAL]), guiAlpha)); break;
-        case FOCUSED: DrawText(text, bounds.x, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[LABEL_TEXT_COLOR_FOCUSED]), guiAlpha)); break;
-        case PRESSED: DrawText(text, bounds.x, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[LABEL_TEXT_COLOR_PRESSED]), guiAlpha)); break;
-        case DISABLED: DrawText(text, bounds.x, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[LABEL_TEXT_COLOR_DISABLED]), guiAlpha)); break;
+        case NORMAL: GuiDrawText(text, bounds.x, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[LABEL_TEXT_COLOR_NORMAL]), guiAlpha)); break;
+        case FOCUSED: GuiDrawText(text, bounds.x, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[LABEL_TEXT_COLOR_FOCUSED]), guiAlpha)); break;
+        case PRESSED: GuiDrawText(text, bounds.x, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[LABEL_TEXT_COLOR_PRESSED]), guiAlpha)); break;
+        case DISABLED: GuiDrawText(text, bounds.x, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[LABEL_TEXT_COLOR_DISABLED]), guiAlpha)); break;
         default: break;
     }
     //--------------------------------------------------------------------
 
-    return clicked;
+    return pressed;
 }
 
 // Image button control, returns true when clicked
@@ -1206,7 +1267,7 @@ RAYGUIDEF bool GuiImageButtonEx(Rectangle bounds, Texture2D texture, Rectangle t
     
     if (text != NULL)
     {
-        textWidth = MeasureText(text, style[DEFAULT_TEXT_SIZE]);
+        textWidth = GuiTextWidth(text);
         textHeight = style[DEFAULT_TEXT_SIZE];
         
         if (bounds.width < textWidth + texSource.width) bounds.width = textWidth + texSource.width + IMAGEBUTTON_PADDING;
@@ -1215,7 +1276,7 @@ RAYGUIDEF bool GuiImageButtonEx(Rectangle bounds, Texture2D texture, Rectangle t
 
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
         
@@ -1237,28 +1298,28 @@ RAYGUIDEF bool GuiImageButtonEx(Rectangle bounds, Texture2D texture, Rectangle t
         {
             DrawRectangleLinesEx(bounds, style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BORDER_COLOR_NORMAL]), guiAlpha));
             DrawRectangle(bounds.x + style[BUTTON_BORDER_WIDTH], bounds.y + style[BUTTON_BORDER_WIDTH], bounds.width - 2*style[BUTTON_BORDER_WIDTH], bounds.height - 2*style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BASE_COLOR_NORMAL]), guiAlpha));
-            if (text != NULL) DrawText(text, (bounds.x + bounds.width/2 - (texSource.width + IMAGEBUTTON_PADDING + textWidth)/2) + texSource.width, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[BUTTON_TEXT_COLOR_NORMAL]), guiAlpha));
+            if (text != NULL) GuiDrawText(text, (bounds.x + bounds.width/2 - (texSource.width + IMAGEBUTTON_PADDING + textWidth)/2) + texSource.width, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[BUTTON_TEXT_COLOR_NORMAL]), guiAlpha));
             if (texture.id > 0) DrawTextureRec(texture, texSource, (Vector2){ bounds.x + bounds.width/2 - (texSource.width + IMAGEBUTTON_PADDING/2 + textWidth)/2, bounds.y + bounds.height/2 - texSource.height/2 }, Fade(GetColor(style[BUTTON_TEXT_COLOR_NORMAL]), guiAlpha));
         } break;
         case FOCUSED:
         {
             DrawRectangleLinesEx(bounds, style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BORDER_COLOR_FOCUSED]), guiAlpha));
             DrawRectangle(bounds.x + style[BUTTON_BORDER_WIDTH], bounds.y + style[BUTTON_BORDER_WIDTH], bounds.width - 2*style[BUTTON_BORDER_WIDTH], bounds.height - 2*style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BASE_COLOR_FOCUSED]), guiAlpha));
-            if (text != NULL) DrawText(text, (bounds.x + bounds.width/2 - (texSource.width + IMAGEBUTTON_PADDING + textWidth)/2) + texSource.width, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[BUTTON_TEXT_COLOR_FOCUSED]), guiAlpha));
+            if (text != NULL) GuiDrawText(text, (bounds.x + bounds.width/2 - (texSource.width + IMAGEBUTTON_PADDING + textWidth)/2) + texSource.width, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[BUTTON_TEXT_COLOR_FOCUSED]), guiAlpha));
             if (texture.id > 0) DrawTextureRec(texture, texSource, (Vector2){ bounds.x + bounds.width/2 - (texSource.width + IMAGEBUTTON_PADDING/2 + textWidth)/2, bounds.y + bounds.height/2 - texSource.height/2 }, Fade(GetColor(style[BUTTON_TEXT_COLOR_FOCUSED]), guiAlpha));
         } break;
         case PRESSED:
         {
             DrawRectangleLinesEx(bounds, style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BORDER_COLOR_PRESSED]), guiAlpha));
             DrawRectangle(bounds.x + style[BUTTON_BORDER_WIDTH], bounds.y + style[BUTTON_BORDER_WIDTH], bounds.width - 2*style[BUTTON_BORDER_WIDTH], bounds.height - 2*style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BASE_COLOR_PRESSED]), guiAlpha));
-            if (text != NULL) DrawText(text, (bounds.x + bounds.width/2 - (texSource.width + IMAGEBUTTON_PADDING + textWidth)/2) + texSource.width, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[BUTTON_TEXT_COLOR_PRESSED]), guiAlpha));
+            if (text != NULL) GuiDrawText(text, (bounds.x + bounds.width/2 - (texSource.width + IMAGEBUTTON_PADDING + textWidth)/2) + texSource.width, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[BUTTON_TEXT_COLOR_PRESSED]), guiAlpha));
             if (texture.id > 0) DrawTextureRec(texture, texSource, (Vector2){ bounds.x + bounds.width/2 - (texSource.width + IMAGEBUTTON_PADDING/2 + textWidth)/2, bounds.y + bounds.height/2 - texSource.height/2 }, Fade(GetColor(style[BUTTON_TEXT_COLOR_PRESSED]), guiAlpha));
         } break;
         case DISABLED:
         {
             DrawRectangleLinesEx(bounds, style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BORDER_COLOR_DISABLED]), guiAlpha));
             DrawRectangle(bounds.x + style[BUTTON_BORDER_WIDTH], bounds.y + style[BUTTON_BORDER_WIDTH], bounds.width - 2*style[BUTTON_BORDER_WIDTH], bounds.height - 2*style[BUTTON_BORDER_WIDTH], Fade(GetColor(style[BUTTON_BASE_COLOR_DISABLED]), guiAlpha));
-            if (text != NULL) DrawText(text, (bounds.x + bounds.width/2 - (texSource.width + IMAGEBUTTON_PADDING + textWidth)/2) + texSource.width, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[BUTTON_TEXT_COLOR_DISABLED]), guiAlpha));
+            if (text != NULL) GuiDrawText(text, (bounds.x + bounds.width/2 - (texSource.width + IMAGEBUTTON_PADDING + textWidth)/2) + texSource.width, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[BUTTON_TEXT_COLOR_DISABLED]), guiAlpha));
             if (texture.id > 0) DrawTextureRec(texture, texSource, (Vector2){ bounds.x + bounds.width/2 - (texSource.width + IMAGEBUTTON_PADDING/2 + textWidth)/2, bounds.y + bounds.height/2 - texSource.height/2 }, Fade(GetColor(style[BUTTON_TEXT_COLOR_DISABLED]), guiAlpha));
         } break;
         default: break;
@@ -1273,7 +1334,7 @@ RAYGUIDEF bool GuiToggleButton(Rectangle bounds, const char *text, bool active)
 {
     GuiControlState state = guiState;
     
-    int textWidth = MeasureText(text, style[DEFAULT_TEXT_SIZE]);
+    int textWidth = GuiTextWidth(text);
     int textHeight = style[DEFAULT_TEXT_SIZE];
     
     if (bounds.width < textWidth) bounds.width = textWidth;
@@ -1281,7 +1342,7 @@ RAYGUIDEF bool GuiToggleButton(Rectangle bounds, const char *text, bool active)
 
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
@@ -1309,32 +1370,32 @@ RAYGUIDEF bool GuiToggleButton(Rectangle bounds, const char *text, bool active)
             {
                 DrawRectangleLinesEx(bounds, style[TOGGLE_BORDER_WIDTH], Fade(GetColor(style[TOGGLE_BORDER_COLOR_PRESSED]), guiAlpha));
                 DrawRectangle(bounds.x + style[TOGGLE_BORDER_WIDTH], bounds.y + style[TOGGLE_BORDER_WIDTH], bounds.width - 2*style[TOGGLE_BORDER_WIDTH], bounds.height - 2*style[TOGGLE_BORDER_WIDTH], Fade(GetColor(style[TOGGLE_BASE_COLOR_PRESSED]), guiAlpha));
-                DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[TOGGLE_TEXT_COLOR_PRESSED]), guiAlpha));
+                GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[TOGGLE_TEXT_COLOR_PRESSED]), guiAlpha));
             }
             else
             {
                 DrawRectangleLinesEx(bounds, style[TOGGLE_BORDER_WIDTH], Fade(GetColor(style[TOGGLE_BORDER_COLOR_NORMAL]), guiAlpha));
                 DrawRectangle(bounds.x + style[TOGGLE_BORDER_WIDTH], bounds.y + style[TOGGLE_BORDER_WIDTH], bounds.width - 2*style[TOGGLE_BORDER_WIDTH], bounds.height - 2*style[TOGGLE_BORDER_WIDTH], Fade(GetColor(style[TOGGLE_BASE_COLOR_NORMAL]), guiAlpha));
-                DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[TOGGLE_TEXT_COLOR_NORMAL]), guiAlpha));
+                GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[TOGGLE_TEXT_COLOR_NORMAL]), guiAlpha));
             }
         } break;
         case FOCUSED:
         {
             DrawRectangleLinesEx(bounds, style[TOGGLE_BORDER_WIDTH], Fade(GetColor(style[TOGGLE_BORDER_COLOR_FOCUSED]), guiAlpha));
             DrawRectangle(bounds.x + style[TOGGLE_BORDER_WIDTH], bounds.y + style[TOGGLE_BORDER_WIDTH], bounds.width - 2*style[TOGGLE_BORDER_WIDTH], bounds.height - 2*style[TOGGLE_BORDER_WIDTH], Fade(GetColor(style[TOGGLE_BASE_COLOR_FOCUSED]), guiAlpha));
-            DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[TOGGLE_TEXT_COLOR_FOCUSED]), guiAlpha));
+            GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[TOGGLE_TEXT_COLOR_FOCUSED]), guiAlpha));
         } break;
         case PRESSED:
         {
             DrawRectangleLinesEx(bounds, style[TOGGLE_BORDER_WIDTH], Fade(GetColor(style[TOGGLE_BORDER_COLOR_PRESSED]), guiAlpha));
             DrawRectangle(bounds.x + style[TOGGLE_BORDER_WIDTH], bounds.y + style[TOGGLE_BORDER_WIDTH], bounds.width - 2*style[TOGGLE_BORDER_WIDTH], bounds.height - 2*style[TOGGLE_BORDER_WIDTH], Fade(GetColor(style[TOGGLE_BASE_COLOR_PRESSED]), guiAlpha));
-            DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[TOGGLE_TEXT_COLOR_PRESSED]), guiAlpha));
+            GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[TOGGLE_TEXT_COLOR_PRESSED]), guiAlpha));
         } break;
         case DISABLED:
         {
             DrawRectangleLinesEx(bounds, style[TOGGLE_BORDER_WIDTH], Fade(GetColor(style[TOGGLE_BORDER_COLOR_DISABLED]), guiAlpha));
             DrawRectangle(bounds.x + style[TOGGLE_BORDER_WIDTH], bounds.y + style[TOGGLE_BORDER_WIDTH], bounds.width - 2*style[TOGGLE_BORDER_WIDTH], bounds.height - 2*style[TOGGLE_BORDER_WIDTH], Fade(GetColor(style[TOGGLE_BASE_COLOR_DISABLED]), guiAlpha));
-            DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[TOGGLE_TEXT_COLOR_DISABLED]), guiAlpha));
+            GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[TOGGLE_TEXT_COLOR_DISABLED]), guiAlpha));
         } break;
         default: break;
     }
@@ -1362,7 +1423,7 @@ RAYGUIDEF bool GuiCheckBox(Rectangle bounds, bool checked)
 
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
@@ -1430,11 +1491,11 @@ RAYGUIDEF bool GuiCheckBoxEx(Rectangle bounds, bool checked, const char *text)
     #define GUICHECKBOXEX_HEIGHT_PADDING 1
     
     GuiControlState state = guiState;
-    int textWidth = MeasureText(text, style[DEFAULT_TEXT_SIZE]);
+    int textWidth = GuiTextWidth(text);
 
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
@@ -1442,8 +1503,9 @@ RAYGUIDEF bool GuiCheckBoxEx(Rectangle bounds, bool checked, const char *text)
         if (CheckCollisionPointRec(mousePoint, bounds))
         {
             if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) state = PRESSED;
-            else if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) checked = !checked;
             else state = FOCUSED;
+            
+            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) checked = !checked;
         }
     }
     //--------------------------------------------------------------------
@@ -1511,7 +1573,7 @@ RAYGUIDEF int GuiComboBox(Rectangle bounds, const char **text, int count, int ac
     if (active < 0) active = 0;
     else if (active > count - 1) active = count - 1;
 
-    int textWidth = MeasureText(text[active], style[DEFAULT_TEXT_SIZE]);
+    int textWidth = GuiTextWidth(text[active]);
     int textHeight = style[DEFAULT_TEXT_SIZE];
 
     if (bounds.width < textWidth) bounds.width = textWidth;
@@ -1519,7 +1581,7 @@ RAYGUIDEF int GuiComboBox(Rectangle bounds, const char **text, int count, int ac
 
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
@@ -1550,11 +1612,8 @@ RAYGUIDEF int GuiComboBox(Rectangle bounds, const char **text, int count, int ac
             DrawRectangleLinesEx(selector, style[COMBOBOX_BORDER_WIDTH], Fade(GetColor(style[COMBOBOX_BORDER_COLOR_NORMAL]), guiAlpha));
             DrawRectangle(selector.x + style[COMBOBOX_BORDER_WIDTH], selector.y + style[COMBOBOX_BORDER_WIDTH], selector.width - 2*style[COMBOBOX_BORDER_WIDTH], selector.height - 2*style[COMBOBOX_BORDER_WIDTH], Fade(GetColor(style[COMBOBOX_BASE_COLOR_NORMAL]), guiAlpha));
             
-            DrawText(text[active], bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[COMBOBOX_TEXT_COLOR_NORMAL]), guiAlpha));   
-            DrawText(FormatText("%i/%i", active + 1, count), 
-                     selector.x + selector.width/2 - (MeasureText(FormatText("%i/%i", active + 1, count), 
-                     style[DEFAULT_TEXT_SIZE])/2), selector.y + selector.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), 
-                     style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[COMBOBOX_TEXT_COLOR_NORMAL]), guiAlpha));
+            GuiDrawText(text[active], bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[COMBOBOX_TEXT_COLOR_NORMAL]), guiAlpha));   
+            GuiDrawText(FormatText("%i/%i", active + 1, count), selector.x + selector.width/2 - GuiTextWidth(FormatText("%i/%i", active + 1, count))/2, selector.y + selector.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[COMBOBOX_TEXT_COLOR_NORMAL]), guiAlpha));
         } break;
         case FOCUSED:
         {
@@ -1564,11 +1623,8 @@ RAYGUIDEF int GuiComboBox(Rectangle bounds, const char **text, int count, int ac
             DrawRectangleLinesEx(selector, style[COMBOBOX_BORDER_WIDTH], Fade(GetColor(style[COMBOBOX_BORDER_COLOR_FOCUSED]), guiAlpha));
             DrawRectangle(selector.x + style[COMBOBOX_BORDER_WIDTH], selector.y + style[COMBOBOX_BORDER_WIDTH], selector.width - 2*style[COMBOBOX_BORDER_WIDTH], selector.height - 2*style[COMBOBOX_BORDER_WIDTH], Fade(GetColor(style[COMBOBOX_BASE_COLOR_FOCUSED]), guiAlpha));
             
-            DrawText(text[active], bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[COMBOBOX_TEXT_COLOR_FOCUSED]), guiAlpha));   
-            DrawText(FormatText("%i/%i", active + 1, count), 
-                     selector.x + selector.width/2 - (MeasureText(FormatText("%i/%i", active + 1, count), 
-                     style[DEFAULT_TEXT_SIZE])/2), selector.y + selector.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), 
-                     style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[COMBOBOX_TEXT_COLOR_FOCUSED]), guiAlpha));
+            GuiDrawText(text[active], bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[COMBOBOX_TEXT_COLOR_FOCUSED]), guiAlpha));   
+            GuiDrawText(FormatText("%i/%i", active + 1, count), selector.x + selector.width/2 - GuiTextWidth(FormatText("%i/%i", active + 1, count))/2, selector.y + selector.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[COMBOBOX_TEXT_COLOR_FOCUSED]), guiAlpha));
         } break;
         case PRESSED:
         {
@@ -1578,11 +1634,8 @@ RAYGUIDEF int GuiComboBox(Rectangle bounds, const char **text, int count, int ac
             DrawRectangleLinesEx(selector, style[COMBOBOX_BORDER_WIDTH], Fade(GetColor(style[COMBOBOX_BORDER_COLOR_PRESSED]), guiAlpha));
             DrawRectangle(selector.x + style[COMBOBOX_BORDER_WIDTH], selector.y + style[COMBOBOX_BORDER_WIDTH], selector.width - 2*style[COMBOBOX_BORDER_WIDTH], selector.height - 2*style[COMBOBOX_BORDER_WIDTH], Fade(GetColor(style[COMBOBOX_BASE_COLOR_PRESSED]), guiAlpha));
             
-            DrawText(text[active], bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[COMBOBOX_TEXT_COLOR_PRESSED]), guiAlpha));   
-            DrawText(FormatText("%i/%i", active + 1, count), 
-                     selector.x + selector.width/2 - (MeasureText(FormatText("%i/%i", active + 1, count), 
-                     style[DEFAULT_TEXT_SIZE])/2), selector.y + selector.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), 
-                     style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[COMBOBOX_TEXT_COLOR_PRESSED]), guiAlpha));
+            GuiDrawText(text[active], bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[COMBOBOX_TEXT_COLOR_PRESSED]), guiAlpha));   
+            GuiDrawText(FormatText("%i/%i", active + 1, count), selector.x + selector.width/2 - GuiTextWidth(FormatText("%i/%i", active + 1, count))/2, selector.y + selector.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[COMBOBOX_TEXT_COLOR_PRESSED]), guiAlpha));
         } break;
         case DISABLED:
         {
@@ -1592,11 +1645,8 @@ RAYGUIDEF int GuiComboBox(Rectangle bounds, const char **text, int count, int ac
             DrawRectangleLinesEx(selector, style[COMBOBOX_BORDER_WIDTH], Fade(GetColor(style[COMBOBOX_BORDER_COLOR_DISABLED]), guiAlpha));
             DrawRectangle(selector.x + style[COMBOBOX_BORDER_WIDTH], selector.y + style[COMBOBOX_BORDER_WIDTH], selector.width - 2*style[COMBOBOX_BORDER_WIDTH], selector.height - 2*style[COMBOBOX_BORDER_WIDTH], Fade(GetColor(style[COMBOBOX_BASE_COLOR_DISABLED]), guiAlpha));
             
-            DrawText(text[active], bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[COMBOBOX_TEXT_COLOR_DISABLED]), guiAlpha));
-            DrawText(FormatText("%i/%i", active + 1, count), 
-                     selector.x + selector.width/2 - (MeasureText(FormatText("%i/%i", active + 1, count), 
-                     style[DEFAULT_TEXT_SIZE])/2), selector.y + selector.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), 
-                     style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[COMBOBOX_TEXT_COLOR_DISABLED]), guiAlpha));
+            GuiDrawText(text[active], bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[COMBOBOX_TEXT_COLOR_DISABLED]), guiAlpha));
+            GuiDrawText(FormatText("%i/%i", active + 1, count), selector.x + selector.width/2 - GuiTextWidth(FormatText("%i/%i", active + 1, count))/2, selector.y + selector.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[COMBOBOX_TEXT_COLOR_DISABLED]), guiAlpha));
         } break;
         default: break;
     }
@@ -1606,52 +1656,74 @@ RAYGUIDEF int GuiComboBox(Rectangle bounds, const char **text, int count, int ac
 }
 
 // Dropdown Box control, returns selected item
-RAYGUIDEF int GuiDropdownBox(Rectangle bounds, const char **text, int count, int active)
+RAYGUIDEF bool GuiDropdownBox(Rectangle bounds, const char **text, int count, int *active, bool editMode)
 {
     #define DROPDOWNBOX_PADDING                 1
     #define DROPDOWNBOX_BORDER_WIDTH            1
     #define DROPDOWNBOX_ARROW_RIGHT_PADDING    16
     
+    bool pressed = false;
+    int auxActive = *active;
+    
     GuiControlState state = guiState;
-    static bool dropOpen = false;
    
-    int textWidth = MeasureText(text[active], style[DEFAULT_TEXT_SIZE]);
+    int textWidth = GuiTextWidth(text[auxActive]);
     int textHeight = style[DEFAULT_TEXT_SIZE];
 
     if (bounds.width < textWidth) bounds.width = textWidth;
     if (bounds.height < textHeight) bounds.height = textHeight;
     
-    int boundsHeight0 = bounds.height;
+    Rectangle closeBounds = bounds;
+    Rectangle openBounds = bounds;
+    openBounds.height *= (count + 1);    
     
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if (guiLocked && editMode) guiLocked = false;
+    
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
         
-        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mousePoint, bounds)) dropOpen = true;
-        
-        if (dropOpen)
+        if (editMode)
         {
-            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
-            {
-                for (int i = 1; i < (count + 1); i++)
-                {
-                    if (CheckCollisionPointRec(mousePoint, (Rectangle){ bounds.x, bounds.y + i*bounds.height, bounds.width, bounds.height })) active = i - 1;
-                }
-                
-                dropOpen = false;
-            }
+            state = PRESSED; 
             
-            bounds.height *= (count + 1);
+            // if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+            // {
+                // for (int i = 1; i < (count + 1); i++)
+                // {
+                    // if (CheckCollisionPointRec(mousePoint, (Rectangle){ bounds.x, bounds.y + i*bounds.height, bounds.width, bounds.height })) 
+                    // {
+                        // auxActive = i - 1;
+                    // }
+                // }
+            // }
+        }  
+        
+         // Note: Changing editMode
+        if (!editMode)
+        {            
+            if (CheckCollisionPointRec(mousePoint, closeBounds))
+            {
+                if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) state = PRESSED;
+                
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) pressed = true;   
+                else state = FOCUSED;
+            }         
         }
-
-        if (CheckCollisionPointRec(mousePoint, bounds))
+        else
         {
-            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) state = PRESSED;
-            else state = FOCUSED;
+            if (CheckCollisionPointRec(mousePoint, closeBounds))
+            {
+                 if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) pressed = true;
+            }            
+            
+            else if (!CheckCollisionPointRec(mousePoint, openBounds))
+            {
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) pressed = true;
+            }
         }
-        else state = NORMAL;
     }
     //--------------------------------------------------------------------
 
@@ -1661,67 +1733,78 @@ RAYGUIDEF int GuiDropdownBox(Rectangle bounds, const char **text, int count, int
     {
         case NORMAL:
         {
-            if (dropOpen) GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height/(count + 1) }, text[active], true);
-            else 
-            {
-                DrawRectangle(bounds.x, bounds.y, bounds.width, bounds.height, Fade(GetColor(style[DEFAULT_BASE_COLOR_NORMAL]), guiAlpha));
-                DrawRectangleLinesEx(bounds, DROPDOWNBOX_BORDER_WIDTH, Fade(GetColor(style[LISTVIEW_BORDER_COLOR_NORMAL]), guiAlpha));
-                GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height }, text[active], false);
-            }
+            DrawRectangle(bounds.x, bounds.y, bounds.width, bounds.height, Fade(GetColor(style[DEFAULT_BASE_COLOR_NORMAL]), guiAlpha));
+            DrawRectangleLinesEx(bounds, DROPDOWNBOX_BORDER_WIDTH, Fade(GetColor(style[LISTVIEW_BORDER_COLOR_NORMAL]), guiAlpha));
+            GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height }, text[auxActive], false, false);
             
-            DrawTriangle((Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING, bounds.y + boundsHeight0/2 - 2 }, 
-                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 5, bounds.y + boundsHeight0/2 - 2 + 5 }, 
-                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 10, bounds.y + boundsHeight0/2 - 2 }, Fade(GetColor(style[DEFAULT_TEXT_COLOR_NORMAL]), guiAlpha));
+            DrawTriangle((Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING, bounds.y + bounds.height/2 - 2 }, 
+                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 5, bounds.y + bounds.height/2 - 2 + 5 }, 
+                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 10, bounds.y + bounds.height/2 - 2 }, Fade(GetColor(style[DEFAULT_TEXT_COLOR_NORMAL]), guiAlpha));
         } break;
         case FOCUSED:
         {
-            if (dropOpen) GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height/(count + 1) }, text[active], true);
-            else GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height }, text[active], true);
+            GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height }, text[auxActive], false, true);
             
-            DrawTriangle((Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING, bounds.y + boundsHeight0/2 - 2 }, 
-                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 5, bounds.y + boundsHeight0/2 - 2 + 5 }, 
-                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 10, bounds.y + boundsHeight0/2 - 2 }, Fade(GetColor(style[DEFAULT_TEXT_COLOR_FOCUSED]), guiAlpha));
+            DrawTriangle((Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING, bounds.y + bounds.height/2 - 2 }, 
+                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 5, bounds.y + bounds.height/2 - 2 + 5 }, 
+                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 10, bounds.y + bounds.height/2 - 2 }, Fade(GetColor(style[DEFAULT_TEXT_COLOR_FOCUSED]), guiAlpha));
         } break;
         case PRESSED:
         {
-            GuiPanel(bounds);
-            if (dropOpen) GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height/(count + 1) }, text[active], true);
-            else GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height }, text[active], true);
-
-            if (dropOpen)
-            {
-                for(int i = 0; i < count; i++)
+            
+            if (!editMode) GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height }, text[auxActive], true, true);
+            if (editMode)
+            {                
+                GuiPanel(openBounds);
+                
+                GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height }, text[auxActive], true, true);
+            
+                for (int i = 0; i < count; i++)
                 {
-                    GuiListElement((Rectangle){ bounds.x, bounds.y + bounds.height/(count + 1)*(i+1) + DROPDOWNBOX_PADDING, bounds.width, bounds.height/(count + 1) - DROPDOWNBOX_PADDING }, text[i], false);
+                    if (i == auxActive && editMode) 
+                    {
+                        if (GuiListElement((Rectangle){ bounds.x, bounds.y + bounds.height*(i+1) + DROPDOWNBOX_PADDING, bounds.width, bounds.height - DROPDOWNBOX_PADDING }, text[i], true, true) == false) pressed = true; //auxActive = i;
+                    }
+                    else 
+                    {
+                        if (GuiListElement((Rectangle){ bounds.x, bounds.y + bounds.height*(i+1) + DROPDOWNBOX_PADDING, bounds.width, bounds.height - DROPDOWNBOX_PADDING }, text[i], false, true))
+                        {
+                            auxActive = i;
+                            pressed = true;
+                        }                            
+                    }
                 }
             }
             
-            DrawTriangle((Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING, bounds.y + boundsHeight0/2 - 2 }, 
-                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 5, bounds.y + boundsHeight0/2 - 2 + 5 }, 
-                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 10, bounds.y + boundsHeight0/2 - 2 }, Fade(GetColor(style[DEFAULT_TEXT_COLOR_PRESSED]), guiAlpha));
+            DrawTriangle((Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING, bounds.y + bounds.height/2 - 2 }, 
+                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 5, bounds.y + bounds.height/2 - 2 + 5 }, 
+                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 10, bounds.y + bounds.height/2 - 2 }, Fade(GetColor(style[DEFAULT_TEXT_COLOR_PRESSED]), guiAlpha));
         } break;
         case DISABLED:
         {
             DrawRectangle(bounds.x, bounds.y, bounds.width, bounds.height, Fade(GetColor(style[DEFAULT_BASE_COLOR_DISABLED]), guiAlpha));
             DrawRectangleLinesEx(bounds, DROPDOWNBOX_BORDER_WIDTH, Fade(GetColor(style[LISTVIEW_BORDER_COLOR_DISABLED]), guiAlpha));
-            GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height }, text[active], false);
+            GuiListElement((Rectangle){ bounds.x, bounds.y, bounds.width, bounds.height }, text[auxActive], false, false);
             
-            DrawTriangle((Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING, bounds.y + boundsHeight0/2 - 2 }, 
-                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 5, bounds.y + boundsHeight0/2 - 2 + 5 }, 
-                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 10, bounds.y + boundsHeight0/2 - 2 }, Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));
+            DrawTriangle((Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING, bounds.y + bounds.height/2 - 2 }, 
+                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 5, bounds.y + bounds.height/2 - 2 + 5 }, 
+                         (Vector2){ bounds.x + bounds.width - DROPDOWNBOX_ARROW_RIGHT_PADDING + 10, bounds.y + bounds.height/2 - 2 }, Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));
         } break;
         default: break;
     }
     //--------------------------------------------------------------------
     
-    return active;
+    
+    *active = auxActive;
+    return pressed;
 }
 
 // Spinner control, returns selected value
 // NOTE: Requires static variables: framesCounter, valueSpeed - ERROR!
-RAYGUIDEF int GuiSpinner(Rectangle bounds, int value, int maxValue, int btnWidth)
+RAYGUIDEF bool GuiSpinner(Rectangle bounds, int *value, int minValue, int maxValue, int btnWidth, bool editMode)
 {
     #define GUIVALUEBOX_BUTTON_BORDER_WIDTH   1
+    bool pressed = false;
     
     int buttonBorderWidth = style[BUTTON_BORDER_WIDTH];
     style[BUTTON_BORDER_WIDTH] = GUIVALUEBOX_BUTTON_BORDER_WIDTH;
@@ -1730,7 +1813,7 @@ RAYGUIDEF int GuiSpinner(Rectangle bounds, int value, int maxValue, int btnWidth
     Rectangle leftButtonBound = { bounds.x, bounds.y, btnWidth, bounds.height };
     Rectangle rightButtonBound = { bounds.x + bounds.width - btnWidth, bounds.y, btnWidth, bounds.height };
 
-    int textWidth = MeasureText(FormatText("%i", value), style[DEFAULT_TEXT_SIZE]);
+    int textWidth = GuiTextWidth(FormatText("%i", *value));
     int textHeight = style[DEFAULT_TEXT_SIZE];
 
     if (bounds.width < textWidth) bounds.width = textWidth;
@@ -1738,69 +1821,121 @@ RAYGUIDEF int GuiSpinner(Rectangle bounds, int value, int maxValue, int btnWidth
 
     // Update control
     //--------------------------------------------------------------------
-    if (value < 0) value = 0;
-    if (value > maxValue) value = maxValue;
+    if (!editMode)
+    {
+        if (*value < minValue) *value = minValue;
+        if (*value > maxValue) *value = maxValue;
+    }
     //--------------------------------------------------------------------
 
     // Draw control
     //--------------------------------------------------------------------
-    value = GuiValueBox(spinner, value, maxValue);
-    
-    if (GuiButton(leftButtonBound, "<")) value--;
-    if (GuiButton(rightButtonBound, ">")) value++;
+    int newValue = *value;    
+    pressed = GuiValueBox(spinner, &newValue, minValue, maxValue, editMode);
 
+    if (GuiButton(leftButtonBound, "<")) newValue--;
+    if (GuiButton(rightButtonBound, ">")) newValue++;
+    
+    *value = newValue;
+    
     style[BUTTON_BORDER_WIDTH] = buttonBorderWidth;
     //--------------------------------------------------------------------
 
-    return value;
+    return pressed;
 }
 
 // Value Box control, updates input text with numbers
 // NOTE: Requires static variables: framesCounter
-RAYGUIDEF int GuiValueBox(Rectangle bounds, int value, int maxValue)
+RAYGUIDEF bool GuiValueBox(Rectangle bounds, int *value, int minValue, int maxValue, bool editMode)
 {
-    #define GUIVALUEBOX_LINE_PADDING 4
-    #define GUIVALUEBOX_CHAR_COUNT 5
-
-    GuiControlState state = guiState;
-    static int framesCounter = 0;               // Required for blinking cursor
-    char text[GUIVALUEBOX_CHAR_COUNT + 1] = "\0";
-    sprintf(text, "%i", value);
+    #define GUIVALUEBOX_CHAR_COUNT 32
+    #define KEY_BACKSPACE_TEXT    259     // GLFW BACKSPACE: 3 + 256
     
-    int textWidth = MeasureText(text, style[DEFAULT_TEXT_SIZE]);
+    bool pressed = false;
+    
+    GuiControlState state = guiState;
+    static int framesCounter = 0; 
+    // Required for blinking cursor
+    char text[GUIVALUEBOX_CHAR_COUNT + 1] = "\0";
+    
+    sprintf(text, "%i", *value);
+    
+    int textWidth = GuiTextWidth(text);
 
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
-
-        #define KEY_BACKSPACE_TEXT    259     // GLFW BACKSPACE: 3 + 256
-
-        if (CheckCollisionPointRec(mousePoint, bounds))
+        
+        bool valueHasChanged = false;
+        
+        if (editMode)
         {
-            state = FOCUSED;        // NOTE: PRESSED state is not used on this control
+            state = PRESSED;
 
             framesCounter++;
             
-            int key = GetKeyPressed();
-            int keyCount = strlen(text);
-            
-            // NOTE: Only allow keys in range [32..125]
-            if ((key >= 48) && (key <= 57) && (keyCount < GUIVALUEBOX_CHAR_COUNT) && (value < maxValue))
+            int keyCount = strlen(text);            
+
+            // Only allow keys in range [48..57]    
+            if (keyCount < GUIVALUEBOX_CHAR_COUNT)
             {
-                text[keyCount] = (char)key;
-                keyCount++;
+                int maxWidth = (bounds.width - (DEFAULT_TEXT_PADDING*2));
+                if (GuiTextWidth(text) < maxWidth)
+                {
+                    int key = GetKeyPressed();
+                    if ((key >= 48) && (key <= 57))
+                    {
+                        text[keyCount] = (char)key;
+                        keyCount++;
+                        valueHasChanged = true;
+                    }
+                }
             }
             
-            if (IsKeyPressed(KEY_BACKSPACE_TEXT))
+            // Delete text
+            if (keyCount > 0)
             {
-                keyCount--;
-                text[keyCount] = '\0';
-                
-                if (keyCount < 0) keyCount = 0;
+                if (IsKeyPressed(KEY_BACKSPACE_TEXT))
+                {
+                    keyCount--;
+                    text[keyCount] = '\0';
+                    framesCounter = 0;
+                    if (keyCount < 0) keyCount = 0;
+                    valueHasChanged = true;
+                }
+                else if (IsKeyDown(KEY_BACKSPACE_TEXT))
+                {
+                    if ((framesCounter > LINE_BLINK_FRAMES) && (framesCounter%2) == 0) keyCount--;
+                    text[keyCount] = '\0';
+                    if (keyCount < 0) keyCount = 0;
+                    valueHasChanged = true;
+                }
             }
+            if (valueHasChanged) *value = atoi(text);             
         }
+        else
+        {
+            if (*value > maxValue) *value = maxValue;
+            else if (*value < minValue) *value = minValue;  
+        }         
+        
+        // Note: Changing editMode
+        if (!editMode)
+        {            
+            if (CheckCollisionPointRec(mousePoint, bounds))
+            {
+                state = FOCUSED;
+                if (IsMouseButtonPressed(0)) pressed = true;
+            }        
+        }
+        else
+        {
+            if (IsKeyPressed(KEY_ENTER) || (!CheckCollisionPointRec(mousePoint, bounds) && IsMouseButtonPressed(0))) pressed = true;
+        }
+        
+        if (pressed) framesCounter = 0;
     }
     //--------------------------------------------------------------------
 
@@ -1812,28 +1947,33 @@ RAYGUIDEF int GuiValueBox(Rectangle bounds, int value, int maxValue)
         {
             DrawRectangleLinesEx(bounds, style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[VALUEBOX_BORDER_COLOR_NORMAL]), guiAlpha));
             DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH], bounds.y + style[TEXTBOX_BORDER_WIDTH], bounds.width - 2*style[TEXTBOX_BORDER_WIDTH], bounds.height - 2*style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[VALUEBOX_BASE_COLOR_NORMAL]), guiAlpha));
-            DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[VALUEBOX_TEXT_COLOR_NORMAL]), guiAlpha));
+            GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[VALUEBOX_TEXT_COLOR_NORMAL]), guiAlpha));
         } break;
         case FOCUSED:
         {
             DrawRectangleLinesEx(bounds, style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[VALUEBOX_BORDER_COLOR_FOCUSED]), guiAlpha));
-            DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH], bounds.y + style[TEXTBOX_BORDER_WIDTH], bounds.width - 2*style[TEXTBOX_BORDER_WIDTH], bounds.height - 2*style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[VALUEBOX_BASE_COLOR_FOCUSED]), guiAlpha));
-            DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[VALUEBOX_TEXT_COLOR_FOCUSED]), guiAlpha));
-            
-            if ((framesCounter/20)%2 == 0) DrawRectangle(bounds.x + GUIVALUEBOX_LINE_PADDING + bounds.width/2 + textWidth/2, bounds.y + GUIVALUEBOX_LINE_PADDING/2, 1, bounds.height - GUIVALUEBOX_LINE_PADDING, Fade(GetColor(style[TEXTBOX_BORDER_COLOR_FOCUSED]), guiAlpha));
+            DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH], bounds.y + style[TEXTBOX_BORDER_WIDTH], bounds.width - 2*style[TEXTBOX_BORDER_WIDTH], bounds.height - 2*style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[VALUEBOX_BASE_COLOR_NORMAL]), guiAlpha));
+            GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[VALUEBOX_TEXT_COLOR_FOCUSED]), guiAlpha));
         } break;
-        case PRESSED: break; // NOTE: State not used on this control
+        case PRESSED:
+        {
+            DrawRectangleLinesEx(bounds, style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[VALUEBOX_BORDER_COLOR_PRESSED]), guiAlpha));
+            DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH], bounds.y + style[TEXTBOX_BORDER_WIDTH], bounds.width - 2*style[TEXTBOX_BORDER_WIDTH], bounds.height - 2*style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[VALUEBOX_BASE_COLOR_FOCUSED]), guiAlpha));
+            GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[VALUEBOX_TEXT_COLOR_PRESSED]), guiAlpha));
+            
+            if (editMode && ((framesCounter/20)%2 == 0)) DrawRectangle(bounds.x + 2 /*+ DEFAULT_TEXT_LINE_PADDING */+ GuiTextWidth(text)/2 + bounds.width/2, bounds.y + DEFAULT_TEXT_LINE_PADDING/2, 1, bounds.height - DEFAULT_TEXT_LINE_PADDING, Fade(GetColor(style[TEXTBOX_BORDER_COLOR_FOCUSED]), guiAlpha));
+        } break;
         case DISABLED:
         {
             DrawRectangleLinesEx(bounds, style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[VALUEBOX_BORDER_COLOR_DISABLED]), guiAlpha));
             DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH], bounds.y + style[TEXTBOX_BORDER_WIDTH], bounds.width - 2*style[TEXTBOX_BORDER_WIDTH], bounds.height - 2*style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[VALUEBOX_BASE_COLOR_DISABLED]), guiAlpha));
-            DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[VALUEBOX_TEXT_COLOR_DISABLED]), guiAlpha));
+            GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + VALIGN_OFFSET(bounds.height), Fade(GetColor(style[VALUEBOX_TEXT_COLOR_DISABLED]), guiAlpha));
         } break;
         default: break;
     }
     //--------------------------------------------------------------------
     
-    return atoi(text);
+    return pressed;
 }
 
 // Text Box control, updates input text
@@ -1841,65 +1981,75 @@ RAYGUIDEF int GuiValueBox(Rectangle bounds, int value, int maxValue)
 // NOTE 2: Returns if KEY_ENTER pressed (useful for data validation)
 RAYGUIDEF bool GuiTextBox(Rectangle bounds, char *text, int textSize, bool editMode)
 {
-    #define GUITEXTBOX_PADDING              4
-    #define GUITEXTBOX_LINE_PADDING         4
-    #define GUITEXTBOX_BACKSPACE_SPEED      2      // Deleting speed
-
     GuiControlState state = guiState;
     static int framesCounter = 0;         // Required for blinking cursor
     bool pressed = false;
 
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
         #define KEY_BACKSPACE_TEXT    259     // GLFW BACKSPACE: 3 + 256
 
-        if (CheckCollisionPointRec(mousePoint, bounds))
+        if (editMode)
         {
-            state = FOCUSED;        // NOTE: PRESSED state is not used on this control
+            state = PRESSED;
             
-            if (editMode)
+            framesCounter++;
+            
+            int key = GetKeyPressed();
+            int keyCount = strlen(text);
+            
+            // Only allow keys in range [32..125]
+            if (keyCount < (textSize - 1))
             {
-                framesCounter++;
-                
-                int key = GetKeyPressed();
-                int keyCount = strlen(text);
-                
-                // NOTE: Only allow keys in range [32..125]
-                if ((key >= 32) && (key <= 125) && (keyCount < textSize))
+                int maxWidth = (bounds.width - (DEFAULT_TEXT_PADDING*2));
+                if (GuiTextWidth(text) < (maxWidth - style[DEFAULT_TEXT_SIZE]))
                 {
-                    text[keyCount] = (char)key;
-                    keyCount++;
+                    if ((key >= 32) && (key <= 125))
+                    {
+                        text[keyCount] = (char)key;
+                        keyCount++;
+                    }
                 }
-                
-                // if (IsKeyPressed(KEY_BACKSPACE_TEXT))
-                // {
-                    // keyCount--;
-                    // text[keyCount] = '\0';
-                    
-                    // if (keyCount < 0) keyCount = 0;
-                // }
-                
-                if ((keyCount > 0) && IsKeyPressed(KEY_BACKSPACE_TEXT))
+            }
+            
+            // Delete text
+            if (keyCount > 0)
+            {
+                if (IsKeyPressed(KEY_BACKSPACE_TEXT))
                 {
                     keyCount--;
                     text[keyCount] = '\0';
                     framesCounter = 0;
                     if (keyCount < 0) keyCount = 0;
                 }
-                else if ((keyCount > 0) && IsKeyDown(KEY_BACKSPACE_TEXT))
+                else if (IsKeyDown(KEY_BACKSPACE_TEXT))
                 {
-                    if ((framesCounter > 30) && (framesCounter%2) == 0) keyCount--;
+                    if ((framesCounter > LINE_BLINK_FRAMES) && (framesCounter%2) == 0) keyCount--;
                     text[keyCount] = '\0';
                     if (keyCount < 0) keyCount = 0;
                 }
             }
-            else if (IsKeyPressed(KEY_ENTER)) pressed = true;
         }
-        else editMode = false;
+        
+        // Note: Changing editMode
+        if (!editMode)
+        {   
+            if (CheckCollisionPointRec(mousePoint, bounds))
+            {
+                state = FOCUSED;
+                if (IsMouseButtonPressed(0)) pressed = true;
+            }          
+        }
+        else
+        {
+            if (IsKeyPressed(KEY_ENTER) || (!CheckCollisionPointRec(mousePoint, bounds) && IsMouseButtonPressed(0))) pressed = true;
+        }
+        
+        if (pressed) framesCounter = 0;
     }
     //--------------------------------------------------------------------
 
@@ -1911,22 +2061,27 @@ RAYGUIDEF bool GuiTextBox(Rectangle bounds, char *text, int textSize, bool editM
         {
             DrawRectangleLinesEx(bounds, style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BORDER_COLOR_NORMAL]), guiAlpha));
             DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH], bounds.y + style[TEXTBOX_BORDER_WIDTH], bounds.width - 2*style[TEXTBOX_BORDER_WIDTH], bounds.height - 2*style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BASE_COLOR_NORMAL]), guiAlpha));
-            DrawText(text, bounds.x + GUITEXTBOX_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[TEXTBOX_TEXT_COLOR_NORMAL]), guiAlpha));
+            GuiDrawText(text, bounds.x + DEFAULT_TEXT_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2, Fade(GetColor(style[TEXTBOX_TEXT_COLOR_NORMAL]), guiAlpha));
         } break;
         case FOCUSED:
         {
             DrawRectangleLinesEx(bounds, style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BORDER_COLOR_FOCUSED]), guiAlpha));
-            DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH], bounds.y + style[TEXTBOX_BORDER_WIDTH], bounds.width - 2*style[TEXTBOX_BORDER_WIDTH], bounds.height - 2*style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BASE_COLOR_FOCUSED]), guiAlpha));
-            DrawText(text, bounds.x + GUITEXTBOX_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[TEXTBOX_TEXT_COLOR_PRESSED]), guiAlpha));
-            
-            if (editMode && ((framesCounter/20)%2 == 0)) DrawRectangle(bounds.x + GUITEXTBOX_LINE_PADDING + MeasureText(text, style[DEFAULT_TEXT_SIZE]), bounds.y + GUITEXTBOX_LINE_PADDING/2, 1, bounds.height - GUITEXTBOX_LINE_PADDING, Fade(GetColor(style[TEXTBOX_BORDER_COLOR_FOCUSED]), guiAlpha));
+            DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH], bounds.y + style[TEXTBOX_BORDER_WIDTH], bounds.width - 2*style[TEXTBOX_BORDER_WIDTH], bounds.height - 2*style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BASE_COLOR_NORMAL]), guiAlpha));
+            GuiDrawText(text, bounds.x + DEFAULT_TEXT_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2, Fade(GetColor(style[TEXTBOX_TEXT_COLOR_FOCUSED]), guiAlpha));
         } break;
-        case PRESSED: break; // NOTE: State not used on this control
+        case PRESSED:
+        {
+            DrawRectangleLinesEx(bounds, style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BORDER_COLOR_PRESSED]), guiAlpha));
+            DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH], bounds.y + style[TEXTBOX_BORDER_WIDTH], bounds.width - 2*style[TEXTBOX_BORDER_WIDTH], bounds.height - 2*style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BASE_COLOR_FOCUSED]), guiAlpha));
+            GuiDrawText(text, bounds.x + DEFAULT_TEXT_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2, Fade(GetColor(style[TEXTBOX_TEXT_COLOR_PRESSED]), guiAlpha));
+            
+            if (editMode && ((framesCounter/20)%2 == 0)) DrawRectangle(bounds.x + DEFAULT_TEXT_LINE_PADDING + GuiTextWidth(text), bounds.y + DEFAULT_TEXT_LINE_PADDING/2, 1, bounds.height - DEFAULT_TEXT_LINE_PADDING, Fade(GetColor(style[TEXTBOX_BORDER_COLOR_PRESSED]), guiAlpha));
+        } break;
         case DISABLED:
         {
             DrawRectangleLinesEx(bounds, style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BORDER_COLOR_DISABLED]), guiAlpha));
             DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH], bounds.y + style[TEXTBOX_BORDER_WIDTH], bounds.width - 2*style[TEXTBOX_BORDER_WIDTH], bounds.height - 2*style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BASE_COLOR_DISABLED]), guiAlpha));
-            DrawText(text, bounds.x + GUITEXTBOX_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[TEXTBOX_TEXT_COLOR_DISABLED]), guiAlpha));
+            GuiDrawText(text, bounds.x + DEFAULT_TEXT_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2, Fade(GetColor(style[TEXTBOX_TEXT_COLOR_DISABLED]), guiAlpha));
         } break;
         default: break;
     }
@@ -1945,58 +2100,161 @@ RAYGUIDEF bool GuiTextBoxMulti(Rectangle bounds, char *text, int textSize, bool 
     GuiControlState state = guiState;
     static int framesCounter = 0;           // Required for blinking cursor
     bool pressed = false;
+    bool textHasChange = false;
     int currentLine = 0;
-
+    
+    const char *numChars = "";
+    
+    // Security check because font is used directly in this control
+    if (guiFont.texture.id == 0) guiFont = GetFontDefault();
+    
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
         #define KEY_BACKSPACE_TEXT    259     // GLFW BACKSPACE: 3 + 256
-
-        if (CheckCollisionPointRec(mousePoint, bounds))
+        
+        if (editMode)
         {
-            state = FOCUSED;        // NOTE: PRESSED state is not used on this control
+            state = PRESSED;
             
-            if (editMode)
+            framesCounter++;
+            
+            int keyCount = strlen(text);
+            int maxWidth = (bounds.width - (DEFAULT_TEXT_PADDING*2));
+            int maxHeight = (bounds.height - (DEFAULT_TEXT_PADDING*2));
+            
+            numChars = FormatText("%i/%i", keyCount, textSize - 1);
+            
+            // Only allow keys in range [32..125]   
+            if (keyCount < (textSize - 1))
             {
-                framesCounter++;
-                
                 int key = GetKeyPressed();
-                int keyCount = strlen(text);
                 
-                if (((MeasureText(text, style[DEFAULT_TEXT_SIZE])) > bounds.width - GUITEXTBOX_PADDING))
-                {
-                    char *ptr = strrchr(text, 32);
-                    
-                    if (ptr != NULL)
+                if (MeasureTextEx(guiFont, text, style[DEFAULT_TEXT_SIZE], 1).y < (maxHeight - style[DEFAULT_TEXT_SIZE]))
+                {                    
+                    if (IsKeyPressed(KEY_ENTER))
                     {
-                        int index = ptr - text;
-                        text[index] = '\n';
+                        text[keyCount] = '\n';
+                        keyCount++;
+                    }
+                    else if ((key >= 32) && (key <= 125))
+                    {
+                        text[keyCount] = (char)key;
+                        keyCount++;
+                        textHasChange = true;
+                    }
+                } 
+                else if (GuiTextWidth(strrchr(text, '\n')) < (maxWidth - style[DEFAULT_TEXT_SIZE]))
+                {                    
+                    if ((key >= 32) && (key <= 125))
+                    {
+                        text[keyCount] = (char)key;
+                        keyCount++;
+                        textHasChange = true;
                     }
                 }
-                
-                currentLine = MeasureTextEx(GetFontDefault(), text, style[DEFAULT_TEXT_SIZE], 1).y/10 - 1;
-                
-                // NOTE: Only allow keys in range [32..125]
-                if ((key >= 32) && (key <= 125) && (keyCount < textSize))
-                {
-                    text[keyCount] = (char)key;
-                    keyCount++;
-                }
-                
+            }
+            
+            // Delete text
+            if (keyCount > 0)
+            {                
                 if (IsKeyPressed(KEY_BACKSPACE_TEXT))
                 {
                     keyCount--;
                     text[keyCount] = '\0';
-                    
+                    framesCounter = 0;
                     if (keyCount < 0) keyCount = 0;
+                    textHasChange = true;
+                }
+                else if (IsKeyDown(KEY_BACKSPACE_TEXT))
+                {
+                    if ((framesCounter > LINE_BLINK_FRAMES) && (framesCounter%2) == 0) keyCount--;
+                    text[keyCount] = '\0';
+                    if (keyCount < 0) keyCount = 0;
+                    textHasChange = true;
                 }
             }
-            else if (IsKeyPressed(KEY_ENTER)) pressed = true;
+            
+            // Introduce automatic new line if necessary
+            if (textHasChange)
+            {
+                textHasChange = false;
+                
+                char *lastLine = strrchr(text, '\n');
+                int maxWidth = (bounds.width - (DEFAULT_TEXT_PADDING*2));
+                
+                if (lastLine != NULL)
+                {
+                    if (GuiTextWidth(lastLine) > maxWidth)
+                    {
+                        int firstIndex = lastLine - text;
+                        
+                        char *lastSpace = strrchr(lastLine, 32);
+                        
+                        if (lastSpace != NULL)
+                        {
+                            int secondIndex = lastSpace - lastLine;
+                            text[firstIndex + secondIndex] = '\n';
+                        }
+                        else
+                        {
+                            int len = strlen(lastLine);
+                            char lastChar = lastLine[len - 1];
+                            lastLine[len - 1] = '\n';
+                            lastLine[len] = lastChar;
+                            lastLine[len + 1] = '\0';
+                            keyCount++;
+                        }
+                    }
+                }
+                else
+                {
+                    if (GuiTextWidth(text) > maxWidth)
+                    {
+                        char *lastSpace = strrchr(text, 32);
+                        if (lastSpace != NULL)
+                        {
+                            int index = lastSpace - text;
+                            text[index] = '\n';
+                        }
+                        else
+                        {
+                            int len = strlen(lastLine);
+                            char lastChar = lastLine[len - 1];
+                            lastLine[len - 1] = '\n';
+                            lastLine[len] = lastChar;
+                            lastLine[len + 1] = '\0';
+                            keyCount++;
+                        }
+                    }
+                }
+            }            
+            
+            // Counting how many new lines
+            for (int i = 0; i < keyCount; i++)
+            {
+                if (text[i] == '\n') currentLine++;
+            }            
         }
-        else editMode = false;
+        
+        // Changing editMode
+        if (!editMode)
+        {            
+            if (CheckCollisionPointRec(mousePoint, bounds))
+            {
+                state = FOCUSED;
+                if (IsMouseButtonPressed(0)) pressed = true;  
+            }   
+        }
+        else
+        {
+            if (!CheckCollisionPointRec(mousePoint, bounds) && IsMouseButtonPressed(0)) pressed = true;
+        }
+        
+        if (pressed) framesCounter = 0;
     }
     //--------------------------------------------------------------------
 
@@ -2008,22 +2266,40 @@ RAYGUIDEF bool GuiTextBoxMulti(Rectangle bounds, char *text, int textSize, bool 
         {
             DrawRectangleLinesEx(bounds, style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BORDER_COLOR_NORMAL]), guiAlpha));
             DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH], bounds.y + style[TEXTBOX_BORDER_WIDTH], bounds.width - 2*style[TEXTBOX_BORDER_WIDTH], bounds.height - 2*style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BASE_COLOR_NORMAL]), guiAlpha));
-            DrawText(text, bounds.x + GUITEXTBOXMULTI_PADDING, bounds.y + GUITEXTBOXMULTI_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[TEXTBOX_TEXT_COLOR_NORMAL]), guiAlpha));
+            GuiDrawText(text, bounds.x + GUITEXTBOXMULTI_PADDING, bounds.y + GUITEXTBOXMULTI_PADDING, Fade(GetColor(style[TEXTBOX_TEXT_COLOR_NORMAL]), guiAlpha));
         } break;
         case FOCUSED:
         {
             DrawRectangleLinesEx(bounds, style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BORDER_COLOR_FOCUSED]), guiAlpha));
-            DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH], bounds.y + style[TEXTBOX_BORDER_WIDTH], bounds.width - 2*style[TEXTBOX_BORDER_WIDTH], bounds.height - 2*style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BASE_COLOR_FOCUSED]), guiAlpha));
-            DrawText(text, bounds.x + GUITEXTBOXMULTI_PADDING, bounds.y + GUITEXTBOXMULTI_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[TEXTBOX_TEXT_COLOR_PRESSED]), guiAlpha));
-            
-            if (editMode && ((framesCounter/20)%2 == 0)) DrawRectangle(bounds.x + GUITEXTBOXMULTI_LINE_PADDING + MeasureText(text, style[DEFAULT_TEXT_SIZE]), bounds.y + GUITEXTBOXMULTI_PADDING + (style[DEFAULT_TEXT_SIZE] + GUITEXTBOXMULTI_LINE_PADDING)*currentLine, 1, style[DEFAULT_TEXT_SIZE]*2, Fade(GetColor(style[TEXTBOX_BORDER_COLOR_FOCUSED]), guiAlpha));
+            DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH], bounds.y + style[TEXTBOX_BORDER_WIDTH], bounds.width - 2*style[TEXTBOX_BORDER_WIDTH], bounds.height - 2*style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BASE_COLOR_NORMAL]), guiAlpha));
+            GuiDrawText(text, bounds.x + GUITEXTBOXMULTI_PADDING, bounds.y + GUITEXTBOXMULTI_PADDING, Fade(GetColor(style[TEXTBOX_TEXT_COLOR_FOCUSED]), guiAlpha));
         } break;
-        case PRESSED: break; // NOTE: State not used on this control
+        case PRESSED:
+        {
+            DrawRectangleLinesEx(bounds, style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BORDER_COLOR_PRESSED]), guiAlpha));
+            DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH], bounds.y + style[TEXTBOX_BORDER_WIDTH], bounds.width - 2*style[TEXTBOX_BORDER_WIDTH], bounds.height - 2*style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BASE_COLOR_FOCUSED]), guiAlpha));
+            GuiDrawText(text, bounds.x + GUITEXTBOXMULTI_PADDING, bounds.y + GUITEXTBOXMULTI_PADDING, Fade(GetColor(style[TEXTBOX_TEXT_COLOR_PRESSED]), guiAlpha));
+            
+            if (editMode) 
+            {
+                if ((framesCounter/20)%2 == 0)
+                {
+                    char *line;
+                    if (currentLine > 0) line = strrchr(text, '\n');
+                    else line = text;
+                    
+                    DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH] + DEFAULT_TEXT_PADDING + GuiTextWidth(line), bounds.y + style[TEXTBOX_BORDER_WIDTH] + DEFAULT_TEXT_PADDING/2 + ((style[DEFAULT_TEXT_SIZE] + DEFAULT_TEXT_LINE_PADDING)*currentLine), 1, style[DEFAULT_TEXT_SIZE] + DEFAULT_TEXT_PADDING, Fade(GetColor(style[TEXTBOX_BORDER_COLOR_FOCUSED]), guiAlpha));
+                }
+                
+                GuiDrawText(numChars, bounds.x + bounds.width - GuiTextWidth(numChars) - DEFAULT_TEXT_LINE_PADDING, bounds.y + bounds.height - style[DEFAULT_TEXT_SIZE] - DEFAULT_TEXT_LINE_PADDING, Fade(GetColor(style[TEXTBOX_TEXT_COLOR_PRESSED]), guiAlpha/2));
+            }
+            
+        } break;
         case DISABLED:
         {
             DrawRectangleLinesEx(bounds, style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BORDER_COLOR_DISABLED]), guiAlpha));
             DrawRectangle(bounds.x + style[TEXTBOX_BORDER_WIDTH], bounds.y + style[TEXTBOX_BORDER_WIDTH], bounds.width - 2*style[TEXTBOX_BORDER_WIDTH], bounds.height - 2*style[TEXTBOX_BORDER_WIDTH], Fade(GetColor(style[TEXTBOX_BASE_COLOR_DISABLED]), guiAlpha));
-            DrawText(text, bounds.x + GUITEXTBOXMULTI_PADDING, bounds.y + GUITEXTBOXMULTI_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[TEXTBOX_TEXT_COLOR_DISABLED]), guiAlpha));
+            GuiDrawText(text, bounds.x + GUITEXTBOXMULTI_PADDING, bounds.y + GUITEXTBOXMULTI_PADDING, Fade(GetColor(style[TEXTBOX_TEXT_COLOR_DISABLED]), guiAlpha));
         } break;
         default: break;
     }
@@ -2044,7 +2320,7 @@ RAYGUIDEF float GuiSlider(Rectangle bounds, float value, float minValue, float m
                          
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
@@ -2073,7 +2349,7 @@ RAYGUIDEF float GuiSlider(Rectangle bounds, float value, float minValue, float m
     //--------------------------------------------------------------------
     switch (state)
     {
-        case NORMAL: 
+        case NORMAL:
         {
             DrawRectangleLinesEx(bounds, style[SLIDER_BORDER_WIDTH], Fade(GetColor(style[SLIDER_BORDER_COLOR_NORMAL]), guiAlpha));
             DrawRectangle(bounds.x + style[SLIDER_BORDER_WIDTH], bounds.y + style[SLIDER_BORDER_WIDTH], bounds.width - 2*style[SLIDER_BORDER_WIDTH], bounds.height - 2*style[SLIDER_BORDER_WIDTH], Fade(GetColor(style[SLIDER_BASE_COLOR_NORMAL]), guiAlpha));
@@ -2116,14 +2392,14 @@ RAYGUIDEF float GuiSliderEx(Rectangle bounds, float value, float minValue, float
     
     GuiControlState state = guiState;
     
-    int textWidth = MeasureText(text, style[DEFAULT_TEXT_SIZE]);
+    int textWidth = GuiTextWidth(text);
     
     Rectangle slider = { bounds.x + (int)((value/(maxValue - minValue))*(bounds.width - 2*style[SLIDER_BORDER_WIDTH])) - style[SLIDER_SLIDER_WIDTH]/2,
                          bounds.y + style[SLIDER_BORDER_WIDTH], style[SLIDER_SLIDER_WIDTH], bounds.height - 2*style[SLIDER_BORDER_WIDTH] };
                          
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
@@ -2158,14 +2434,14 @@ RAYGUIDEF float GuiSliderEx(Rectangle bounds, float value, float minValue, float
     //--------------------------------------------------------------------    
     switch (state)
     {
-        case NORMAL: 
+        case NORMAL:
         {
             DrawRectangleLinesEx(bounds, style[SLIDER_BORDER_WIDTH], Fade(GetColor(style[SLIDER_BORDER_COLOR_NORMAL]), guiAlpha));
             DrawRectangle(bounds.x + style[SLIDER_BORDER_WIDTH], bounds.y + style[SLIDER_BORDER_WIDTH], bounds.width - 2*style[SLIDER_BORDER_WIDTH], bounds.height - 2*style[SLIDER_BORDER_WIDTH], Fade(GetColor(style[SLIDER_BASE_COLOR_NORMAL]), guiAlpha));
 
             DrawRectangleRec(slider, Fade(GetColor(style[SLIDER_BASE_COLOR_PRESSED]), guiAlpha));
-            DrawText(text, bounds.x - SLIDEREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_NORMAL]), guiAlpha));
-            if (showValue) DrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_NORMAL]), guiAlpha));
+            GuiDrawText(text, bounds.x - SLIDEREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_NORMAL]), guiAlpha));
+            if (showValue) GuiDrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_NORMAL]), guiAlpha));
         } break;
         case FOCUSED:
         {
@@ -2173,8 +2449,8 @@ RAYGUIDEF float GuiSliderEx(Rectangle bounds, float value, float minValue, float
             DrawRectangle(bounds.x + style[SLIDER_BORDER_WIDTH], bounds.y + style[SLIDER_BORDER_WIDTH], bounds.width - 2*style[SLIDER_BORDER_WIDTH], bounds.height - 2*style[SLIDER_BORDER_WIDTH], Fade(GetColor(style[SLIDER_BASE_COLOR_NORMAL]), guiAlpha));
             
             DrawRectangleRec(slider, Fade(GetColor(style[SLIDER_BASE_COLOR_FOCUSED]), guiAlpha));
-            DrawText(text, bounds.x - SLIDEREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_FOCUSED]), guiAlpha));
-            if (showValue) DrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_FOCUSED]), guiAlpha));
+            GuiDrawText(text, bounds.x - SLIDEREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_FOCUSED]), guiAlpha));
+            if (showValue) GuiDrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_FOCUSED]), guiAlpha));
         } break;
         case PRESSED:
         {
@@ -2182,16 +2458,16 @@ RAYGUIDEF float GuiSliderEx(Rectangle bounds, float value, float minValue, float
             DrawRectangle(bounds.x + style[SLIDER_BORDER_WIDTH], bounds.y + style[SLIDER_BORDER_WIDTH], bounds.width - 2*style[SLIDER_BORDER_WIDTH], bounds.height - 2*style[SLIDER_BORDER_WIDTH], Fade(GetColor(style[SLIDER_BASE_COLOR_NORMAL]), guiAlpha));
             
             DrawRectangleRec(slider, Fade(GetColor(style[SLIDER_BASE_COLOR_PRESSED]), guiAlpha));
-            DrawText(text, bounds.x - SLIDEREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_PRESSED]), guiAlpha));
-            if (showValue) DrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_PRESSED]), guiAlpha));
+            GuiDrawText(text, bounds.x - SLIDEREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_PRESSED]), guiAlpha));
+            if (showValue) GuiDrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_PRESSED]), guiAlpha));
         } break;
         case DISABLED:
         {
             DrawRectangleLinesEx(bounds, style[SLIDER_BORDER_WIDTH], Fade(GetColor(style[SLIDER_BORDER_COLOR_DISABLED]), guiAlpha));
-            DrawText(text, bounds.x - SLIDEREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));
+            GuiDrawText(text, bounds.x - SLIDEREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));
             DrawRectangle(bounds.x + style[SLIDER_BORDER_WIDTH], bounds.y + style[SLIDER_BORDER_WIDTH], bounds.width - 2*style[SLIDER_BORDER_WIDTH], bounds.height - 2*style[SLIDER_BORDER_WIDTH], Fade(GetColor(style[SLIDER_BASE_COLOR_DISABLED]), guiAlpha));
             DrawRectangleRec(slider, Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));
-            if (showValue) DrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));
+            if (showValue) GuiDrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));
         } break;
         default: break;
     }
@@ -2211,7 +2487,7 @@ RAYGUIDEF float GuiSliderBar(Rectangle bounds, float value, float minValue, floa
 
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
@@ -2274,7 +2550,7 @@ RAYGUIDEF float GuiSliderBarEx(Rectangle bounds, float value, float minValue, fl
     #define SLIDERBAREX_HEIGHT_PADDING 1
     
     GuiControlState state = guiState;
-    int textWidth = MeasureText(text, style[DEFAULT_TEXT_SIZE]);
+    int textWidth = GuiTextWidth(text);
     
     Rectangle slider = { bounds.x + style[SLIDERBAR_BORDER_WIDTH], bounds.y + style[SLIDERBAR_BORDER_WIDTH] + style[SLIDERBAR_INNER_PADDING], 
                          (int)(((value - minValue)/(maxValue - minValue))*(bounds.width - 2*style[SLIDERBAR_BORDER_WIDTH])),
@@ -2282,7 +2558,7 @@ RAYGUIDEF float GuiSliderBarEx(Rectangle bounds, float value, float minValue, fl
 
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
@@ -2312,32 +2588,32 @@ RAYGUIDEF float GuiSliderBarEx(Rectangle bounds, float value, float minValue, fl
             DrawRectangleLinesEx(bounds, style[SLIDERBAR_BORDER_WIDTH], Fade(GetColor(style[SLIDERBAR_BORDER_COLOR_NORMAL]), guiAlpha));
             DrawRectangle(bounds.x + style[SLIDERBAR_BORDER_WIDTH], bounds.y + style[SLIDERBAR_BORDER_WIDTH], bounds.width - 2*style[SLIDERBAR_BORDER_WIDTH], bounds.height - 2*style[SLIDERBAR_BORDER_WIDTH], Fade(GetColor(style[SLIDERBAR_BASE_COLOR_NORMAL]), guiAlpha));
             DrawRectangleRec(slider, Fade(GetColor(style[SLIDERBAR_BASE_COLOR_PRESSED]), guiAlpha));
-            DrawText(text, bounds.x - SLIDERBAREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDERBAREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_NORMAL]), guiAlpha));
-            if (showValue) DrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_NORMAL]), guiAlpha));
+            GuiDrawText(text, bounds.x - SLIDERBAREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDERBAREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_NORMAL]), guiAlpha));
+            if (showValue) GuiDrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_NORMAL]), guiAlpha));
         } break;
         case FOCUSED:
         {
             DrawRectangleLinesEx(bounds, style[SLIDERBAR_BORDER_WIDTH], Fade(GetColor(style[SLIDERBAR_BORDER_COLOR_FOCUSED]), guiAlpha));
             DrawRectangle(bounds.x + style[SLIDERBAR_BORDER_WIDTH], bounds.y + style[SLIDERBAR_BORDER_WIDTH], bounds.width - 2*style[SLIDERBAR_BORDER_WIDTH], bounds.height - 2*style[SLIDERBAR_BORDER_WIDTH], Fade(GetColor(style[SLIDERBAR_BASE_COLOR_NORMAL]), guiAlpha));
             DrawRectangleRec(slider, Fade(GetColor(style[SLIDERBAR_BASE_COLOR_FOCUSED]), guiAlpha));
-            DrawText(text, bounds.x - SLIDERBAREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDERBAREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_FOCUSED]), guiAlpha));
-            if (showValue) DrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_FOCUSED]), guiAlpha));
+            GuiDrawText(text, bounds.x - SLIDERBAREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDERBAREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_FOCUSED]), guiAlpha));
+            if (showValue) GuiDrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_FOCUSED]), guiAlpha));
         } break;
         case PRESSED:
         {
             DrawRectangleLinesEx(bounds, style[SLIDERBAR_BORDER_WIDTH], Fade(GetColor(style[SLIDERBAR_BORDER_COLOR_PRESSED]), guiAlpha));
             DrawRectangle(bounds.x + style[SLIDERBAR_BORDER_WIDTH], bounds.y + style[SLIDERBAR_BORDER_WIDTH], bounds.width - 2*style[SLIDERBAR_BORDER_WIDTH], bounds.height - 2*style[SLIDERBAR_BORDER_WIDTH], Fade(GetColor(style[SLIDERBAR_BASE_COLOR_NORMAL]), guiAlpha));
             DrawRectangleRec(slider, Fade(GetColor(style[SLIDERBAR_BASE_COLOR_PRESSED]), guiAlpha));
-            DrawText(text, bounds.x - SLIDERBAREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDERBAREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_PRESSED]), guiAlpha));
-            if (showValue) DrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_PRESSED]), guiAlpha));
+            GuiDrawText(text, bounds.x - SLIDERBAREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDERBAREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_PRESSED]), guiAlpha));
+            if (showValue) GuiDrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_PRESSED]), guiAlpha));
             } break;
         case DISABLED:
         {
             DrawRectangleLinesEx(bounds, style[SLIDERBAR_BORDER_WIDTH], Fade(GetColor(style[SLIDERBAR_BORDER_COLOR_DISABLED]), guiAlpha));
             DrawRectangle(bounds.x + style[SLIDERBAR_BORDER_WIDTH], bounds.y + style[SLIDERBAR_BORDER_WIDTH], bounds.width - 2*style[SLIDERBAR_BORDER_WIDTH], bounds.height - 2*style[SLIDERBAR_BORDER_WIDTH], Fade(GetColor(style[SLIDER_BASE_COLOR_DISABLED]), guiAlpha));
             DrawRectangleRec(slider, Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));
-            DrawText(text, bounds.x - SLIDERBAREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDERBAREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));
-            if (showValue) DrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));
+            GuiDrawText(text, bounds.x - SLIDERBAREX_WIDTH_PADDING - textWidth, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDERBAREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));
+            if (showValue) GuiDrawText(FormatText("%.02f", value), bounds.x + bounds.width + SLIDEREX_WIDTH_PADDING, bounds.y + bounds.height/2 - style[DEFAULT_TEXT_SIZE]/2 + SLIDEREX_HEIGHT_PADDING, Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));
         } break;
         default: break;
     }    
@@ -2450,7 +2726,7 @@ RAYGUIDEF void GuiStatusBar(Rectangle bounds, const char *text, int offsetX)
     
     GuiControlState state = guiState;
 
-    int textWidth = MeasureText(text, style[DEFAULT_TEXT_SIZE]);
+    int textWidth = GuiTextWidth(text);
     int textHeight = style[DEFAULT_TEXT_SIZE];
 
     if (bounds.width < textWidth + offsetX) bounds.width = textWidth + offsetX;
@@ -2460,19 +2736,19 @@ RAYGUIDEF void GuiStatusBar(Rectangle bounds, const char *text, int offsetX)
     //--------------------------------------------------------------------
     switch (state)
     {
-        case NORMAL: 
+        case NORMAL:
         case FOCUSED:
         case PRESSED:
         {
             DrawRectangleLinesEx(bounds, STATUSBAR_BORDER_WIDTH, Fade(GetColor(style[DEFAULT_BORDER_COLOR_NORMAL]), guiAlpha));
             DrawRectangleRec((Rectangle){ bounds.x + STATUSBAR_BORDER_WIDTH, bounds.y + STATUSBAR_BORDER_WIDTH, bounds.width - STATUSBAR_BORDER_WIDTH*2, bounds.height - STATUSBAR_BORDER_WIDTH*2 }, Fade(GetColor(style[DEFAULT_BASE_COLOR_NORMAL]), guiAlpha));
-            DrawText(text, bounds.x + offsetX, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_NORMAL]), guiAlpha));         
+            GuiDrawText(text, bounds.x + offsetX, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[DEFAULT_TEXT_COLOR_NORMAL]), guiAlpha));         
         } break;   
         case DISABLED:
         {
             DrawRectangleLinesEx(bounds, STATUSBAR_BORDER_WIDTH, Fade(GetColor(style[DEFAULT_BORDER_COLOR_DISABLED]), guiAlpha));
             DrawRectangleRec((Rectangle){ bounds.x + STATUSBAR_BORDER_WIDTH, bounds.y + STATUSBAR_BORDER_WIDTH, bounds.width - STATUSBAR_BORDER_WIDTH*2, bounds.height - STATUSBAR_BORDER_WIDTH*2 }, Fade(GetColor(style[DEFAULT_BASE_COLOR_DISABLED]), guiAlpha));
-            DrawText(text, bounds.x + offsetX, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));         
+            GuiDrawText(text, bounds.x + offsetX, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[DEFAULT_TEXT_COLOR_DISABLED]), guiAlpha));         
         } break;
         default: break;
     }
@@ -2483,7 +2759,7 @@ RAYGUIDEF void GuiDummyRec(Rectangle bounds, const char *text)
 {
     GuiControlState state = guiState;
     
-    int textWidth = MeasureText(text, style[DEFAULT_TEXT_SIZE]);
+    int textWidth = GuiTextWidth(text);
     int textHeight = style[DEFAULT_TEXT_SIZE];
     
     if (bounds.width < textWidth) bounds.width = textWidth;
@@ -2491,7 +2767,7 @@ RAYGUIDEF void GuiDummyRec(Rectangle bounds, const char *text)
 
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
@@ -2514,14 +2790,14 @@ RAYGUIDEF void GuiDummyRec(Rectangle bounds, const char *text)
         {
             DrawRectangleRec(bounds, Fade(GetColor(style[DEFAULT_BASE_COLOR_NORMAL]), guiAlpha));
             //DrawRectangleLines(bounds.x, bounds.y, bounds.width, bounds.height, Fade(GetColor(style[DEFAULT_BORDER_COLOR_NORMAL]), guiAlpha));
-            DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[BUTTON_TEXT_COLOR_NORMAL]), guiAlpha));
+            GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[BUTTON_TEXT_COLOR_NORMAL]), guiAlpha));
 
         } break;
         case DISABLED:
         {
             DrawRectangleRec(bounds, Fade(GetColor(style[DEFAULT_BASE_COLOR_DISABLED]), guiAlpha));
             //DrawRectangleLines(bounds.x, bounds.y, bounds.width, bounds.height, Fade(GetColor(style[DEFAULT_BORDER_COLOR_DISABLED]), guiAlpha));
-            DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[BUTTON_TEXT_COLOR_DISABLED]), guiAlpha));
+            GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[BUTTON_TEXT_COLOR_DISABLED]), guiAlpha));
         } break;
         default: break;
     }
@@ -2529,35 +2805,42 @@ RAYGUIDEF void GuiDummyRec(Rectangle bounds, const char *text)
 }
 
 // List Element control, returns element state
-static bool GuiListElement(Rectangle bounds, const char *text, bool active)
+static bool GuiListElement(Rectangle bounds, const char *text, bool active, bool editMode)
 {
-    #define GUILISTELEMENT_PADDING          2
-    #define GUILISTELEMENT_BORDER_WIDTH     1
+    #define LISTELEMENT_PADDING          2
+    #define LISTELEMENT_BORDER_WIDTH     1
     
     GuiControlState state = guiState;
     
-    int textWidth = MeasureText(text, style[DEFAULT_TEXT_SIZE]);
+    int textWidth = GuiTextWidth(text);
     int textHeight = style[DEFAULT_TEXT_SIZE];
     
-    if (bounds.width < textWidth) bounds.width = textWidth + GUILISTELEMENT_PADDING*2;
-    if (bounds.height < textHeight) bounds.height = textHeight;
+    if (!guiLocked && editMode) state = NORMAL;
     
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
+        if (bounds.width < textWidth)
+        {
+            // TODO: Remove character if they dont fit inside bounds. We have the same problem with others GUIs.
+        }
+        
+        
+        //if (bounds.width < textWidth) bounds.width = textWidth + LISTELEMENT_PADDING*2;
+       // if (bounds.height < textHeight) bounds.height = textHeight;
+    
         Vector2 mousePoint = GetMousePosition();
 
-        // Check toggle button state
         if (CheckCollisionPointRec(mousePoint, bounds))
         {
-            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) state = PRESSED;
-            else if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+            if (!active)
             {
-                state = NORMAL;
-                active = !active;
+                if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) state = PRESSED;
+                else state = FOCUSED;
             }
-            else state = FOCUSED;
+                       
+            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) active = !active;
         }
     }
     //--------------------------------------------------------------------
@@ -2571,29 +2854,36 @@ static bool GuiListElement(Rectangle bounds, const char *text, bool active)
             if (active)
             {
                 DrawRectangle(bounds.x, bounds.y, bounds.width, bounds.height, Fade(GetColor(style[LISTVIEW_BASE_COLOR_PRESSED]), guiAlpha));
-                DrawRectangleLinesEx(bounds, GUILISTELEMENT_BORDER_WIDTH, Fade(GetColor(style[LISTVIEW_BORDER_COLOR_PRESSED]), guiAlpha));
-                DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[LISTVIEW_TEXT_COLOR_PRESSED]), guiAlpha));
+                DrawRectangleLinesEx(bounds, LISTELEMENT_BORDER_WIDTH, Fade(GetColor(style[LISTVIEW_BORDER_COLOR_PRESSED]), guiAlpha));
+                GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[LISTVIEW_TEXT_COLOR_PRESSED]), guiAlpha));
             }
             else
             {
-                DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[LISTVIEW_TEXT_COLOR_NORMAL]), guiAlpha));
+                GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[LISTVIEW_TEXT_COLOR_NORMAL]), guiAlpha));
             }
         } break;
         case FOCUSED:
         {
             DrawRectangle(bounds.x, bounds.y, bounds.width, bounds.height, Fade(GetColor(style[LISTVIEW_BASE_COLOR_FOCUSED]), guiAlpha));
-            DrawRectangleLinesEx(bounds, GUILISTELEMENT_BORDER_WIDTH, Fade(GetColor(style[LISTVIEW_BORDER_COLOR_FOCUSED]), guiAlpha));
-            DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[LISTVIEW_TEXT_COLOR_FOCUSED]), guiAlpha));
+            DrawRectangleLinesEx(bounds, LISTELEMENT_BORDER_WIDTH, Fade(GetColor(style[LISTVIEW_BORDER_COLOR_FOCUSED]), guiAlpha));
+            GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[LISTVIEW_TEXT_COLOR_FOCUSED]), guiAlpha));
         } break;
         case PRESSED:
         {
             DrawRectangle(bounds.x, bounds.y, bounds.width, bounds.height, Fade(GetColor(style[LISTVIEW_BASE_COLOR_PRESSED]), guiAlpha));
-            DrawRectangleLinesEx(bounds, GUILISTELEMENT_BORDER_WIDTH, Fade(GetColor(style[LISTVIEW_BORDER_COLOR_PRESSED]), guiAlpha));
-            DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[LISTVIEW_TEXT_COLOR_PRESSED]), guiAlpha));
+            DrawRectangleLinesEx(bounds, LISTELEMENT_BORDER_WIDTH, Fade(GetColor(style[LISTVIEW_BORDER_COLOR_PRESSED]), guiAlpha));
+            GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[LISTVIEW_TEXT_COLOR_PRESSED]), guiAlpha));
         } break;
         case DISABLED:
         {
-            DrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2, style[DEFAULT_TEXT_SIZE], Fade(GetColor(style[LISTVIEW_TEXT_COLOR_DISABLED]), guiAlpha));
+            if (active)
+            {
+                DrawRectangle(bounds.x, bounds.y, bounds.width, bounds.height, Fade(GetColor(style[LISTVIEW_BASE_COLOR_DISABLED]), guiAlpha));
+                DrawRectangleLinesEx(bounds, LISTELEMENT_BORDER_WIDTH, Fade(GetColor(style[LISTVIEW_BORDER_COLOR_NORMAL]), guiAlpha));
+                GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[LISTVIEW_TEXT_COLOR_NORMAL]), guiAlpha));
+
+            }
+            else GuiDrawText(text, bounds.x + bounds.width/2 - textWidth/2, bounds.y + bounds.height/2 - textHeight/2, Fade(GetColor(style[LISTVIEW_TEXT_COLOR_DISABLED]), guiAlpha));
         } break;
         default: break;
     }
@@ -2603,124 +2893,262 @@ static bool GuiListElement(Rectangle bounds, const char *text, bool active)
 }
 
 // List View control, returns selected list element index  // int *startIndex)
-RAYGUIDEF int GuiListView(Rectangle bounds, const char **text, int count, int active)
+RAYGUIDEF bool GuiListView(Rectangle bounds, const char **text, int count, int*scrollIndex, int *active, bool editMode)
+{    
+    int focusDefault = 0;
+    return GuiListViewEx(bounds, text, NULL, count, scrollIndex, active, &focusDefault, editMode);
+}
+
+RAYGUIDEF bool GuiListViewEx(Rectangle bounds, const char **text, int *enabledElements, int count, int *scrollIndex, int *active, int*focus, bool editMode)
 {
     #define LISTVIEW_LINE_THICK       1
     
+    bool usingEnableList = false;    
+    if (enabledElements != NULL) usingEnableList = true;
+
+    int focusElement = -1;    
+    
     GuiControlState state = guiState;
     
-    static int startIndex = 0;
-    int endIndex = count;
-
+    bool pressed = false;
+    
+    int startIndex = *scrollIndex;    
+    bool useScrollBar = true;
+    bool pressedKey = false;
+    
+    int visibleElements = bounds.height/(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]);
+    if ((startIndex < 0) || (startIndex > count - visibleElements)) startIndex = 0;
+    int endIndex = startIndex + visibleElements;    
+    
+    int auxActive = *active;
+    
+    float barHeight = bounds.height;
+    float minBarHeight = 10;
+    float barPosY = 0; 
+    
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+
+    // All the elements fit inside ListView and dont need scrollbar.
+    if (visibleElements >= count) 
     {
-        for(int i = 0; i < count; i++)
-        {
-            int textWidth = MeasureText(text[i], style[DEFAULT_TEXT_SIZE]);
-            if (bounds.width - style[LISTVIEW_BAR_WIDTH] - 2*style[LISTVIEW_ELEMENTS_PADDING] - LISTVIEW_LINE_THICK < textWidth)
-            {
-                 bounds.width = textWidth + style[LISTVIEW_BAR_WIDTH] + 2*style[LISTVIEW_ELEMENTS_PADDING] + LISTVIEW_LINE_THICK;
-            }               
-       }
-      
+        useScrollBar = false;
+        startIndex = 0;
+        endIndex = count;
+    }
+    
+    // Calculate position X and width to draw each element. 
+    int posX = bounds.x + style[LISTVIEW_BAR_WIDTH]  + style[LISTVIEW_ELEMENTS_PADDING];
+    int elementWidth = bounds.width - style[LISTVIEW_BAR_WIDTH] - 2*style[LISTVIEW_ELEMENTS_PADDING] - LISTVIEW_LINE_THICK;
+    if (!useScrollBar)
+    {
+        posX = bounds.x + style[LISTVIEW_ELEMENTS_PADDING];
+        elementWidth = bounds.width - 2*style[LISTVIEW_ELEMENTS_PADDING] - LISTVIEW_LINE_THICK; 
+    }
+    
+    if ((state != DISABLED) && !guiLocked) // && !guiLocked
+    {
         Vector2 mousePoint = GetMousePosition();
         
-        endIndex = bounds.height/(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]);
-        
-        if (endIndex < count)
+        if (editMode)
         {
-            startIndex -= GetMouseWheelMove();
-            if (startIndex < 0) startIndex = 0;
-
-            endIndex += startIndex;
+            state = PRESSED;            
             
-            if (startIndex > (count - (endIndex - startIndex)))
+            // Change active with keys
+            if (IsKeyPressed(KEY_UP))
             {
-                startIndex = count - (endIndex - startIndex);
+                if (auxActive > 0) 
+                {
+                    auxActive--;
+                    if ((useScrollBar) && (auxActive < startIndex)) startIndex--;
+                }
+                pressedKey = true;
+            }
+            else if (IsKeyPressed(KEY_DOWN))
+            {
+                if (auxActive < count - 1) 
+                {
+                    auxActive++;
+                    if ((useScrollBar) && (auxActive >= endIndex)) startIndex++;                     
+                }
+                pressedKey = true;
+            }   
+            
+            if (useScrollBar && CheckCollisionPointRec(mousePoint, bounds))
+            {
+                endIndex = startIndex + visibleElements;  
+                int wheel = GetMouseWheelMove();
+            
+                if (wheel < 0 && endIndex < count) startIndex -= wheel;
+                else if (wheel > 0 && startIndex > 0)  startIndex -= wheel;
+                
+                if (pressedKey)
+                {
+                    pressedKey = false;
+                    if ((auxActive < startIndex) || (auxActive  >= endIndex)) startIndex = auxActive;
+                } 
+                
+                if (startIndex < 0) startIndex = 0;
+                else if (startIndex > (count - (endIndex - startIndex)))
+                {
+                    startIndex = count - (endIndex - startIndex);
+                }
+                
+                endIndex = startIndex + visibleElements;  
+                if (endIndex > count) endIndex = count; 
+            }
+        }                    
+        // ------------------------------------------------------------------------------------       
+        
+        // Note: Changing editMode
+        if (!editMode)
+        {            
+            if (CheckCollisionPointRec(mousePoint, bounds))
+            {
+                state = FOCUSED;
+                if (IsMouseButtonPressed(0)) pressed = true; 
+                
+                int wheel = GetMouseWheelMove();
+                if (wheel) 
+                {
+                    startIndex -= wheel;
+                    if (startIndex < 0) startIndex = 0;
+                    else if (startIndex > (count - (endIndex - startIndex)))
+                    {
+                        startIndex = count - (endIndex - startIndex);
+                    }
+                    pressed = true;
+                }
             }
         }
-        
-        if (endIndex > count) endIndex = count;
-        
-        if (count*style[LISTVIEW_ELEMENTS_HEIGHT] <= bounds.height) startIndex = 0;
-        
-        if (CheckCollisionPointRec(mousePoint, bounds))
+        else
         {
-            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) state = PRESSED;
-            else if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) 
+            if (!CheckCollisionPointRec(mousePoint, bounds))
             {
-                //active += 1;
-                //if (active >= count) active = 0;
+                if (IsMouseButtonPressed(0) || GetMouseWheelMove() != 0) pressed = true;
             }
-            else state = FOCUSED;
         }
         
-        //(maxIndexCount + indexOffset) > count) ? count : (maxIndexCount + indexOffset)
-        //if (maxIndexCount + indexOffset) > count) return count;
-        //else return (maxIndexCount + indexOffset);
+        // Get focused element
+        for (int i = startIndex; i < endIndex; i++)
+        {
+            if (CheckCollisionPointRec(mousePoint, (Rectangle){ posX, bounds.y + style[LISTVIEW_ELEMENTS_PADDING] + LISTVIEW_LINE_THICK + (i - startIndex)*(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]), elementWidth, style[LISTVIEW_ELEMENTS_HEIGHT] }))
+            {
+                focusElement = i;
+            }
+        }         
+    }
+    
+    // Calculamos el porcentaje de elementos visibles, y aplicamos el mismo porcentaje al tamaño de la barra original.
+    // Hay que tener en cuenta un valor mínimo para que la barra no sea de 1 px nunca y también que no sea mayor que la altura máxima. 
+    if (useScrollBar)
+    {
+        float percentVisible = (endIndex - startIndex)*100/count;
+        barHeight *= percentVisible/100;
+        
+        if (barHeight < minBarHeight) barHeight = minBarHeight;
+        else if (barHeight > bounds.height) barHeight = bounds.height;  
+        
+        // Posición  Y a la que dibujamos la barra.    
+        barPosY = bounds.y + startIndex*((bounds.height - barHeight)/(count - (endIndex - startIndex)));
     }
     //--------------------------------------------------------------------
 
     // Draw control
     //--------------------------------------------------------------------
-    for (int i = startIndex; i < endIndex; i++)
-    {
-        if (i == active) 
-        {
-            if (GuiListElement((Rectangle){ bounds.x + style[LISTVIEW_BAR_WIDTH]  + style[LISTVIEW_ELEMENTS_PADDING], bounds.y + style[LISTVIEW_ELEMENTS_PADDING] + LISTVIEW_LINE_THICK + (i - startIndex)*(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]), bounds.width - style[LISTVIEW_BAR_WIDTH] - 2*style[LISTVIEW_ELEMENTS_PADDING] - LISTVIEW_LINE_THICK, style[LISTVIEW_ELEMENTS_HEIGHT] }, text[i], true) == false) active = -1;
-        }
-        else
-        {
-            if (GuiListElement((Rectangle){ bounds.x + style[LISTVIEW_BAR_WIDTH]  + style[LISTVIEW_ELEMENTS_PADDING], bounds.y  + style[LISTVIEW_ELEMENTS_PADDING] + LISTVIEW_LINE_THICK + (i - startIndex)*(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]), bounds.width - style[LISTVIEW_BAR_WIDTH] - 2*style[LISTVIEW_ELEMENTS_PADDING] - LISTVIEW_LINE_THICK, style[LISTVIEW_ELEMENTS_HEIGHT] }, text[i], false) == true) active = i;
-        }
-    }
     
-    DrawRectangle(bounds.x, bounds.y, style[LISTVIEW_BAR_WIDTH], bounds.height, Fade(LIGHTGRAY, guiAlpha));
+    // Draw background
+    DrawRectangleRec(bounds, GetColor(style[DEFAULT_BACKGROUND_COLOR])); 
     
-    int barHeight = bounds.height - (count - (endIndex - startIndex))*style[LISTVIEW_ELEMENTS_HEIGHT];
+    // Draw scrollBar background
+    if (useScrollBar) DrawRectangle(bounds.x, bounds.y, style[LISTVIEW_BAR_WIDTH], bounds.height, Fade(GetColor(style[DEFAULT_BORDER_COLOR_DISABLED]), guiAlpha));   
     
-    // TODO: Review bar logic when bar size should be shorter than LISTVIEW_ELEMENT_HEIGHT
-    if (bounds.height < ((count - (endIndex - startIndex))*style[LISTVIEW_ELEMENTS_HEIGHT]))
-    {
-        float newHeight = (float)(endIndex - startIndex)*(float)(style[LISTVIEW_ELEMENTS_HEIGHT]/2)/(float)(endIndex - startIndex);
-        barHeight = (float)bounds.height - (float)((count - (endIndex - startIndex))*newHeight);
-    }
-    
+    // Draw ListView states    
     switch (state)
     {
         case NORMAL:
         {
-            if (barHeight >= bounds.height) DrawRectangle(bounds.x, startIndex*style[LISTVIEW_ELEMENTS_HEIGHT] + bounds.y, style[LISTVIEW_BAR_WIDTH], barHeight, Fade(GetColor(style[LISTVIEW_BASE_COLOR_DISABLED]), guiAlpha));
-            else DrawRectangle(bounds.x, startIndex*style[LISTVIEW_ELEMENTS_HEIGHT] + bounds.y, style[LISTVIEW_BAR_WIDTH], barHeight, Fade(GetColor(style[SLIDERBAR_BASE_COLOR_NORMAL]), guiAlpha));
-            
+            if (useScrollBar) DrawRectangle(bounds.x, barPosY, style[LISTVIEW_BAR_WIDTH], barHeight, Fade(GetColor(style[SLIDERBAR_BORDER_COLOR_NORMAL]), guiAlpha));
             DrawRectangleLinesEx(bounds, LISTVIEW_LINE_THICK, Fade(GetColor(style[LISTVIEW_BORDER_COLOR_NORMAL]), guiAlpha));
+            
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                if (usingEnableList && enabledElements[i] == 0) 
+                {
+                    GuiDisable();
+                    GuiListElement((Rectangle){ posX, bounds.y + style[LISTVIEW_ELEMENTS_PADDING] + LISTVIEW_LINE_THICK + (i - startIndex)*(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]), elementWidth, style[LISTVIEW_ELEMENTS_HEIGHT] }, text[i], false, false);
+                    GuiEnable();
+                }
+                else if (i == auxActive)
+                {
+                    GuiDisable();
+                    GuiListElement((Rectangle){ posX, bounds.y + style[LISTVIEW_ELEMENTS_PADDING] + LISTVIEW_LINE_THICK + (i - startIndex)*(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]), elementWidth, style[LISTVIEW_ELEMENTS_HEIGHT] }, text[i], true, false);
+                    GuiEnable();
+                }                    
+                else GuiListElement((Rectangle){ posX, bounds.y  + style[LISTVIEW_ELEMENTS_PADDING] + LISTVIEW_LINE_THICK + (i - startIndex)*(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]), elementWidth, style[LISTVIEW_ELEMENTS_HEIGHT] }, text[i], false, false);
+            }
         } break;
         case FOCUSED:
         {
-            if (barHeight >= bounds.height) DrawRectangle(bounds.x, startIndex*style[LISTVIEW_ELEMENTS_HEIGHT] + bounds.y, style[LISTVIEW_BAR_WIDTH], barHeight, Fade(GetColor(style[LISTVIEW_BASE_COLOR_DISABLED]), guiAlpha));
-            else DrawRectangle(bounds.x, startIndex*style[LISTVIEW_ELEMENTS_HEIGHT] + bounds.y, style[LISTVIEW_BAR_WIDTH], barHeight, Fade(GetColor(style[SLIDERBAR_BASE_COLOR_FOCUSED]), guiAlpha));
-            
+            if (useScrollBar) DrawRectangle(bounds.x, barPosY, style[LISTVIEW_BAR_WIDTH], barHeight, Fade(GetColor(style[SLIDERBAR_BASE_COLOR_FOCUSED]), guiAlpha));
             DrawRectangleLinesEx(bounds, LISTVIEW_LINE_THICK, Fade(GetColor(style[LISTVIEW_BORDER_COLOR_FOCUSED]), guiAlpha));
+            
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                if (usingEnableList && enabledElements[i] == 0) 
+                {
+                    GuiDisable();
+                    GuiListElement((Rectangle){ posX, bounds.y + style[LISTVIEW_ELEMENTS_PADDING] + LISTVIEW_LINE_THICK + (i - startIndex)*(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]), elementWidth, style[LISTVIEW_ELEMENTS_HEIGHT] }, text[i], false, false);
+                    GuiEnable();
+                }
+                else if (i == auxActive) GuiListElement((Rectangle){ posX, bounds.y + style[LISTVIEW_ELEMENTS_PADDING] + LISTVIEW_LINE_THICK + (i - startIndex)*(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]), elementWidth, style[LISTVIEW_ELEMENTS_HEIGHT] }, text[i], true, false);
+                else GuiListElement((Rectangle){ posX, bounds.y  + style[LISTVIEW_ELEMENTS_PADDING] + LISTVIEW_LINE_THICK + (i - startIndex)*(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]), elementWidth, style[LISTVIEW_ELEMENTS_HEIGHT] }, text[i], false, false);
+            }
         } break;
         case PRESSED:
         {
-            if (barHeight >= bounds.height) DrawRectangle(bounds.x, startIndex*style[LISTVIEW_ELEMENTS_HEIGHT] + bounds.y, style[LISTVIEW_BAR_WIDTH], barHeight, Fade(GetColor(style[LISTVIEW_BASE_COLOR_DISABLED]), guiAlpha));
-            else DrawRectangle(bounds.x, startIndex*style[LISTVIEW_ELEMENTS_HEIGHT] + bounds.y, style[LISTVIEW_BAR_WIDTH], barHeight, Fade(GetColor(style[SLIDERBAR_BASE_COLOR_PRESSED]), guiAlpha));
-            
+            if (useScrollBar) DrawRectangle(bounds.x, barPosY, style[LISTVIEW_BAR_WIDTH], barHeight, Fade(GetColor(style[SLIDERBAR_BASE_COLOR_PRESSED]), guiAlpha));
             DrawRectangleLinesEx(bounds, LISTVIEW_LINE_THICK, Fade(GetColor(style[LISTVIEW_BORDER_COLOR_PRESSED]), guiAlpha));
+            
+            // Draw GuiListElements
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                if (usingEnableList && enabledElements[i] == 0) 
+                {
+                    GuiDisable();
+                    GuiListElement((Rectangle){ posX, bounds.y + style[LISTVIEW_ELEMENTS_PADDING] + LISTVIEW_LINE_THICK + (i - startIndex)*(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]), elementWidth, style[LISTVIEW_ELEMENTS_HEIGHT] }, text[i], false, false);
+                    GuiEnable();
+                }
+                else if (i == auxActive && editMode) 
+                {
+                    if (GuiListElement((Rectangle){ posX, bounds.y + style[LISTVIEW_ELEMENTS_PADDING] + LISTVIEW_LINE_THICK + (i - startIndex)*(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]), elementWidth, style[LISTVIEW_ELEMENTS_HEIGHT] }, text[i], true, true) == false) auxActive = -1;
+                }
+                else
+                {
+                    if (GuiListElement((Rectangle){ posX, bounds.y  + style[LISTVIEW_ELEMENTS_PADDING] + LISTVIEW_LINE_THICK + (i - startIndex)*(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]), elementWidth, style[LISTVIEW_ELEMENTS_HEIGHT] }, text[i], false, true) == true) auxActive = i;
+                }
+            }
         } break;
         case DISABLED:
         {
-            DrawRectangle(bounds.x, startIndex*style[LISTVIEW_ELEMENTS_HEIGHT] + bounds.y, style[LISTVIEW_BAR_WIDTH], barHeight, Fade(GetColor(style[LISTVIEW_BASE_COLOR_DISABLED]), guiAlpha));
+            if (useScrollBar) DrawRectangle(bounds.x, barPosY, style[LISTVIEW_BAR_WIDTH], barHeight, Fade(GetColor(style[LISTVIEW_BASE_COLOR_DISABLED]), guiAlpha));
+            
             DrawRectangleLinesEx(bounds, LISTVIEW_LINE_THICK, Fade(GetColor(style[LISTVIEW_BORDER_COLOR_DISABLED]), guiAlpha));
+            
+            // Draw GuiListElements
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                if (i == auxActive) GuiListElement((Rectangle){ posX, bounds.y + style[LISTVIEW_ELEMENTS_PADDING] + LISTVIEW_LINE_THICK + (i - startIndex)*(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]), elementWidth, style[LISTVIEW_ELEMENTS_HEIGHT] }, text[i], true, false);
+                else GuiListElement((Rectangle){ posX, bounds.y  + style[LISTVIEW_ELEMENTS_PADDING] + LISTVIEW_LINE_THICK + (i - startIndex)*(style[LISTVIEW_ELEMENTS_HEIGHT] + style[LISTVIEW_ELEMENTS_PADDING]), elementWidth, style[LISTVIEW_ELEMENTS_HEIGHT] }, text[i], false, false);
+            }
         } break;
         default: break;
     }
     //--------------------------------------------------------------------
-    
-    return active;
+    *scrollIndex = startIndex;
+    *focus = focusElement;
+    *active = auxActive;
+    return pressed;
 }
 
 // Color Panel control
@@ -2745,7 +3173,7 @@ RAYGUIDEF Color GuiColorPanel(Rectangle bounds, Color color)
                       
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
@@ -2788,7 +3216,6 @@ RAYGUIDEF Color GuiColorPanel(Rectangle bounds, Color color)
         
         // Draw color picker: selector
         DrawRectangle(pickerSelector.x - GUICOLORPANEL_SELECTOR_THICK/2, pickerSelector.y - GUICOLORPANEL_SELECTOR_THICK/2, GUICOLORPANEL_SELECTOR_THICK, GUICOLORPANEL_SELECTOR_THICK, Fade(WHITE, guiAlpha));
-        
     }
     else 
     {
@@ -2824,7 +3251,7 @@ RAYGUIDEF float GuiColorBarAlpha(Rectangle bounds, float alpha)
 
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
@@ -2860,7 +3287,7 @@ RAYGUIDEF float GuiColorBarAlpha(Rectangle bounds, float alpha)
     
     switch (state)
     {
-        case NORMAL: 
+        case NORMAL:
         {
             DrawRectangleLines(bounds.x, bounds.y, bounds.width, bounds.height, Fade(GetColor(style[COLORPICKER_BORDER_COLOR_NORMAL]), guiAlpha));
             DrawRectangle(selector.x , selector.y, selector.width, selector.height, Fade(GetColor(style[COLORPICKER_BORDER_COLOR_PRESSED]), guiAlpha));
@@ -2899,7 +3326,7 @@ RAYGUIDEF float GuiColorBarHue(Rectangle bounds, float hue)
     
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
@@ -3015,12 +3442,12 @@ RAYGUIDEF bool GuiMessageBox(Rectangle bounds, const char *windowTitle, const ch
     
     bool clicked = false;
 
-    Vector2 textSize = MeasureTextEx(GetFontDefault(), windowTitle, style[DEFAULT_TEXT_SIZE], 1);
+    int textWidth = GuiTextWidth(windowTitle);
     int offsetX = 20;
 
-    if (bounds.width < textSize.x + offsetX + STATUSBAR_BUTTON) bounds.width = textSize.x + offsetX + STATUSBAR_BUTTON;
+    if (bounds.width < textWidth + offsetX + STATUSBAR_BUTTON) bounds.width = textWidth + offsetX + STATUSBAR_BUTTON;
     
-    textSize = MeasureTextEx(GetFontDefault(), message, style[DEFAULT_TEXT_SIZE], 1);
+    Vector2 textSize = MeasureTextEx(GetFontDefault(), message, style[DEFAULT_TEXT_SIZE], 1);
     if (bounds.width < textSize.x + offsetX) bounds.width = textSize.x + offsetX;
 
     if (bounds.height < (BUTTON_HEIGHT + BUTTON_PADDING*2 + STATUSBAR_HEIGHT + STATUSBAR_BUTTON + textSize.y)) bounds.height = (BUTTON_HEIGHT + BUTTON_PADDING*2 + STATUSBAR_HEIGHT + STATUSBAR_BUTTON + textSize.y);
@@ -3039,33 +3466,24 @@ RAYGUIDEF bool GuiMessageBox(Rectangle bounds, const char *windowTitle, const ch
 }
 
 // Grid control
-// NOTE: Returns mouse position on grid
-RAYGUIDEF Vector2 GuiGrid(Rectangle bounds, int spacing, int subdivs, bool snap)
+// NOTE: Returns mouse position on grid, selected cell
+RAYGUIDEF Vector2 GuiGrid(Rectangle bounds, int spacing, int subdivs)
 {
-    #define GRID_COLOR_ALPHA    0.15f        // Grid lines alpha amount
+    #define GRID_COLOR_ALPHA    0.15f           // Grid lines alpha amount
     
     GuiControlState state = guiState;
     Vector2 mousePoint = GetMousePosition();
+    Vector2 currentCell = { -1, -1 };
 
     // Update control
     //--------------------------------------------------------------------
-    if (state != DISABLED)
+    if ((state != DISABLED) && !guiLocked)
     {
         // Check mouse position if snap
-        if (snap)
+        if (CheckCollisionPointRec(mousePoint, bounds))
         {
-            // Mouse snap to grid points
-            // NOTE: Point changes when spacing/2 has been surpassed in X and Y
-            int offsetX = (int)mousePoint.x%spacing;
-            int offsetY = (int)mousePoint.y%spacing;
-            
-            if (offsetX >= spacing/2) mousePoint.x += (spacing - offsetX);
-            else mousePoint.x -= offsetX;
-            
-            if (offsetY >= spacing/2) mousePoint.y += (spacing - offsetY);
-            else mousePoint.y -= offsetY;
-            
-            SetMousePosition(mousePoint);
+            currentCell.x = (int)((mousePoint.x - bounds.x)/spacing);
+            currentCell.y = (int)((mousePoint.y - bounds.y)/spacing);
         }
     }
     //--------------------------------------------------------------------
@@ -3088,12 +3506,11 @@ RAYGUIDEF Vector2 GuiGrid(Rectangle bounds, int spacing, int subdivs, bool snap)
                 DrawRectangle(bounds.x, bounds.y + spacing*i, bounds.width, 1, ((i%subdivs) == 0) ? Fade(GetColor(style[DEFAULT_LINES_COLOR]), GRID_COLOR_ALPHA*4) : Fade(GetColor(style[DEFAULT_LINES_COLOR]), GRID_COLOR_ALPHA));
             }
             
-            if (snap) DrawRectangle(mousePoint.x - 1, mousePoint.y - 1, 2, 2, MAROON);
         } break;
         default: break;
     }
     
-    return mousePoint;
+    return currentCell;
 }
 
 #if defined(RAYGUI_STYLE_SAVE_LOAD)
@@ -3239,7 +3656,7 @@ RAYGUIDEF void GuiLoadStyle(const char *fileName)
 }
 
 // Load style from a color palette array (14 values required)
-RAYGUIDEF void GuiLoadStylePalette(int *palette)
+RAYGUIDEF void GuiLoadStylePalette(const int *palette)
 {
     // Load generic style color palette
     style[DEFAULT_BACKGROUND_COLOR] = palette[0];
