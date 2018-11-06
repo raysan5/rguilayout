@@ -2499,3 +2499,28 @@ static void GenerateCode(const char *fileName, GuiLayoutConfig config)
 
     fclose(ftool);
 }
+
+// New exportation option (self-contained modules):
+/*
+// Gui window structure declaration
+typedef struct {
+    Vector2 position;
+    bool active;
+    int width;
+    int height;    
+} GuiWindowAboutState;
+
+// Initialization
+GuiWindowAboutState windowAboutState = {
+    .position = (Vector2){ 0, 0 }; 
+    .active = false;
+    .width = 330;
+    .height = 380;
+};
+
+// Update & Draw
+GuiWindowAbout(&windowAboutState);
+
+// Function definition
+static void GuiWindowAbout(GuiWindowAboutState *state)
+*/
