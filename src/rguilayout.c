@@ -233,7 +233,8 @@ int main(int argc, char *argv[])
     bool controlGlobalPos = false;      // Control global position mode
     bool textEditMode = false;          // Control text edit mode (KEY_T)
     bool nameEditMode = false;          // Control name edit mode (KEY_N)
-
+    bool orderEditMode = false;         // Control order edit mode (KEY_LEFT_ALT)
+    
     int framesCounter = 0;
     int framesCounterSnap = 0;
     int selectedControl = -1;
@@ -536,7 +537,6 @@ int main(int argc, char *argv[])
         }
 
         // Toggle palette selector
-
         if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
         {
             paletteCounter = 0;
@@ -573,7 +573,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        // Exit textEditMode
+        // Exit textEditMode TODO: Move this
         if (textEditMode)
         {
             if (IsKeyPressed(KEY_ENTER))
@@ -590,7 +590,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        // Exit nameEditMode
+        // Exit nameEditMode TODO: Move this
         if (nameEditMode)
         {
             if (IsKeyPressed(KEY_ENTER))
@@ -607,6 +607,8 @@ int main(int argc, char *argv[])
             }
         }
 
+        if (IsKeyPressed(KEY_LEFT_ALT)) orderEditMode = true;
+        if (IsKeyReleased(KEY_LEFT_ALT)) orderEditMode = false;
         // ---------------------------------------------------------------------------------------------
 
         // CONTROLS
@@ -708,34 +710,47 @@ int main(int argc, char *argv[])
             }
             else //focusedControl != -1
             {
+                // Change controls layer order (position inside array)
+                if (orderEditMode)
+                {
+                    int newOrder = 0;
+                    if (IsKeyPressed(KEY_UP)) newOrder = 1;
+                    else if (IsKeyPressed(KEY_DOWN)) newOrder = -1;
+                    else newOrder -= GetMouseWheelMove();
+                    
+                    if ((newOrder > 0) && (focusedControl < layout.controlsCount - 1))
+                    {
+                        // Move control towards beginning of array
+                        GuiControl auxControl = layout.controls[focusedControl];
+                        layout.controls[focusedControl] = layout.controls[focusedControl + 1];
+                        layout.controls[focusedControl].id -= 1;
+                        layout.controls[focusedControl + 1] = auxControl;
+                        layout.controls[focusedControl + 1].id += 1;
+                        selectedControl = -1;
+                    }
+                    else if ((newOrder < 0) && (focusedControl > 0))
+                    {
+                        // Move control towards end of array
+                        GuiControl auxControl = layout.controls[focusedControl];
+                        layout.controls[focusedControl] = layout.controls[focusedControl - 1];
+                        layout.controls[focusedControl].id += 1;
+                        layout.controls[focusedControl - 1] = auxControl;
+                        layout.controls[focusedControl - 1].id -= 1;
+                        selectedControl = -1;
+                    }
+                }
+            }
+            
+            if (selectedControl != -1)
+            {
                 
             }
-        } 
+            else //selectedControl == -1
+            {
+                
+            }
+        }        
         
-        // Change controls layer order (position inside array)
-        if (IsKeyDown(KEY_LEFT_ALT) && (focusedControl != -1))
-        {
-            if ((IsKeyPressed(KEY_UP)) && (focusedControl < layout.controlsCount - 1))
-            {
-                // Move control towards beginning of array
-                GuiControl auxControl = layout.controls[focusedControl];
-                layout.controls[focusedControl] = layout.controls[focusedControl + 1];
-                layout.controls[focusedControl].id -= 1;
-                layout.controls[focusedControl + 1] = auxControl;
-                layout.controls[focusedControl + 1].id += 1;
-                selectedControl = -1;
-            }
-            else if ((IsKeyPressed(KEY_DOWN)) && (focusedControl > 0))
-            {
-                // Move control towards end of array
-                GuiControl auxControl = layout.controls[focusedControl];
-                layout.controls[focusedControl] = layout.controls[focusedControl - 1];
-                layout.controls[focusedControl].id += 1;
-                layout.controls[focusedControl - 1] = auxControl;
-                layout.controls[focusedControl - 1].id -= 1;
-                selectedControl = -1;
-            }
-        }
 
         // Controls mouse movement logic
         if (selectedControl != -1 && !textEditMode && !nameEditMode && !anchorEditMode)
@@ -873,7 +888,7 @@ int main(int argc, char *argv[])
         }
 
         // Updates the selected type with the mouse wheel
-        selectedType -= GetMouseWheelMove();
+        if (focusedControl == -1) selectedType -= GetMouseWheelMove();
 
         if (selectedType < WINDOWBOX) selectedType = WINDOWBOX;
         else if (selectedType > DUMMYREC) selectedType = DUMMYREC;
@@ -1684,7 +1699,7 @@ int main(int argc, char *argv[])
             if (tracemapEditMode) DrawText(FormatText("[%i, %i, %i, %i]", tracemapRec.x, tracemapRec.y, tracemapRec.width, tracemapRec.height), tracemapRec.x + 25, tracemapRec.y + 25, 20, MAROON);
 
             // Draw the id of all controls
-            if (IsKeyDown(KEY_LEFT_ALT))
+            if (orderEditMode)
             {
                 for (int i = layout.controlsCount - 1; i >= 0; i--) DrawText(FormatText("[%i]", layout.controls[i].id), layout.controls[i].rec.x + layout.controls[i].ap->x + layout.controls[i].rec.width, layout.controls[i].rec.y + layout.controls[i].ap->y - 10, 10, BLUE);
             }
