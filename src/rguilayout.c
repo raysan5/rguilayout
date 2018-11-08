@@ -743,7 +743,32 @@ int main(int argc, char *argv[])
             
             if (selectedControl != -1)
             {
+                // Unlinks the control selected from its current anchor
+                if (layout.controls[selectedControl].ap->id != 0 && IsKeyPressed(KEY_U))
+                {
+                    layout.controls[selectedControl].rec.x += layout.controls[selectedControl].ap->x;
+                    layout.controls[selectedControl].rec.y += layout.controls[selectedControl].ap->y;
+                    layout.controls[selectedControl].ap = &layout.anchors[0];
+                }
                 
+                // Delete selected control
+                if (IsKeyPressed(KEY_DELETE))
+                {
+                    for (int i = selectedControl; i < layout.controlsCount; i++)
+                    {
+                        layout.controls[i].type = layout.controls[i + 1].type;
+                        layout.controls[i].rec = layout.controls[i + 1].rec;
+                        memset(layout.controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
+                        memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
+                        strcpy(layout.controls[i].text, layout.controls[i + 1].text);
+                        strcpy(layout.controls[i].name, layout.controls[i + 1].name);
+                        layout.controls[i].ap = layout.controls[i + 1].ap;
+                    }
+
+                    layout.controlsCount--;
+                    focusedControl = -1;
+                    selectedControl = -1;
+                }
             }
             else //selectedControl == -1
             {
@@ -878,13 +903,7 @@ int main(int argc, char *argv[])
                 }
             }
 
-            // Unlinks the control selected from its current anchor
-            if (IsKeyPressed(KEY_U))
-            {
-                layout.controls[selectedControl].rec.x += layout.controls[selectedControl].ap->x;
-                layout.controls[selectedControl].rec.y += layout.controls[selectedControl].ap->y;
-                layout.controls[selectedControl].ap = &layout.anchors[0];
-            }
+            
         }
 
         // Updates the selected type with the mouse wheel
@@ -898,23 +917,7 @@ int main(int argc, char *argv[])
         if (focusedControl != -1)
         {
             // Delete focused control and shift array position
-            if (IsKeyPressed(KEY_DELETE))
-            {
-                for (int i = focusedControl; i < layout.controlsCount; i++)
-                {
-                    layout.controls[i].type = layout.controls[i + 1].type;
-                    layout.controls[i].rec = layout.controls[i + 1].rec;
-                    memset(layout.controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
-                    memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
-                    strcpy(layout.controls[i].text, layout.controls[i + 1].text);
-                    strcpy(layout.controls[i].name, layout.controls[i + 1].name);
-                    layout.controls[i].ap = layout.controls[i + 1].ap;
-                }
-
-                layout.controlsCount--;
-                focusedControl = -1;
-                selectedControl = -1;
-            }
+            
         }
 
         // Updates the default rectangle position
@@ -1222,6 +1225,19 @@ int main(int argc, char *argv[])
                             // Hide/Unhide anchors
                             if (IsKeyPressed(KEY_H)) layout.anchors[selectedAnchor].hidding = !layout.anchors[selectedAnchor].hidding;
                             
+                             // Unlinks controls from selected anchor
+                            if (IsKeyPressed(KEY_U))
+                            {
+                                for (int i = 0; i < layout.controlsCount; i++)
+                                {
+                                    if (layout.controls[i].ap->id == selectedAnchor)
+                                    {
+                                        layout.controls[i].rec.x += layout.controls[i].ap->x;
+                                        layout.controls[i].rec.y += layout.controls[i].ap->y;
+                                        layout.controls[i].ap = &layout.anchors[0];
+                                    }
+                                }
+                            }
                             // Delete anchor
                             if (IsKeyPressed(KEY_DELETE))
                             {
