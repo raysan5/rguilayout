@@ -614,97 +614,107 @@ int main(int argc, char *argv[])
         // CONTROLS
         // ---------------------------------------------------------------------------------------------
         // TODO: Review this condition...
-        if (!CheckCollisionPointRec(mouse, palettePanel) && !anchorEditMode && !closingWindowActive && !generateWindowActive && !resetWindowActive && !tracemapEditMode && !controlDrag)
+        if (!CheckCollisionPointRec(mouse, palettePanel) && !textEditMode && !nameEditMode && !closingWindowActive && !generateWindowActive && !resetWindowActive && !tracemapEditMode)
         {
             // Checks if mouse is over a control
-            focusedControl = -1;
-            for (int i = layout.controlsCount; i >= 0; i--)
+            if (!controlDrag)
             {
-                if (!layout.controls[i].ap->hidding)
+                focusedControl = -1;
+                for (int i = layout.controlsCount; i >= 0; i--)
                 {
-                    int layoutHeight = layout.controls[i].rec.height;
-                    if (layout.controls[i].type == WINDOWBOX) layoutHeight = 24;
-                    
-                    if (CheckCollisionPointRec(mouse, (Rectangle){ layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, layout.controls[i].rec.width, layoutHeight }))
+                    if (!layout.controls[i].ap->hidding)
                     {
-                        focusedControl = i;
-                        break;
+                        int layoutHeight = layout.controls[i].rec.height;
+                        if (layout.controls[i].type == WINDOWBOX) layoutHeight = 24;
+                        
+                        if (CheckCollisionPointRec(mouse, (Rectangle){ layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, layout.controls[i].rec.width, layoutHeight }))
+                        {
+                            focusedControl = i;
+                            break;
+                        }
                     }
-                }
+                } 
             }
             
             // (Des)select control
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) selectedControl = focusedControl;
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) 
+            {
+                selectedControl = focusedControl;
+                if (focusedAnchor != -1 || anchorLinkMode || anchorEditMode) selectedControl = -1;
+            }            
             
             if (focusedControl == -1)
             {
                 if (focusedAnchor == -1)
                 {
                     // Create new control
-                    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                    if (!anchorEditMode)
                     {
-                        // Config new control
-                        layout.controls[layout.controlsCount].id = layout.controlsCount;
-                        layout.controls[layout.controlsCount].type = selectedType;
-                        layout.controls[layout.controlsCount].rec = (Rectangle){  mouse.x - defaultRec[selectedType].width/2, mouse.y - defaultRec[selectedType].height/2, defaultRec[selectedType].width, defaultRec[selectedType].height };
-                        
-                        if ((layout.controls[layout.controlsCount].type == LABEL) || (layout.controls[layout.controlsCount].type == TEXTBOX) || (layout.controls[layout.controlsCount].type == BUTTON) || (layout.controls[layout.controlsCount].type == TOGGLE)
-                            || (layout.controls[layout.controlsCount].type == GROUPBOX) || (layout.controls[layout.controlsCount].type == WINDOWBOX) || (layout.controls[layout.controlsCount].type == STATUSBAR) || (layout.controls[layout.controlsCount].type == DUMMYREC)) strcpy(layout.controls[layout.controlsCount].text, "SAMPLE TEXT");
-                        
-                        strcpy(layout.controls[layout.controlsCount].name, FormatText("%s%03i", controlTypeNameLow[layout.controls[layout.controlsCount].type], layout.controlsCount));
-                        
-                        layout.controls[layout.controlsCount].ap = &layout.anchors[0];        // Default anchor point (0, 0)
-
-                        // If we create new control inside a windowbox, then anchor the new control to the windowbox anchor
-                        for (int i = layout.controlsCount; i >= 0; i--)
+                        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                         {
-                            if (layout.controls[i].type == WINDOWBOX)
-                            {
-                                if (CheckCollisionPointRec(mouse, (Rectangle){ layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }))
-                                {
-                                    layout.controls[layout.controlsCount].ap = layout.controls[i].ap;
-                                    break;
-                                }                                    
-                            }
-                        }
+                            // Config new control
+                            layout.controls[layout.controlsCount].id = layout.controlsCount;
+                            layout.controls[layout.controlsCount].type = selectedType;
+                            layout.controls[layout.controlsCount].rec = (Rectangle){  mouse.x - defaultRec[selectedType].width/2, mouse.y - defaultRec[selectedType].height/2, defaultRec[selectedType].width, defaultRec[selectedType].height };
+                            
+                            if ((layout.controls[layout.controlsCount].type == LABEL) || (layout.controls[layout.controlsCount].type == TEXTBOX) || (layout.controls[layout.controlsCount].type == BUTTON) || (layout.controls[layout.controlsCount].type == TOGGLE)
+                                || (layout.controls[layout.controlsCount].type == GROUPBOX) || (layout.controls[layout.controlsCount].type == WINDOWBOX) || (layout.controls[layout.controlsCount].type == STATUSBAR) || (layout.controls[layout.controlsCount].type == DUMMYREC)) strcpy(layout.controls[layout.controlsCount].text, "SAMPLE TEXT");
+                            
+                            strcpy(layout.controls[layout.controlsCount].name, FormatText("%s%03i", controlTypeNameLow[layout.controls[layout.controlsCount].type], layout.controlsCount));
+                            
+                            layout.controls[layout.controlsCount].ap = &layout.anchors[0];        // Default anchor point (0, 0)
 
-                        // Create anchor for windowbox control if we can
-                        if (layout.anchorsCount < MAX_ANCHOR_POINTS && layout.controls[layout.controlsCount].type == WINDOWBOX)
-                        {
-                            for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
+                            // If we create new control inside a windowbox, then anchor the new control to the windowbox anchor
+                            for (int i = layout.controlsCount; i >= 0; i--)
                             {
-                                if (!layout.anchors[i].enabled)
+                                if (layout.controls[i].type == WINDOWBOX)
                                 {
-                                    layout.anchors[i].x = layout.controls[layout.controlsCount].rec.x;
-                                    layout.anchors[i].y = layout.controls[layout.controlsCount].rec.y;
-
-                                    if (snapMode)
+                                    if (CheckCollisionPointRec(mouse, (Rectangle){ layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }))
                                     {
-                                        int offsetX = layout.anchors[i].x%GRID_LINE_SPACING;
-                                        int offsetY = layout.anchors[i].y%GRID_LINE_SPACING;
-
-                                        if (offsetX >= GRID_LINE_SPACING/2) layout.anchors[i].x += (GRID_LINE_SPACING - offsetX);
-                                        else layout.anchors[i].x -= offsetX;
-
-                                        if (offsetY >= GRID_LINE_SPACING/2) layout.anchors[i].y += (GRID_LINE_SPACING - offsetY);
-                                        else layout.anchors[i].y -= offsetY;
-                                    }
-
-                                    layout.controls[layout.controlsCount].rec.x = layout.anchors[i].x;
-                                    layout.controls[layout.controlsCount].rec.y = layout.anchors[i].y;
-
-                                    layout.anchors[i].enabled = true;
-                                    layout.controls[layout.controlsCount].ap = &layout.anchors[i];
-                                    
-                                    layout.anchorsCount++;
-                                    break;
+                                        layout.controls[layout.controlsCount].ap = layout.controls[i].ap;
+                                        break;
+                                    }                                    
                                 }
                             }
-                        }
 
-                        layout.controls[layout.controlsCount].rec.x -= layout.controls[layout.controlsCount].ap->x;
-                        layout.controls[layout.controlsCount].rec.y -= layout.controls[layout.controlsCount].ap->y;
-                        layout.controlsCount++;
+                            // Create anchor for windowbox control if we can
+                            if (layout.anchorsCount < MAX_ANCHOR_POINTS && layout.controls[layout.controlsCount].type == WINDOWBOX)
+                            {
+                                for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
+                                {
+                                    if (!layout.anchors[i].enabled)
+                                    {
+                                        layout.anchors[i].x = layout.controls[layout.controlsCount].rec.x;
+                                        layout.anchors[i].y = layout.controls[layout.controlsCount].rec.y;
+
+                                        if (snapMode)
+                                        {
+                                            int offsetX = layout.anchors[i].x%GRID_LINE_SPACING;
+                                            int offsetY = layout.anchors[i].y%GRID_LINE_SPACING;
+
+                                            if (offsetX >= GRID_LINE_SPACING/2) layout.anchors[i].x += (GRID_LINE_SPACING - offsetX);
+                                            else layout.anchors[i].x -= offsetX;
+
+                                            if (offsetY >= GRID_LINE_SPACING/2) layout.anchors[i].y += (GRID_LINE_SPACING - offsetY);
+                                            else layout.anchors[i].y -= offsetY;
+                                        }
+
+                                        layout.controls[layout.controlsCount].rec.x = layout.anchors[i].x;
+                                        layout.controls[layout.controlsCount].rec.y = layout.anchors[i].y;
+
+                                        layout.anchors[i].enabled = true;
+                                        layout.controls[layout.controlsCount].ap = &layout.anchors[i];
+                                        
+                                        layout.anchorsCount++;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            layout.controls[layout.controlsCount].rec.x -= layout.controls[layout.controlsCount].ap->x;
+                            layout.controls[layout.controlsCount].rec.y -= layout.controls[layout.controlsCount].ap->y;
+                            layout.controlsCount++;
+                        }
                     }
                 }
             }
@@ -743,31 +753,59 @@ int main(int argc, char *argv[])
             
             if (selectedControl != -1)
             {
-                // Unlinks the control selected from its current anchor
-                if (layout.controls[selectedControl].ap->id != 0 && IsKeyPressed(KEY_U))
+                if (!anchorLinkMode)
                 {
-                    layout.controls[selectedControl].rec.x += layout.controls[selectedControl].ap->x;
-                    layout.controls[selectedControl].rec.y += layout.controls[selectedControl].ap->y;
-                    layout.controls[selectedControl].ap = &layout.anchors[0];
-                }
-                
-                // Delete selected control
-                if (IsKeyPressed(KEY_DELETE))
-                {
-                    for (int i = selectedControl; i < layout.controlsCount; i++)
+                    if (controlDrag)
                     {
-                        layout.controls[i].type = layout.controls[i + 1].type;
-                        layout.controls[i].rec = layout.controls[i + 1].rec;
-                        memset(layout.controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
-                        memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
-                        strcpy(layout.controls[i].text, layout.controls[i + 1].text);
-                        strcpy(layout.controls[i].name, layout.controls[i + 1].name);
-                        layout.controls[i].ap = layout.controls[i + 1].ap;
+                        
                     }
+                    else
+                    {
+                        // Unlinks the control selected from its current anchor
+                        if (layout.controls[selectedControl].ap->id != 0 && IsKeyPressed(KEY_U))
+                        {
+                            layout.controls[selectedControl].rec.x += layout.controls[selectedControl].ap->x;
+                            layout.controls[selectedControl].rec.y += layout.controls[selectedControl].ap->y;
+                            layout.controls[selectedControl].ap = &layout.anchors[0];
+                        }
+                        
+                        // Delete selected control
+                        if (IsKeyPressed(KEY_DELETE))
+                        {
+                            for (int i = selectedControl; i < layout.controlsCount; i++)
+                            {
+                                layout.controls[i].type = layout.controls[i + 1].type;
+                                layout.controls[i].rec = layout.controls[i + 1].rec;
+                                memset(layout.controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
+                                memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
+                                strcpy(layout.controls[i].text, layout.controls[i + 1].text);
+                                strcpy(layout.controls[i].name, layout.controls[i + 1].name);
+                                layout.controls[i].ap = layout.controls[i + 1].ap;
+                            }
 
-                    layout.controlsCount--;
-                    focusedControl = -1;
-                    selectedControl = -1;
+                            layout.controlsCount--;
+                            focusedControl = -1;
+                            selectedControl = -1;
+                        }
+                        //if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) controlDrag = true;
+                        if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) anchorLinkMode = true;
+                    }
+                }
+                else // anchorLinkMode == true
+                {
+                    if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON))
+                    {
+                        anchorLinkMode = false;
+
+                        if (focusedAnchor != -1)
+                        {
+                            layout.controls[selectedControl].rec.x += layout.controls[selectedControl].ap->x;
+                            layout.controls[selectedControl].rec.y += layout.controls[selectedControl].ap->y;
+                            layout.controls[selectedControl].ap = &layout.anchors[focusedAnchor];
+                            layout.controls[selectedControl].rec.x -= layout.anchors[focusedAnchor].x;
+                            layout.controls[selectedControl].rec.y -= layout.anchors[focusedAnchor].y;
+                        }
+                    }
                 }
             }
             else //selectedControl == -1
@@ -914,11 +952,6 @@ int main(int argc, char *argv[])
 
         selectedTypeDraw = selectedType;
 
-        if (focusedControl != -1)
-        {
-            // Delete focused control and shift array position
-            
-        }
 
         // Updates the default rectangle position
         defaultRec[selectedType].x = mouse.x - defaultRec[selectedType].width/2;
@@ -1083,7 +1116,7 @@ int main(int argc, char *argv[])
         if (!generateWindowActive && !resetWindowActive && !closingWindowActive)
         {
             // Checks if mouse is over an anchor
-            if (!(anchorLinkMode || controlDrag))
+            if (!controlDrag)
             {
                 focusedAnchor = -1;
                 for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
@@ -1103,28 +1136,35 @@ int main(int argc, char *argv[])
             {
                 if (focusedAnchor == -1)
                 {
-                    // Create new anchor
-                    if (anchorEditMode && layout.anchorsCount < MAX_ANCHOR_POINTS)
+                    if (focusedControl == -1)
                     {
-                        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                        // Create new anchor
+                        if (anchorEditMode && layout.anchorsCount < MAX_ANCHOR_POINTS)
                         {
-                            layout.anchorsCount++;
-                            for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
+                            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                             {
-                                if (!layout.anchors[i].enabled)
+                                layout.anchorsCount++;
+                                for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
                                 {
-                                    layout.anchors[i].x = mouse.x;
-                                    layout.anchors[i].y = mouse.y;
-                                    layout.anchors[i].enabled = true;
-                                    focusedAnchor = i;
-                                    break;
+                                    if (!layout.anchors[i].enabled)
+                                    {
+                                        layout.anchors[i].x = mouse.x;
+                                        layout.anchors[i].y = mouse.y;
+                                        layout.anchors[i].enabled = true;
+                                        focusedAnchor = i;
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
                 }            
                 // (Des)select anchor
-                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) selectedAnchor = focusedAnchor;
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) 
+                {
+                    selectedAnchor = focusedAnchor;
+                    if (anchorLinkMode) selectedAnchor = -1;
+                }
 
                 // Actions with one anchor selected
                 if (selectedAnchor != -1)
@@ -1261,7 +1301,7 @@ int main(int argc, char *argv[])
                             }
                         }
                     }
-                    else
+                    else // anchorLinkMode == true
                     {
                         if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON))
                         {
@@ -1275,8 +1315,7 @@ int main(int argc, char *argv[])
                                 layout.controls[focusedControl].rec.x -= layout.anchors[selectedAnchor].x;
                                 layout.controls[focusedControl].rec.y -= layout.anchors[selectedAnchor].y;
                             }
-
-                            selectedAnchor = -1;
+                            //selectedAnchor = -1;
                         }
                     }
                 }
@@ -1564,10 +1603,7 @@ int main(int argc, char *argv[])
                         case DUMMYREC: GuiDummyRec((Rectangle){ layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text); break;
                         default: break;
                     }
-
-                    if ((layout.controls[i].ap->id == focusedAnchor) && (layout.controls[i].ap->id > 0)) DrawLine(layout.controls[i].ap->x, layout.controls[i].ap->y, layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, RED);
                 }
-                else if ((layout.controls[i].ap->id == focusedAnchor) && (layout.controls[i].ap->id > 0)) DrawLine(layout.controls[i].ap->x, layout.controls[i].ap->y, layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, BLUE);
             }
 
             // Draw the default rectangle of the control selected
@@ -1643,15 +1679,38 @@ int main(int argc, char *argv[])
                 if (focusedControl != -1) DrawRectangleLinesEx((Rectangle){ layout.controls[focusedControl].ap->x + layout.controls[focusedControl].rec.x, layout.controls[focusedControl].ap->y + layout.controls[focusedControl].rec.y, layout.controls[focusedControl].rec.width, layout.controls[focusedControl].rec.height }, 1, RED);
             }
 
-            // Draw anchor lines
-            if ((selectedControl != -1) && layout.controls[selectedControl].ap->id > 0 && !layout.controls[selectedControl].ap->hidding) DrawLine(layout.controls[selectedControl].ap->x, layout.controls[selectedControl].ap->y, layout.controls[selectedControl].ap->x + layout.controls[selectedControl].rec.x, layout.controls[selectedControl].ap->y + layout.controls[selectedControl].rec.y, RED);
-            else if ((selectedControl != -1) && layout.controls[selectedControl].ap->id > 0 && layout.controls[selectedControl].ap->hidding) DrawLine(layout.controls[selectedControl].ap->x, layout.controls[selectedControl].ap->y, layout.controls[selectedControl].ap->x + layout.controls[selectedControl].rec.x, layout.controls[selectedControl].ap->y + layout.controls[selectedControl].rec.y, BLUE);
-
-            if ((focusedControl != -1) && layout.controls[focusedControl].ap->id > 0 && !layout.controls[focusedControl].ap->hidding) DrawLine(layout.controls[focusedControl].ap->x, layout.controls[focusedControl].ap->y, layout.controls[focusedControl].ap->x + layout.controls[focusedControl].rec.x, layout.controls[focusedControl].ap->y + layout.controls[focusedControl].rec.y, RED);
-            else if ((focusedControl != -1) && layout.controls[focusedControl].ap->id > 0 && layout.controls[focusedControl].ap->hidding) DrawLine(layout.controls[focusedControl].ap->x, layout.controls[focusedControl].ap->y, layout.controls[focusedControl].ap->x + layout.controls[focusedControl].rec.x, layout.controls[focusedControl].ap->y + layout.controls[focusedControl].rec.y, BLUE);
-
+            // Draw anchor lines from one control
+            if (focusedControl != -1 && layout.controls[focusedControl].ap->id > 0) DrawLine(layout.controls[focusedControl].ap->x, layout.controls[focusedControl].ap->y, layout.controls[focusedControl].ap->x + layout.controls[focusedControl].rec.x, layout.controls[focusedControl].ap->y + layout.controls[focusedControl].rec.y, RED);
+            if (selectedControl != -1 && layout.controls[selectedControl].ap->id > 0) DrawLine(layout.controls[selectedControl].ap->x, layout.controls[selectedControl].ap->y, layout.controls[selectedControl].ap->x + layout.controls[selectedControl].rec.x, layout.controls[selectedControl].ap->y + layout.controls[selectedControl].rec.y, RED);
+            
+            // Draw all links from one anchor
+            if (focusedAnchor != -1)
+            {
+                 for (int i = 0; i < layout.controlsCount; i++)
+                {
+                    //if (!layout.controls[i].ap->hidding)
+                    if (layout.controls[i].ap->id == focusedAnchor)
+                    {
+                        if(!layout.controls[i].ap->hidding) DrawLine(layout.controls[i].ap->x, layout.controls[i].ap->y, layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, RED);
+                        else DrawLine(layout.controls[i].ap->x, layout.controls[i].ap->y, layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, GRAY);
+                    }
+                }
+            }
+            if (selectedAnchor != -1)
+            {
+                 for (int i = 0; i < layout.controlsCount; i++)
+                {
+                    //if (!layout.controls[i].ap->hidding)
+                    if (layout.controls[i].ap->id == selectedAnchor)
+                    {
+                        if(!layout.controls[i].ap->hidding) DrawLine(layout.controls[i].ap->x, layout.controls[i].ap->y, layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, RED);
+                        else DrawLine(layout.controls[i].ap->x, layout.controls[i].ap->y, layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, GRAY);
+                    }
+                }
+            }  
+            
             // Draw cursor (control mode or anchor mode)
-            if ((selectedControl == -1)  && (focusedAnchor == -1))
+            if ((focusedControl == -1)  && (focusedAnchor == -1))
             {
                 if (anchorEditMode)
                 {
@@ -1702,7 +1761,11 @@ int main(int argc, char *argv[])
             }
 
             // Draw anchor linking line
-            if (anchorLinkMode) DrawLine(layout.anchors[selectedAnchor].x, layout.anchors[selectedAnchor].y, mouse.x, mouse.y, BLACK);
+            if (anchorLinkMode) 
+            {
+                if (selectedAnchor != -1) DrawLine(layout.anchors[selectedAnchor].x, layout.anchors[selectedAnchor].y, mouse.x, mouse.y, RED);
+                else if (selectedControl != -1) DrawLine(layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x, layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y, mouse.x, mouse.y, RED);
+            }
 
             // Draw rectangle info
             if (selectedControl != -1)
