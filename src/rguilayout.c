@@ -533,11 +533,11 @@ int main(int argc, char *argv[])
         if (helpCounter <= PANELS_EASING_FRAMES)
         {
             helpCounter++;
-            helpPositionX = helpPositionX = (int)EaseCubicInOut(helpCounter, helpStartPositionX, helpDeltaPositionX, PANELS_EASING_FRAMES);
+            helpPositionX = (int)EaseCubicInOut(helpCounter, helpStartPositionX, helpDeltaPositionX, PANELS_EASING_FRAMES);
         }
 
         // Toggle palette selector
-        if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+        if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && (focusedAnchor == -1) && (focusedControl == -1))
         {
             paletteCounter = 0;
             paletteStartPositionX = palettePanel.x;
@@ -634,21 +634,14 @@ int main(int argc, char *argv[])
                         }
                     }
                 } 
-            }
-            
-            // (Des)select control
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) 
-            {
-                selectedControl = focusedControl;
-                if (focusedAnchor != -1 || anchorLinkMode || anchorEditMode) selectedControl = -1;
-            }            
+            } 
             
             if (focusedControl == -1)
             {
-                if (focusedAnchor == -1)
+                if (focusedAnchor == -1 && selectedAnchor == -1 && selectedControl == -1)
                 {
                     // Create new control
-                    if (!anchorEditMode)
+                    if (!anchorEditMode && !anchorLinkMode)
                     {
                         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                         {
@@ -750,6 +743,12 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+            // (Des)select control
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) 
+            {
+                selectedControl = focusedControl;
+                if (focusedAnchor != -1 || anchorLinkMode || anchorEditMode) selectedControl = -1;
+            } 
             
             if (selectedControl != -1)
             {
@@ -1089,8 +1088,6 @@ int main(int argc, char *argv[])
             else if (keyCount == MAX_CONTROL_NAME_LENGTH) framesCounter = 21;
         }
 
-
-
         // Turn on text edit mode
         if (IsKeyPressed(KEY_T) && !nameEditMode && (selectedControl != -1) && (!generateWindowActive) && (!anchorEditMode) &&
            ((layout.controls[selectedControl].type == LABEL) || (layout.controls[selectedControl].type == CHECKBOX) || (layout.controls[selectedControl].type == SLIDERBAR) || (layout.controls[selectedControl].type == SLIDER) || (layout.controls[selectedControl].type == TEXTBOX) || (layout.controls[selectedControl].type == BUTTON) || (layout.controls[selectedControl].type == TOGGLE) || (layout.controls[selectedControl].type == GROUPBOX) || (layout.controls[selectedControl].type == WINDOWBOX) || (layout.controls[selectedControl].type == STATUSBAR) || (layout.controls[selectedControl].type == DUMMYREC)))
@@ -1139,7 +1136,7 @@ int main(int argc, char *argv[])
                     if (focusedControl == -1)
                     {
                         // Create new anchor
-                        if (anchorEditMode && layout.anchorsCount < MAX_ANCHOR_POINTS)
+                        if (!anchorLinkMode && anchorEditMode && layout.anchorsCount < MAX_ANCHOR_POINTS)
                         {
                             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                             {
@@ -1151,7 +1148,7 @@ int main(int argc, char *argv[])
                                         layout.anchors[i].x = mouse.x;
                                         layout.anchors[i].y = mouse.y;
                                         layout.anchors[i].enabled = true;
-                                        focusedAnchor = i;
+                                        //focusedAnchor = i;
                                         break;
                                     }
                                 }
@@ -1321,6 +1318,8 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
+                    // TODO: this is for anchors and controls...move this condition
+                    if (anchorLinkMode && IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) anchorLinkMode = false;
                     framesCounterMovement = 0;
                 }
             }  
@@ -1607,7 +1606,7 @@ int main(int argc, char *argv[])
             }
 
             // Draw the default rectangle of the control selected
-            if ((focusedControl == -1) && (focusedAnchor == -1) && !anchorEditMode && !tracemapEditMode && !closingWindowActive && !generateWindowActive && !(CheckCollisionPointRec(mouse, palettePanel)))
+            if (!anchorLinkMode && (focusedControl == -1) && (focusedAnchor == -1) && (selectedAnchor == -1) && (selectedControl == -1) && !anchorEditMode && !tracemapEditMode && !closingWindowActive && !generateWindowActive && !(CheckCollisionPointRec(mouse, palettePanel)))
             {
                 GuiFade(0.5f);
                 switch (selectedTypeDraw)
