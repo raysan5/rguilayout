@@ -229,11 +229,13 @@ int main(int argc, char *argv[])
     bool exitWindow = false;            // Exit window flag
     bool snapMode = false;              // Snap mode flag (KEY_S)
     bool showGrid = true;               // Show grid flag (KEY_G)
-    bool controlDrag = false;           // Control drag mode
+    bool dragMode = false;       // Control drag mode
     bool controlGlobalPos = false;      // Control global position mode
     bool textEditMode = false;          // Control text edit mode (KEY_T)
     bool nameEditMode = false;          // Control name edit mode (KEY_N)
-    bool orderEditMode = false;         // Control order edit mode (KEY_LEFT_ALT)
+    bool orderEditMode = false;         // Control order edit mode (focusedControl != -1 + KEY_LEFT_ALT)
+    bool resizeMode = false;              // Control size mode (controlSelected != -1 + KEY_LEFT_ALT)
+    bool precisionMode = false;         // Control precision mode (KEY_LEFT_SHIFT)
     
     int framesCounter = 0;
     int framesCounterSnap = 0;
@@ -516,6 +518,19 @@ int main(int argc, char *argv[])
             // Enable anchor mode editing
             if (IsKeyPressed(KEY_A)) anchorEditMode = true;
             if (IsKeyReleased(KEY_A)) anchorEditMode = false;
+            
+            // Enable/disable order edit mode
+            if (IsKeyPressed(KEY_LEFT_ALT)) orderEditMode = true;
+            if (IsKeyReleased(KEY_LEFT_ALT))  orderEditMode = false;
+            
+            // Enable/diable precision mode
+            if (IsKeyDown(KEY_LEFT_SHIFT)) precisionMode = true;
+            if (IsKeyReleased(KEY_LEFT_SHIFT)) precisionMode = false;
+            
+            // Enable/disable size modifier mode
+            if (IsKeyDown(KEY_LEFT_CONTROL)) resizeMode = true;
+            if (IsKeyReleased(KEY_LEFT_CONTROL)) resizeMode = false;
+                
         }
 
         // Toggle help info
@@ -606,9 +621,6 @@ int main(int argc, char *argv[])
                 strcpy(layout.controls[selectedControl].name, prevControlName);
             }
         }
-
-        if (IsKeyPressed(KEY_LEFT_ALT)) orderEditMode = true;
-        if (IsKeyReleased(KEY_LEFT_ALT)) orderEditMode = false;
         // ---------------------------------------------------------------------------------------------
 
         // CONTROLS
@@ -617,7 +629,7 @@ int main(int argc, char *argv[])
         if (!CheckCollisionPointRec(mouse, palettePanel) && !textEditMode && !nameEditMode && !closingWindowActive && !generateWindowActive && !resetWindowActive && !tracemapEditMode)
         {
             // Checks if mouse is over a control
-            if (!controlDrag)
+            if (!dragMode)
             {
                 focusedControl = -1;
                 for (int i = layout.controlsCount; i >= 0; i--)
@@ -713,36 +725,40 @@ int main(int argc, char *argv[])
             }
             else //focusedControl != -1
             {
-                // Change controls layer order (position inside array)
-                if (orderEditMode)
+                if (selectedControl == -1)
                 {
-                    int newOrder = 0;
-                    if (IsKeyPressed(KEY_UP)) newOrder = 1;
-                    else if (IsKeyPressed(KEY_DOWN)) newOrder = -1;
-                    else newOrder -= GetMouseWheelMove();
-                    
-                    if ((newOrder > 0) && (focusedControl < layout.controlsCount - 1))
+                    // Change controls layer order (position inside array)
+                    if (orderEditMode)
                     {
-                        // Move control towards beginning of array
-                        GuiControl auxControl = layout.controls[focusedControl];
-                        layout.controls[focusedControl] = layout.controls[focusedControl + 1];
-                        layout.controls[focusedControl].id -= 1;
-                        layout.controls[focusedControl + 1] = auxControl;
-                        layout.controls[focusedControl + 1].id += 1;
-                        selectedControl = -1;
-                    }
-                    else if ((newOrder < 0) && (focusedControl > 0))
-                    {
-                        // Move control towards end of array
-                        GuiControl auxControl = layout.controls[focusedControl];
-                        layout.controls[focusedControl] = layout.controls[focusedControl - 1];
-                        layout.controls[focusedControl].id += 1;
-                        layout.controls[focusedControl - 1] = auxControl;
-                        layout.controls[focusedControl - 1].id -= 1;
-                        selectedControl = -1;
+                        int newOrder = 0;
+                        if (IsKeyPressed(KEY_UP)) newOrder = 1;
+                        else if (IsKeyPressed(KEY_DOWN)) newOrder = -1;
+                        else newOrder -= GetMouseWheelMove();
+                        
+                        if ((newOrder > 0) && (focusedControl < layout.controlsCount - 1))
+                        {
+                            // Move control towards beginning of array
+                            GuiControl auxControl = layout.controls[focusedControl];
+                            layout.controls[focusedControl] = layout.controls[focusedControl + 1];
+                            layout.controls[focusedControl].id -= 1;
+                            layout.controls[focusedControl + 1] = auxControl;
+                            layout.controls[focusedControl + 1].id += 1;
+                            selectedControl = -1;
+                        }
+                        else if ((newOrder < 0) && (focusedControl > 0))
+                        {
+                            // Move control towards end of array
+                            GuiControl auxControl = layout.controls[focusedControl];
+                            layout.controls[focusedControl] = layout.controls[focusedControl - 1];
+                            layout.controls[focusedControl].id += 1;
+                            layout.controls[focusedControl - 1] = auxControl;
+                            layout.controls[focusedControl - 1].id -= 1;
+                            selectedControl = -1;
+                        }                   
                     }
                 }
             }
+            
             // (Des)select control
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) 
             {
@@ -754,40 +770,135 @@ int main(int argc, char *argv[])
             {
                 if (!anchorLinkMode)
                 {
-                    if (controlDrag)
+                    if (dragMode)
                     {
+                        // Drag controls
                         
+                        layout.controls[selectedControl].rec.x = prevControlPosition.x + (mouse.x - panControlOffset.x);
+                        layout.controls[selectedControl].rec.y = prevControlPosition.y + (mouse.y - panControlOffset.y);
+                        
+                        int offsetX = (int)layout.controls[selectedControl].rec.x%movePixel;
+                        int offsetY = (int)layout.controls[selectedControl].rec.y%movePixel;
+                        
+                        if (offsetX >= movePixel/2) layout.controls[selectedControl].rec.x += (movePixel - offsetX);
+                        else layout.controls[selectedControl].rec.x -= offsetX;
+
+                        if (offsetY >= movePixel/2) layout.controls[selectedControl].rec.y += (movePixel - offsetY);
+                        else layout.controls[selectedControl].rec.y -= offsetY;
+                        
+                        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) dragMode = false;
                     }
                     else
                     {
-                        // Unlinks the control selected from its current anchor
-                        if (layout.controls[selectedControl].ap->id != 0 && IsKeyPressed(KEY_U))
+                        // Resize controls
+                        if (resizeMode)
                         {
-                            layout.controls[selectedControl].rec.x += layout.controls[selectedControl].ap->x;
-                            layout.controls[selectedControl].rec.y += layout.controls[selectedControl].ap->y;
-                            layout.controls[selectedControl].ap = &layout.anchors[0];
-                        }
-                        
-                        // Delete selected control
-                        if (IsKeyPressed(KEY_DELETE))
-                        {
-                            for (int i = selectedControl; i < layout.controlsCount; i++)
+                            if (precisionMode)
                             {
-                                layout.controls[i].type = layout.controls[i + 1].type;
-                                layout.controls[i].rec = layout.controls[i + 1].rec;
-                                memset(layout.controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
-                                memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
-                                strcpy(layout.controls[i].text, layout.controls[i + 1].text);
-                                strcpy(layout.controls[i].name, layout.controls[i + 1].name);
-                                layout.controls[i].ap = layout.controls[i + 1].ap;
-                            }
+                                if (IsKeyPressed(KEY_RIGHT)) layout.controls[selectedControl].rec.width += movePixel;
+                                else if (IsKeyPressed(KEY_LEFT)) layout.controls[selectedControl].rec.width -= movePixel;
 
-                            layout.controlsCount--;
-                            focusedControl = -1;
-                            selectedControl = -1;
+                                if (IsKeyPressed(KEY_UP)) layout.controls[selectedControl].rec.height -= movePixel;
+                                else if (IsKeyPressed(KEY_DOWN)) layout.controls[selectedControl].rec.height += movePixel;
+                                
+                                framesCounterMovement = 0;
+                            }       
+                            else
+                            {
+                                framesCounterMovement++;
+                                
+                                if ((framesCounterMovement%movePerFrame) == 0)
+                                {
+                                    if (IsKeyDown(KEY_RIGHT)) layout.controls[selectedControl].rec.width += movePixel;
+                                    else if (IsKeyDown(KEY_LEFT)) layout.controls[selectedControl].rec.width -= movePixel;
+
+                                    if (IsKeyDown(KEY_UP)) layout.controls[selectedControl].rec.height -= movePixel;
+                                    else if (IsKeyDown(KEY_DOWN)) layout.controls[selectedControl].rec.height += movePixel;
+                                    
+                                    framesCounterMovement = 0;
+                                }
+                            }
+                            
+                            // Snap size to grid
+                            if (IsKeyPressed(KEY_R))
+                            {
+                                int offsetX = (int)layout.controls[selectedControl].rec.width%GRID_LINE_SPACING;
+                                int offsetY = (int)layout.controls[selectedControl].rec.height%GRID_LINE_SPACING;
+
+                                if (offsetX >= GRID_LINE_SPACING/2) layout.controls[selectedControl].rec.width += (GRID_LINE_SPACING - offsetX);
+                                else layout.controls[selectedControl].rec.width -= offsetX;
+
+                                if (offsetY >= GRID_LINE_SPACING/2) layout.controls[selectedControl].rec.height += (GRID_LINE_SPACING - offsetY);
+                                else layout.controls[selectedControl].rec.height -= offsetY;
+                            }
                         }
-                        //if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) controlDrag = true;
-                        if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) anchorLinkMode = true;
+                        else
+                        {
+                            // Move control with arrows
+                            if (precisionMode)
+                            {                                
+                                if (IsKeyPressed(KEY_RIGHT)) layout.controls[selectedControl].rec.x += movePixel;
+                                else if (IsKeyPressed(KEY_LEFT)) layout.controls[selectedControl].rec.x -= movePixel;
+                                
+                                if (IsKeyPressed(KEY_UP)) layout.controls[selectedControl].rec.y -= movePixel;
+                                else if (IsKeyPressed(KEY_DOWN)) layout.controls[selectedControl].rec.y += movePixel;
+                                
+                                framesCounterMovement = 0;
+                            }
+                            else 
+                            {
+                                framesCounterMovement++;
+                                
+                                if ((framesCounterMovement%movePerFrame) == 0)
+                                {
+                                    if (IsKeyDown(KEY_RIGHT)) layout.controls[selectedControl].rec.x += movePixel;
+                                    else if (IsKeyDown(KEY_LEFT)) layout.controls[selectedControl].rec.x -= movePixel;
+                                    
+                                    if (IsKeyDown(KEY_UP)) layout.controls[selectedControl].rec.y -= movePixel;
+                                    else if (IsKeyDown(KEY_DOWN)) layout.controls[selectedControl].rec.y += movePixel;
+                                    
+                                    framesCounterMovement = 0;
+                                }
+                            } 
+                        
+                            // Unlinks the control selected from its current anchor
+                            if (layout.controls[selectedControl].ap->id != 0 && IsKeyPressed(KEY_U))
+                            {
+                                layout.controls[selectedControl].rec.x += layout.controls[selectedControl].ap->x;
+                                layout.controls[selectedControl].rec.y += layout.controls[selectedControl].ap->y;
+                                layout.controls[selectedControl].ap = &layout.anchors[0];
+                            }
+                            
+                            // Delete selected control
+                            if (IsKeyPressed(KEY_DELETE))
+                            {
+                                for (int i = selectedControl; i < layout.controlsCount; i++)
+                                {
+                                    layout.controls[i].type = layout.controls[i + 1].type;
+                                    layout.controls[i].rec = layout.controls[i + 1].rec;
+                                    memset(layout.controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
+                                    memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
+                                    strcpy(layout.controls[i].text, layout.controls[i + 1].text);
+                                    strcpy(layout.controls[i].name, layout.controls[i + 1].name);
+                                    layout.controls[i].ap = layout.controls[i + 1].ap;
+                                }
+
+                                layout.controlsCount--;
+                                focusedControl = -1;
+                                selectedControl = -1;
+                            }
+                            
+                            // Activate dragMode  mode
+                            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                            {
+                                panControlOffset = mouse;
+                                prevControlPosition = (Vector2){ layout.controls[selectedControl].rec.x, layout.controls[selectedControl].rec.y };
+                                dragMode = true;
+                            }
+                            
+                            // Activate anchor link mode
+                            if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) anchorLinkMode = true;
+                        }  
                     }
                 }
                 else // anchorLinkMode == true
@@ -812,136 +923,6 @@ int main(int argc, char *argv[])
                 
             }
         }        
-        
-
-        // Controls mouse movement logic
-        if (selectedControl != -1 && !textEditMode && !nameEditMode && !anchorEditMode)
-        {
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-            {
-                controlDrag = true;
-                panControlOffset = mouse;
-                prevControlPosition = (Vector2){ layout.controls[selectedControl].rec.x, layout.controls[selectedControl].rec.y };
-            }
-            else if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
-            {
-                controlDrag = false;
-            }
-
-            if (controlDrag)
-            {
-                layout.controls[selectedControl].rec.x = prevControlPosition.x + (mouse.x - panControlOffset.x);
-                layout.controls[selectedControl].rec.y = prevControlPosition.y + (mouse.y - panControlOffset.y);
-
-                // Snap to grid position and size
-                if (snapMode)
-                {
-                    // Snap rectangle position to closer snap point
-                    int offsetX = (int)layout.controls[selectedControl].rec.x%GRID_LINE_SPACING;
-                    int offsetY = (int)layout.controls[selectedControl].rec.y%GRID_LINE_SPACING;
-
-                    if (offsetX >= GRID_LINE_SPACING/2) layout.controls[selectedControl].rec.x += (GRID_LINE_SPACING - offsetX);
-                    else layout.controls[selectedControl].rec.x -= offsetX;
-
-                    if (offsetY >= GRID_LINE_SPACING/2) layout.controls[selectedControl].rec.y += (GRID_LINE_SPACING - offsetY);
-                    else layout.controls[selectedControl].rec.y -= offsetY;
-                }
-            }
-
-            if (!IsKeyDown(KEY_LEFT_ALT) && (selectedControl != -1))
-            {
-                if (snapMode)
-                {
-                    if (IsKeyDown(KEY_LEFT_CONTROL))
-                    {
-                        // Control modifier of width and height
-                        if (IsKeyDown(KEY_LEFT_SHIFT))
-                        {
-                            if (IsKeyPressed(KEY_RIGHT)) layout.controls[selectedControl].rec.width += GRID_LINE_SPACING;
-                            else if (IsKeyPressed(KEY_LEFT)) layout.controls[selectedControl].rec.width -= GRID_LINE_SPACING;
-
-                            if (IsKeyPressed(KEY_UP)) layout.controls[selectedControl].rec.height -= GRID_LINE_SPACING;
-                            else if (IsKeyPressed(KEY_DOWN)) layout.controls[selectedControl].rec.height += GRID_LINE_SPACING;
-                        }
-                        else
-                        {
-                            if (IsKeyDown(KEY_RIGHT) && ((framesCounterSnap%MOVEMENT_FRAME_SPEED) == 0)) layout.controls[selectedControl].rec.width += GRID_LINE_SPACING;
-                            else if (IsKeyDown(KEY_LEFT) && ((framesCounterSnap%MOVEMENT_FRAME_SPEED) == 0)) layout.controls[selectedControl].rec.width -= GRID_LINE_SPACING;
-
-                            if (IsKeyDown(KEY_UP) && ((framesCounterSnap%MOVEMENT_FRAME_SPEED) == 0)) layout.controls[selectedControl].rec.height -= GRID_LINE_SPACING;
-                            else if (IsKeyDown(KEY_DOWN) && ((framesCounterSnap%MOVEMENT_FRAME_SPEED) == 0)) layout.controls[selectedControl].rec.height += GRID_LINE_SPACING;
-                        }
-                    }
-                    else
-                    {
-                        // Control modifier of position
-                        if (IsKeyDown(KEY_LEFT_SHIFT))
-                        {
-                            if (IsKeyPressed(KEY_RIGHT)) layout.controls[selectedControl].rec.x += GRID_LINE_SPACING;
-                            else if (IsKeyPressed(KEY_LEFT)) layout.controls[selectedControl].rec.x -= GRID_LINE_SPACING;
-
-                            if (IsKeyPressed(KEY_UP)) layout.controls[selectedControl].rec.y -= GRID_LINE_SPACING;
-                            else if (IsKeyPressed(KEY_DOWN)) layout.controls[selectedControl].rec.y += GRID_LINE_SPACING;
-                        }
-                        else
-                        {
-                            if (IsKeyDown(KEY_RIGHT) && ((framesCounterSnap%MOVEMENT_FRAME_SPEED) == 0)) layout.controls[selectedControl].rec.x += GRID_LINE_SPACING;
-                            else if (IsKeyDown(KEY_LEFT) && ((framesCounterSnap%MOVEMENT_FRAME_SPEED) == 0)) layout.controls[selectedControl].rec.x -= GRID_LINE_SPACING;
-
-                            if (IsKeyDown(KEY_UP) && ((framesCounterSnap%MOVEMENT_FRAME_SPEED) == 0)) layout.controls[selectedControl].rec.y -= GRID_LINE_SPACING;
-                            else if (IsKeyDown(KEY_DOWN) && ((framesCounterSnap%MOVEMENT_FRAME_SPEED) == 0)) layout.controls[selectedControl].rec.y += GRID_LINE_SPACING;
-                        }
-
-                    }
-                }
-                else
-                {
-                    if (IsKeyDown(KEY_LEFT_CONTROL))
-                    {
-                        // Control modifier for a more precise sizing
-                        if (IsKeyDown(KEY_LEFT_SHIFT))
-                        {
-                            // Control modifier of position
-                            if (IsKeyPressed(KEY_RIGHT)) layout.controls[selectedControl].rec.width++;
-                            else if (IsKeyPressed(KEY_LEFT)) layout.controls[selectedControl].rec.width--;
-
-                            if (IsKeyPressed(KEY_UP)) layout.controls[selectedControl].rec.height--;
-                            else if (IsKeyPressed(KEY_DOWN)) layout.controls[selectedControl].rec.height++;
-                        }
-                        else
-                        {
-                            if (IsKeyDown(KEY_RIGHT)) layout.controls[selectedControl].rec.width++;
-                            else if (IsKeyDown(KEY_LEFT)) layout.controls[selectedControl].rec.width--;
-
-                            if (IsKeyDown(KEY_UP)) layout.controls[selectedControl].rec.height--;
-                            else if (IsKeyDown(KEY_DOWN)) layout.controls[selectedControl].rec.height++;
-                        }
-                    }
-                    else
-                    {
-                        if (IsKeyDown(KEY_LEFT_SHIFT))
-                        {
-                            // Control modifier for a more precise sizing
-                            if (IsKeyPressed(KEY_RIGHT)) layout.controls[selectedControl].rec.x++;
-                            else if (IsKeyPressed(KEY_LEFT)) layout.controls[selectedControl].rec.x--;
-
-                            if (IsKeyPressed(KEY_UP)) layout.controls[selectedControl].rec.y--;
-                            else if (IsKeyPressed(KEY_DOWN)) layout.controls[selectedControl].rec.y++;
-                        }
-                        else
-                        {
-                            if (IsKeyDown(KEY_RIGHT)) layout.controls[selectedControl].rec.x++;
-                            else if (IsKeyDown(KEY_LEFT)) layout.controls[selectedControl].rec.x--;
-
-                            if (IsKeyDown(KEY_UP)) layout.controls[selectedControl].rec.y--;
-                            else if (IsKeyDown(KEY_DOWN)) layout.controls[selectedControl].rec.y++;
-                        }
-                    }
-                }
-            }
-
-            
-        }
 
         // Updates the selected type with the mouse wheel
         if (focusedControl == -1) selectedType -= GetMouseWheelMove();
@@ -982,17 +963,17 @@ int main(int argc, char *argv[])
         }
 
         // Resize the controller with snap
-        if ((IsKeyDown(KEY_LEFT_CONTROL)) && (!textEditMode) && (!nameEditMode) && (IsKeyPressed(KEY_R)) && (selectedControl != -1))
-        {
-            int offsetX = (int)layout.controls[selectedControl].rec.width%GRID_LINE_SPACING;
-            int offsetY = (int)layout.controls[selectedControl].rec.height%GRID_LINE_SPACING;
+        // if ((resizeMode) && (!textEditMode) && (!nameEditMode) && (IsKeyPressed(KEY_R)) && (selectedControl != -1))
+        // {
+            // int offsetX = (int)layout.controls[selectedControl].rec.width%GRID_LINE_SPACING;
+            // int offsetY = (int)layout.controls[selectedControl].rec.height%GRID_LINE_SPACING;
 
-            if (offsetX >= GRID_LINE_SPACING/2) layout.controls[selectedControl].rec.width += (GRID_LINE_SPACING - offsetX);
-            else layout.controls[selectedControl].rec.width -= offsetX;
+            // if (offsetX >= GRID_LINE_SPACING/2) layout.controls[selectedControl].rec.width += (GRID_LINE_SPACING - offsetX);
+            // else layout.controls[selectedControl].rec.width -= offsetX;
 
-            if (offsetY >= GRID_LINE_SPACING/2) layout.controls[selectedControl].rec.height += (GRID_LINE_SPACING - offsetY);
-            else layout.controls[selectedControl].rec.height -= offsetY;
-        }
+            // if (offsetY >= GRID_LINE_SPACING/2) layout.controls[selectedControl].rec.height += (GRID_LINE_SPACING - offsetY);
+            // else layout.controls[selectedControl].rec.height -= offsetY;
+        // }
 
         // Check if control has text to edit
         if (textEditMode)
@@ -1104,8 +1085,7 @@ int main(int argc, char *argv[])
             nameEditMode = true;
             strcpy(prevControlName, layout.controls[selectedControl].name);
             storedControl = selectedControl;
-        }
-        
+        }        
         // -------------------------------------------------------------------------------------------------------------------
 
         // ANCHOR POINTS 
@@ -1113,7 +1093,7 @@ int main(int argc, char *argv[])
         if (!generateWindowActive && !resetWindowActive && !closingWindowActive)
         {
             // Checks if mouse is over an anchor
-            if (!controlDrag)
+            if (!dragMode)
             {
                 focusedAnchor = -1;
                 for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
@@ -1169,7 +1149,7 @@ int main(int argc, char *argv[])
                     // Link anchor
                     if (!anchorLinkMode)
                     {          
-                        if (controlDrag)
+                        if (dragMode)
                         {
                             layout.anchors[selectedAnchor].x = mouse.x;
                             layout.anchors[selectedAnchor].y = mouse.y;
@@ -1225,13 +1205,13 @@ int main(int argc, char *argv[])
                                     }                                    
                                     anchorMoveMode = false;
                                 }                                
-                                controlDrag = false;
+                                dragMode = false;
                             }
                         }
                         else
                         {
                             // Move anchor with arrows once
-                            if (IsKeyDown(KEY_LEFT_SHIFT))
+                            if (precisionMode)
                             {
                                 if (IsKeyPressed(KEY_RIGHT)) layout.anchors[selectedAnchor].x+= movePixel;
                                 else if (IsKeyPressed(KEY_LEFT)) layout.anchors[selectedAnchor].x-= movePixel;
@@ -1245,6 +1225,7 @@ int main(int argc, char *argv[])
                             else 
                             {
                                 framesCounterMovement++;
+                                
                                 if ((framesCounterMovement%movePerFrame) == 0)
                                 {
                                     if (IsKeyDown(KEY_RIGHT)) layout.anchors[selectedAnchor].x+= movePixel;
@@ -1252,10 +1233,12 @@ int main(int argc, char *argv[])
                                     
                                     if (IsKeyDown(KEY_UP)) layout.anchors[selectedAnchor].y-= movePixel;
                                     else if (IsKeyDown(KEY_DOWN)) layout.anchors[selectedAnchor].y+= movePixel;
+                                    
+                                    framesCounterMovement = 0;
                                 }
                             }
                             // Activate anchor position edit mode
-                            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) controlDrag = true;
+                            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) dragMode = true;
                             // Activate anchor link mode
                             else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) anchorLinkMode = true;
                             
@@ -1320,11 +1303,9 @@ int main(int argc, char *argv[])
                 {
                     // TODO: this is for anchors and controls...move this condition
                     if (anchorLinkMode && IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) anchorLinkMode = false;
-                    framesCounterMovement = 0;
                 }
             }  
-        }
-        
+        }        
         // -------------------------------------------------------------------------------------------------------------------
 
         // Checks the minimum size of the rec
@@ -1466,7 +1447,7 @@ int main(int argc, char *argv[])
                 // Change texture fade
                 if (IsKeyDown(KEY_LEFT_CONTROL))
                 {
-                    if (IsKeyDown(KEY_LEFT_SHIFT))
+                    if (precisionMode)
                     {
                         if (IsKeyPressed(KEY_LEFT)) tracemapRec.x--;
                         else if (IsKeyPressed(KEY_RIGHT)) tracemapRec.x++;
@@ -1777,7 +1758,7 @@ int main(int argc, char *argv[])
             if (tracemapEditMode) DrawText(FormatText("[%i, %i, %i, %i]", tracemapRec.x, tracemapRec.y, tracemapRec.width, tracemapRec.height), tracemapRec.x + 25, tracemapRec.y + 25, 20, MAROON);
 
             // Draw the id of all controls
-            if (orderEditMode)
+            if (selectedControl == -1 && orderEditMode)
             {
                 for (int i = layout.controlsCount - 1; i >= 0; i--) DrawText(FormatText("[%i]", layout.controls[i].id), layout.controls[i].rec.x + layout.controls[i].ap->x + layout.controls[i].rec.width, layout.controls[i].rec.y + layout.controls[i].ap->y - 10, 10, BLUE);
             }
