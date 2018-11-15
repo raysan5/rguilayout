@@ -71,6 +71,7 @@
 
 #define MAX_CONTROL_TEXT_LENGTH     64      // Maximum length of control text
 #define MAX_CONTROL_NAME_LENGTH     32      // Maximum length of control name (used on code generation)
+#define MAX_ANCHOR_NAME_LENGTH      32
 
 #define GRID_LINE_SPACING           20      // Grid line spacing in pixels
 
@@ -82,27 +83,27 @@
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
 typedef enum {
-    GUI_WINDOWBOX = 0,
-    GUI_GROUPBOX,
+    GUI_WINDOWBOX = 0,  //textEditMode
+    GUI_GROUPBOX,       //textEditMode
     GUI_LINE,
     GUI_PANEL,
-    GUI_LABEL,
-    GUI_BUTTON,
-    GUI_TOGGLE,
+    GUI_LABEL,          //textEditMode
+    GUI_BUTTON,         //textEditMode
+    GUI_TOGGLE,         //textEditMode
     GUI_TOGGLEGROUP,
-    GUI_CHECKBOX,
+    GUI_CHECKBOX,       //textEditMode
     GUI_COMBOBOX,
     GUI_DROPDOWNBOX,
     GUI_SPINNER,
     GUI_VALUEBOX,
-    GUI_TEXTBOX,
-    GUI_SLIDER,
-    GUI_SLIDERBAR,
+    GUI_TEXTBOX,        //textEditMode
+    GUI_SLIDER,         //textEditMode
+    GUI_SLIDERBAR,      //textEditMode
     GUI_PROGRESSBAR,
-    GUI_STATUSBAR,
+    GUI_STATUSBAR,      //textEditMode
     GUI_LISTVIEW,
     GUI_COLORPICKER,
-    GUI_DUMMYREC
+    GUI_DUMMYREC        //textEditMode
 } GuiControlType;
 
 // Anchor point type
@@ -112,6 +113,7 @@ typedef struct {
     int y;
     bool enabled;
     bool hidding;
+    unsigned char name[MAX_ANCHOR_NAME_LENGTH];
 } GuiAnchorPoint;
 
 // Gui control type
@@ -240,7 +242,7 @@ int main(int argc, char *argv[])
     bool precisionMode = false;         // Control precision mode (KEY_LEFT_SHIFT)
     
     int framesCounter = 0;
-    int framesCounterSnap = 0;
+    int framesCounterMovement = 0;
     
     // Controls variables
     int selectedControl = -1;
@@ -251,9 +253,8 @@ int main(int argc, char *argv[])
     Vector2 panControlOffset = { 0 };
     Vector2 prevControlPosition = { 0 };
     Color selectedControlColor = RED;
-    Color positionColor = MAROON;    
+    Color positionColor = MAROON;      
     
-    int framesCounterMovement = 0;
     int movePixel = 1;
     int movePerFrame = 1;
 
@@ -313,6 +314,8 @@ int main(int argc, char *argv[])
         layout.anchors[i].y = 0;
         layout.anchors[i].enabled = false;
         layout.anchors[i].hidding = false;
+        memset(layout.anchors[i].name, 0, MAX_ANCHOR_NAME_LENGTH);
+        strcpy(layout.anchors[i].name, "anchor name");
     }
 
     layout.anchors[0].enabled = true;      // Enable layout parent anchor (0, 0)
@@ -325,8 +328,8 @@ int main(int argc, char *argv[])
         layout.controls[i].type = 0;
         layout.controls[i].rec = (Rectangle){ 0, 0, 0, 0 };
         memset(layout.controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
-        memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
-        layout.controls[i].ap = &layout.anchors[0];  // By default, set parent anchor
+        memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);        
+        layout.controls[i].ap = &layout.anchors[0];  // By default, set parent anchor        
     }
 
     // Define palette variables
@@ -376,8 +379,8 @@ int main(int argc, char *argv[])
     // Undo text/name editing on cancel (KEY_ESC)
     int undoSelectedControl = -1;
     Rectangle undoLastRec;
-    char prevControlText[MAX_CONTROL_TEXT_LENGTH];
-    char prevControlName[MAX_CONTROL_NAME_LENGTH];
+    char prevText[MAX_CONTROL_TEXT_LENGTH];
+    char prevName[MAX_CONTROL_NAME_LENGTH];
 
     // Close layout window variables
     bool closingWindowActive = false;
@@ -443,13 +446,13 @@ int main(int argc, char *argv[])
                 strcpy(loadedFileName, droppedFileName);
                 SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
             }
-            else if (IsFileExtension(droppedFileName, ".rgs")) GuiLoadStyle(droppedFileName);
+            else if (IsFileExtension(droppedFileName, ".rgs")); //TODO GuiLoadStyle(droppedFileName);
             else if (IsFileExtension(droppedFileName, ".png"))
             {
                 if (loadedTexture.id > 0) UnloadTexture(loadedTexture);
                 loadedTexture = LoadTexture(droppedFileName);
 
-                if (loadedTexture.width == 64 && loadedTexture.height == 16) GuiLoadStylePaletteImage(droppedFileName);
+                if (loadedTexture.width == 64 && loadedTexture.height == 16); //TODO GuiLoadStylePaletteImage(droppedFileName);
                 else
                 {
                     if (tracemap.id > 0) UnloadTexture(tracemap);
@@ -479,8 +482,7 @@ int main(int argc, char *argv[])
         //----------------------------------------------------------------------------------
 
         // Basic program flow logic
-        //----------------------------------------------------------------------------------
-        framesCounterSnap++;
+        //----------------------------------------------------------------------------------       
         mouse = GetMousePosition();
         if (WindowShouldClose()) exitWindow = true;
 
@@ -591,40 +593,6 @@ int main(int argc, char *argv[])
                     break;
                 }
                 else paletteSelect = -1;
-            }
-        }
-
-        // Exit textEditMode TODO: Move this
-        if (textEditMode)
-        {
-            if (IsKeyPressed(KEY_ENTER))
-            {
-                textEditMode = false;
-                framesCounter = 0;
-            }
-            else if (IsKeyPressed(KEY_ESCAPE))
-            {
-                textEditMode = false;
-                framesCounter = 0;
-                memset(layout.controls[selectedControl].text, 0, MAX_CONTROL_TEXT_LENGTH);
-                strcpy(layout.controls[selectedControl].text, prevControlText);
-            }
-        }
-
-        // Exit nameEditMode TODO: Move this
-        if (nameEditMode)
-        {
-            if (IsKeyPressed(KEY_ENTER))
-            {
-                nameEditMode = false;
-                framesCounter = 0;
-            }
-            else if (IsKeyPressed(KEY_ESCAPE))
-            {
-                nameEditMode = false;
-                framesCounter = 0;
-                memset(layout.controls[selectedControl].name, 0, MAX_CONTROL_NAME_LENGTH);
-                strcpy(layout.controls[selectedControl].name, prevControlName);
             }
         }
         // ---------------------------------------------------------------------------------------------
@@ -1001,8 +969,8 @@ int main(int argc, char *argv[])
                                             selectedControl = -1;
                                         }
                                         
-                                        // Activate dragMode  mode
-                                        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                                        // Enable dragMode  mode
+                                        else if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                                         {
                                             panControlOffset = mouse;
                                             if (useGlobalPos && (layout.controls[selectedControl].ap->id != 0))
@@ -1013,8 +981,37 @@ int main(int argc, char *argv[])
                                             dragMode = true;
                                         }
                                         
-                                        // Activate anchor link mode
-                                        if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) anchorLinkMode = true;
+                                        // Enable anchor link mode
+                                        else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) anchorLinkMode = true;
+                                        
+                                        // Enable text edit mode
+                                        else if (IsKeyReleased(KEY_T))
+                                        {
+                                            if (layout.controls[selectedControl].type == GUI_LABEL ||
+                                                layout.controls[selectedControl].type == GUI_CHECKBOX ||
+                                                layout.controls[selectedControl].type == GUI_SLIDERBAR ||
+                                                layout.controls[selectedControl].type == GUI_SLIDER ||
+                                                layout.controls[selectedControl].type == GUI_TEXTBOX ||
+                                                layout.controls[selectedControl].type == GUI_BUTTON ||
+                                                layout.controls[selectedControl].type == GUI_TOGGLE || 
+                                                layout.controls[selectedControl].type == GUI_GROUPBOX ||
+                                                layout.controls[selectedControl].type == GUI_WINDOWBOX ||
+                                                layout.controls[selectedControl].type == GUI_STATUSBAR ||
+                                                layout.controls[selectedControl].type == GUI_DUMMYREC)
+                                            {           
+                                            
+                                                strcpy(prevText, layout.controls[selectedControl].text);                                                
+                                                textEditMode = true;
+                                            }
+                                            else printf("Can't edit text to this control\n");
+                                        }
+                                        
+                                        // Enable name edit mode
+                                        else if (IsKeyReleased(KEY_N))
+                                        {
+                                            nameEditMode = true;
+                                            strcpy(prevName, layout.controls[selectedControl].name);
+                                        }
                                     }  
                                 }
                             }
@@ -1042,230 +1039,98 @@ int main(int argc, char *argv[])
                     }
                 }
                 else
-                {
-                    
+                { 
+                    // Cancel text edit mode
+                    if (IsKeyPressed(KEY_ESCAPE))
+                    {
+                        textEditMode = false;
+                        memset(layout.controls[selectedControl].text, 0, MAX_CONTROL_TEXT_LENGTH);
+                        strcpy(layout.controls[selectedControl].text, prevText);
+                    }
                 }
             }
             else
             {
-                
+                // Cancel nameEditMode
+                if (IsKeyPressed(KEY_ESCAPE))
+                {
+                    nameEditMode = false;
+                    memset(layout.controls[selectedControl].name, 0, MAX_CONTROL_NAME_LENGTH);
+                    strcpy(layout.controls[selectedControl].name, prevName);
+                }            
             }
         }
-
-        // Check if control has text to edit
-        if (textEditMode)
-        {
-            // Locks the selectedControl for text editing
-            selectedControl = storedControl;
-            int key = GetKeyPressed();
-            int keyCount = strlen(layout.controls[selectedControl].text); // Keeps track of text length
-
-            // TODO: Move cursor properly on text edition
-            if (IsKeyPressed(KEY_LEFT)) textArrayPos--;
-            else if (IsKeyPressed(KEY_RIGHT)) textArrayPos++;
-
-            if (textArrayPos >= 0) textArrayPos = 0;
-            else if (textArrayPos <= keyCount*(-1)) textArrayPos = keyCount*(-1);
-
-            // Replaces characters with pressed keys or '\0' in case of backspace
-            // NOTE: Only allow keys in range [32..125]
-            if (((key >= 32) && (key <= 125)) && (keyCount < MAX_CONTROL_TEXT_LENGTH - 1))
-            {
-                for (int i = keyCount; i > keyCount + textArrayPos; i--)
-                {
-                    layout.controls[selectedControl].text[i] = layout.controls[selectedControl].text[i - 1];
-                }
-                layout.controls[selectedControl].text[keyCount + textArrayPos] = (unsigned char)key;
-            }
-
-            if ((textArrayPos == 0))
-            {
-                if ((keyCount > 0) && IsKeyPressed(KEY_BACKSPACE))
-                {
-                    layout.controls[selectedControl].text[keyCount - 1] = '\0';
-                    framesCounterSnap = 0;
-                    if (keyCount < 0) keyCount = 0;
-                }
-                else if ((keyCount > 0) && IsKeyDown(KEY_BACKSPACE))
-                {
-                    if ((framesCounterSnap > 60) && ((framesCounterSnap%4) == 0)) layout.controls[selectedControl].text[keyCount - 1] = '\0';
-                    if (keyCount < 0) keyCount = 0;
-                }
-            }
-            else if(textArrayPos*(-1) != keyCount)
-            {
-                if ((keyCount > 0) && IsKeyPressed(KEY_BACKSPACE))
-                {
-                    framesCounterSnap = 0;
-                    for (int i = -1; i <= -textArrayPos; i++)
-                    {
-                        layout.controls[selectedControl].text[keyCount + textArrayPos + i] = layout.controls[selectedControl].text[keyCount + textArrayPos + i + 1];
-                        if (i == -textArrayPos) layout.controls[selectedControl].text[keyCount - 1] = '\0';
-                    }
-                }
-                else if ((keyCount > 0) && IsKeyDown(KEY_BACKSPACE))
-                {
-                    if ((framesCounterSnap > 60) && ((framesCounterSnap%4) == 0))
-                    {
-                        for (int i = -1; i <= -textArrayPos; i++)
-                        {
-                            layout.controls[selectedControl].text[keyCount + textArrayPos + i] = layout.controls[selectedControl].text[keyCount + textArrayPos + i + 1];
-                            if (i == -textArrayPos) layout.controls[selectedControl].text[keyCount - 1] = '\0';
-                        }
-                    }
-                }
-            }
-
-            // Used to show the cursor('|') in textEditMode
-            if (keyCount < MAX_CONTROL_TEXT_LENGTH) framesCounter++;
-            else if (keyCount == MAX_CONTROL_TEXT_LENGTH) framesCounter = 21;
-        }
-
-        if ((nameEditMode))
-        {
-            // Locks the selectedControl for text editing
-            selectedControl = storedControl;
-            int key = GetKeyPressed();
-            int keyCount = strlen(layout.controls[selectedControl].name); // Keeps track of name length
-
-            // Replaces characters with pressed keys or '\0' in case of backspace
-            // NOTE: Only allow keys in range [48..57], [65..90] and [97..122]
-            if ((((key >= 48) && (key <= 57)) || ((key >= 65) && (key <= 90)) || ((key >= 97) && (key <= 122))) && (keyCount < MAX_CONTROL_NAME_LENGTH - 1))
-            {
-                layout.controls[selectedControl].name[keyCount] = (unsigned char)key;
-            }
-
-            if ((keyCount > 0) && IsKeyPressed(KEY_BACKSPACE))
-            {
-                layout.controls[selectedControl].name[keyCount - 1] = '\0';
-                if (keyCount < 0) keyCount = 0;
-            }
-
-            // Used to show the cursor('|') in textEditMode
-            if (keyCount < MAX_CONTROL_NAME_LENGTH) framesCounter++;
-            else if (keyCount == MAX_CONTROL_NAME_LENGTH) framesCounter = 21;
-        }
-
-        // Turn on text edit mode
-        if (IsKeyPressed(KEY_T) && !nameEditMode && (selectedControl != -1) && (!generateWindowActive) && (!anchorEditMode) &&
-           ((layout.controls[selectedControl].type == GUI_LABEL) || (layout.controls[selectedControl].type == GUI_CHECKBOX) || (layout.controls[selectedControl].type == GUI_SLIDERBAR) || (layout.controls[selectedControl].type == GUI_SLIDER) || (layout.controls[selectedControl].type == GUI_TEXTBOX) || (layout.controls[selectedControl].type == GUI_BUTTON) || (layout.controls[selectedControl].type == GUI_TOGGLE) || (layout.controls[selectedControl].type == GUI_GROUPBOX) || (layout.controls[selectedControl].type == GUI_WINDOWBOX) || (layout.controls[selectedControl].type == GUI_STATUSBAR) || (layout.controls[selectedControl].type == GUI_DUMMYREC)))
-        {
-            textEditMode = true;
-            textArrayPos = 0;
-            storedControl = selectedControl;
-            strcpy(prevControlText, layout.controls[selectedControl].text);
-        }
-
-        // Turn on name edit mode
-        if (IsKeyPressed(KEY_N) && (!IsKeyDown(KEY_LEFT_CONTROL)) && (!resetWindowActive) && !textEditMode && (selectedControl != -1) && (!generateWindowActive))
-        {
-            nameEditMode = true;
-            strcpy(prevControlName, layout.controls[selectedControl].name);
-            storedControl = selectedControl;
-        }        
+        
         // -------------------------------------------------------------------------------------------------------------------
        
         // ANCHOR POINTS 
         // -------------------------------------------------------------------------------------------------------------------
-        if (!generateWindowActive && !resetWindowActive && !closingWindowActive && !textEditMode && !nameEditMode)
+        if (!generateWindowActive && !resetWindowActive && !closingWindowActive && !textEditMode)
         {
-            // Checks if mouse is over an anchor
-            if (!dragMode)
+            if (!nameEditMode)
             {
-                focusedAnchor = -1;
-                for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
+                // Checks if mouse is over an anchor
+                if (!dragMode)
                 {
-                    if (layout.anchors[i].enabled)
+                    focusedAnchor = -1;
+                    for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
                     {
-                        if (CheckCollisionPointCircle(mouse, (Vector2){ layout.anchors[i].x, layout.anchors[i].y }, ANCHOR_RADIUS))
+                        if (layout.anchors[i].enabled)
                         {
-                            focusedAnchor = i;
-                        }
-                    }
-                }
-            }
-            
-            // Editing anchors
-            if (focusedAnchor == -1)
-            {
-                if (focusedControl == -1)
-                {
-                    // Create new anchor
-                    if (!anchorLinkMode && anchorEditMode && layout.anchorsCount < MAX_ANCHOR_POINTS)
-                    {
-                        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-                        {
-                            layout.anchorsCount++;
-                            for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
+                            if (CheckCollisionPointCircle(mouse, (Vector2){ layout.anchors[i].x, layout.anchors[i].y }, ANCHOR_RADIUS))
                             {
-                                if (!layout.anchors[i].enabled)
-                                {
-                                    layout.anchors[i].x = mouse.x;
-                                    layout.anchors[i].y = mouse.y;
-                                    layout.anchors[i].enabled = true;
-                                    //focusedAnchor = i;
-                                    break;
-                                }
+                                focusedAnchor = i;
                             }
                         }
                     }
                 }
-            }            
-            // (Des)select anchor
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) 
-            {
-                selectedAnchor = focusedAnchor;
-                if (anchorLinkMode) selectedAnchor = -1;
-            }
+                
+                // Editing anchors
+                if (focusedAnchor == -1)
+                {
+                    if (focusedControl == -1)
+                    {
+                        // Create new anchor
+                        if (!anchorLinkMode && anchorEditMode && layout.anchorsCount < MAX_ANCHOR_POINTS)
+                        {
+                            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                            {
+                                layout.anchorsCount++;
+                                for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
+                                {
+                                    if (!layout.anchors[i].enabled)
+                                    {
+                                        layout.anchors[i].x = mouse.x;
+                                        layout.anchors[i].y = mouse.y;
+                                        layout.anchors[i].enabled = true;
+                                        //focusedAnchor = i;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }            
+                // (Des)select anchor
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) 
+                {
+                    selectedAnchor = focusedAnchor;
+                    if (anchorLinkMode) selectedAnchor = -1;
+                }
 
-            // Actions with one anchor selected
-            if (selectedAnchor != -1)
-            {
-                // Link anchor
-                if (!anchorLinkMode)
-                {          
-                    if (dragMode)
-                    {
-                        layout.anchors[selectedAnchor].x = mouse.x;
-                        layout.anchors[selectedAnchor].y = mouse.y;
-                        
-                        // Move anchor without moving controls
-                        if (anchorMoveMode && !anchorEditMode)
+                // Actions with one anchor selected
+                if (selectedAnchor != -1)
+                {
+                    // Link anchor
+                    if (!anchorLinkMode)
+                    {          
+                        if (dragMode)
                         {
-                            for (int i = 0; i < layout.controlsCount; i++)
-                            {
-                                if (layout.controls[i].ap->id == 9) //auxAnchor ID
-                                {
-                                    layout.controls[i].rec.x += layout.controls[i].ap->x;
-                                    layout.controls[i].rec.y += layout.controls[i].ap->y;
-                                    layout.controls[i].ap = &layout.anchors[selectedAnchor];
-                                    layout.controls[i].rec.x -= layout.anchors[selectedAnchor].x;
-                                    layout.controls[i].rec.y -= layout.anchors[selectedAnchor].y;
-                                }
-                            }
-                            anchorMoveMode = false;
-                        }
-                        // Move anchor without moving controls
-                        if (!anchorMoveMode && anchorEditMode) 
-                        {
-                            anchorMoveMode = true;
+                            layout.anchors[selectedAnchor].x = mouse.x;
+                            layout.anchors[selectedAnchor].y = mouse.y;
                             
-                            for (int i = 0; i < layout.controlsCount; i++)
-                            {
-                                if (layout.controls[i].ap->id == selectedAnchor)
-                                {
-                                    layout.controls[i].rec.x += layout.controls[i].ap->x;
-                                    layout.controls[i].rec.y += layout.controls[i].ap->y;
-                                    layout.controls[i].ap = &auxAnchor;
-                                }
-                            }
-                        }
-                        
-                        // Exit anchor position edit mode
-                        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) 
-                        { 
-                            // If moving only the anchor, relink with controls
-                            if(anchorMoveMode)
+                            // Move anchor without moving controls
+                            if (anchorMoveMode && !anchorEditMode)
                             {
                                 for (int i = 0; i < layout.controlsCount; i++)
                                 {
@@ -1277,127 +1142,181 @@ int main(int argc, char *argv[])
                                         layout.controls[i].rec.x -= layout.anchors[selectedAnchor].x;
                                         layout.controls[i].rec.y -= layout.anchors[selectedAnchor].y;
                                     }
-                                }                                    
+                                }
                                 anchorMoveMode = false;
-                            }                                
-                            dragMode = false;
-                        }
-                    }
-                    else
-                    {
-                        int offsetX = (int)layout.anchors[selectedAnchor].x%movePixel;                            
-                        int offsetY = (int)layout.anchors[selectedAnchor].y%movePixel;
-                        // Move anchor with arrows once
-                        if (precisionMode)
-                        {
-                            if (IsKeyPressed(KEY_RIGHT)) layout.anchors[selectedAnchor].x+= (movePixel - offsetX);
-                            else if (IsKeyPressed(KEY_LEFT))
+                            }
+                            // Move anchor without moving controls
+                            if (!anchorMoveMode && anchorEditMode) 
                             {
-                                if (offsetX == 0) offsetX = movePixel;
-                                layout.anchors[selectedAnchor].x-= offsetX;
-                            }                            
-                            
-                            if (IsKeyPressed(KEY_DOWN)) layout.anchors[selectedAnchor].y+= (movePixel - offsetY);
-                            else if (IsKeyPressed(KEY_UP)) 
-                            {
-                                if (offsetY == 0) offsetY = movePixel;
-                                layout.anchors[selectedAnchor].y-= offsetY;
+                                anchorMoveMode = true;
+                                
+                                for (int i = 0; i < layout.controlsCount; i++)
+                                {
+                                    if (layout.controls[i].ap->id == selectedAnchor)
+                                    {
+                                        layout.controls[i].rec.x += layout.controls[i].ap->x;
+                                        layout.controls[i].rec.y += layout.controls[i].ap->y;
+                                        layout.controls[i].ap = &auxAnchor;
+                                    }
+                                }
                             }
                             
-                            framesCounterMovement = 0;
+                            // Exit anchor position edit mode
+                            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) 
+                            { 
+                                // If moving only the anchor, relink with controls
+                                if(anchorMoveMode)
+                                {
+                                    for (int i = 0; i < layout.controlsCount; i++)
+                                    {
+                                        if (layout.controls[i].ap->id == 9) //auxAnchor ID
+                                        {
+                                            layout.controls[i].rec.x += layout.controls[i].ap->x;
+                                            layout.controls[i].rec.y += layout.controls[i].ap->y;
+                                            layout.controls[i].ap = &layout.anchors[selectedAnchor];
+                                            layout.controls[i].rec.x -= layout.anchors[selectedAnchor].x;
+                                            layout.controls[i].rec.y -= layout.anchors[selectedAnchor].y;
+                                        }
+                                    }                                    
+                                    anchorMoveMode = false;
+                                }                                
+                                dragMode = false;
+                            }
                         }
-                        // Move anchor with arrows 
-                        else 
+                        else
                         {
-                            framesCounterMovement++;
-                            
-                            if ((framesCounterMovement%movePerFrame) == 0)
+                            int offsetX = (int)layout.anchors[selectedAnchor].x%movePixel;                            
+                            int offsetY = (int)layout.anchors[selectedAnchor].y%movePixel;
+                            // Move anchor with arrows once
+                            if (precisionMode)
                             {
-                                if (IsKeyDown(KEY_RIGHT)) layout.anchors[selectedAnchor].x += (movePixel - offsetX);
-                                else if (IsKeyDown(KEY_LEFT))
+                                if (IsKeyPressed(KEY_RIGHT)) layout.anchors[selectedAnchor].x+= (movePixel - offsetX);
+                                else if (IsKeyPressed(KEY_LEFT))
                                 {
                                     if (offsetX == 0) offsetX = movePixel;
-                                    layout.anchors[selectedAnchor].x -= offsetX;
-                                }   
+                                    layout.anchors[selectedAnchor].x-= offsetX;
+                                }                            
                                 
-                                
-                                if (IsKeyDown(KEY_DOWN)) layout.anchors[selectedAnchor].y +=(movePixel - offsetY);
-                                else if (IsKeyDown(KEY_UP))
+                                if (IsKeyPressed(KEY_DOWN)) layout.anchors[selectedAnchor].y+= (movePixel - offsetY);
+                                else if (IsKeyPressed(KEY_UP)) 
                                 {
                                     if (offsetY == 0) offsetY = movePixel;
-                                    layout.anchors[selectedAnchor].y -= offsetY;
+                                    layout.anchors[selectedAnchor].y-= offsetY;
                                 }
                                 
                                 framesCounterMovement = 0;
                             }
-                        }
-                        // Activate anchor position edit mode
-                        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) dragMode = true;
-                        // Activate anchor link mode
-                        else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) anchorLinkMode = true;
-                        
-                        // Hide/Unhide anchors
-                        if (IsKeyPressed(KEY_H)) layout.anchors[selectedAnchor].hidding = !layout.anchors[selectedAnchor].hidding;
-                        
-                         // Unlinks controls from selected anchor
-                        if (IsKeyPressed(KEY_U))
-                        {
-                            for (int i = 0; i < layout.controlsCount; i++)
+                            // Move anchor with arrows 
+                            else 
                             {
-                                if (layout.controls[i].ap->id == selectedAnchor)
+                                framesCounterMovement++;
+                                
+                                if ((framesCounterMovement%movePerFrame) == 0)
                                 {
-                                    layout.controls[i].rec.x += layout.controls[i].ap->x;
-                                    layout.controls[i].rec.y += layout.controls[i].ap->y;
-                                    layout.controls[i].ap = &layout.anchors[0];
+                                    if (IsKeyDown(KEY_RIGHT)) layout.anchors[selectedAnchor].x += (movePixel - offsetX);
+                                    else if (IsKeyDown(KEY_LEFT))
+                                    {
+                                        if (offsetX == 0) offsetX = movePixel;
+                                        layout.anchors[selectedAnchor].x -= offsetX;
+                                    }   
+                                    
+                                    
+                                    if (IsKeyDown(KEY_DOWN)) layout.anchors[selectedAnchor].y +=(movePixel - offsetY);
+                                    else if (IsKeyDown(KEY_UP))
+                                    {
+                                        if (offsetY == 0) offsetY = movePixel;
+                                        layout.anchors[selectedAnchor].y -= offsetY;
+                                    }
+                                    
+                                    framesCounterMovement = 0;
                                 }
                             }
-                        }
-                        // Delete anchor
-                        if (IsKeyPressed(KEY_DELETE))
-                        {
-                            for (int i = 0; i < layout.controlsCount; i++)
+                            // Activate anchor position edit mode
+                            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) dragMode = true;
+                            // Activate anchor link mode
+                            else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) anchorLinkMode = true;
+                            
+                            // Hide/Unhide anchors
+                            else if (IsKeyPressed(KEY_H)) layout.anchors[selectedAnchor].hidding = !layout.anchors[selectedAnchor].hidding;
+                            
+                             // Unlinks controls from selected anchor
+                            else if (IsKeyPressed(KEY_U))
                             {
-                                if (layout.controls[i].ap->id == selectedAnchor)
+                                for (int i = 0; i < layout.controlsCount; i++)
                                 {
-                                    layout.controls[i].rec.x += layout.controls[i].ap->x;
-                                    layout.controls[i].rec.y += layout.controls[i].ap->y;
-                                    layout.controls[i].ap = &layout.anchors[0];
+                                    if (layout.controls[i].ap->id == selectedAnchor)
+                                    {
+                                        layout.controls[i].rec.x += layout.controls[i].ap->x;
+                                        layout.controls[i].rec.y += layout.controls[i].ap->y;
+                                        layout.controls[i].ap = &layout.anchors[0];
+                                    }
                                 }
                             }
+                            // Delete anchor
+                            else if (IsKeyPressed(KEY_DELETE))
+                            {
+                                for (int i = 0; i < layout.controlsCount; i++)
+                                {
+                                    if (layout.controls[i].ap->id == selectedAnchor)
+                                    {
+                                        layout.controls[i].rec.x += layout.controls[i].ap->x;
+                                        layout.controls[i].rec.y += layout.controls[i].ap->y;
+                                        layout.controls[i].ap = &layout.anchors[0];
+                                    }
+                                }
+                                
+                                layout.anchors[selectedAnchor].x = 0;
+                                layout.anchors[selectedAnchor].y = 0;
+                                layout.anchors[selectedAnchor].enabled = false;
+                                layout.anchors[selectedAnchor].hidding = false;
+                                
+                                selectedAnchor = -1;
+                                focusedAnchor = -1;
+                            }
                             
-                            layout.anchors[selectedAnchor].x = 0;
-                            layout.anchors[selectedAnchor].y = 0;
-                            layout.anchors[selectedAnchor].enabled = false;
-                            layout.anchors[selectedAnchor].hidding = false;
-                            
-                            selectedAnchor = -1;
-                            focusedAnchor = -1;
+                            // Enable name edit mode
+                            else if (IsKeyReleased(KEY_N))
+                            {
+                                nameEditMode = true;
+                                strcpy(prevName, layout.anchors[selectedAnchor].name);
+                            }
                         }
                     }
-                }
-                else // anchorLinkMode == true
-                {
-                    if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON))
+                    else // anchorLinkMode == true
                     {
-                        anchorLinkMode = false;
-
-                        if (focusedControl != -1)
+                        if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON))
                         {
-                            layout.controls[focusedControl].rec.x += layout.controls[focusedControl].ap->x;
-                            layout.controls[focusedControl].rec.y += layout.controls[focusedControl].ap->y;
-                            layout.controls[focusedControl].ap = &layout.anchors[selectedAnchor];
-                            layout.controls[focusedControl].rec.x -= layout.anchors[selectedAnchor].x;
-                            layout.controls[focusedControl].rec.y -= layout.anchors[selectedAnchor].y;
+                            anchorLinkMode = false;
+
+                            if (focusedControl != -1)
+                            {
+                                layout.controls[focusedControl].rec.x += layout.controls[focusedControl].ap->x;
+                                layout.controls[focusedControl].rec.y += layout.controls[focusedControl].ap->y;
+                                layout.controls[focusedControl].ap = &layout.anchors[selectedAnchor];
+                                layout.controls[focusedControl].rec.x -= layout.anchors[selectedAnchor].x;
+                                layout.controls[focusedControl].rec.y -= layout.anchors[selectedAnchor].y;
+                            }
+                            //selectedAnchor = -1;
                         }
-                        //selectedAnchor = -1;
                     }
                 }
+                else
+                {
+                    // TODO: this is for anchors and controls...move this condition
+                    if (anchorLinkMode && IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) anchorLinkMode = false;
+                }
             }
-            else
+            else //nameEditMode
             {
-                // TODO: this is for anchors and controls...move this condition
-                if (anchorLinkMode && IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) anchorLinkMode = false;
+                // Cancel nameEditMode
+                if (IsKeyPressed(KEY_ESCAPE))
+                {
+                    nameEditMode = false;
+                    memset(layout.anchors[selectedAnchor].name, 0, MAX_CONTROL_NAME_LENGTH);
+                    strcpy(layout.anchors[selectedAnchor].name, prevName);
+                } 
             }
+
         }        
         // -------------------------------------------------------------------------------------------------------------------
 
@@ -1636,6 +1555,7 @@ int main(int argc, char *argv[])
             }
 
             // Draws the controls placed on the grid
+            GuiLock();
             for (int i = 0; i < layout.controlsCount; i++)
             {
                 if (!layout.controls[i].ap->hidding)
@@ -1678,7 +1598,7 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-
+            
             // Draw the default rectangle of the control selected
             if (!anchorLinkMode && (focusedControl == -1) && (focusedAnchor == -1) && (selectedAnchor == -1) && (selectedControl == -1) && !anchorEditMode && !tracemapEditMode && !closingWindowActive && !generateWindowActive && !(CheckCollisionPointRec(mouse, palettePanel)))
             {
@@ -1710,7 +1630,8 @@ int main(int argc, char *argv[])
                 }
                 GuiFade(1.0f);
             }
-
+            GuiUnlock();
+            
             // Draw the anchor points
             for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
             {
@@ -1758,10 +1679,13 @@ int main(int argc, char *argv[])
                 {
                     selectedControlColor = RED;
                     if (!dragMode && resizeMode) selectedControlColor = BLUE;
-                    DrawRectangleRec((Rectangle){ layout.controls[selectedControl].ap->x + layout.controls[selectedControl].rec.x, layout.controls[selectedControl].ap->y + layout.controls[selectedControl].rec.y, layout.controls[selectedControl].rec.width, layout.controls[selectedControl].rec.height }, (nameEditMode) ? Fade(WHITE, 0.7f) : Fade(selectedControlColor, 0.5f));
+                    DrawRectangleRec((Rectangle){ layout.controls[selectedControl].ap->x + layout.controls[selectedControl].rec.x, layout.controls[selectedControl].ap->y + layout.controls[selectedControl].rec.y, layout.controls[selectedControl].rec.width, layout.controls[selectedControl].rec.height }, Fade(selectedControlColor, 0.5f));
                 }
-                if (focusedControl != -1) 
-                    DrawRectangleLinesEx((Rectangle){ layout.controls[focusedControl].ap->x + layout.controls[focusedControl].rec.x, layout.controls[focusedControl].ap->y + layout.controls[focusedControl].rec.y, layout.controls[focusedControl].rec.width, layout.controls[focusedControl].rec.height }, 1, RED);
+                if (focusedControl != -1)
+                {
+                    if (focusedControl != selectedControl) DrawRectangleRec((Rectangle){ layout.controls[focusedControl].ap->x + layout.controls[focusedControl].rec.x, layout.controls[focusedControl].ap->y + layout.controls[focusedControl].rec.y, layout.controls[focusedControl].rec.width, layout.controls[focusedControl].rec.height }, Fade(RED, 0.1f));
+                    DrawRectangleLinesEx((Rectangle){ layout.controls[focusedControl].ap->x + layout.controls[focusedControl].rec.x, layout.controls[focusedControl].ap->y + layout.controls[focusedControl].rec.y, layout.controls[focusedControl].rec.width, layout.controls[focusedControl].rec.height }, 1, MAROON);
+                }                    
             }
 
             // Draw anchor lines from one control
@@ -1810,41 +1734,6 @@ int main(int argc, char *argv[])
                 }
             }
 
-            // Draw cursor on textEditMode
-            if (textEditMode)
-            {
-               if (((framesCounter/20)%2) == 0)
-               {
-                    if (layout.controls[selectedControl].type == GUI_LABEL) DrawText("|", layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x + MeasureText(layout.controls[selectedControl].text, GuiGetStyle(DEFAULT, TEXT_SIZE)), layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y - GuiGetStyle(DEFAULT, TEXT_SIZE)/2 + layout.controls[selectedControl].rec.height/2, GuiGetStyle(DEFAULT, TEXT_SIZE) + 2, BLACK);
-                    else if (layout.controls[selectedControl].type == GUI_TEXTBOX) DrawText("|", layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x + MeasureText(layout.controls[selectedControl].text, GuiGetStyle(DEFAULT, TEXT_SIZE)) + 4, layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y - GuiGetStyle(DEFAULT, TEXT_SIZE)/2 + layout.controls[selectedControl].rec.height/2, GuiGetStyle(DEFAULT, TEXT_SIZE) + 2, BLACK);
-                    else if (layout.controls[selectedControl].type == GUI_GROUPBOX) DrawText("|", layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x + 15 + MeasureText(layout.controls[selectedControl].text, GuiGetStyle(DEFAULT, TEXT_SIZE)), layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y - GuiGetStyle(DEFAULT, TEXT_SIZE)/2, GuiGetStyle(DEFAULT, TEXT_SIZE) + 2, BLACK);
-                    else if (layout.controls[selectedControl].type == GUI_WINDOWBOX) DrawText("|", layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x + 10 + MeasureText(layout.controls[selectedControl].text, GuiGetStyle(DEFAULT, TEXT_SIZE)), layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y + GuiGetStyle(DEFAULT, TEXT_SIZE)/2, GuiGetStyle(DEFAULT, TEXT_SIZE) + 2, BLACK);
-                    else if (layout.controls[selectedControl].type == GUI_STATUSBAR) DrawText("|", layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x + 15 + MeasureText(layout.controls[selectedControl].text, GuiGetStyle(DEFAULT, TEXT_SIZE)), layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y - GuiGetStyle(DEFAULT, TEXT_SIZE)/2 + layout.controls[selectedControl].rec.height/2, GuiGetStyle(DEFAULT, TEXT_SIZE) + 2, BLACK);
-                    else if (layout.controls[selectedControl].type == GUI_CHECKBOX) DrawText("|", layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x + layout.controls[selectedControl].rec.width + 5 + MeasureText(layout.controls[selectedControl].text, GuiGetStyle(DEFAULT, TEXT_SIZE)), layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y - GuiGetStyle(DEFAULT, TEXT_SIZE)/2 + layout.controls[selectedControl].rec.height/2, GuiGetStyle(DEFAULT, TEXT_SIZE) + 2, BLACK);
-                    else if (layout.controls[selectedControl].type == GUI_SLIDERBAR || layout.controls[selectedControl].type == GUI_SLIDER) DrawText("|", layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x - 5, layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y - GuiGetStyle(DEFAULT, TEXT_SIZE)/2 + layout.controls[selectedControl].rec.height/2, GuiGetStyle(DEFAULT, TEXT_SIZE) + 2, BLACK);
-                    else DrawText("|", layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x + layout.controls[selectedControl].rec.width/2 + MeasureText(layout.controls[selectedControl].text , GuiGetStyle(DEFAULT, TEXT_SIZE))/2 + 2, layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y + layout.controls[selectedControl].rec.height/2 - 6, GuiGetStyle(DEFAULT, TEXT_SIZE) + 2, BLACK);
-               }
-            }
-
-            // Draw nameEditMode
-            if (nameEditMode)
-            {
-                DrawText(FormatText("%s", layout.controls[selectedControl].name), layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x + layout.controls[selectedControl].rec.width/2 - MeasureText(layout.controls[selectedControl].name, GuiGetStyle(DEFAULT, TEXT_SIZE)*2)/2, layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y + layout.controls[selectedControl].rec.height/2 - 10, GuiGetStyle(DEFAULT, TEXT_SIZE)*2, BLACK);
-
-                if (((framesCounter/20)%2) == 0) DrawText("|", layout.controls[selectedControl].rec.x + layout.controls[selectedControl].rec.width/2 + layout.controls[selectedControl].ap->x + MeasureText(layout.controls[selectedControl].name, GuiGetStyle(DEFAULT, TEXT_SIZE)*2)/2 + 2, layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y + layout.controls[selectedControl].rec.height/2 - 10, GuiGetStyle(DEFAULT, TEXT_SIZE)*2 + 2, BLACK);
-            }
-            else if ((IsKeyDown(KEY_N)) && (!textEditMode) && (!generateWindowActive) && (!resetWindowActive))
-            {
-                if (layout.controlsCount > 0) DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(WHITE, 0.7f));
-
-                for (int i = 0; i < layout.controlsCount; i++)
-                {
-                    // Draws the Controls when placed on the grid.
-                    if (!layout.controls[i].ap->hidding)
-                    DrawText(FormatText("%s", layout.controls[i].name), layout.controls[i].rec.x + layout.controls[i].ap->x + layout.controls[i].rec.width/2 - MeasureText(layout.controls[i].name, GuiGetStyle(DEFAULT, TEXT_SIZE)*2)/2, layout.controls[i].rec.y + layout.controls[i].ap->y + layout.controls[i].rec.height/2 - 10, GuiGetStyle(DEFAULT, TEXT_SIZE)*2, BLACK);
-                }
-            }
-
             // Draw anchor linking line
             if (anchorLinkMode) 
             {
@@ -1878,6 +1767,42 @@ int main(int argc, char *argv[])
             if (selectedControl == -1 && orderEditMode)
             {
                 for (int i = layout.controlsCount - 1; i >= 0; i--) DrawText(FormatText("[%i]", layout.controls[i].id), layout.controls[i].rec.x + layout.controls[i].ap->x + layout.controls[i].rec.width, layout.controls[i].rec.y + layout.controls[i].ap->y - 10, 10, BLUE);
+            }
+            
+            // Textbox to edit control text
+            if (textEditMode)
+            {
+                Rectangle textboxRec = layout.controls[selectedControl].rec;
+                textboxRec.x += layout.controls[selectedControl].ap->x;
+                textboxRec.y += layout.controls[selectedControl].ap->y;
+                
+                DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(SKYBLUE, 0.2f));
+                DrawText("Control text edit mode", 20, 25, 20, DARKGRAY);
+                if (GuiTextBox(textboxRec, layout.controls[selectedControl].text, MAX_CONTROL_TEXT_LENGTH, textEditMode)) textEditMode = !textEditMode;
+            }
+
+            // Textbox to edit control name
+            if (nameEditMode)
+            {
+                if (selectedControl != -1)
+                {
+                    Rectangle textboxRec = layout.controls[selectedControl].rec;
+                    textboxRec.x += layout.controls[selectedControl].ap->x;
+                    textboxRec.y += layout.controls[selectedControl].ap->y;
+                    
+                    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(RED, 0.2f));
+                    DrawText("Control name edit mode", 20, 20, 20, DARKGRAY);
+                    if (GuiTextBox(textboxRec, layout.controls[selectedControl].name, MAX_CONTROL_NAME_LENGTH, nameEditMode)) nameEditMode = !nameEditMode;
+                }
+                else if(selectedAnchor != -1)
+                {
+                    //layout.anchor[selectedAnchor].name
+                    Rectangle textboxRec = (Rectangle) {layout.anchors[selectedAnchor].x, layout.anchors[selectedAnchor].y, 200, 30};
+                    
+                    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(ORANGE, 0.2f));
+                    DrawText("Anchor name edit mode", 20, 20, 20, DARKGRAY);
+                    if (GuiTextBox(textboxRec, layout.anchors[selectedAnchor].name, MAX_ANCHOR_NAME_LENGTH, nameEditMode)) nameEditMode = !nameEditMode;
+                }
             }
 
             // Draw the help listData (by default is out of screen)
@@ -1917,6 +1842,7 @@ int main(int argc, char *argv[])
             }
 
             // Draw right panel controls palette
+            GuiLock();
             GuiPanel(palettePanel);
             GuiWindowBox(paletteRecs[0], "WindowBox");
             GuiGroupBox(paletteRecs[1], "GroupBox");
@@ -1939,10 +1865,15 @@ int main(int argc, char *argv[])
             GuiListView(paletteRecs[18], listData, 3, &listViewScrollIndex, &listViewActive, false);
             GuiColorPicker(paletteRecs[19], RED);
             GuiDummyRec(paletteRecs[20], "DummyRec");
-
+            GuiUnlock();
+            
             DrawRectangleRec(paletteRecs[selectedType], Fade(RED, 0.5f));
 
-            if (paletteSelect > -1) DrawRectangleLinesEx(paletteRecs[paletteSelect], 1, RED);
+            if (paletteSelect > -1) 
+            {
+                if (selectedType != paletteSelect) DrawRectangleRec(paletteRecs[paletteSelect], Fade(RED, 0.1f));
+                DrawRectangleLinesEx(paletteRecs[paletteSelect], 1, MAROON);
+            }
 
             // Draw export options window
             if (generateWindowActive)
@@ -2597,6 +2528,7 @@ static void GenerateCode(const char *fileName, GuiLayoutConfig config)
             {
                 if (layout.controls[j].ap->id == layout.anchors[i].id)
                 {
+                    // TODO: review anchor name
                     if ((!config.exportAnchor0) && layout.controls[j].ap->id == 0) break;
                     fprintf(ftool, "    Vector2 %s%02i = { %i, %i };\n", "anchor", i, layout.anchors[i].x, layout.anchors[i].y);
                     break;
