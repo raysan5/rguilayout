@@ -1,0 +1,42 @@
+#
+# rgl text file (v1.0) - raygui layout text file generated using rGuiLayout
+#
+# Total number of controls:     27
+# Anchor info:   a <id> <posx> <posy> <enabled>
+# Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
+#
+a 000 0 0 1
+a 001 0 0 1
+a 002 0 0 0
+a 003 0 0 0
+a 004 0 0 0
+a 005 0 0 0
+a 006 0 0 0
+a 007 0 0 0
+c 000 0 windowAbout 0 0 330 380 1 About rToolName
+c 001 20 dummyLogo 10 35 65 65 1 logo_rtool
+c 002 4 lblNameVersion 85 35 136 25 1 rToolTemplate v1.0 ZERO
+c 003 4 lblDate 220 35 65 25 1 (Dec. 2018)
+c 004 4 lblDescription 85 65 225 20 1 A simple and easy-to-use sounds generator
+c 005 2 lineTop 0 100 330 20 1 
+c 006 4 lblUsedLibs 10 110 126 25 1 Used libraries:
+c 007 20 dummyraylib 10 135 65 65 1 logo_raylib
+c 008 20 dummyraygui 80 135 65 65 1 logo_raygui
+c 009 4 linkraylib 155 130 126 25 1 www.raylib.com
+c 010 4 linkGitraylib 155 150 165 25 1 github.com/raysan5/raylib
+c 011 4 linkGitraygui 155 170 165 25 1 github.com/raysan5/raygui
+c 012 2 lineMid01 10 200 310 20 1 
+c 013 4 lblDevelopers 10 210 80 25 1 Developers:
+c 014 4 lblDev01 20 230 180 25 1 - Ramon Santamaria (              )
+c 015 4 linkDev01 130 230 56 25 1 @raysan5
+c 016 2 lineMid02 10 250 310 20 1 
+c 017 4 lblCopyright 10 265 289 25 1 Copyright (c) 2019 raylib technologies (                 )
+c 018 4 linkraylibtech 215 265 76 25 1 @raylibtech
+c 019 4 lblMoreInfo 10 285 80 25 1 More info:
+c 020 4 linkToolWeb 95 285 165 25 1 www.raylibtech.com/rtoolname
+c 021 4 linkMail 95 305 165 25 1 ray@raylibtech.com
+c 022 4 lblSupport 10 305 80 25 1 Support:
+c 023 2 lineBottom 0 325 330 20 1 
+c 024 8 chkLicense 10 350 15 15 1 License Agreement (EULA)
+c 025 5 BtnBeONE 175 345 70 25 1 Be ONE!
+c 026 5 BtnClose 250 345 70 25 1 Close
