@@ -73,6 +73,8 @@
 #define MAX_CONTROL_NAME_LENGTH     32      // Maximum length of control name (used on code generation)
 #define MAX_ANCHOR_NAME_LENGTH      32
 
+#define MIN_CONTROL_SIZE            10
+
 #define GRID_LINE_SPACING           20      // Grid line spacing in pixels
 
 #define MOVEMENT_FRAME_SPEED        10      // Controls movement speed in pixels per frame
@@ -250,8 +252,8 @@ int main(int argc, char *argv[])
     int focusedControl = -1;
     int selectedType = GUI_WINDOWBOX;
     int selectedTypeDraw = GUI_LABEL;
-    Vector2 panControlOffset = { 0 };
-    Vector2 prevControlPosition = { 0 };
+    Vector2 panOffset = { 0 };
+    Vector2 prevPosition = { 0 };
     Color selectedControlColor = RED;
     Color positionColor = MAROON;      
     
@@ -368,8 +370,11 @@ int main(int argc, char *argv[])
     // Tracemap (background image for reference) variables
     Texture2D tracemap = { 0 };
     Rectangle tracemapRec = { 0 };
-    bool tracemapEditMode = false;
+    bool tracemapBlocked = false;
+    bool tracemapFocused = false;
+    bool tracemapSelected = false;
     float tracemapFade = 0.5f;
+    Color tracemapColor = RED;
 
     // loadedTexture for checking if texture is a tracemap or a style
     Texture2D loadedTexture = { 0 };
@@ -462,8 +467,7 @@ int main(int argc, char *argv[])
                 UnloadTexture(loadedTexture);
                 SetTextureFilter(tracemap, FILTER_BILINEAR);
 
-                tracemapRec.width = tracemap.width;
-                tracemapRec.height = tracemap.height;
+                tracemapRec = (Rectangle){30, 30, tracemap.width, tracemap.height};
             }
 
             ClearDroppedFiles();
@@ -487,8 +491,7 @@ int main(int argc, char *argv[])
         if (WindowShouldClose()) exitWindow = true;
 
         // SHORTCUTS
-        // ---------------------------------------------------------------------------------------------
-
+        // ---------------------------------------------------------------------------------------------        
         if (!textEditMode && !nameEditMode)
         {
             // TODO: review -- Show save layout message window on ESC
@@ -538,7 +541,16 @@ int main(int argc, char *argv[])
             // Enable/disable size modifier mode
             if (IsKeyDown(KEY_LEFT_CONTROL)) resizeMode = true;
             if (IsKeyReleased(KEY_LEFT_CONTROL)) resizeMode = false;
-                
+            
+            // Enable/disable grid
+            if (IsKeyPressed(KEY_G)) showGrid = !showGrid;   
+
+            // Enable/disable texture editing mode
+            if (tracemap.id > 0 && IsKeyPressed(KEY_SPACE))
+            {
+                if (tracemapSelected) tracemapBlocked = true;
+                else if(tracemapBlocked && tracemapFocused) tracemapBlocked = false;
+            }
         }
 
         // Toggle help info
@@ -639,9 +651,8 @@ int main(int argc, char *argv[])
         // ---------------------------------------------------------------------------------------------
         
         // CONTROLS
-        // ---------------------------------------------------------------------------------------------
-        
-        if (!closingWindowActive && !generateWindowActive && !resetWindowActive && !tracemapEditMode)
+        // ---------------------------------------------------------------------------------------------        
+        if (!closingWindowActive && !generateWindowActive && !resetWindowActive)// && !tracemapBlocked)
         {
             if (!nameEditMode)
             {
@@ -671,7 +682,7 @@ int main(int argc, char *argv[])
                         
                         if (focusedControl == -1)
                         {
-                            if (focusedAnchor == -1 && selectedAnchor == -1 && selectedControl == -1)
+                            if (focusedAnchor == -1 && selectedAnchor == -1 && selectedControl == -1 && !tracemapFocused && !tracemapSelected)
                             {
                                 // Create new control
                                 if (!anchorEditMode && !anchorLinkMode)
@@ -803,8 +814,8 @@ int main(int argc, char *argv[])
                                         controlPosY += layout.controls[selectedControl].ap->y;
                                     } 
                                     
-                                    controlPosX = prevControlPosition.x + (mouse.x - panControlOffset.x);
-                                    controlPosY = prevControlPosition.y + (mouse.y - panControlOffset.y);
+                                    controlPosX = prevPosition.x + (mouse.x - panOffset.x);
+                                    controlPosY = prevPosition.y + (mouse.y - panOffset.y);
                                     
                                     int offsetX = (int)controlPosX%movePixel;
                                     int offsetY = (int)controlPosY%movePixel;
@@ -873,7 +884,11 @@ int main(int argc, char *argv[])
                                                 
                                                 framesCounterMovement = 0;
                                             }
-                                        }                         
+                                        }   
+
+                                        // Minimum size limit
+                                        if (layout.controls[selectedControl].rec.width < MIN_CONTROL_SIZE) layout.controls[selectedControl].rec.width = MIN_CONTROL_SIZE;
+                                        if (layout.controls[selectedControl].rec.height < MIN_CONTROL_SIZE) layout.controls[selectedControl].rec.height = MIN_CONTROL_SIZE;
                                     }
                                     else
                                     {
@@ -938,8 +953,7 @@ int main(int argc, char *argv[])
                                             controlPosY -= layout.controls[selectedControl].ap->y;
                                         }
                                         layout.controls[selectedControl].rec.x = controlPosX;
-                                        layout.controls[selectedControl].rec.y = controlPosY;
-                                        
+                                        layout.controls[selectedControl].rec.y = controlPosY;                                        
                                         // --------------------------------------------------------------------
                                     
                                         // Unlinks the control selected from its current anchor
@@ -972,12 +986,12 @@ int main(int argc, char *argv[])
                                         // Enable dragMode  mode
                                         else if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                                         {
-                                            panControlOffset = mouse;
+                                            panOffset = mouse;
                                             if (useGlobalPos && (layout.controls[selectedControl].ap->id != 0))
                                             {
-                                                prevControlPosition = (Vector2){ layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x, layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y };
+                                                prevPosition = (Vector2){ layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x, layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y };
                                             }
-                                            else prevControlPosition = (Vector2){ layout.controls[selectedControl].rec.x, layout.controls[selectedControl].rec.y };
+                                            else prevPosition = (Vector2){ layout.controls[selectedControl].rec.x, layout.controls[selectedControl].rec.y };
                                             dragMode = true;
                                         }
                                         
@@ -1059,13 +1073,12 @@ int main(int argc, char *argv[])
                     strcpy(layout.controls[selectedControl].name, prevName);
                 }            
             }
-        }
-        
+        }        
         // -------------------------------------------------------------------------------------------------------------------
        
         // ANCHOR POINTS 
         // -------------------------------------------------------------------------------------------------------------------
-        if (!generateWindowActive && !resetWindowActive && !closingWindowActive && !textEditMode)
+        if (!generateWindowActive && !resetWindowActive && !closingWindowActive && !textEditMode)// && !tracemapBlocked)
         {
             if (!nameEditMode)
             {
@@ -1091,7 +1104,7 @@ int main(int argc, char *argv[])
                     if (focusedControl == -1)
                     {
                         // Create new anchor
-                        if (!anchorLinkMode && anchorEditMode && layout.anchorsCount < MAX_ANCHOR_POINTS)
+                        if (!anchorLinkMode && anchorEditMode && layout.anchorsCount < MAX_ANCHOR_POINTS && !tracemapFocused && !tracemapSelected)
                         {
                             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                             {
@@ -1319,41 +1332,189 @@ int main(int argc, char *argv[])
 
         }        
         // -------------------------------------------------------------------------------------------------------------------
+        
+        // TRACEMAP
+        // -------------------------------------------------------------------------------------------------------------------
+        // Tracemap texture control logic
+        if (!tracemapBlocked)
+        {            
+            tracemapFocused = false;
+            if (CheckCollisionPointRec(mouse, tracemapRec) && focusedControl == -1 && focusedAnchor == -1) tracemapFocused = true;
+            
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) tracemapSelected = tracemapFocused;
+            
+            if (tracemapSelected)
+            {
+                if (dragMode)
+                {
+                    int offsetX = (int)mouse.x%GRID_LINE_SPACING;
+                    int offsetY = (int)mouse.y%GRID_LINE_SPACING;
+                    
+                    tracemapRec.x = prevPosition.x + (mouse.x - panOffset.x);
+                    tracemapRec.y = prevPosition.y + (mouse.y - panOffset.y);
+                    
+                    if (snapMode)
+                    {
+                        if (offsetX >= GRID_LINE_SPACING/2) mouse.x += (GRID_LINE_SPACING - offsetX);
+                        else mouse.x -= offsetX;
 
-        // Checks the minimum size of the rec
-        // TODO: Redesign this... looks very bad
-        if (selectedControl != -1)
-        {
-            // Sets the minimum limit of the width
-            if (layout.controls[selectedControl].type == GUI_LABEL || layout.controls[selectedControl].type == GUI_BUTTON || layout.controls[selectedControl].type == GUI_TOGGLE || layout.controls[selectedControl].type == GUI_TEXTBOX)
-            {
-                if (layout.controls[selectedControl].rec.width <  MeasureText(layout.controls[selectedControl].text, GuiGetStyle(DEFAULT, TEXT_SIZE))) layout.controls[selectedControl].rec.width = MeasureText(layout.controls[selectedControl].text , GuiGetStyle(DEFAULT, TEXT_SIZE));
-            }
-            else if (layout.controls[selectedControl].type == GUI_WINDOWBOX || layout.controls[selectedControl].type == GUI_GROUPBOX || layout.controls[selectedControl].type == GUI_STATUSBAR)
-            {
-                if (layout.controls[selectedControl].rec.width <  MeasureText(layout.controls[selectedControl].text, GuiGetStyle(DEFAULT, TEXT_SIZE)) + 31) layout.controls[selectedControl].rec.width = MeasureText(layout.controls[selectedControl].text , GuiGetStyle(DEFAULT, TEXT_SIZE)) + 31;
-            }
-            else if (layout.controls[selectedControl].type == GUI_CHECKBOX)
-            {
-                if (layout.controls[selectedControl].rec.width <= 10) layout.controls[selectedControl].rec.width = 10;
-            }
-            else if (layout.controls[selectedControl].rec.width <= 20) layout.controls[selectedControl].rec.width = 20;
+                        if (offsetY >= GRID_LINE_SPACING/2) mouse.y += (GRID_LINE_SPACING - offsetY);
+                        else mouse.y -= offsetY;
 
-            // Sets the minimum limit of the height
-            if (layout.controls[selectedControl].type == GUI_WINDOWBOX)
-            {
-                if (layout.controls[selectedControl].rec.height < 50) layout.controls[selectedControl].rec.height = 50;
-            }
-            else if (layout.controls[selectedControl].type == GUI_PROGRESSBAR || layout.controls[selectedControl].type == GUI_SLIDER || layout.controls[selectedControl].type == GUI_SLIDERBAR || layout.controls[selectedControl].type == GUI_CHECKBOX || layout.controls[selectedControl].type == GUI_LINE)
-            {
-                if (layout.controls[selectedControl].rec.height <= 10 ) layout.controls[selectedControl].rec.height = 10;
-            }
-            else if (layout.controls[selectedControl].rec.height <= 20) layout.controls[selectedControl].rec.height = 20;
+                        offsetX = (int)tracemapRec.x%GRID_LINE_SPACING;
+                        offsetY = (int)tracemapRec.y%GRID_LINE_SPACING;
+
+                        if (offsetX >= GRID_LINE_SPACING/2) tracemapRec.x += (GRID_LINE_SPACING - offsetX);
+                        else tracemapRec.x -= offsetX;
+
+                        if (offsetY >= GRID_LINE_SPACING/2) tracemapRec.y += (GRID_LINE_SPACING - offsetY);
+                        else tracemapRec.y -= offsetY;
+                    }
+                    
+                    if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) dragMode = false;
+                }
+                else
+                {
+                    if (resizeMode)
+                    {                     
+                        // NOTE: la escala no es proporcional ahora mismo, se tiene que ajustar
+                        if (precisionMode)
+                        {
+                            if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_DOWN))
+                            {
+                                tracemapRec.height += movePixel;
+                                tracemapRec.width += movePixel;
+                            }
+                            else if(IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_UP))
+                            {
+                                tracemapRec.height -= movePixel;
+                                tracemapRec.width -= movePixel;
+                            }
+                            
+                            framesCounterMovement = 0;
+                        }
+                        else
+                        {
+                            framesCounterMovement++;
+                            
+                            if((framesCounterMovement%movePerFrame) == 0)
+                            {
+                                if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_DOWN))
+                                {
+                                    tracemapRec.height += movePixel;
+                                    tracemapRec.width += movePixel;
+                                }
+                                else if(IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_UP))
+                                {
+                                    tracemapRec.height -= movePixel;
+                                    tracemapRec.width -= movePixel;
+                                }
+                                
+                                framesCounterMovement = 0;
+                            }
+                        }                       
+                        
+                        //tracemap.height = tracemapRec.height;
+                        //tracemap.width = tracemapRec.width;
+                    }
+                    else
+                    {
+                        // Move map with arrows                        
+                        int offsetX = (int)tracemapRec.x%movePixel;
+                        int offsetY = (int)tracemapRec.y%movePixel;
+
+                        if (precisionMode)
+                        {
+                            if (IsKeyPressed(KEY_RIGHT))  tracemapRec.x += (movePixel - offsetX);
+                            else if (IsKeyPressed(KEY_LEFT)) 
+                            {
+                                if (offsetX == 0) offsetX = movePixel;
+                                tracemapRec.x -= offsetX;
+                            } 
+                            
+                            if (IsKeyPressed(KEY_DOWN)) tracemapRec.y += (movePixel - offsetY);
+                            else if (IsKeyPressed(KEY_UP)) 
+                            {
+                                if (offsetY == 0) offsetY = movePixel;
+                                tracemapRec.y -= offsetY;
+                            }
+                            
+                            framesCounterMovement = 0;
+                        }
+                        else
+                        {
+                            framesCounterMovement++;
+                            
+                            if ((framesCounterMovement%movePerFrame) == 0)
+                            {
+                                if (IsKeyDown(KEY_RIGHT)) tracemapRec.x += (movePixel - offsetX);
+                                else if (IsKeyDown(KEY_LEFT))
+                                {
+                                    if (offsetX == 0) offsetX = movePixel;
+                                    tracemapRec.x -= offsetX;
+                                } 
+                                
+                                if (IsKeyDown(KEY_DOWN)) tracemapRec.y += (movePixel - offsetY);
+                                else if (IsKeyDown(KEY_UP))
+                                {
+                                    if (offsetY == 0) offsetY = movePixel;
+                                    tracemapRec.y -= offsetY;
+                                }
+                                
+                                framesCounterMovement = 0;
+                            }
+                        }
+                        // -----------------------------------------------------------------
+                        
+                        // Change alpha NOTE: Mover fuera, que sea un control global.
+                        if (precisionMode)
+                        {
+                            if (IsKeyPressed(KEY_KP_ADD)) tracemapFade += 0.05f;
+                            else if (IsKeyPressed(KEY_KP_SUBTRACT) || IsKeyPressed(KEY_MINUS)) tracemapFade -= 0.05f;
+                        }
+                        else
+                        {
+                            if (IsKeyDown(KEY_KP_ADD)) tracemapFade += 0.01f;
+                            else if (IsKeyDown(KEY_KP_SUBTRACT) || IsKeyDown(KEY_MINUS)) tracemapFade -= 0.01f;
+                        }
+                        
+                        if (tracemapFade < 0) tracemapFade = 0;
+                        else if (tracemapFade > 1) tracemapFade = 1;
+                        
+                        // Delete map
+                        if (IsKeyPressed(KEY_DELETE))
+                        {
+                            UnloadTexture(tracemap);
+                            tracemap.id = 0;                            
+                            tracemapRec.x = 0;
+                            tracemapRec.y = 0;
+                            
+                            //tracemapBlocked = false;
+                            tracemapFocused = false;
+                            tracemapSelected = false;
+                        }
+                        
+                        // Enable dragMode  mode
+                        else if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                        {
+                            panOffset = mouse;
+                            prevPosition = (Vector2){ tracemapRec.x, tracemapRec.y };
+                            
+                            dragMode = true;
+                        }
+                    }
+                }          
+            }            
         }
-
-        // Shows or hides the grid
-        if (IsKeyPressed(KEY_G) && (!nameEditMode) && (!textEditMode) && (!generateWindowActive)) showGrid = !showGrid;
-
+        else
+        {
+            tracemapFocused = false;
+            tracemapSelected = false;
+            
+            if (CheckCollisionPointRec(mouse, tracemapRec) && focusedControl == -1 && focusedAnchor == -1) tracemapFocused = true;
+        }
+        // -------------------------------------------------------------------------------------------------------------------
+        
         // Duplicate selected control
         if ((IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_D)) && (selectedControl != -1) && !anchorEditMode)
         {
@@ -1392,110 +1553,6 @@ int main(int argc, char *argv[])
 
         // Activate code generation export window
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ENTER) && !closingWindowActive) generateWindowActive = true;
-
-        if (generateWindowActive)   // Keep window in the middle of screen
-        {
-            exportWindowPos.x = GetScreenWidth()/2 - 200;
-            exportWindowPos.y = GetScreenHeight()/2 - 112;
-        }
-
-        // Tracemap texture control logic
-        if (tracemap.id > 0)
-        {
-            // Toggles Texture editting mode between true or false
-            if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_T)) tracemapEditMode = !tracemapEditMode;
-
-            if (tracemapEditMode)
-            {
-                int offsetX = (int)mouse.x%GRID_LINE_SPACING;
-                int offsetY = (int)mouse.y%GRID_LINE_SPACING;
-
-                // Moves the texture with the mouse
-                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-                {
-                    panControlOffset = mouse;
-                    prevControlPosition = (Vector2){ tracemapRec.x, tracemapRec.y };
-                }
-
-                if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
-                {
-                    tracemapRec.x = prevControlPosition.x + (mouse.x - panControlOffset.x);
-                    tracemapRec.y = prevControlPosition.y + (mouse.y - panControlOffset.y);
-
-                    if (snapMode)
-                    {
-                        if (offsetX >= GRID_LINE_SPACING/2) mouse.x += (GRID_LINE_SPACING - offsetX);
-                        else mouse.x -= offsetX;
-
-                        if (offsetY >= GRID_LINE_SPACING/2) mouse.y += (GRID_LINE_SPACING - offsetY);
-                        else mouse.y -= offsetY;
-
-                        offsetX = (int)tracemapRec.x%GRID_LINE_SPACING;
-                        offsetY = (int)tracemapRec.y%GRID_LINE_SPACING;
-
-                        if (offsetX >= GRID_LINE_SPACING/2) tracemapRec.x += (GRID_LINE_SPACING - offsetX);
-                        else tracemapRec.x -= offsetX;
-
-                        if (offsetY >= GRID_LINE_SPACING/2) tracemapRec.y += (GRID_LINE_SPACING - offsetY);
-                        else tracemapRec.y -= offsetY;
-                    }
-                }
-
-                // Moves and scales the texture with snap.
-                if (IsKeyDown(KEY_LEFT_CONTROL))
-                {
-                    tracemapRec.height -= GetMouseWheelMove();
-                    tracemapRec.width -= GetMouseWheelMove();
-                }
-                else
-                {
-                    tracemapRec.height -= 10*GetMouseWheelMove();
-                    tracemapRec.width -= 10*GetMouseWheelMove();
-                }
-
-                tracemap.height = tracemapRec.height;
-                tracemap.width = tracemapRec.width;
-
-                // Change texture fade
-                if (IsKeyDown(KEY_LEFT_CONTROL))
-                {
-                    if (precisionMode)
-                    {
-                        if (IsKeyPressed(KEY_LEFT)) tracemapRec.x--;
-                        else if (IsKeyPressed(KEY_RIGHT)) tracemapRec.x++;
-
-                        if (IsKeyPressed(KEY_UP)) tracemapRec.y--;
-                        else if (IsKeyPressed(KEY_DOWN)) tracemapRec.y++;
-                    }
-                    else
-                    {
-                        if (IsKeyDown(KEY_LEFT)) tracemapRec.x--;
-                        else if (IsKeyDown(KEY_RIGHT)) tracemapRec.x++;
-
-                        if (IsKeyDown(KEY_UP)) tracemapRec.y--;
-                        else if (IsKeyDown(KEY_DOWN)) tracemapRec.y++;
-                    }
-                }
-                else
-                {
-                    if (IsKeyDown(KEY_LEFT)) tracemapFade-= 0.01f;
-                    else if (IsKeyDown(KEY_RIGHT)) tracemapFade+=0.01f;
-                }
-
-                if (tracemapFade < 0) tracemapFade = 0;
-                else if (tracemapFade > 1) tracemapFade = 1;
-
-                // Deletes the texture and resets it
-                if (IsKeyPressed(KEY_DELETE))
-                {
-                    UnloadTexture(tracemap);
-                    tracemap.id = 0;
-                    tracemapEditMode = false;
-                    tracemapRec.x = 0;
-                    tracemapRec.y = 0;
-                }
-            }
-        }
 
         if ((IsKeyDown(KEY_LEFT_CONTROL)) && (IsKeyPressed(KEY_Z))) layout.controls[undoSelectedControl].rec = undoLastRec;
 
@@ -1547,11 +1604,33 @@ int main(int argc, char *argv[])
             // Draw the tracemap texture if loaded
             if (tracemap.id > 0)
             {
-                DrawTexture(tracemap, tracemapRec.x, tracemapRec.y, Fade(WHITE, tracemapFade));
-
-                // Draw the tracemap rectangle
-                if (tracemapEditMode) DrawRectangleLines(tracemapRec.x, tracemapRec.y, tracemapRec.width, tracemapRec.height, RED);
-                else DrawRectangleLines(tracemapRec.x, tracemapRec.y, tracemapRec.width, tracemapRec.height, GRAY);
+                DrawTexturePro(tracemap, (Rectangle){ 0, 0, tracemap.width, tracemap.height }, tracemapRec, (Vector2){ 0, 0 }, 0.0f, Fade(WHITE, tracemapFade)); 
+                
+                if (tracemapBlocked) 
+                {
+                    if (tracemapFocused) DrawRectangleLinesEx(tracemapRec, 1, MAROON);
+                    else DrawRectangleLinesEx(tracemapRec, 1, GRAY);
+                }
+                else
+                {
+                    if (tracemapFocused) 
+                    {
+                        DrawRectangleRec(tracemapRec, Fade(RED, 0.1f));
+                        DrawRectangleLinesEx(tracemapRec, 1, MAROON);                    
+                    }
+                    if (tracemapSelected)
+                    {
+                        tracemapColor = RED;
+                        if (!dragMode && resizeMode) tracemapColor = BLUE;
+                        DrawRectangleRec(tracemapRec, Fade(tracemapColor, 0.5f));                    
+                        
+                        positionColor = MAROON;
+                        if (useGlobalPos) positionColor = RED;
+                        if (snapMode) positionColor = LIME;
+                        if (!dragMode && precisionMode) positionColor = BLUE;
+                        DrawText(FormatText("[%i, %i, %i, %i]", (int)tracemapRec.x, (int)tracemapRec.y, (int)tracemapRec.width, (int)tracemapRec.height), tracemapRec.x, tracemapRec.y - 20, 20, positionColor);
+                    }
+                }              
             }
 
             // Draws the controls placed on the grid
@@ -1600,7 +1679,7 @@ int main(int argc, char *argv[])
             }
             
             // Draw the default rectangle of the control selected
-            if (!anchorLinkMode && (focusedControl == -1) && (focusedAnchor == -1) && (selectedAnchor == -1) && (selectedControl == -1) && !anchorEditMode && !tracemapEditMode && !closingWindowActive && !generateWindowActive && !(CheckCollisionPointRec(mouse, palettePanel)))
+            if (!anchorLinkMode && (focusedControl == -1) && (focusedAnchor == -1) && (selectedAnchor == -1) && (selectedControl == -1) && !tracemapFocused && !tracemapSelected && !anchorEditMode && !closingWindowActive && !generateWindowActive && !(CheckCollisionPointRec(mouse, palettePanel)))
             {
                 GuiFade(0.5f);
                 switch (selectedTypeDraw)
@@ -1719,7 +1798,7 @@ int main(int argc, char *argv[])
             }  
             
             // Draw cursor (control mode or anchor mode)
-            if ((focusedControl == -1)  && (focusedAnchor == -1))
+            if ((focusedControl == -1)  && (focusedAnchor == -1) && !tracemapFocused)
             {
                 if (anchorEditMode)
                 {
@@ -1753,15 +1832,12 @@ int main(int argc, char *argv[])
                 else DrawText(FormatText("[%i, %i, %i, %i]", (int)layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x, (int)layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y, (int)layout.controls[selectedControl].rec.width, (int)layout.controls[selectedControl].rec.height), (int)layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x, (int)layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y - 30, 20, positionColor);
             }
             // Draw cursor position
-            if (selectedControl == -1 && focusedControl == -1 && selectedAnchor == -1 && focusedAnchor == -1 && !anchorEditMode)
+            if (selectedControl == -1 && focusedControl == -1 && selectedAnchor == -1 && focusedAnchor == -1 && !anchorEditMode && !tracemapFocused && !tracemapSelected)
             {
                 positionColor = MAROON;
                 if (snapMode) positionColor = LIME;
                 DrawText(FormatText("[%i, %i, %i, %i]", (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y, (int)defaultRec[selectedType].width, (int)defaultRec[selectedType].height), (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
             }
-
-            // Draw image info
-            if (tracemapEditMode) DrawText(FormatText("[%i, %i, %i, %i]", tracemapRec.x, tracemapRec.y, tracemapRec.width, tracemapRec.height), tracemapRec.x + 25, tracemapRec.y + 25, 20, MAROON);
 
             // Draw the id of all controls
             if (selectedControl == -1 && orderEditMode)

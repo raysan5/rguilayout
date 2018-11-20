@@ -136,8 +136,8 @@
 #define LINE_BLINK_FRAMES           20      // Text edit controls cursor blink timming
 
 #define NUM_CONTROLS                12      // Number of standard controls
-#define NUM_CONTROL_PROPS_DEFAULT   16      // Number of standard properties
-#define NUM_CONTROL_PROPS_EX         8      // Number of extended properties
+#define NUM_PROPS_DEFAULT   16      // Number of standard properties
+#define NUM_PROPS_EXTENDED         8      // Number of extended properties
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -219,10 +219,10 @@ typedef enum {
     BORDER_COLOR_DISABLED,
     BASE_COLOR_DISABLED,
     TEXT_COLOR_DISABLED,
-    TEXT_SIZE,
-    TEXT_SPACING,
     BORDER_WIDTH,
     INNER_PADDING,
+    RESERVED01,
+    RESERVED02
 } GuiControlProperty;
 
 // Gui extended properties depending on control type
@@ -230,7 +230,9 @@ typedef enum {
 
 // Generic
 typedef enum {
-    LINES_COLOR = 16,
+    TEXT_SIZE = 16,
+    TEXT_SPACING,
+    LINES_COLOR,
     BACKGROUND_COLOR,
 } GuiGenericProperty;
 
@@ -546,7 +548,7 @@ RAYGUIDEF void GuiSetStyle(int control, int property, int value)
     // Get current style, initialized automatically if required (RAII)
     unsigned int *style = GetStyleDefault();
     
-    style[control*(NUM_CONTROL_PROPS_DEFAULT + NUM_CONTROL_PROPS_EX) + property] = value; 
+    style[control*(NUM_PROPS_DEFAULT + NUM_PROPS_EXTENDED) + property] = value; 
 }
 
 // Get control style property value
@@ -555,7 +557,7 @@ RAYGUIDEF int GuiGetStyle(int control, int property)
     // Get current style, initialized automatically if required (RAII)
     unsigned int *style = GetStyleDefault();
 
-    return style[control*(NUM_CONTROL_PROPS_DEFAULT + NUM_CONTROL_PROPS_EX) + property];
+    return style[control*(NUM_PROPS_DEFAULT + NUM_PROPS_EXTENDED) + property];
 }
 
 // Window Box control
@@ -1136,7 +1138,7 @@ RAYGUIDEF int GuiComboBox(Rectangle bounds, const char **text, int count, int ac
     bounds.width -= (GuiGetStyle(COMBOBOX, SELECTOR_WIDTH) + GuiGetStyle(COMBOBOX, SELECTOR_PADDING));
 
     Rectangle selector = { bounds.x + bounds.width + GuiGetStyle(COMBOBOX, SELECTOR_PADDING),
-                               bounds.y, GuiGetStyle(COMBOBOX, SELECTOR_WIDTH), bounds.height };
+                           bounds.y, GuiGetStyle(COMBOBOX, SELECTOR_WIDTH), bounds.height };
 
     if (active < 0) active = 0;
     else if (active > count - 1) active = count - 1;
@@ -1174,9 +1176,11 @@ RAYGUIDEF int GuiComboBox(Rectangle bounds, const char **text, int count, int ac
     {
         case GUI_STATE_NORMAL:
         {
+            // Draw combo box main
             DrawRectangleLinesEx(bounds, GuiGetStyle(COMBOBOX, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(COMBOBOX, BORDER_COLOR_NORMAL)), guiAlpha));
             DrawRectangle(bounds.x + GuiGetStyle(COMBOBOX, BORDER_WIDTH), bounds.y + GuiGetStyle(COMBOBOX, BORDER_WIDTH), bounds.width - 2*GuiGetStyle(COMBOBOX, BORDER_WIDTH), bounds.height - 2*GuiGetStyle(COMBOBOX, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(COMBOBOX, BASE_COLOR_NORMAL)), guiAlpha));
 
+            // Draw selector
             DrawRectangleLinesEx(selector, GuiGetStyle(COMBOBOX, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(COMBOBOX, BORDER_COLOR_NORMAL)), guiAlpha));
             DrawRectangle(selector.x + GuiGetStyle(COMBOBOX, BORDER_WIDTH), selector.y + GuiGetStyle(COMBOBOX, BORDER_WIDTH), selector.width - 2*GuiGetStyle(COMBOBOX, BORDER_WIDTH), selector.height - 2*GuiGetStyle(COMBOBOX, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(COMBOBOX, BASE_COLOR_NORMAL)), guiAlpha));
 
@@ -1607,7 +1611,7 @@ RAYGUIDEF bool GuiTextBox(Rectangle bounds, char *text, int textSize, bool editM
             DrawRectangle(bounds.x + GuiGetStyle(TEXTBOX, BORDER_WIDTH), bounds.y + GuiGetStyle(TEXTBOX, BORDER_WIDTH), bounds.width - 2*GuiGetStyle(TEXTBOX, BORDER_WIDTH), bounds.height - 2*GuiGetStyle(TEXTBOX, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(TEXTBOX, BASE_COLOR_FOCUSED)), guiAlpha));
             GuiDrawText(text, bounds.x + GuiGetStyle(TEXTBOX, INNER_PADDING), bounds.y + bounds.height/2 - GuiGetStyle(DEFAULT, TEXT_SIZE)/2, Fade(GetColor(GuiGetStyle(TEXTBOX, TEXT_COLOR_PRESSED)), guiAlpha));
 
-            if (editMode && ((framesCounter/20)%2 == 0)) DrawRectangle(bounds.x + GuiGetStyle(TEXTBOX, INNER_PADDING) + GuiTextWidth(text) + 2, bounds.y + GuiGetStyle(TEXTBOX, INNER_PADDING), 1, bounds.height - GuiGetStyle(TEXTBOX, INNER_PADDING)*2, Fade(GetColor(GuiGetStyle(TEXTBOX, BORDER_COLOR_PRESSED)), guiAlpha));
+            if (editMode && ((framesCounter/20)%2 == 0)) DrawRectangle(bounds.x + GuiGetStyle(TEXTBOX, INNER_PADDING) + GuiTextWidth(text) + 2, bounds.y + bounds.height/2 - GuiGetStyle(DEFAULT, TEXT_SIZE), 1, GuiGetStyle(DEFAULT, TEXT_SIZE)*2, Fade(GetColor(GuiGetStyle(TEXTBOX, BORDER_COLOR_PRESSED)), guiAlpha));
         } break;
         case GUI_STATE_DISABLED:
         {
@@ -1728,7 +1732,7 @@ RAYGUIDEF bool GuiTextBoxMulti(Rectangle bounds, char *text, int textSize, bool 
                         }
                         else
                         {
-                            int len = strlen(lastLine);
+                            int len = (lastLine != NULL) ? strlen(lastLine) : 0;
                             char lastChar = lastLine[len - 1];
                             lastLine[len - 1] = '\n';
                             lastLine[len] = lastChar;
@@ -1750,7 +1754,7 @@ RAYGUIDEF bool GuiTextBoxMulti(Rectangle bounds, char *text, int textSize, bool 
                         }
                         else
                         {
-                            int len = strlen(lastLine);
+                            int len = (lastLine != NULL) ? strlen(lastLine) : 0;
                             char lastChar = lastLine[len - 1];
                             lastLine[len - 1] = '\n';
                             lastLine[len] = lastChar;
@@ -2841,7 +2845,7 @@ RAYGUIDEF void GuiLoadStyle(const char *fileName)
         {
             for (int i = 0; i < NUM_CONTROLS; i++)
             {
-                for (int j = 0; j < NUM_CONTROL_PROPS_DEFAULT + NUM_CONTROL_PROPS_EX; j++)
+                for (int j = 0; j < NUM_PROPS_DEFAULT + NUM_PROPS_EXTENDED; j++)
                 {
                     fread(&value, 1, sizeof(unsigned int), rgsFile);
                     GuiSetStyle(i, j, value);
@@ -2917,7 +2921,7 @@ RAYGUIDEF void GuiUpdateStyleComplete(void)
     // NOTE: Extended style properties are ignored
     for (int i = 1; i < NUM_CONTROLS; i++)
     {
-        for (int j = 0; j < NUM_CONTROL_PROPS_DEFAULT; j++)GuiSetStyle(i, j, GuiGetStyle(DEFAULT, j));
+        for (int j = 0; j < NUM_PROPS_DEFAULT; j++)GuiSetStyle(i, j, GuiGetStyle(DEFAULT, j));
     }
 }
 #endif  // defined(RAYGUI_STYLE_LOADING)
@@ -2931,7 +2935,7 @@ static unsigned int *GetStyleDefault(void)
 {
     if (guiStyle == NULL)
     {
-        guiStyle = (unsigned int *)calloc(NUM_CONTROLS*(NUM_CONTROL_PROPS_DEFAULT + NUM_CONTROL_PROPS_EX), sizeof(unsigned int));
+        guiStyle = (unsigned int *)calloc(NUM_CONTROLS*(NUM_PROPS_DEFAULT + NUM_PROPS_EXTENDED), sizeof(unsigned int));
         
         // Initialize default LIGHT style property values
         GuiSetStyle(DEFAULT, BORDER_COLOR_NORMAL, 0x838383ff);
@@ -2954,7 +2958,7 @@ static unsigned int *GetStyleDefault(void)
         // Populate all controls with default style 
         for (int i = 1; i < NUM_CONTROLS; i++)
         {
-            for (int j = 0; j < NUM_CONTROL_PROPS_DEFAULT; j++) GuiSetStyle(i, j, GuiGetStyle(DEFAULT, j));
+            for (int j = 0; j < NUM_PROPS_DEFAULT; j++) GuiSetStyle(i, j, GuiGetStyle(DEFAULT, j));
         }
 
         // Initialize extended property values
@@ -2966,6 +2970,7 @@ static unsigned int *GetStyleDefault(void)
         GuiSetStyle(SLIDER, SLIDER_WIDTH, 15);
         GuiSetStyle(SLIDER, EX_TEXT_PADDING, 5);
         GuiSetStyle(CHECKBOX, CHECK_TEXT_PADDING, 5);
+        GuiSetStyle(COMBOBOX, SELECTOR_WIDTH, 30);
         GuiSetStyle(COMBOBOX, SELECTOR_PADDING, 2);
         GuiSetStyle(DROPDOWNBOX, ARROW_RIGHT_PADDING, 16);
         GuiSetStyle(TEXTBOX, INNER_PADDING, 4);
@@ -2981,6 +2986,8 @@ static unsigned int *GetStyleDefault(void)
         GuiSetStyle(LISTVIEW, ELEMENTS_HEIGHT, 0x1e);
         GuiSetStyle(LISTVIEW, ELEMENTS_PADDING, 2);
         GuiSetStyle(LISTVIEW, SCROLLBAR_WIDTH, 10);
+        
+        // TODO: Allocated memory must be freed!
     }
 
     return guiStyle;
