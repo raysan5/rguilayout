@@ -1,10 +1,10 @@
 /*******************************************************************************************
 *
-*   rGuiLayout v1.2 - A simple and easy-to-use raygui layouts editor
+*   rGuiLayout v2.0-dev - A simple and easy-to-use raygui layouts editor
 *
 *   CONFIGURATION:
 *
-*   #define ENABLE_PRO_FEATURES
+*   #define VERSION_ONE
 *       Enable PRO features for the tool. Usually command-line and export options related.
 *
 *   DEPENDENCIES:
@@ -49,7 +49,7 @@
 #include "raylib.h"
 
 #define RAYGUI_IMPLEMENTATION
-#define RAYGUI_STYLE_SAVE_LOAD
+#define RAYGUI_STYLE_LOADING
 #include "raygui.h"                         // Required for: IMGUI controls
 
 #include "external/easings.h"               // Required for: Easing animations math
@@ -60,9 +60,9 @@
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
-#define ENABLE_PRO_FEATURES                 // Enable PRO version features
+#define VERSION_ONE                         // Enable PRO version features
 
-#define TOOL_VERSION_TEXT         "1.2"     // Tool version string
+#define TOOL_VERSION_TEXT         "2.0-dev"     // Tool version string
 
 #define MAX_GUI_CONTROLS           256      // Maximum number of gui controls
 #define CONTROLS_TYPE_NUM           32
@@ -73,7 +73,7 @@
 #define MAX_CONTROL_NAME_LENGTH     32      // Maximum length of control name (used on code generation)
 #define MAX_ANCHOR_NAME_LENGTH      32
 
-#define MIN_CONTROL_SIZE            10
+#define MIN_CONTROL_SIZE            10      // Minimum control size
 
 #define GRID_LINE_SPACING           20      // Grid line spacing in pixels
 
@@ -168,7 +168,7 @@ static char loadedFileName[256] = { 0 };    // Loaded layout file name
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
 //----------------------------------------------------------------------------------
-#if defined(ENABLE_PRO_FEATURES)
+#if defined(VERSION_ONE)
 static void ShowCommandLineInfo(void);                      // Show command line usage info
 static void ProcessCommandLine(int argc, char *argv[]);     // Process command line input
 #endif
@@ -181,7 +181,7 @@ static void DialogSaveLayout(void);                             // Show dialog: 
 static void DialogExportLayout(GuiLayoutConfig config);         // Show dialog: export layout file (.c)
 
 // Code generation functions
-static char *GetControlRectangleText(int index, GuiControl control, GuiLayoutConfig config);    // Get control rectangle text
+static char *GetControlRectangleText(int index, GuiControl control, GuiLayoutConfig config, bool forceRecs);    // Get control rectangle text
 static char *GetControlParamText(int controlType, char *name, GuiLayoutConfig config);          // Get control func parameters text
 static void WriteControlsVariables(FILE *ftool, GuiControl control, GuiLayoutConfig config);    // Write controls variables code to file
 static void WriteControlsDrawing(FILE *ftool,int index, GuiControl control, GuiLayoutConfig config);      // Write controls drawing code to file
@@ -208,13 +208,13 @@ int main(int argc, char *argv[])
                 strcpy(inFileName, argv[1]);        // Read input filename
             }
         }
-#if defined(ENABLE_PRO_FEATURES)
+#if defined(VERSION_ONE)
         else
         {
             ProcessCommandLine(argc, argv);
             return 0;
         }
-#endif      // ENABLE_PRO_FEATURES
+#endif      // VERSION_ONE
     }
 
     // GUI usage mode - Initialization
@@ -451,13 +451,13 @@ int main(int argc, char *argv[])
                 strcpy(loadedFileName, droppedFileName);
                 SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
             }
-            else if (IsFileExtension(droppedFileName, ".rgs")); //TODO GuiLoadStyle(droppedFileName);
+            else if (IsFileExtension(droppedFileName, ".rgs")) GuiLoadStyle(droppedFileName);
             else if (IsFileExtension(droppedFileName, ".png"))
             {
                 if (loadedTexture.id > 0) UnloadTexture(loadedTexture);
                 loadedTexture = LoadTexture(droppedFileName);
 
-                if (loadedTexture.width == 64 && loadedTexture.height == 16); //TODO GuiLoadStylePaletteImage(droppedFileName);
+                if ((loadedTexture.width == 64) && (loadedTexture.height == 16)) GuiLoadStylePaletteImage(droppedFileName);
                 else
                 {
                     if (tracemap.id > 0) UnloadTexture(tracemap);
@@ -2043,7 +2043,7 @@ int main(int argc, char *argv[])
 // Module Functions Definitions (local)
 //----------------------------------------------------------------------------------
 
-#if defined(ENABLE_PRO_FEATURES)
+#if defined(VERSION_ONE)
 // Show command line usage info
 static void ShowCommandLineInfo(void)
 {
@@ -2163,7 +2163,7 @@ static void ProcessCommandLine(int argc, char *argv[])
 
     if (showUsageInfo) ShowCommandLineInfo();
 }
-#endif      // ENABLE_PRO_FEATURES
+#endif      // VERSION_ONE
 
 //--------------------------------------------------------------------------------------------
 // Load/Save/Export data functions
@@ -2354,12 +2354,12 @@ static void DialogExportLayout(GuiLayoutConfig config)
 //--------------------------------------------------------------------------------------------
 
 // Get control rectangle text (considering anchor or not)
-static char *GetControlRectangleText(int index, GuiControl control, GuiLayoutConfig config)
+static char *GetControlRectangleText(int index, GuiControl control, GuiLayoutConfig config, bool forceRecs)
 {
     static char text[512];
     memset(text, 0, 512);
 
-    if (!config.defineRecs)
+    if (!config.defineRecs || forceRecs)
     {
         if (config.exportAnchors && config.exportAnchor0) strcpy(text, FormatText("(Rectangle){ anchor%02i.x + %i, anchor%02i.y + %i, %i, %i }", control.ap->id, (int)control.rec.x, control.ap->id, (int)control.rec.y, (int)control.rec.width, (int)control.rec.height));
         else if (config.exportAnchors && !config.exportAnchor0)
@@ -2499,52 +2499,53 @@ static void WriteControlsVariables(FILE *ftool, GuiControl control, GuiLayoutCon
 static void WriteControlsDrawing(FILE *ftool, int index, GuiControl control, GuiLayoutConfig config)
 {
     int i = index;
+    char *rec = GetControlRectangleText(i, control, config, false);
 
     switch (control.type)
     {
         case GUI_LABEL:
         {
-            if (config.defineTexts) fprintf(ftool, "            GuiLabel(%s, %sText);\n", GetControlRectangleText(i, control, config), control.name);
-            else fprintf(ftool, "            GuiLabel(%s, \"%s\");\n", GetControlRectangleText(i, control, config), control.text);
+            if (config.defineTexts) fprintf(ftool, "            GuiLabel(%s, %sText);\n", rec, control.name);
+            else fprintf(ftool, "            GuiLabel(%s, \"%s\");\n", rec, control.text);
         }
         break;
-        case GUI_BUTTON: fprintf(ftool, "            if (GuiButton(%s, \"%s\")) %s(); \n\n", GetControlRectangleText(i, control, config), control.text, control.name); break;
-        case GUI_VALUEBOX: fprintf(ftool, "            if (GuiValueBox(%s, %sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;\n", control.name, GetControlRectangleText(i, control, config), control.name, control.name, control.name, control.name); break;
-        case GUI_TOGGLE: fprintf(ftool, "            %sActive = GuiToggle(%s, \"%s\", %sActive);\n", control.name, GetControlRectangleText(i, control, config), control.text, control.name); break;
-        case GUI_TOGGLEGROUP: fprintf(ftool, "            %sActive = GuiToggleGroup(%s, %sTextList, %s, %sActive);\n", control.name, GetControlRectangleText(i, control, config), control.name, GetControlParamText(control.type, control.name, config), control.name); break;
+        case GUI_BUTTON: fprintf(ftool, "            if (GuiButton(%s, \"%s\")) %s(); \n\n", rec, control.text, control.name); break;
+        case GUI_VALUEBOX: fprintf(ftool, "            if (GuiValueBox(%s, %sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;\n", control.name, rec, control.name, control.name, control.name, control.name); break;
+        case GUI_TOGGLE: fprintf(ftool, "            %sActive = GuiToggle(%s, \"%s\", %sActive);\n", control.name, rec, control.text, control.name); break;
+        case GUI_TOGGLEGROUP: fprintf(ftool, "            %sActive = GuiToggleGroup(%s, %sTextList, %s, %sActive);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.name); break;
         case GUI_SLIDER:
         {
-            if (control.text[0] != '\0') fprintf(ftool, "            %sValue = GuiSliderEx(%s, %sValue, %s, \"%s\", true);\n", control.name, GetControlRectangleText(i, control, config), control.name, GetControlParamText(control.type, control.name, config), control.text);
-            else fprintf(ftool, "            %sValue = GuiSlider(%s, %sValue, %s);\n", control.name, GetControlRectangleText(i, control, config), control.name, GetControlParamText(control.type, control.name, config));
+            if (control.text[0] != '\0') fprintf(ftool, "            %sValue = GuiSliderEx(%s, %sValue, %s, \"%s\", true);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.text);
+            else fprintf(ftool, "            %sValue = GuiSlider(%s, %sValue, %s);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config));
         } break;
         case GUI_SLIDERBAR:
         {
-            if (control.text[0] != '\0') fprintf(ftool, "            %sValue = GuiSliderBarEx(%s, %sValue, %s, \"%s\", true);\n", control.name, GetControlRectangleText(i, control, config), control.name, GetControlParamText(control.type, control.name, config), control.text);
-            else fprintf(ftool, "            %sValue = GuiSliderBar(%s, %sValue, %s);\n", control.name, GetControlRectangleText(i, control, config), control.name, GetControlParamText(control.type, control.name, config));
+            if (control.text[0] != '\0') fprintf(ftool, "            %sValue = GuiSliderBarEx(%s, %sValue, %s, \"%s\", true);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.text);
+            else fprintf(ftool, "            %sValue = GuiSliderBar(%s, %sValue, %s);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config));
         } break;
-        case GUI_PROGRESSBAR: fprintf(ftool, "            %sValue = GuiProgressBarEx(%s, %sValue, 0, 100, true);\n", control.name, GetControlRectangleText(i, control, config), control.name); break;
-        case GUI_SPINNER: fprintf(ftool, "            if (GuiSpinner(%s, %sValue, 0, 100, 25, %sEditMode)) %sEditMode = !%sEditMode;\n", GetControlRectangleText(i, control, config), control.name, control.name, control.name, control.name); break;
-        case GUI_COMBOBOX: fprintf(ftool, "            %sActive = GuiComboBox(%s, %sTextList, %s, %sActive);\n", control.name, GetControlRectangleText(i, control, config), control.name, GetControlParamText(control.type, control.name, config), control.name); break;
+        case GUI_PROGRESSBAR: fprintf(ftool, "            %sValue = GuiProgressBarEx(%s, %sValue, 0, 100, true);\n", control.name, rec, control.name); break;
+        case GUI_SPINNER: fprintf(ftool, "            if (GuiSpinner(%s, %sValue, 0, 100, 25, %sEditMode)) %sEditMode = !%sEditMode;\n", rec, control.name, control.name, control.name, control.name); break;
+        case GUI_COMBOBOX: fprintf(ftool, "            %sActive = GuiComboBox(%s, %sTextList, %s, %sActive);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.name); break;
         case GUI_CHECKBOX:
         {
-            if (control.text[0] != '\0') fprintf(ftool, "            %sChecked = GuiCheckBoxEx(%s, %sChecked, \"%s\");\n", control.name, GetControlRectangleText(i, control, config), control.name, control.text);
-            else fprintf(ftool, "            %sChecked = GuiCheckBox(%s, %sChecked); \n", control.name, GetControlRectangleText(i, control, config), control.name);
+            if (control.text[0] != '\0') fprintf(ftool, "            %sChecked = GuiCheckBoxEx(%s, %sChecked, \"%s\");\n", control.name, rec, control.name, control.text);
+            else fprintf(ftool, "            %sChecked = GuiCheckBox(%s, %sChecked); \n", control.name, rec, control.name);
         } break;
-        case GUI_LISTVIEW: fprintf(ftool, "            if (GuiListView(%s, %sTextList, %s, &%sScrollIndex, &%sActive, %sEditMode)) %sEditMode = !%sEditMode;\n", GetControlRectangleText(i, control, config), control.name, GetControlParamText(control.type, control.name, config), control.name, control.name, control.name, control.name, control.name); break;
-        case GUI_TEXTBOX: fprintf(ftool, "            GuiTextBox(%s, %sText, %s, true);\n", GetControlRectangleText(i, control, config), control.name, GetControlParamText(control.type, control.name, config)); break;
-        case GUI_GROUPBOX: fprintf(ftool, "            GuiGroupBox(%s, \"%s\");\n", GetControlRectangleText(i, control, config), control.text); break;
+        case GUI_LISTVIEW: fprintf(ftool, "            if (GuiListView(%s, %sTextList, %s, &%sScrollIndex, &%sActive, %sEditMode)) %sEditMode = !%sEditMode;\n", rec, control.name, GetControlParamText(control.type, control.name, config), control.name, control.name, control.name, control.name, control.name); break;
+        case GUI_TEXTBOX: fprintf(ftool, "            GuiTextBox(%s, %sText, %s, true);\n", rec, control.name, GetControlParamText(control.type, control.name, config)); break;
+        case GUI_GROUPBOX: fprintf(ftool, "            GuiGroupBox(%s, \"%s\");\n", rec, control.text); break;
         case GUI_WINDOWBOX:
         {
             fprintf(ftool, "            if (%sActive)\n            {\n", control.name);
-            fprintf(ftool, "                %sActive = !GuiWindowBox(%s, \"%s\");\n", control.name, GetControlRectangleText(i, control, config), control.text);
+            fprintf(ftool, "                %sActive = !GuiWindowBox(%s, \"%s\");\n", control.name, rec, control.text);
             fprintf(ftool, "            }\n");
         }break;
-        case GUI_DUMMYREC: fprintf(ftool, "            GuiDummyRec(%s, \"%s\");\n", GetControlRectangleText(i, control, config), control.text); break;
-        case GUI_DROPDOWNBOX: fprintf(ftool, "            if (GuiDropdownBox(%s, %sTextList, %s, &%sActive, %sEditMode)) %sEditMode = !%sEditMode; \n", GetControlRectangleText(i, control, config), control.name, GetControlParamText(control.type, control.name, config), control.name, control.name, control.name, control.name); break;
-        case GUI_STATUSBAR: fprintf(ftool, "            GuiStatusBar(%s, %sText, 10);\n", GetControlRectangleText(i, control, config), control.name); break;
-        case GUI_COLORPICKER: fprintf(ftool, "            %sValue = GuiColorPicker(%s, %sValue);\n", control.name, GetControlRectangleText(i, control, config), control.name); break;
-        case GUI_LINE: fprintf(ftool, "            GuiLine(%s, 1);\n", GetControlRectangleText(i, control, config)); break;
-        case GUI_PANEL: fprintf(ftool, "            GuiPanel(%s);\n", GetControlRectangleText(i, control, config)); break;
+        case GUI_DUMMYREC: fprintf(ftool, "            GuiDummyRec(%s, \"%s\");\n", rec, control.text); break;
+        case GUI_DROPDOWNBOX: fprintf(ftool, "            if (GuiDropdownBox(%s, %sTextList, %s, &%sActive, %sEditMode)) %sEditMode = !%sEditMode; \n", rec, control.name, GetControlParamText(control.type, control.name, config), control.name, control.name, control.name, control.name); break;
+        case GUI_STATUSBAR: fprintf(ftool, "            GuiStatusBar(%s, %sText, 10);\n", rec, control.name); break;
+        case GUI_COLORPICKER: fprintf(ftool, "            %sValue = GuiColorPicker(%s, %sValue);\n", control.name, rec, control.name); break;
+        case GUI_LINE: fprintf(ftool, "            GuiLine(%s, 1);\n", rec); break;
+        case GUI_PANEL: fprintf(ftool, "            GuiPanel(%s);\n", rec); break;
 
         default: break;
     }
@@ -2623,10 +2624,12 @@ static void GenerateCode(const char *fileName, GuiLayoutConfig config)
         // Define controls rectangles
         fprintf(ftool, "\n    // Define controls rectangles\n");
         fprintf(ftool, "    Rectangle layoutRecs[%i] = {\n", layout.controlsCount);
+        
+        //strcpy(text, FormatText("layoutRecs[%i]", index));
 
         for (int i = 0; i < layout.controlsCount; i++)
         {
-            fprintf(ftool, "        %s", GetControlRectangleText(i, layout.controls[i], config));
+            fprintf(ftool, "        %s", GetControlRectangleText(i, layout.controls[i], config, true));
             fprintf(ftool, (i == layout.controlsCount - 1) ? "        // %s: %s\n    };\n\n" : ",        // %s: %s\n", controlTypeNameLow[layout.controls[i].type], layout.controls[i].name);
         }
     }
