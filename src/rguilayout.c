@@ -337,37 +337,37 @@ int main(int argc, char *argv[])
     }
 
     // Define palette variables
-    Rectangle palettePanel = { GetScreenWidth() + 130, 15, 135, 835 };
-    // TODO: int paletteOffset for easing animation
+    Rectangle palettePanel = { 0, 15, 135, 835 };
+    int paletteOffset = 0;
     int paletteSelect = -1;
-    int paletteCounter = 0;
+    int paletteCounter = PANELS_EASING_FRAMES;
     int paletteStartPositionX = GetScreenWidth() + 130;
     int paletteDeltaPositionX = 0;
     bool paletteActive = false;
 
     // Define palette rectangles
     Rectangle paletteRecs[CONTROLS_TYPE_NUM] = {
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 5, 125, 50 },     // WindowBox
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 65, 125, 30 },    // GroupBox
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 105, 125, 25 },   // Line
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 140, 125, 35 },   // Panel
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 185, 126, 25 },   // Label
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 220, 125, 30 },   // Button
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 260, 90, 25 },    // Toggle
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 295, 125, 25 },   // ToggleGroup
-        (Rectangle){ palettePanel.x + 105, palettePanel.y + 265, 15, 15 },  // CheckBox
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 330, 125, 25 },   // ComboBox
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 365, 125, 25 },   // DropdownBox
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 400, 125, 25 },   // Spinner
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 435, 125, 25 },   // ValueBox
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 470, 125, 25 },   // TextBox
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 505, 125, 15 },   // Slider
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 530, 125, 15 },   // SliderBar
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 555, 125, 15 },   // ProgressBar
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 580, 125, 25 },   // StatusBar
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 615, 125, 75 },   // ListView
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 700, 95, 95 },    // ColorPicker
-        (Rectangle){ palettePanel.x + 5, palettePanel.y + 800, 125, 30 }    // DummyRec
+        (Rectangle){ 5, 5, 125, 50 },     // WindowBox
+        (Rectangle){ 5, 65, 125, 30 },    // GroupBox
+        (Rectangle){ 5, 105, 125, 25 },   // Line
+        (Rectangle){ 5, 140, 125, 35 },   // Panel
+        (Rectangle){ 5, 185, 126, 25 },   // Label
+        (Rectangle){ 5, 220, 125, 30 },   // Button
+        (Rectangle){ 5, 260, 90, 25 },    // Toggle
+        (Rectangle){ 5, 295, 125, 25 },   // ToggleGroup
+        (Rectangle){ 105, 265, 15, 15 },  // CheckBox
+        (Rectangle){ 5, 330, 125, 25 },   // ComboBox
+        (Rectangle){ 5, 365, 125, 25 },   // DropdownBox
+        (Rectangle){ 5, 400, 125, 25 },   // Spinner
+        (Rectangle){ 5, 435, 125, 25 },   // ValueBox
+        (Rectangle){ 5, 470, 125, 25 },   // TextBox
+        (Rectangle){ 5, 505, 125, 15 },   // Slider
+        (Rectangle){ 5, 530, 125, 15 },   // SliderBar
+        (Rectangle){ 5, 555, 125, 15 },   // ProgressBar
+        (Rectangle){ 5, 580, 125, 25 },   // StatusBar
+        (Rectangle){ 5, 615, 125, 75 },   // ListView
+        (Rectangle){ 5, 700, 95, 95 },    // ColorPicker
+        (Rectangle){ 5, 800, 125, 30 }    // DummyRec
     };
 
     // Tracemap (background image for reference) variables
@@ -589,33 +589,28 @@ int main(int argc, char *argv[])
         }
 
         // Toggle palette selector
+        palettePanel.x = GetScreenWidth() + paletteOffset;
         if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && (focusedAnchor == -1) && (focusedControl == -1))
         {
             paletteCounter = 0;
-            paletteStartPositionX = palettePanel.x;
+            paletteStartPositionX = paletteOffset;
 
-            if (paletteActive) paletteDeltaPositionX = GetScreenWidth() + 130 - paletteStartPositionX;
-            else paletteDeltaPositionX = (GetScreenWidth() - 145) - paletteStartPositionX;
+            if (paletteActive) paletteDeltaPositionX = 0 - paletteStartPositionX;
+            else paletteDeltaPositionX = -(palettePanel.width + 15) - paletteStartPositionX;
 
             paletteActive = !paletteActive;
         }        
         if (paletteCounter <= PANELS_EASING_FRAMES)
         {
             paletteCounter++;
-            palettePanel.x = (int)EaseCubicInOut(paletteCounter, paletteStartPositionX, paletteDeltaPositionX, PANELS_EASING_FRAMES);
-
-            for (int i = 0; i < CONTROLS_TYPE_NUM; i++)
-            {
-                if (i == 8) paletteRecs[i].x = palettePanel.x + 105;
-                else paletteRecs[i].x = palettePanel.x + 5;
-            }
+            paletteOffset = (int)EaseCubicInOut(paletteCounter, paletteStartPositionX, paletteDeltaPositionX, PANELS_EASING_FRAMES);
         }
         // Controls palette selector logic
         else if (paletteActive)
         {
             for (int i = 0; i < CONTROLS_TYPE_NUM; i++)
             {
-                if (CheckCollisionPointRec(mouse, paletteRecs[i]))
+                if (CheckCollisionPointRec(mouse, (Rectangle){palettePanel.x + paletteRecs[i].x, palettePanel.y + paletteRecs[i].y, paletteRecs[i].width, paletteRecs[i].height}))
                 {
                     paletteSelect = i;
                     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) selectedType = i;
@@ -624,6 +619,7 @@ int main(int argc, char *argv[])
                 else paletteSelect = -1;
             }
         }
+        
         // ---------------------------------------------------------------------------------------------
 
         // LAYOUT LOGIC
@@ -1990,37 +1986,37 @@ int main(int argc, char *argv[])
                 }
 
                 // Draw right panel controls palette
-                GuiLock();
+                GuiLock();                
                 GuiPanel(palettePanel);
-                GuiWindowBox(paletteRecs[0], "WindowBox");
-                GuiGroupBox(paletteRecs[1], "GroupBox");
-                GuiLine(paletteRecs[2], 1);
-                GuiPanel(paletteRecs[3]);
-                GuiLabel(paletteRecs[4], "Label (SAMPLE TEXT)");
-                GuiButton(paletteRecs[5], "Button");
-                GuiToggle(paletteRecs[6], "Toggle", false);
-                GuiCheckBox(paletteRecs[8], false);
-                GuiToggleGroup(paletteRecs[7], listData, 3, 0);
-                GuiComboBox(paletteRecs[9],  listData, 3, 0);
-                GuiDropdownBox(paletteRecs[10], listData, 3, &dropdownBoxActive, false);
-                GuiSpinner(paletteRecs[11], &spinnerValue, 42, 100, 25, false);
-                GuiValueBox(paletteRecs[12], &valueBoxValue, 42, 100, false);
-                GuiTextBox(paletteRecs[13], "GUI_TEXTBOX", 7, false);
-                GuiSlider(paletteRecs[14], 42, 0, 100);
-                GuiSliderBar(paletteRecs[15], 42, 0, 100);
-                GuiProgressBar(paletteRecs[16], 42, 0, 100);
-                GuiStatusBar(paletteRecs[17], "StatusBar", 10);
-                GuiListView(paletteRecs[18], listData, 3, &listViewScrollIndex, &listViewActive, false);
-                GuiColorPicker(paletteRecs[19], RED);
-                GuiDummyRec(paletteRecs[20], "DummyRec");
+                GuiWindowBox((Rectangle){palettePanel.x + paletteRecs[0].x ,palettePanel.y + paletteRecs[0].y, paletteRecs[0].width, paletteRecs[0].height}, "WindowBox");
+                GuiGroupBox((Rectangle){palettePanel.x + paletteRecs[1].x ,palettePanel.y + paletteRecs[1].y, paletteRecs[1].width, paletteRecs[1].height}, "GroupBox");
+                GuiLine((Rectangle){palettePanel.x + paletteRecs[2].x ,palettePanel.y + paletteRecs[2].y, paletteRecs[2].width, paletteRecs[2].height}, 1);
+                GuiPanel((Rectangle){palettePanel.x + paletteRecs[3].x ,palettePanel.y + paletteRecs[3].y, paletteRecs[3].width, paletteRecs[3].height});
+                GuiLabel((Rectangle){palettePanel.x + paletteRecs[4].x ,palettePanel.y + paletteRecs[4].y, paletteRecs[4].width, paletteRecs[4].height}, "Label (SAMPLE TEXT)");
+                GuiButton((Rectangle){palettePanel.x + paletteRecs[5].x ,palettePanel.y + paletteRecs[5].y, paletteRecs[5].width, paletteRecs[5].height}, "Button");
+                GuiToggle((Rectangle){palettePanel.x + paletteRecs[6].x ,palettePanel.y + paletteRecs[6].y, paletteRecs[6].width, paletteRecs[6].height}, "Toggle", false);
+                GuiCheckBox((Rectangle){palettePanel.x + paletteRecs[8].x ,palettePanel.y + paletteRecs[8].y, paletteRecs[8].width, paletteRecs[8].height}, false);
+                GuiToggleGroup((Rectangle){palettePanel.x + paletteRecs[7].x ,palettePanel.y + paletteRecs[7].y, paletteRecs[7].width, paletteRecs[7].height}, listData, 3, 8);
+                GuiComboBox((Rectangle){palettePanel.x + paletteRecs[9].x ,palettePanel.y + paletteRecs[9].y, paletteRecs[9].width, paletteRecs[9].height},  listData, 3, 9);
+                GuiDropdownBox((Rectangle){palettePanel.x + paletteRecs[10].x ,palettePanel.y + paletteRecs[10].y, paletteRecs[10].width, paletteRecs[10].height}, listData, 3, &dropdownBoxActive, false);
+                GuiSpinner((Rectangle){palettePanel.x + paletteRecs[11].x ,palettePanel.y + paletteRecs[11].y, paletteRecs[11].width, paletteRecs[11].height}, &spinnerValue, 42, 0, 25, false);
+                GuiValueBox((Rectangle){palettePanel.x + paletteRecs[12].x ,palettePanel.y + paletteRecs[12].y, paletteRecs[12].width, paletteRecs[12].height}, &valueBoxValue, 42, 0, false);
+                GuiTextBox((Rectangle){palettePanel.x + paletteRecs[13].x ,palettePanel.y + paletteRecs[13].y, paletteRecs[13].width, paletteRecs[13].height}, "GUI_TEXTBOX", 7, false);
+                GuiSlider((Rectangle){palettePanel.x + paletteRecs[14].x ,palettePanel.y + paletteRecs[14].y, paletteRecs[14].width, paletteRecs[14].height}, 42, 14, 0);
+                GuiSliderBar((Rectangle){palettePanel.x + paletteRecs[15].x ,palettePanel.y + paletteRecs[15].y, paletteRecs[15].width, paletteRecs[15].height}, 42, 15, 0);
+                GuiProgressBar((Rectangle){palettePanel.x + paletteRecs[16].x ,palettePanel.y + paletteRecs[16].y, paletteRecs[16].width, paletteRecs[16].height}, 42, 16, 0);
+                GuiStatusBar((Rectangle){palettePanel.x + paletteRecs[17].x ,palettePanel.y + paletteRecs[17].y, paletteRecs[17].width, paletteRecs[17].height}, "StatusBar", 10);
+                GuiListView((Rectangle){palettePanel.x + paletteRecs[18].x ,palettePanel.y + paletteRecs[18].y, paletteRecs[18].width, paletteRecs[18].height}, listData, 3, &listViewScrollIndex, &listViewActive, false);
+                GuiColorPicker((Rectangle){palettePanel.x + paletteRecs[19].x ,palettePanel.y + paletteRecs[19].y, paletteRecs[19].width, paletteRecs[19].height}, RED);
+                GuiDummyRec((Rectangle){palettePanel.x + paletteRecs[20].x ,palettePanel.y + paletteRecs[20].y, paletteRecs[20].width, paletteRecs[20].height}, "DummyRec");
                 GuiUnlock();
                 
-                DrawRectangleRec(paletteRecs[selectedType], Fade(RED, 0.5f));
+                DrawRectangleRec((Rectangle){palettePanel.x + paletteRecs[selectedType].x, palettePanel.y + paletteRecs[selectedType].y, paletteRecs[selectedType].width, paletteRecs[selectedType].height}, Fade(RED, 0.5f));
 
                 if (paletteSelect > -1) 
                 {
-                    if (selectedType != paletteSelect) DrawRectangleRec(paletteRecs[paletteSelect], Fade(RED, 0.1f));
-                    DrawRectangleLinesEx(paletteRecs[paletteSelect], 1, MAROON);
+                    if (selectedType != paletteSelect) DrawRectangleRec((Rectangle){palettePanel.x + paletteRecs[paletteSelect].x, palettePanel.y + paletteRecs[paletteSelect].y, paletteRecs[paletteSelect].width, paletteRecs[paletteSelect].height}, Fade(RED, 0.1f));
+                    DrawRectangleLinesEx((Rectangle){palettePanel.x + paletteRecs[paletteSelect].x, palettePanel.y + paletteRecs[paletteSelect].y, paletteRecs[paletteSelect].width, paletteRecs[paletteSelect].height}, 1, MAROON);
                 }
             }  
             else
