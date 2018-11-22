@@ -52,6 +52,10 @@
 #define RAYGUI_STYLE_LOADING
 #include "raygui.h"                         // Required for: IMGUI controls
 
+#undef RAYGUI_IMPLEMENTATION
+#define GUI_WINDOW_EXPORT_CODE_IMPLEMENTATION
+#include "gui_window_export_code.h"
+
 #include "external/easings.h"               // Required for: Easing animations math
 #include "external/tinyfiledialogs.h"       // Required for: Open/Save file dialogs
 
@@ -389,20 +393,11 @@ int main(int argc, char *argv[])
     // Close layout window variables
     bool closingWindowActive = false;
 
-    // Export code options window variables
-    Vector2 exportWindowSize = {400, 225};
-    Vector2 exportWindowPos = { screenWidth/2 - exportWindowSize.x/2, screenHeight/2 - exportWindowSize.y/2 };
-    bool exportWindowActive = false;
-    int toolNameSize = 32;
-    int toolVersionSize = 32;
-    int companySize = 32;
-    int toolDescriptionSize = 256;
-    bool filenameEditMode = false;
-    bool versionEditMode = false;
-    bool companyEditMode = false;
-    bool descriptionEditMode = false;
-    bool widthBoxEditMode = false;
-    bool heightBoxEditMode = false;
+   
+    // Export window Layout: controls initialization
+    //----------------------------------------------------------------------------------------
+    GuiWindowExportCodeState windowExportCodeState = InitGuiWindowExportCode();
+    //----------------------------------------------------------------------------------------
 
     // Generate code configuration
     GuiLayoutConfig config;
@@ -501,7 +496,7 @@ int main(int argc, char *argv[])
             if (IsKeyPressed(KEY_ESCAPE))
             {
                 // Close windows
-                if (exportWindowActive) exportWindowActive = false;
+                if (windowExportCodeState.active) windowExportCodeState.active = false;
                 else if (resetWindowActive) resetWindowActive = false;
                 // Quit application
                 else if (layout.controlsCount <= 0 && layout.anchorsCount <= 1) exitWindow = true;
@@ -513,7 +508,7 @@ int main(int argc, char *argv[])
                 }
             }
 
-            if (!exportWindowActive && !closingWindowActive && !resetWindowActive)
+            if (!windowExportCodeState.active && !closingWindowActive && !resetWindowActive)
             {
                 // Enables or disables snapMode if not in textEditMode
                 if (IsKeyPressed(KEY_S)) 
@@ -565,7 +560,7 @@ int main(int argc, char *argv[])
                     // Open reset window
                     if (IsKeyPressed(KEY_N)) resetWindowActive = true;
                     // Activate code generation export window
-                    if (IsKeyPressed(KEY_ENTER)) exportWindowActive = true;
+                    if (IsKeyPressed(KEY_ENTER)) windowExportCodeState.active = true;
                 }
             }            
         }
@@ -624,7 +619,7 @@ int main(int argc, char *argv[])
 
         // LAYOUT LOGIC
         // ---------------------------------------------------------------------------------------------
-        if (!closingWindowActive && !exportWindowActive && !resetWindowActive)
+        if (!closingWindowActive && !windowExportCodeState.active && !resetWindowActive)
         {
             if (!nameEditMode)
             {
@@ -1771,7 +1766,7 @@ int main(int argc, char *argv[])
                 }
             }
             
-            if (!closingWindowActive && !exportWindowActive && !resetWindowActive)
+            if (!closingWindowActive && !windowExportCodeState.active && !resetWindowActive)
             {
                 if (!(CheckCollisionPointRec(mouse, palettePanel)))
                 {
@@ -2045,39 +2040,27 @@ int main(int argc, char *argv[])
                 }
                 
                 // Draw export options window
-                if (exportWindowActive)
+                if (windowExportCodeState.active) 
                 {
-                    exportWindowPos = (Vector2){ GetScreenWidth()/2 - exportWindowSize.x/2, GetScreenHeight()/2 - exportWindowSize.y/2 };
-                    
-                    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(WHITE, 0.7f));
-                    exportWindowActive = !GuiWindowBox((Rectangle){ exportWindowPos.x, exportWindowPos.y, exportWindowSize.x, exportWindowSize.y }, "Export Code Options - layout");
-
-                    GuiLabel((Rectangle){ exportWindowPos.x + 10, exportWindowPos.y + 35, 65, 25 }, "Name:");
-                    if (GuiTextBox((Rectangle){ exportWindowPos.x + 75, exportWindowPos.y + 35, 135, 25 }, config.name, toolNameSize, filenameEditMode)) filenameEditMode = !filenameEditMode;
-                    GuiLabel((Rectangle){ exportWindowPos.x + 225, exportWindowPos.y + 35, 50, 25 }, "Version:");
-                    if (GuiTextBox((Rectangle){ exportWindowPos.x + 275, exportWindowPos.y + 35, 115, 25 }, config.version, toolVersionSize, versionEditMode)) versionEditMode = !versionEditMode;
-                    GuiLabel((Rectangle){ exportWindowPos.x + 10, exportWindowPos.y + 65, 65, 25 }, "Window size:");
-                    if (GuiValueBox((Rectangle){ exportWindowPos.x + 75, exportWindowPos.y + 65, 60, 25 }, &config.width, 400, 1000, widthBoxEditMode)) widthBoxEditMode = !widthBoxEditMode;
-                    GuiLabel((Rectangle){ exportWindowPos.x + 140, exportWindowPos.y + 65, 10, 25 }, "x");
-                    if (GuiValueBox((Rectangle){ exportWindowPos.x + 150, exportWindowPos.y + 65, 60, 25 }, &config.height, 400, 1000, heightBoxEditMode)) heightBoxEditMode = !heightBoxEditMode;
-                    GuiLabel((Rectangle){ exportWindowPos.x + 225, exportWindowPos.y + 65, 50, 25 }, "Company:");
-                    if(GuiTextBox((Rectangle){ exportWindowPos.x + 275, exportWindowPos.y + 65, 115, 25 }, config.company, companySize, companyEditMode)) companyEditMode = !companyEditMode;
-                    GuiLabel((Rectangle){ exportWindowPos.x + 10, exportWindowPos.y + 95, 65, 25 }, "Description:");
-                    if (GuiTextBoxMulti((Rectangle){ exportWindowPos.x + 75, exportWindowPos.y + 95, 315, 55 }, config.description, toolDescriptionSize, descriptionEditMode)) descriptionEditMode = !descriptionEditMode;;
-                    config.defineRecs = GuiCheckBoxEx((Rectangle){ exportWindowPos.x + 10, exportWindowPos.y + 160, 15, 15 }, config.defineRecs, "Define Rectangles");
-                    config.defineTexts = GuiCheckBoxEx((Rectangle){ exportWindowPos.x + 10, exportWindowPos.y + 180, 15, 15 }, config.defineTexts, "Define text const");
-                    config.exportAnchors = GuiCheckBoxEx((Rectangle){ exportWindowPos.x + 140, exportWindowPos.y + 160, 15, 15 }, config.exportAnchors, "Export anchors");
-                    config.exportAnchor0 = GuiCheckBoxEx((Rectangle){ exportWindowPos.x + 140, exportWindowPos.y + 180, 15, 15 }, config.exportAnchor0, "Export anchor 0");
-                    config.fullComments = GuiCheckBoxEx((Rectangle){ exportWindowPos.x + 140, exportWindowPos.y + 200, 15, 15 }, config.fullComments, "Full comments");
-                    config.cropWindow = GuiCheckBoxEx((Rectangle){ exportWindowPos.x + 275, exportWindowPos.y + 160, 15, 15 }, config.cropWindow, "Crop to Window");
-                    config.fullVariables = GuiCheckBoxEx((Rectangle){ exportWindowPos.x + 10, exportWindowPos.y + 200, 15, 15 }, config.fullVariables, "Full variables");
-
-                    if (GuiButton((Rectangle){ exportWindowPos.x + 275, exportWindowPos.y + 185, 115, 30 }, "Export Code"))
+                    GuiWindowExportCode(&windowExportCodeState);
+                    if (windowExportCodeState.exportButtonPressed)
                     {
-                        DialogExportLayout(config);
-                        exportWindowActive = false;
+                        windowExportCodeState.active = false;
+                        strcpy(config.name, windowExportCodeState.nameText);
+                        strcpy(config.version, windowExportCodeState.versionText);
+                        strcpy(config.company, windowExportCodeState.companyText);
+                        strcpy(config.description, windowExportCodeState.descriptionText);
+                        config.width = windowExportCodeState.windowWidth;
+                        config.height = windowExportCodeState.windowHeight;
+                        config.defineRecs = windowExportCodeState.exportRects;
+                        config.defineTexts = windowExportCodeState.exportText;
+                        config.exportAnchors = windowExportCodeState.exportAnchors;
+                        config.fullVariables = windowExportCodeState.exportVariables;
+                        config.fullComments = windowExportCodeState.exportComments;
+                        config.cropWindow = windowExportCodeState.cropToWindow;  
+                        DialogExportLayout(config);                        
                     }
-                } 
+                }                
              
                 // Draw ending message window (save)
                 if (closingWindowActive)

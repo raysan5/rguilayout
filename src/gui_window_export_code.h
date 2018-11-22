@@ -70,14 +70,14 @@ GuiWindowExportCodeState InitGuiWindowExportCode(void)
     GuiWindowExportCodeState state = { 0 };
     // Main window properties
     state.active = false;
-    state.rec = (Rectangle){ GetScreenWidth()/2 - 200, GetScreenHeight()/2 - 128 , 400, 256 };
+    state.rec = (Rectangle){ GetScreenWidth()/2 - 200, GetScreenHeight()/2 - 112 , 400, 226 };
     // Name text
     state.nameTextSize = 32;
-    strcpy(state.nameText, "layout_file_name");
+    strcpy(state.nameText, "file_name");
     state.nameTextEdit = false;
     // Version text
     state.versionTextSize = 16;
-    strcpy(state.versionText, "layout_file_name");
+    strcpy(state.versionText, "1.0");
     state.versionTextEdit = false;
     // Window size values
     state.windowWidth = 0;
@@ -86,7 +86,7 @@ GuiWindowExportCodeState InitGuiWindowExportCode(void)
     state.windowHeightEdit = false;
     // Company text
     state.companyTextSize = 32;
-    strcpy(state.companyText, "layout_file_name");
+    strcpy(state.companyText, "company name");
     state.companyTextEdit = false;
     // Description text
     state.descriptionTextSize = 256;
@@ -110,7 +110,7 @@ void GuiWindowExportCode(GuiWindowExportCodeState *state)
 {
     if (state->active)
     {
-        state->rec = (Rectangle){ GetScreenWidth()/2 - 200, GetScreenHeight()/2 - 128 , 400, 256 };
+        state->rec = (Rectangle){ GetScreenWidth()/2 - state->rec.width/2, GetScreenHeight()/2 - state->rec.height/2 , state->rec.width, state->rec.height };
         
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.85f));
         // Main window
