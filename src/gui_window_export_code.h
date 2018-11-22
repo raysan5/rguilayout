@@ -33,6 +33,19 @@ typedef struct {
     int companyTextSize;
     unsigned char companyText[32];
     bool companyTextEdit;
+    // Description text
+    int descriptionTextSize;
+    unsigned char descriptionText[256];
+    bool descriptionTextEdit;
+    // Export options
+    bool exportRects;
+    bool exportText;
+    bool exportAnchors;
+    bool exportVariables;
+    bool exportComments;
+    bool cropToWindow;
+    // Export button
+    bool exportButtonPressed;
     
 } GuiWindowExportCodeState;
 
@@ -98,7 +111,19 @@ GuiWindowExportCodeState InitGuiWindowExportCode(void)
     state.companyTextSize = 32;
     strcpy(state.companyText, "layout_file_name");
     state.companyTextEdit = false;
-    
+    // Description text
+    state.descriptionTextSize = 256;
+    strcpy(state.descriptionText, "tool description");
+    state.descriptionTextEdit = false;
+    // Export options    
+    state,exportRects = false;
+    state.exportText = false;
+    state.exportAnchors = false;
+    state.exportVariables = false;
+    state.exportComments = false;
+    state.cropToWindow = false;
+    // Export button
+    exportButtonPressed = false;
     
     return state;
 }
@@ -129,24 +154,23 @@ void GuiWindowExportCode(GuiWindowExportCodeState *state)
         if(GuiTextBox((Rectangle){ state->rec.x + 275, state->rec.y + 65, 115, 25 }, state->companyText, state->companyTextSize, state->companyTextEdit)) state->companyTextEdit = !state->companyTextEdit;
         // Description multitext
         GuiLabel((Rectangle){state->rec.x + 10, state->rec.y + 95, 65, 25 }, "Description:")
-    }    
-
-    // TODO: rewrite with state variables
-    
-    // if (GuiTextBoxMulti((Rectangle){ exportWindowPos.x + 75, exportWindowPos.y + 95, 315, 55 }, config.description, toolDescriptionSize, descriptionEditMode)) descriptionEditMode = !descriptionEditMode;;
-    // config.defineRecs = GuiCheckBoxEx((Rectangle){ exportWindowPos.x + 10, exportWindowPos.y + 160, 15, 15 }, config.defineRecs, "Define Rectangles");
-    // config.defineTexts = GuiCheckBoxEx((Rectangle){ exportWindowPos.x + 10, exportWindowPos.y + 180, 15, 15 }, config.defineTexts, "Define text const");
-    // config.exportAnchors = GuiCheckBoxEx((Rectangle){ exportWindowPos.x + 140, exportWindowPos.y + 160, 15, 15 }, config.exportAnchors, "Export anchors");
-    // config.exportAnchor0 = GuiCheckBoxEx((Rectangle){ exportWindowPos.x + 140, exportWindowPos.y + 180, 15, 15 }, config.exportAnchor0, "Export anchor 0");
-    // config.fullComments = GuiCheckBoxEx((Rectangle){ exportWindowPos.x + 140, exportWindowPos.y + 200, 15, 15 }, config.fullComments, "Full comments");
-    // config.cropWindow = GuiCheckBoxEx((Rectangle){ exportWindowPos.x + 275, exportWindowPos.y + 160, 15, 15 }, config.cropWindow, "Crop to Window");
-    // config.fullVariables = GuiCheckBoxEx((Rectangle){ exportWindowPos.x + 10, exportWindowPos.y + 200, 15, 15 }, config.fullVariables, "Full variables");
-
-    // if (GuiButton((Rectangle){ exportWindowPos.x + 275, exportWindowPos.y + 185, 115, 30 }, "Export Code"))
-    // {
-        // DialogExportLayout(config);
-        // exportWindowActive = false;
-    // }    
+        if (GuiTextBoxMulti((Rectangle){ state->rec.x + 75, state->rec.y + 95, 315, 55 }, state->descriptionText, state->descriptionTextSize, state->descriptionTextEdit)) state->descriptionTextEdit = !state->descriptionTextEdit;
+        // Export options
+            // Define rectangles
+            state->exportRects = GuiCheckBoxEx((Rectangle){ state->rec.x + 10, state->rec.y + 160, 15, 15 }, state->exportRects, "Define Rectangles");
+            // Define text const
+            state->exportText = GuiCheckBoxEx((Rectangle){ state->rec.x + 10, state->rec.y + 180, 15, 15 }, state->exportText, "Define text const");
+            // Define Export anchors
+            state->exportAnchors = GuiCheckBoxEx((Rectangle){ state->rec.x + 10, state->rec.y + 200, 15, 15 }, state->exportAnchors, "Export anchors");
+            // Full variables
+            state->exportVariables = GuiCheckBoxEx((Rectangle){ exportWindowPos.x + 140, exportWindowPos.y + 160, 15, 15 }, state->exportVariables, "Full variables");
+            // Full comments
+            state->exportComments = GuiCheckBoxEx((Rectangle){ state->rec.x + 140, state->rec.y + 180, 15, 15 }, state->exportComments, "Full comments");
+            // Crop to window
+            state->cropToWindow = GuiCheckBoxEx((Rectangle){ state->rec.x + 140, state->rec.y + 200, 15, 15 }, state->cropToWindow, "Crop to Window");
+        // Export button
+        exportButtonPressed = GuiButton((Rectangle){ state->rec.x + 275, state->rec.y + 185, 115, 30 }, "Export Code");  
+    }      
 }
 
 // Gui about window
