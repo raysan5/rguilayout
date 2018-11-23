@@ -168,6 +168,11 @@ const char *controlTypeNameShort[] = { "wdwbox", "grpbox", "lne", "pnl", "lbl", 
 
 static char loadedFileName[256] = { 0 };    // Loaded layout file name
 
+static unsigned int codeStrCurrentPos = 0;  // Track generated code string position
+
+static unsigned int codeStrDrawHeight = 0;  // Generated code drawing size
+static int codeStrDrawOffset = 0;           // Code drawing Y offset
+
 // TODO: Implement UNDO system, using a layouts[] array and checking changes every certain time
 
 //----------------------------------------------------------------------------------
@@ -182,15 +187,16 @@ static void ProcessCommandLine(int argc, char *argv[]);     // Process command l
 static void LoadLayout(const char *fileName);                   // Load raygui layout (.rgl), text or binary
 static void SaveLayout(const char *fileName, bool binary);      // Save raygui layout (.rgl), text or binary
 
+static void DialogLoadLayout(void);                             // Show dialog: load layout file (.rgl)
 static bool DialogSaveLayout(void);                             // Show dialog: save layout file (.rgl)
-static void DialogExportLayout(GuiLayoutConfig config);         // Show dialog: export layout file (.c)
+static void DialogExportLayout(unsigned char *codestr);         // Show dialog: export layout file (.c)
 
 // Code generation functions
 static char *GetControlRectangleText(int index, GuiControl control, GuiLayoutConfig config, bool forceRecs);    // Get control rectangle text
-static char *GetControlParamText(int controlType, char *name, GuiLayoutConfig config);          // Get control func parameters text
-static void WriteControlsVariables(FILE *ftool, GuiControl control, GuiLayoutConfig config);    // Write controls variables code to file
-static void WriteControlsDrawing(FILE *ftool,int index, GuiControl control, GuiLayoutConfig config);    // Write controls drawing code to file
-static void ExportLayoutAsCode(const char *fileName, GuiLayoutConfig config);                           // Generate C code for gui layout
+static char *GetControlParamText(int controlType, char *name, GuiLayoutConfig config);                          // Get control func parameters text
+static void WriteControlsVariables(unsigned char *toolstr, GuiControl control, GuiLayoutConfig config);         // Write controls variables code to file
+static void WriteControlsDrawing(unsigned char *toolstr,int index, GuiControl control, GuiLayoutConfig config); // Write controls drawing code to file
+static unsigned char *GenerateLayoutCode(GuiLayoutConfig config);   // Generate C code for gui layout
 
 
 //----------------------------------------------------------------------------------
@@ -394,14 +400,13 @@ int main(int argc, char *argv[])
     bool closingWindowActive = false;
 
    
-    // Export window Layout: controls initialization
+    // Export Window Layout: controls initialization
     //----------------------------------------------------------------------------------------
     GuiWindowExportCodeState windowExportCodeState = InitGuiWindowExportCode();
     //----------------------------------------------------------------------------------------
 
     // Generate code configuration
-    GuiLayoutConfig config;
-    memset(&config, 0, sizeof(GuiLayoutConfig));
+    GuiLayoutConfig config = { 0 };
     config.width = 800;
     config.height = 600;
     strcpy(config.name, "layout_file_name");
@@ -425,6 +430,8 @@ int main(int argc, char *argv[])
     int valueBoxValue = 0;
     int listViewScrollIndex = 0;
     int listViewActive = 0;
+    
+    unsigned char *code = NULL;
 
     SetTargetFPS(120);
     //--------------------------------------------------------------------------------------
@@ -474,13 +481,15 @@ int main(int argc, char *argv[])
 
         // Keyboard shortcuts
         //----------------------------------------------------------------------------------
-        /*
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) BtnSaveStyle(false);    // Show save style dialog (.rgs text)
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O)) BtnLoadStyle();         // Show load style dialog (.rgs)
-        //if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) BtnExportStyle(wave);   // Show export style dialog (.rgs, .png, .h)
-        // TODO: Support style name definition!
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) ExportStyle("style_table.png", CONTROLS_TABLE_IMAGE);
-        */
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O)) DialogLoadLayout();    // Show dialog: load layout file (.rgl)
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) DialogSaveLayout();    // Show dialog: save layout file (.rgl)
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) { } // Show code generation window
+
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_K)) 
+        {
+            if (code != NULL) free(code);
+            code = GenerateLayoutCode(config);
+        }
         //----------------------------------------------------------------------------------
 
         // Basic program flow logic
@@ -2057,8 +2066,11 @@ int main(int argc, char *argv[])
                         config.exportAnchors = windowExportCodeState.exportAnchors;
                         config.fullVariables = windowExportCodeState.exportVariables;
                         config.fullComments = windowExportCodeState.exportComments;
-                        config.cropWindow = windowExportCodeState.cropToWindow;  
-                        DialogExportLayout(config);                        
+                        config.cropWindow = windowExportCodeState.cropToWindow;
+                        
+                        unsigned char *codestr = GenerateLayoutCode(config);
+                        DialogExportLayout(codestr);
+                        free(codestr);
                     }
                 }                
              
@@ -2088,6 +2100,33 @@ int main(int argc, char *argv[])
             GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, FormatText("CONTROLS COUNT: %i", layout.controlsCount), 20);
             if (selectedControl != -1) GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, FormatText("SELECTED CONTROL: #%03i  |  %s  |  REC (%i, %i, %i, %i)  |  %s", selectedControl, controlTypeName[layout.controls[selectedControl].type], (int)layout.controls[selectedControl].rec.x, (int)layout.controls[selectedControl].rec.y, (int)layout.controls[selectedControl].rec.width, (int)layout.controls[selectedControl].rec.height, layout.controls[selectedControl].name), 15);
             else GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, "", 15);
+            
+            if (IsKeyDown(KEY_Q) && (code != NULL)) // codeViewMode
+            {
+                DrawRectangle(0, 0, 700, GetScreenHeight(), RAYWHITE);
+                DrawRectangleLines(0, 0, 700, GetScreenHeight(), DARKGRAY);
+                
+                int linesCounter = 0;
+                unsigned char *currentLine = code;
+                
+                // TODO: Only process/draw lines inside screen
+                while (currentLine)
+                {
+                    char *nextLine = strchr(currentLine, '\n');
+                    if (nextLine) *nextLine = '\0';  // Temporarily terminate the current line
+                    DrawText(currentLine, 10, codeStrDrawOffset + 10 + 15*linesCounter, 10, BLUE);
+                    if (nextLine) *nextLine = '\n';  // Restore newline-char, just to be tidy
+                    currentLine = nextLine ? (nextLine + 1) : NULL;
+                    linesCounter++;
+                }
+                
+                // TODO: Move this code to update: codeViewMode ?
+                codeStrDrawHeight = 10 + 15*linesCounter;
+
+                codeStrDrawOffset -= GetMouseWheelMove()*20;
+                //if (codeStrDrawOffset < 0) codeStrDrawOffset = 0;
+                //if (codeStrDrawOffset > (codeStrDrawHeight - GetScreenHeight())) codeStrDrawOffset = (codeStrDrawHeight - GetScreenHeight()); 
+            }
 
         EndDrawing();
         //----------------------------------------------------------------------------------
@@ -2222,7 +2261,13 @@ static void ProcessCommandLine(int argc, char *argv[])
         config.fullComments = true;
 
         // Generate C code for gui layout.controls
-        ExportLayoutAsCode(outName, config);
+        unsigned char *codestr = GenerateLayoutCode(config);
+        
+        FILE *ftool = fopen(outFileName, "wt");
+        fprintf(ftool, codestr);    // Write code string to file
+        fclose(ftool);
+        
+        free(codestr);
     }
 
     if (showUsageInfo) ShowCommandLineInfo();
@@ -2378,6 +2423,12 @@ static void SaveLayout(const char *fileName, bool binary)
     }
 }
 
+// Show dialog: load layout file (.rgl)
+static void DialogLoadLayout(void)
+{
+    
+}
+
 // Show save layout dialog
 static bool DialogSaveLayout(void)
 {
@@ -2401,17 +2452,21 @@ static bool DialogSaveLayout(void)
 }
 
 // Show save layout dialog
-static void DialogExportLayout(GuiLayoutConfig config)
+static void DialogExportLayout(unsigned char *codestr)
 {
     const char *filters[] = { "*.c", "*.go", "*.lua" };
-    const char *fileName = tinyfd_saveFileDialog("Export code file", config.name, 3, filters, "Code file");
+    const char *fileName = tinyfd_saveFileDialog("Export code file", "layout_code.c", 3, filters, "Code file");
 
     if (fileName != NULL)
     {
         char outFileName[256] = { 0 };
         strcpy(outFileName, fileName);
         if (GetExtension(fileName) == NULL) strcat(outFileName, ".c\0");     // No extension provided
-        ExportLayoutAsCode(outFileName, config);
+
+        // Write code string to file
+        FILE *ftool = fopen(outFileName, "wt");
+        fprintf(ftool, codestr);
+        fclose(ftool);
     }
 }
 
@@ -2479,91 +2534,107 @@ static char *GetControlParamText(int controlType, char *name, GuiLayoutConfig co
     return text;
 }
 
+// Append one string at last position of a bigger string,
+// i.e. use string as a file to add keep adding other strings...
+// NOTE: It requires global variable [codeStrCurrentPos] for tracking
+static void sappend(char *str, const char *appstr, ...)
+{
+    unsigned char buffer[512] = { 0 };
+
+    va_list args;
+    va_start(args, appstr);
+    vsprintf(buffer, appstr, args);
+    va_end(args);
+    
+    strcpy(str + codeStrCurrentPos, buffer);
+    codeStrCurrentPos += strlen(buffer);
+}
+
 // Write controls variables code to file
-static void WriteControlsVariables(FILE *ftool, GuiControl control, GuiLayoutConfig config)
+static void WriteControlsVariables(unsigned char *toolstr, GuiControl control, GuiLayoutConfig config)
 {
     switch (control.type)
     {
         case GUI_WINDOWBOX:
         case GUI_TOGGLE:
         {
-            if (config.fullComments) fprintf(ftool, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
-            fprintf(ftool, "    bool %sActive = true;\n", control.name);
+            if (config.fullComments) sappend(toolstr, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
+            sappend(toolstr, "    bool %sActive = true;\n", control.name);
         } break;
         case GUI_CHECKBOX:
         {
-            if (config.fullComments) fprintf(ftool, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
-            fprintf(ftool, "    bool %sChecked = false;\n", control.name);
+            if (config.fullComments) sappend(toolstr, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
+            sappend(toolstr, "    bool %sChecked = false;\n", control.name);
         } break;
         case GUI_LABEL:
         {
             if (config.defineTexts)
             {
-                if (config.fullComments) fprintf(ftool, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
-                fprintf(ftool, "    const char *%sText = \"%s\";\n", control.name, control.text);
+                if (config.fullComments) sappend(toolstr, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
+                sappend(toolstr, "    const char *%sText = \"%s\";\n", control.name, control.text);
             }
         } break;
         case GUI_STATUSBAR:
         {
-            if (config.fullComments) fprintf(ftool, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
-            fprintf(ftool, "    char *%sText = \"%s\";\n", control.name, control.text);
+            if (config.fullComments) sappend(toolstr, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
+            sappend(toolstr, "    char *%sText = \"%s\";\n", control.name, control.text);
         } break;
         case GUI_LISTVIEW:
         case GUI_DROPDOWNBOX:
         {
-            if (config.fullComments) fprintf(ftool, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
-            if (config.fullVariables) fprintf(ftool, "    int %sCount = 3;\n", control.name);
-            fprintf(ftool, "    const char *%sTextList[3] = { \"ONE\", \"TWO\", \"THREE\" };\n", control.name);
-            fprintf(ftool, "    int %sActive = 0;\n", control.name);
-            fprintf(ftool, "    bool %sEditMode = false;\n", control.name);
+            if (config.fullComments) sappend(toolstr, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
+            if (config.fullVariables) sappend(toolstr, "    int %sCount = 3;\n", control.name);
+            sappend(toolstr, "    const char *%sTextList[3] = { \"ONE\", \"TWO\", \"THREE\" };\n", control.name);
+            sappend(toolstr, "    int %sActive = 0;\n", control.name);
+            sappend(toolstr, "    bool %sEditMode = false;\n", control.name);
         } break;
         case GUI_COMBOBOX:
         case GUI_TOGGLEGROUP:
         {
-            if (config.fullComments) fprintf(ftool, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
-            if (config.fullVariables) fprintf(ftool, "    int %sCount = 3;\n", control.name);
-            fprintf(ftool, "    const char *%sTextList[3] = { \"ONE\", \"TWO\", \"THREE\" };\n", control.name);
-           fprintf(ftool, "    int %sActive = 0;\n", control.name);
+            if (config.fullComments) sappend(toolstr, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
+            if (config.fullVariables) sappend(toolstr, "    int %sCount = 3;\n", control.name);
+            sappend(toolstr, "    const char *%sTextList[3] = { \"ONE\", \"TWO\", \"THREE\" };\n", control.name);
+           sappend(toolstr, "    int %sActive = 0;\n", control.name);
         } break;
         case GUI_SLIDER:
         case GUI_SLIDERBAR:
         {
-            if (config.fullComments) fprintf(ftool, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
-            fprintf(ftool, "    float %sValue = 50.0f;\n", control.name);
+            if (config.fullComments) sappend(toolstr, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
+            sappend(toolstr, "    float %sValue = 50.0f;\n", control.name);
             if (config.fullVariables)
             {
-                fprintf(ftool, "    const float %sMinValue = 0.0f;\n", control.name);
-                fprintf(ftool, "    const float %sMaxValue = 100.0f;\n", control.name);
+                sappend(toolstr, "    const float %sMinValue = 0.0f;\n", control.name);
+                sappend(toolstr, "    const float %sMaxValue = 100.0f;\n", control.name);
             }
         } break;
         case GUI_PROGRESSBAR:
         {
-            if (config.fullComments) fprintf(ftool, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
-            fprintf(ftool, "    float %sValue = 50.0f;\n", control.name);
+            if (config.fullComments) sappend(toolstr, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
+            sappend(toolstr, "    float %sValue = 50.0f;\n", control.name);
         } break;
         case GUI_VALUEBOX:
         case GUI_SPINNER:
         {
-            if (config.fullComments) fprintf(ftool, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
-            fprintf(ftool, "    int %sValue = 0;\n", control.name);
+            if (config.fullComments) sappend(toolstr, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
+            sappend(toolstr, "    int %sValue = 0;\n", control.name);
         } break;
         case GUI_COLORPICKER:
         {
-            if (config.fullComments) fprintf(ftool, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
-            fprintf(ftool, "    Color %sValue;\n", control.name);
+            if (config.fullComments) sappend(toolstr, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
+            sappend(toolstr, "    Color %sValue;\n", control.name);
         } break;
         case GUI_TEXTBOX:
         {
-            if (config.fullComments) fprintf(ftool, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
-            if (config.fullVariables) fprintf(ftool, "    int %sSize = %i;\n", control.name, MAX_CONTROL_TEXT_LENGTH);
-            fprintf(ftool, "    char %sText[%i] = \"%s\";\n", control.name, MAX_CONTROL_TEXT_LENGTH, control.text);
+            if (config.fullComments) sappend(toolstr, "    \n    // %s: %s\n", controlTypeNameLow[control.type], control.name);
+            if (config.fullVariables) sappend(toolstr, "    int %sSize = %i;\n", control.name, MAX_CONTROL_TEXT_LENGTH);
+            sappend(toolstr, "    char %sText[%i] = \"%s\";\n", control.name, MAX_CONTROL_TEXT_LENGTH, control.text);
         } break;
         default: break;
     }
 }
 
 // Write controls drawing code to file
-static void WriteControlsDrawing(FILE *ftool, int index, GuiControl control, GuiLayoutConfig config)
+static void WriteControlsDrawing(unsigned char *toolstr, int index, GuiControl control, GuiLayoutConfig config)
 {
     int i = index;
     char *rec = GetControlRectangleText(i, control, config, false);
@@ -2572,99 +2643,105 @@ static void WriteControlsDrawing(FILE *ftool, int index, GuiControl control, Gui
     {
         case GUI_LABEL:
         {
-            if (config.defineTexts) fprintf(ftool, "            GuiLabel(%s, %sText);\n", rec, control.name);
-            else fprintf(ftool, "            GuiLabel(%s, \"%s\");\n", rec, control.text);
+            if (config.defineTexts) sappend(toolstr, "            GuiLabel(%s, %sText);\n", rec, control.name);
+            else sappend(toolstr, "            GuiLabel(%s, \"%s\");\n", rec, control.text);
         }
         break;
-        case GUI_BUTTON: fprintf(ftool, "            if (GuiButton(%s, \"%s\")) %s(); \n\n", rec, control.text, control.name); break;
-        case GUI_VALUEBOX: fprintf(ftool, "            if (GuiValueBox(%s, %sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;\n", control.name, rec, control.name, control.name, control.name, control.name); break;
-        case GUI_TOGGLE: fprintf(ftool, "            %sActive = GuiToggle(%s, \"%s\", %sActive);\n", control.name, rec, control.text, control.name); break;
-        case GUI_TOGGLEGROUP: fprintf(ftool, "            %sActive = GuiToggleGroup(%s, %sTextList, %s, %sActive);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.name); break;
+        case GUI_BUTTON: sappend(toolstr, "            if (GuiButton(%s, \"%s\")) %s(); \n\n", rec, control.text, control.name); break;
+        case GUI_VALUEBOX: sappend(toolstr, "            if (GuiValueBox(%s, %sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;\n", control.name, rec, control.name, control.name, control.name, control.name); break;
+        case GUI_TOGGLE: sappend(toolstr, "            %sActive = GuiToggle(%s, \"%s\", %sActive);\n", control.name, rec, control.text, control.name); break;
+        case GUI_TOGGLEGROUP: sappend(toolstr, "            %sActive = GuiToggleGroup(%s, %sTextList, %s, %sActive);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.name); break;
         case GUI_SLIDER:
         {
-            if (control.text[0] != '\0') fprintf(ftool, "            %sValue = GuiSliderEx(%s, %sValue, %s, \"%s\", true);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.text);
-            else fprintf(ftool, "            %sValue = GuiSlider(%s, %sValue, %s);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config));
+            if (control.text[0] != '\0') sappend(toolstr, "            %sValue = GuiSliderEx(%s, %sValue, %s, \"%s\", true);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.text);
+            else sappend(toolstr, "            %sValue = GuiSlider(%s, %sValue, %s);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config));
         } break;
         case GUI_SLIDERBAR:
         {
-            if (control.text[0] != '\0') fprintf(ftool, "            %sValue = GuiSliderBarEx(%s, %sValue, %s, \"%s\", true);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.text);
-            else fprintf(ftool, "            %sValue = GuiSliderBar(%s, %sValue, %s);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config));
+            if (control.text[0] != '\0') sappend(toolstr, "            %sValue = GuiSliderBarEx(%s, %sValue, %s, \"%s\", true);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.text);
+            else sappend(toolstr, "            %sValue = GuiSliderBar(%s, %sValue, %s);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config));
         } break;
-        case GUI_PROGRESSBAR: fprintf(ftool, "            %sValue = GuiProgressBarEx(%s, %sValue, 0, 100, true);\n", control.name, rec, control.name); break;
-        case GUI_SPINNER: fprintf(ftool, "            if (GuiSpinner(%s, %sValue, 0, 100, 25, %sEditMode)) %sEditMode = !%sEditMode;\n", rec, control.name, control.name, control.name, control.name); break;
-        case GUI_COMBOBOX: fprintf(ftool, "            %sActive = GuiComboBox(%s, %sTextList, %s, %sActive);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.name); break;
+        case GUI_PROGRESSBAR: sappend(toolstr, "            %sValue = GuiProgressBarEx(%s, %sValue, 0, 100, true);\n", control.name, rec, control.name); break;
+        case GUI_SPINNER: sappend(toolstr, "            if (GuiSpinner(%s, %sValue, 0, 100, 25, %sEditMode)) %sEditMode = !%sEditMode;\n", rec, control.name, control.name, control.name, control.name); break;
+        case GUI_COMBOBOX: sappend(toolstr, "            %sActive = GuiComboBox(%s, %sTextList, %s, %sActive);\n", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.name); break;
         case GUI_CHECKBOX:
         {
-            if (control.text[0] != '\0') fprintf(ftool, "            %sChecked = GuiCheckBoxEx(%s, %sChecked, \"%s\");\n", control.name, rec, control.name, control.text);
-            else fprintf(ftool, "            %sChecked = GuiCheckBox(%s, %sChecked); \n", control.name, rec, control.name);
+            if (control.text[0] != '\0') sappend(toolstr, "            %sChecked = GuiCheckBoxEx(%s, %sChecked, \"%s\");\n", control.name, rec, control.name, control.text);
+            else sappend(toolstr, "            %sChecked = GuiCheckBox(%s, %sChecked); \n", control.name, rec, control.name);
         } break;
-        case GUI_LISTVIEW: fprintf(ftool, "            if (GuiListView(%s, %sTextList, %s, &%sScrollIndex, &%sActive, %sEditMode)) %sEditMode = !%sEditMode;\n", rec, control.name, GetControlParamText(control.type, control.name, config), control.name, control.name, control.name, control.name, control.name); break;
-        case GUI_TEXTBOX: fprintf(ftool, "            GuiTextBox(%s, %sText, %s, true);\n", rec, control.name, GetControlParamText(control.type, control.name, config)); break;
-        case GUI_GROUPBOX: fprintf(ftool, "            GuiGroupBox(%s, \"%s\");\n", rec, control.text); break;
+        case GUI_LISTVIEW: sappend(toolstr, "            if (GuiListView(%s, %sTextList, %s, &%sScrollIndex, &%sActive, %sEditMode)) %sEditMode = !%sEditMode;\n", rec, control.name, GetControlParamText(control.type, control.name, config), control.name, control.name, control.name, control.name, control.name); break;
+        case GUI_TEXTBOX: sappend(toolstr, "            GuiTextBox(%s, %sText, %s, true);\n", rec, control.name, GetControlParamText(control.type, control.name, config)); break;
+        case GUI_GROUPBOX: sappend(toolstr, "            GuiGroupBox(%s, \"%s\");\n", rec, control.text); break;
         case GUI_WINDOWBOX:
         {
-            fprintf(ftool, "            if (%sActive)\n            {\n", control.name);
-            fprintf(ftool, "                %sActive = !GuiWindowBox(%s, \"%s\");\n", control.name, rec, control.text);
-            fprintf(ftool, "            }\n");
+            sappend(toolstr, "            if (%sActive)\n            {\n", control.name);
+            sappend(toolstr, "                %sActive = !GuiWindowBox(%s, \"%s\");\n", control.name, rec, control.text);
+            sappend(toolstr, "            }\n");
         }break;
-        case GUI_DUMMYREC: fprintf(ftool, "            GuiDummyRec(%s, \"%s\");\n", rec, control.text); break;
-        case GUI_DROPDOWNBOX: fprintf(ftool, "            if (GuiDropdownBox(%s, %sTextList, %s, &%sActive, %sEditMode)) %sEditMode = !%sEditMode; \n", rec, control.name, GetControlParamText(control.type, control.name, config), control.name, control.name, control.name, control.name); break;
-        case GUI_STATUSBAR: fprintf(ftool, "            GuiStatusBar(%s, %sText, 10);\n", rec, control.name); break;
-        case GUI_COLORPICKER: fprintf(ftool, "            %sValue = GuiColorPicker(%s, %sValue);\n", control.name, rec, control.name); break;
-        case GUI_LINE: fprintf(ftool, "            GuiLine(%s, 1);\n", rec); break;
-        case GUI_PANEL: fprintf(ftool, "            GuiPanel(%s);\n", rec); break;
+        case GUI_DUMMYREC: sappend(toolstr, "            GuiDummyRec(%s, \"%s\");\n", rec, control.text); break;
+        case GUI_DROPDOWNBOX: sappend(toolstr, "            if (GuiDropdownBox(%s, %sTextList, %s, &%sActive, %sEditMode)) %sEditMode = !%sEditMode; \n", rec, control.name, GetControlParamText(control.type, control.name, config), control.name, control.name, control.name, control.name); break;
+        case GUI_STATUSBAR: sappend(toolstr, "            GuiStatusBar(%s, %sText, 10);\n", rec, control.name); break;
+        case GUI_COLORPICKER: sappend(toolstr, "            %sValue = GuiColorPicker(%s, %sValue);\n", control.name, rec, control.name); break;
+        case GUI_LINE: sappend(toolstr, "            GuiLine(%s, 1);\n", rec); break;
+        case GUI_PANEL: sappend(toolstr, "            GuiPanel(%s);\n", rec); break;
 
         default: break;
     }
 }
 
-// Generate C code for gui layout
-static void ExportLayoutAsCode(const char *fileName, GuiLayoutConfig config)
+// Generate layout code string
+static unsigned char *GenerateLayoutCode(GuiLayoutConfig config)
 {
-    FILE *ftool = fopen(fileName, "wt");
+    // Maximum number of characters in generated code string
+    // We suppose 1024 lines of code of 512 chars every line
+    #define MAX_CODE_SIZE   1024*512
+    
+    unsigned char *toolstr = (unsigned char *)malloc(MAX_CODE_SIZE);
+    
+    codeStrCurrentPos = 0;      // Reset code string writting position (sappend)
 
     // File description info
-    fprintf(ftool, "/*******************************************************************************************\n");
-    fprintf(ftool, "*\n");
-    fprintf(ftool, "*   %s - %s\n", config.name, config.description);
-    fprintf(ftool, "*\n");
-    fprintf(ftool, "*   LICENSE: zlib/libpng\n");
-    fprintf(ftool, "*\n");
-    fprintf(ftool, "*   Copyright (c) %i %s\n", 2018, config.company);
-    fprintf(ftool, "*\n");
-    fprintf(ftool, "**********************************************************************************************/\n\n");
-    fprintf(ftool, "#include \"raylib.h\"\n\n");
-    fprintf(ftool, "#define RAYGUI_IMPLEMENTATION\n");
-    fprintf(ftool, "#include \"raygui.h\"\n\n");
-    fprintf(ftool, "//----------------------------------------------------------------------------------\n");
-    fprintf(ftool, "// Controls Functions Declaration\n");
-    fprintf(ftool, "//----------------------------------------------------------------------------------\n");
+    sappend(toolstr, "/*******************************************************************************************\n");
+    sappend(toolstr, "*\n");
+    sappend(toolstr, "*   %s - %s\n", config.name, config.description);
+    sappend(toolstr, "*\n");
+    sappend(toolstr, "*   LICENSE: zlib/libpng\n");
+    sappend(toolstr, "*\n");
+    sappend(toolstr, "*   Copyright (c) %i %s\n", 2018, config.company);
+    sappend(toolstr, "*\n");
+    sappend(toolstr, "**********************************************************************************************/\n\n");
+    sappend(toolstr, "#include \"raylib.h\"\n\n");
+    sappend(toolstr, "#define RAYGUI_IMPLEMENTATION\n");
+    sappend(toolstr, "#include \"raygui.h\"\n\n");
+    sappend(toolstr, "//----------------------------------------------------------------------------------\n");
+    sappend(toolstr, "// Controls Functions Declaration\n");
+    sappend(toolstr, "//----------------------------------------------------------------------------------\n");
 
     // Define required functions for calling
     for (int i = 0; i < layout.controlsCount; i++)
     {
-        if (layout.controls[i].type == GUI_BUTTON) fprintf(ftool, "static void %s();        // %s: %s logic\n", layout.controls[i].name, controlTypeNameLow[layout.controls[i].type], layout.controls[i].name);
+        if (layout.controls[i].type == GUI_BUTTON) sappend(toolstr, "static void %s();        // %s: %s logic\n", layout.controls[i].name, controlTypeNameLow[layout.controls[i].type], layout.controls[i].name);
     }
 
-    fprintf(ftool, "\n");
-    fprintf(ftool, "//------------------------------------------------------------------------------------\n");
-    fprintf(ftool, "// Program main entry point\n");
-    fprintf(ftool, "//------------------------------------------------------------------------------------\n");
-    fprintf(ftool, "int main()\n");
-    fprintf(ftool, "{\n");
-    fprintf(ftool, "    // Initialization\n");
-    fprintf(ftool, "    //---------------------------------------------------------------------------------------\n");
-    fprintf(ftool, "    int screenWidth = %i;\n", config.width);
-    fprintf(ftool, "    int screenHeight = %i;\n\n", config.height);
-    fprintf(ftool, "    InitWindow(screenWidth, screenHeight, \"%s\");\n\n", config.name);
+    sappend(toolstr, "\n");
+    sappend(toolstr, "//------------------------------------------------------------------------------------\n");
+    sappend(toolstr, "// Program main entry point\n");
+    sappend(toolstr, "//------------------------------------------------------------------------------------\n");
+    sappend(toolstr, "int main()\n");
+    sappend(toolstr, "{\n");
+    sappend(toolstr, "    // Initialization\n");
+    sappend(toolstr, "    //---------------------------------------------------------------------------------------\n");
+    sappend(toolstr, "    int screenWidth = %i;\n", config.width);
+    sappend(toolstr, "    int screenHeight = %i;\n\n", config.height);
+    sappend(toolstr, "    InitWindow(screenWidth, screenHeight, \"%s\");\n\n", config.name);
 
-    fprintf(ftool, "    // %s: controls initialization\n", config.name);
-    fprintf(ftool, "    //----------------------------------------------------------------------------------\n");
+    sappend(toolstr, "    // %s: controls initialization\n", config.name);
+    sappend(toolstr, "    //----------------------------------------------------------------------------------\n");
 
     // Anchors points export code
     if (config.exportAnchors)
     {
-        fprintf(ftool, "    // Anchor points\n");
+        sappend(toolstr, "    // Anchor points\n");
 
         for(int i = 0; i < MAX_ANCHOR_POINTS; i++)
         {
@@ -2674,103 +2751,78 @@ static void ExportLayoutAsCode(const char *fileName, GuiLayoutConfig config)
                 {
                     // TODO: review anchor name
                     if ((!config.exportAnchor0) && layout.controls[j].ap->id == 0) break;
-                    fprintf(ftool, "    Vector2 %s%02i = { %i, %i };\n", "anchor", i, layout.anchors[i].x, layout.anchors[i].y);
+                    sappend(toolstr, "    Vector2 %s%02i = { %i, %i };\n", "anchor", i, layout.anchors[i].x, layout.anchors[i].y);
                     break;
                 }
             }
         }
     }
 
-    if (!config.fullComments) fprintf(ftool, "\n");
+    if (!config.fullComments) sappend(toolstr, "\n");
 
     // Generate controls required variables code
-    for (int i = 0; i < layout.controlsCount; i++) WriteControlsVariables(ftool, layout.controls[i], config);
+    for (int i = 0; i < layout.controlsCount; i++) WriteControlsVariables(toolstr, layout.controls[i], config);
 
     if (config.defineRecs)
     {
         // Define controls rectangles
-        fprintf(ftool, "\n    // Define controls rectangles\n");
-        fprintf(ftool, "    Rectangle layoutRecs[%i] = {\n", layout.controlsCount);
+        sappend(toolstr, "\n    // Define controls rectangles\n");
+        sappend(toolstr, "    Rectangle layoutRecs[%i] = {\n", layout.controlsCount);
         
         //strcpy(text, FormatText("layoutRecs[%i]", index));
 
         for (int i = 0; i < layout.controlsCount; i++)
         {
-            fprintf(ftool, "        %s", GetControlRectangleText(i, layout.controls[i], config, true));
-            fprintf(ftool, (i == layout.controlsCount - 1) ? "        // %s: %s\n    };\n\n" : ",        // %s: %s\n", controlTypeNameLow[layout.controls[i].type], layout.controls[i].name);
+            sappend(toolstr, "        %s", GetControlRectangleText(i, layout.controls[i], config, true));
+            sappend(toolstr, (i == layout.controlsCount - 1) ? "        // %s: %s\n    };\n\n" : ",        // %s: %s\n", controlTypeNameLow[layout.controls[i].type], layout.controls[i].name);
         }
     }
 
-    fprintf(ftool, "    //----------------------------------------------------------------------------------\n\n");
+    sappend(toolstr, "    //----------------------------------------------------------------------------------\n\n");
 
-    fprintf(ftool, "    SetTargetFPS(60);\n");
-    fprintf(ftool, "    //--------------------------------------------------------------------------------------\n\n");
-    fprintf(ftool, "    // Main game loop\n");
-    fprintf(ftool, "    while (!WindowShouldClose())    // Detect window close button or ESC key\n");
-    fprintf(ftool, "    {\n");
-    fprintf(ftool, "        // Update\n");
-    fprintf(ftool, "        //----------------------------------------------------------------------------------\n");
-    fprintf(ftool, "        // TODO: Implement required update logic\n");
-    fprintf(ftool, "        //----------------------------------------------------------------------------------\n\n");
-    fprintf(ftool, "        // Draw\n");
-    fprintf(ftool, "        //----------------------------------------------------------------------------------\n");
-    fprintf(ftool, "        BeginDrawing();\n\n");
-    fprintf(ftool, "            ClearBackground(GetColor(style[DEFAULT_BACKGROUND_COLOR]));\n\n");
+    sappend(toolstr, "    SetTargetFPS(60);\n");
+    sappend(toolstr, "    //--------------------------------------------------------------------------------------\n\n");
+    sappend(toolstr, "    // Main game loop\n");
+    sappend(toolstr, "    while (!WindowShouldClose())    // Detect window close button or ESC key\n");
+    sappend(toolstr, "    {\n");
+    sappend(toolstr, "        // Update\n");
+    sappend(toolstr, "        //----------------------------------------------------------------------------------\n");
+    sappend(toolstr, "        // TODO: Implement required update logic\n");
+    sappend(toolstr, "        //----------------------------------------------------------------------------------\n\n");
+    sappend(toolstr, "        // Draw\n");
+    sappend(toolstr, "        //----------------------------------------------------------------------------------\n");
+    sappend(toolstr, "        BeginDrawing();\n\n");
+    sappend(toolstr, "            ClearBackground(GetColor(style[DEFAULT_BACKGROUND_COLOR]));\n\n");
 
-    fprintf(ftool, "            // raygui: controls drawing\n");
-    fprintf(ftool, "            //----------------------------------------------------------------------------------\n");
+    sappend(toolstr, "            // raygui: controls drawing\n");
+    sappend(toolstr, "            //----------------------------------------------------------------------------------\n");
 
     // Generate controls drawing code
-    for (int i = 0; i < layout.controlsCount; i++) WriteControlsDrawing(ftool, i, layout.controls[i], config);
+    for (int i = 0; i < layout.controlsCount; i++) WriteControlsDrawing(toolstr, i, layout.controls[i], config);
 
-    fprintf(ftool, "            //----------------------------------------------------------------------------------\n\n");
-    fprintf(ftool, "        EndDrawing();\n");
-    fprintf(ftool, "        //----------------------------------------------------------------------------------\n");
-    fprintf(ftool, "    }\n\n");
-    fprintf(ftool, "    // De-Initialization\n");
-    fprintf(ftool, "    //--------------------------------------------------------------------------------------\n");
-    fprintf(ftool, "    CloseWindow();        // Close window and OpenGL context\n");
-    fprintf(ftool, "    //--------------------------------------------------------------------------------------\n\n");
-    fprintf(ftool, "    return 0;\n");
-    fprintf(ftool, "}\n\n");
+    sappend(toolstr, "            //----------------------------------------------------------------------------------\n\n");
+    sappend(toolstr, "        EndDrawing();\n");
+    sappend(toolstr, "        //----------------------------------------------------------------------------------\n");
+    sappend(toolstr, "    }\n\n");
+    sappend(toolstr, "    // De-Initialization\n");
+    sappend(toolstr, "    //--------------------------------------------------------------------------------------\n");
+    sappend(toolstr, "    CloseWindow();        // Close window and OpenGL context\n");
+    sappend(toolstr, "    //--------------------------------------------------------------------------------------\n\n");
+    sappend(toolstr, "    return 0;\n");
+    sappend(toolstr, "}\n\n");
 
-    fprintf(ftool, "//------------------------------------------------------------------------------------\n");
-    fprintf(ftool, "// Controls Functions Definitions (local)\n");
-    fprintf(ftool, "//------------------------------------------------------------------------------------\n");
+    sappend(toolstr, "//------------------------------------------------------------------------------------\n");
+    sappend(toolstr, "// Controls Functions Definitions (local)\n");
+    sappend(toolstr, "//------------------------------------------------------------------------------------\n");
 
     for (int i = 0; i < layout.controlsCount; i++)
     {
         if (layout.controls[i].type == GUI_BUTTON)
         {
-            fprintf(ftool, "// %s: %s logic\n", controlTypeNameLow[layout.controls[i].type], layout.controls[i].name);
-            fprintf(ftool, "static void %s()\n{\n    // TODO: Implement control logic\n}\n\n", layout.controls[i].name);
+            sappend(toolstr, "// %s: %s logic\n", controlTypeNameLow[layout.controls[i].type], layout.controls[i].name);
+            sappend(toolstr, "static void %s()\n{\n    // TODO: Implement control logic\n}\n\n", layout.controls[i].name);
         }
     }
-
-    fclose(ftool);
+    
+    return toolstr;
 }
-
-// New exportation option (self-contained modules):
-/*
-// Gui window structure declaration
-typedef struct {
-    Vector2 position;
-    bool active;
-    int width;
-    int height;
-} GuiWindowAboutState;
-
-// Initialization
-GuiWindowAboutState windowAboutState = {
-    .position = (Vector2){ 0, 0 };
-    .active = false;
-    .width = 330;
-    .height = 380;
-};
-
-// Update & Draw
-GuiWindowAbout(&windowAboutState);
-
-// Function definition
-static void GuiWindowAbout(GuiWindowAboutState *state)
-*/
