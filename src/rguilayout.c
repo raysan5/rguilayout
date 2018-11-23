@@ -60,6 +60,7 @@
 #include "external/tinyfiledialogs.h"       // Required for: Open/Save file dialogs
 
 #include <stdlib.h>                         // Required for: malloc(), free()
+#include <stdarg.h>                         // Required for: va_list, va_start(), vfprintf(), va_end()
 
 //----------------------------------------------------------------------------------
 // Defines and Macros
@@ -169,9 +170,6 @@ const char *controlTypeNameShort[] = { "wdwbox", "grpbox", "lne", "pnl", "lbl", 
 static char loadedFileName[256] = { 0 };    // Loaded layout file name
 
 static unsigned int codeStrCurrentPos = 0;  // Track generated code string position
-
-static unsigned int codeStrDrawHeight = 0;  // Generated code drawing size
-static int codeStrDrawOffset = 0;           // Code drawing Y offset
 
 // TODO: Implement UNDO system, using a layouts[] array and checking changes every certain time
 
@@ -399,7 +397,6 @@ int main(int argc, char *argv[])
     // Close layout window variables
     bool closingWindowActive = false;
 
-   
     // Export Window Layout: controls initialization
     //----------------------------------------------------------------------------------------
     GuiWindowExportCodeState windowExportCodeState = InitGuiWindowExportCode();
@@ -431,7 +428,10 @@ int main(int argc, char *argv[])
     int listViewScrollIndex = 0;
     int listViewActive = 0;
     
-    unsigned char *code = NULL;
+    // Code generation variables
+    unsigned char *code = NULL;     // Generated code string
+    unsigned int codeHeight = 0;    // Generated code drawing size
+    int codeOffsetY = 0;            // Code drawing Y offset
 
     SetTargetFPS(120);
     //--------------------------------------------------------------------------------------
@@ -481,10 +481,28 @@ int main(int argc, char *argv[])
 
         // Keyboard shortcuts
         //----------------------------------------------------------------------------------
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O)) DialogLoadLayout();    // Show dialog: load layout file (.rgl)
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) DialogSaveLayout();    // Show dialog: save layout file (.rgl)
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) { } // Show code generation window
+        // Open layout file dialog logic
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O))
+        {
+            // Open file dialog
+            const char *filters[] = { "*.rgl" };
+            const char *fileName = tinyfd_openFileDialog("Load raygui layout file", "", 1, filters, "raygui Layout Files (*.rgl)", 0);
 
+            if (fileName != NULL) LoadLayout(fileName);
+        }
+        
+        // Save layout file dialog logic
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_S)) DialogSaveLayout();
+        else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S))
+        {
+            if (loadedFileName[0] == '\0') DialogSaveLayout();
+            else SaveLayout(loadedFileName, false);
+        }
+        
+        // Show code generation window
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) { }
+
+        // Generate code from layout (using current config)
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_K)) 
         {
             if (code != NULL) free(code);
@@ -504,11 +522,10 @@ int main(int argc, char *argv[])
             // TODO: review -- Show save layout message window on ESC
             if (IsKeyPressed(KEY_ESCAPE))
             {
-                // Close windows
+                // Close windows logic
                 if (windowExportCodeState.active) windowExportCodeState.active = false;
                 else if (resetWindowActive) resetWindowActive = false;
-                // Quit application
-                else if (layout.controlsCount <= 0 && layout.anchorsCount <= 1) exitWindow = true;
+                else if (layout.controlsCount <= 0 && layout.anchorsCount <= 1) exitWindow = true;  // Quit application
                 else
                 {
                     closingWindowActive = !closingWindowActive;
@@ -1586,29 +1603,7 @@ int main(int argc, char *argv[])
             precisionMode = false;
         }
         // ---------------------------------------------------------------------------------------------
-        
-        // TODO: review save and load shortcuts
-        // Save layout file dialog logic
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_S)) DialogSaveLayout();
-        else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S))
-        {
-            // TODO: Save only .rgl
-
-            if (loadedFileName[0] == '\0') DialogSaveLayout();
-            else SaveLayout(loadedFileName, false);
-        }
-
-        // Open laout file dialog logic
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O))
-        {
-            // Open file dialog
-            const char *filters[] = { "*.rgl" };
-            const char *fileName = tinyfd_openFileDialog("Load raygui layout file", "", 1, filters, "raygui Layout Files (*.rgl)", 0);
-
-            if (fileName != NULL) LoadLayout(fileName);
-        }
-        // ------------------- END REVIEW --------------------
-        
+               
         // RESET LAYOUT LOGIC        
         if (resetLayout)
         {
@@ -1633,6 +1628,7 @@ int main(int argc, char *argv[])
                 memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
                 layout.controls[i].ap = &layout.anchors[0];  // By default, set parent anchor
             }
+            
             layout.controlsCount = 0;
             
             // Resets anchor points to default values
@@ -1643,6 +1639,7 @@ int main(int argc, char *argv[])
                 layout.anchors[i].enabled = false;
                 layout.anchors[i].hidding = false;
             }
+            
             layout.anchorsCount = 0;
 
             SetWindowTitle(FormatText("rGuiLayout v%s", TOOL_VERSION_TEXT));
@@ -2114,18 +2111,18 @@ int main(int argc, char *argv[])
                 {
                     char *nextLine = strchr(currentLine, '\n');
                     if (nextLine) *nextLine = '\0';  // Temporarily terminate the current line
-                    DrawText(currentLine, 10, codeStrDrawOffset + 10 + 15*linesCounter, 10, BLUE);
+                    DrawText(currentLine, 10, codeOffsetY + 10 + 15*linesCounter, 10, BLUE);
                     if (nextLine) *nextLine = '\n';  // Restore newline-char, just to be tidy
                     currentLine = nextLine ? (nextLine + 1) : NULL;
                     linesCounter++;
                 }
                 
                 // TODO: Move this code to update: codeViewMode ?
-                codeStrDrawHeight = 10 + 15*linesCounter;
+                codeHeight = 10 + 15*linesCounter;
 
-                codeStrDrawOffset -= GetMouseWheelMove()*20;
-                //if (codeStrDrawOffset < 0) codeStrDrawOffset = 0;
-                //if (codeStrDrawOffset > (codeStrDrawHeight - GetScreenHeight())) codeStrDrawOffset = (codeStrDrawHeight - GetScreenHeight()); 
+                codeOffsetY -= GetMouseWheelMove()*20;
+                //if (codeOffsetY < 0) codeOffsetY = 0;
+                //if (codeOffsetY > (codeHeight - GetScreenHeight())) codeOffsetY = (codeHeight - GetScreenHeight()); 
             }
 
         EndDrawing();
