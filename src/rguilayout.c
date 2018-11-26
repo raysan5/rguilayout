@@ -80,7 +80,7 @@
 
 #define MIN_CONTROL_SIZE            10      // Minimum control size
 
-#define GRID_LINE_SPACING           20      // Grid line spacing in pixels
+#define GRID_LINE_SPACING            5      // Grid line spacing in pixels
 
 #define MOVEMENT_FRAME_SPEED        10      // Controls movement speed in pixels per frame
 
