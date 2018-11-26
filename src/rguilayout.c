@@ -387,9 +387,6 @@ int main(int argc, char *argv[])
     float tracemapFade = 0.5f;
     Color tracemapColor = RED;
 
-    // loadedTexture for checking if texture is a tracemap or a style
-    Texture2D loadedTexture = { 0 };
-
     // Track previous text/name to cancel editing
     char prevText[MAX_CONTROL_TEXT_LENGTH];
     char prevName[MAX_CONTROL_NAME_LENGTH];
@@ -457,21 +454,10 @@ int main(int argc, char *argv[])
                 SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
             }
             else if (IsFileExtension(droppedFileName, ".rgs")) GuiLoadStyle(droppedFileName);
-            else if (IsFileExtension(droppedFileName, ".png"))
+            else if (IsFileExtension(droppedFileName, ".png")) // Tracemap image
             {
-                if (loadedTexture.id > 0) UnloadTexture(loadedTexture);
-                loadedTexture = LoadTexture(droppedFileName);
-
-                if ((loadedTexture.width == 64) && (loadedTexture.height == 16)) GuiLoadStylePaletteImage(droppedFileName);
-                else
-                {
-                    if (tracemap.id > 0) UnloadTexture(tracemap);
-                    tracemap = LoadTexture(droppedFileName);
-                }
-
-                UnloadTexture(loadedTexture);
-                SetTextureFilter(tracemap, FILTER_BILINEAR);
-
+                if (tracemap.id > 0) UnloadTexture(tracemap);
+                tracemap = LoadTexture(droppedFileName);
                 tracemapRec = (Rectangle){30, 30, tracemap.width, tracemap.height};
             }
 
