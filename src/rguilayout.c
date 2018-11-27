@@ -239,19 +239,20 @@ int main(int argc, char *argv[])
     SetExitKey(0);
 
     // General app variables
-    Vector2 mouse = { -1, -1 };         // Mouse position
-    bool exitWindow = false;            // Exit window flag    
-    bool showGrid = true;               // Show grid flag (KEY_G) 
+    Vector2 mouse = { -1, -1 };             // Mouse position
+    bool exitWindow = false;                // Exit window flag    
+    bool showGrid = true;                   // Show grid flag (KEY_G) 
     
     // Modes
-    bool dragMode = false;       // Control drag mode
-    bool useGlobalPos = false;      // Control global position mode
-    bool snapMode = false;              // Snap mode flag (KEY_S)
-    bool textEditMode = false;          // Control text edit mode (KEY_T)
-    bool nameEditMode = false;          // Control name edit mode (KEY_N)
-    bool orderEditMode = false;         // Control order edit mode (focusedControl != -1 + KEY_LEFT_ALT)
-    bool resizeMode = false;              // Control size mode (controlSelected != -1 + KEY_LEFT_ALT)
-    bool precisionMode = false;         // Control precision mode (KEY_LEFT_SHIFT)
+    bool dragMode = false;                  // Control drag mode
+    bool useGlobalPos = false;              // Control global position mode
+    bool snapMode = false;                  // Snap mode flag (KEY_S)
+    bool textEditMode = false;              // Control text edit mode (KEY_T)
+    bool nameEditMode = false;              // Control name edit mode (KEY_N)
+    bool orderEditMode = false;             // Control order edit mode (focusedControl != -1 + KEY_LEFT_ALT)
+    bool resizeMode = false;                // Control size mode (controlSelected != -1 + KEY_LEFT_ALT)
+    bool precisionMode = false;             // Control precision mode (KEY_LEFT_SHIFT)
+    bool showNamesMode = false;             // Show names of all controls
     
     int framesCounter = 0;
     int framesCounterMovement = 0;
@@ -545,6 +546,10 @@ int main(int argc, char *argv[])
                 if (IsKeyPressed(KEY_A)) anchorEditMode = true;
                 if (IsKeyReleased(KEY_A)) anchorEditMode = false;
                 
+                // Enable show names mode
+                if (IsKeyPressed(KEY_N)) showNamesMode = true;
+                if (IsKeyReleased(KEY_N)) showNamesMode = false;                
+                
                 // Enable/disable order edit mode
                 if (IsKeyPressed(KEY_LEFT_ALT)) orderEditMode = true;
                 if (IsKeyReleased(KEY_LEFT_ALT))  orderEditMode = false;
@@ -797,7 +802,7 @@ int main(int argc, char *argv[])
                         }
                         else //focusedControl != -1
                         {
-                            if (selectedControl == -1)
+                            //if (selectedControl == -1)
                             {
                                 // Change controls layer order (position inside array)
                                 if (orderEditMode)
@@ -1772,7 +1777,7 @@ int main(int argc, char *argv[])
                     {
                         if (!anchorEditMode)
                         {
-                            if (!anchorLinkMode)
+                            if (!anchorLinkMode && selectedAnchor == -1 && selectedControl == -1 && !tracemapSelected)
                             {
                                 // Draw the default rectangle of the control selected
                                 GuiLock();
@@ -1803,19 +1808,49 @@ int main(int argc, char *argv[])
                                     default: break;
                                 }
                                 GuiFade(1.0f);
-                                GuiUnlock();
-                            }
+                                GuiUnlock();                            
                             
-                            // Draw default cursor
-                            DrawRectangle(mouse.x - 8, mouse.y, 17, 1, RED);
-                            DrawRectangle(mouse.x, mouse.y - 8, 1, 17, RED);
-                            
-                            if (selectedAnchor == -1 && selectedControl == -1 && !tracemapSelected)
-                            {
+                                // Draw default cursor
+                                DrawRectangle(mouse.x - 8, mouse.y, 17, 1, RED);
+                                DrawRectangle(mouse.x, mouse.y - 8, 1, 17, RED);
+                                
                                 // Draw cursor position
                                 positionColor = MAROON;
                                 if (snapMode) positionColor = LIME;
                                 DrawText(FormatText("[%i, %i, %i, %i]", (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y, (int)defaultRec[selectedType].width, (int)defaultRec[selectedType].height), (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
+                            
+                                if (showNamesMode)
+                                {
+                                    GuiLock();
+                                    for (int i = 0; i < layout.controlsCount; i++)
+                                    {
+                                        Rectangle textboxRec = layout.controls[i].rec;
+                                        int type = layout.controls[i].type;
+                                        if (type == GUI_CHECKBOX || type == GUI_LABEL || type == GUI_SLIDER || type == GUI_SLIDERBAR) 
+                                        {
+                                            int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
+                                            int textWidth = MeasureText(layout.controls[i].name, fontSize);
+                                            if (textboxRec.width < textWidth + 20) textboxRec.width = textWidth + 20;
+                                            if (textboxRec.height < fontSize) textboxRec.height += fontSize;
+                                        }
+                                        
+                                        if (type == GUI_WINDOWBOX) textboxRec.height = WINDOW_SATUSBAR_HEIGHT;  // Defined inside raygui.h
+                                        else if (type == GUI_GROUPBOX)
+                                        {
+                                            textboxRec.y -= 10;
+                                            textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;
+                                        }
+                                        
+                                        textboxRec.x += layout.controls[i].ap->x;
+                                        textboxRec.y += layout.controls[i].ap->y;
+                                        
+                                        DrawRectangleRec(textboxRec, WHITE);
+                                        //DrawRectangleRec(textboxRec, Fade(SKYBLUE, 0.5f));                                        
+                                        GuiTextBox(textboxRec, layout.controls[i].name, MAX_CONTROL_NAME_LENGTH, false);
+                                        //DrawRectangleLinesEx(textboxRec,1, BLUE);
+                                    }
+                                    GuiUnlock();
+                                }                            
                             }
                         }
                         else
@@ -1968,7 +2003,7 @@ int main(int argc, char *argv[])
                         if (GuiTextBox(textboxRec, layout.controls[selectedControl].name, MAX_CONTROL_NAME_LENGTH, nameEditMode)) nameEditMode = !nameEditMode;
                     }
                 }
-                else //selectedControl == 1
+                //else //selectedControl == 1
                 {
                     // ID controls
                     if (orderEditMode) for (int i = layout.controlsCount - 1; i >= 0; i--) DrawText(FormatText("[%i]", layout.controls[i].id), layout.controls[i].rec.x + layout.controls[i].ap->x + layout.controls[i].rec.width, layout.controls[i].rec.y + layout.controls[i].ap->y - 10, 10, BLUE);
