@@ -690,20 +690,31 @@ int main(int argc, char *argv[])
                         if (!dragMode)
                         {
                             focusedControl = -1;
-                            for (int i = layout.controlsCount; i >= 0; i--)
+                            if (!anchorEditMode && focusedAnchor == -1)
                             {
-                                if (!layout.controls[i].ap->hidding)
+                                for (int i = layout.controlsCount; i >= 0; i--)
                                 {
-                                    int layoutHeight = layout.controls[i].rec.height;
-                                    if (layout.controls[i].type == GUI_WINDOWBOX) layoutHeight = 24;
-                                    
-                                    if (CheckCollisionPointRec(mouse, (Rectangle){ layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, layout.controls[i].rec.width, layoutHeight }))
+                                    if (!layout.controls[i].ap->hidding)
                                     {
-                                        focusedControl = i;
-                                        break;
+                                        Rectangle layoutRec = layout.controls[i].rec;
+                                        if (layout.controls[i].type == GUI_WINDOWBOX) layoutRec.height = WINDOW_SATUSBAR_HEIGHT;  // Defined inside raygui.h
+                                        else if (layout.controls[i].type == GUI_GROUPBOX)
+                                        {
+                                            layoutRec.y -= 10;
+                                            layoutRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;    
+                                        }
+                                        
+                                        layoutRec.x += layout.controls[i].ap->x;
+                                        layoutRec.y += layout.controls[i].ap->y;
+                                        
+                                        if (CheckCollisionPointRec(mouse, layoutRec))
+                                        {
+                                            focusedControl = i;
+                                            break;
+                                        }
                                     }
-                                }
-                            } 
+                                } 
+                            }
                         } 
                         
                         if (focusedControl == -1)
@@ -730,7 +741,7 @@ int main(int argc, char *argv[])
                                         // If we create new control inside a windowbox, then anchor the new control to the windowbox anchor
                                         for (int i = layout.controlsCount; i >= 0; i--)
                                         {
-                                            if (layout.controls[i].type == GUI_WINDOWBOX)
+                                            if (layout.controls[i].type == GUI_WINDOWBOX || layout.controls[i].type == GUI_GROUPBOX)
                                             {
                                                 if (CheckCollisionPointRec(mouse, (Rectangle){ layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }))
                                                 {
@@ -741,7 +752,7 @@ int main(int argc, char *argv[])
                                         }
 
                                         // Create anchor for windowbox control if we can
-                                        if (layout.anchorsCount < MAX_ANCHOR_POINTS && layout.controls[layout.controlsCount].type == GUI_WINDOWBOX)
+                                        if (layout.anchorsCount < MAX_ANCHOR_POINTS && (layout.controls[layout.controlsCount].type == GUI_WINDOWBOX || layout.controls[layout.controlsCount].type == GUI_GROUPBOX))
                                         {
                                             for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
                                             {
@@ -834,32 +845,27 @@ int main(int argc, char *argv[])
                                 if (dragMode)
                                 {
                                     // Drag controls 
-                                    int controlPosX = (int)layout.controls[selectedControl].rec.x;
-                                    int controlPosY = (int)layout.controls[selectedControl].rec.y;
+                                    int controlPosX = prevPosition.x + (mouse.x - panOffset.x);
+                                    int controlPosY = prevPosition.y + (mouse.y - panOffset.y);                             
                                     
-                                    if (useGlobalPos && (layout.controls[selectedControl].ap->id != 0))
+                                    if (snapMode)
                                     {
-                                        controlPosX += layout.controls[selectedControl].ap->x;
-                                        controlPosY += layout.controls[selectedControl].ap->y;
-                                    } 
-                                    
-                                    controlPosX = prevPosition.x + (mouse.x - panOffset.x);
-                                    controlPosY = prevPosition.y + (mouse.y - panOffset.y);
-                                    
-                                    int offsetX = (int)controlPosX%movePixel;
-                                    int offsetY = (int)controlPosY%movePixel;
-                                    
-                                    if (offsetX >= movePixel/2) controlPosX += (movePixel - offsetX);
-                                    else controlPosX-= offsetX;
+                                        int offsetX = (int)controlPosX%movePixel;
+                                        int offsetY = (int)controlPosY%movePixel;
+                                        
+                                        if (offsetX >= movePixel/2) controlPosX += (movePixel - offsetX);
+                                        else controlPosX -= offsetX;
 
-                                    if (offsetY >= movePixel/2) controlPosY += (movePixel - offsetY);
-                                    else controlPosY -= offsetY;
+                                        if (offsetY >= movePixel/2) controlPosY += (movePixel - offsetY);
+                                        else controlPosY -= offsetY; 
+                                    }
                                     
                                     if (useGlobalPos && (layout.controls[selectedControl].ap->id != 0))
                                     {
                                         controlPosX -= layout.controls[selectedControl].ap->x;
                                         controlPosY -= layout.controls[selectedControl].ap->y;
                                     }
+                                    
                                     layout.controls[selectedControl].rec.x = controlPosX;
                                     layout.controls[selectedControl].rec.y = controlPosY;
                                     
@@ -1569,8 +1575,8 @@ int main(int argc, char *argv[])
                     nameEditMode = false;
                     if (selectedControl != -1)
                     {
-                        memset(layout.controls[selectedControl].text, 0, MAX_CONTROL_TEXT_LENGTH);
-                        strcpy(layout.controls[selectedControl].text, prevText);
+                        memset(layout.controls[selectedControl].name, 0, MAX_CONTROL_NAME_LENGTH);
+                        strcpy(layout.controls[selectedControl].name, prevName);
                     }
                     else if (selectedAnchor != -1)
                     {
@@ -1878,7 +1884,18 @@ int main(int argc, char *argv[])
                     // Selection rectangle
                     selectedControlColor = RED;
                     if (!dragMode && resizeMode) selectedControlColor = BLUE;
-                    DrawRectangleRec((Rectangle){ layout.controls[selectedControl].ap->x + layout.controls[selectedControl].rec.x, layout.controls[selectedControl].ap->y + layout.controls[selectedControl].rec.y, layout.controls[selectedControl].rec.width, layout.controls[selectedControl].rec.height }, Fade(selectedControlColor, 0.5f));
+                    
+                    Rectangle selectedRec = layout.controls[selectedControl].rec;
+                    if (layout.controls[selectedControl].type == GUI_WINDOWBOX) selectedRec.height = 24;
+                    else if (layout.controls[selectedControl].type == GUI_GROUPBOX)
+                    {
+                        selectedRec.y -= 10;
+                        selectedRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;                            
+                    }
+                    selectedRec.x += layout.controls[selectedControl].ap->x;
+                    selectedRec.y += layout.controls[selectedControl].ap->y;
+                    
+                    DrawRectangleRec(selectedRec, Fade(selectedControlColor, 0.5f));
                     
                     // Control Link
                     if (layout.controls[selectedControl].ap->id > 0) DrawLine(layout.controls[selectedControl].ap->x, layout.controls[selectedControl].ap->y, layout.controls[selectedControl].ap->x + layout.controls[selectedControl].rec.x, layout.controls[selectedControl].ap->y + layout.controls[selectedControl].rec.y, RED);
@@ -1897,8 +1914,24 @@ int main(int argc, char *argv[])
 
                     // Text edit
                     if (textEditMode)
-                    {                
+                    {               
                         Rectangle textboxRec = layout.controls[selectedControl].rec;
+                        int type = layout.controls[selectedControl].type;
+                        if (type == GUI_CHECKBOX || type == GUI_LABEL || type == GUI_SLIDER || type == GUI_SLIDERBAR) 
+                        {
+                            int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
+                            int textWidth = MeasureText(layout.controls[selectedControl].text, fontSize);
+                            if (textboxRec.width < textWidth + 20) textboxRec.width = textWidth + 20;
+                            if (textboxRec.height < fontSize) textboxRec.height += fontSize;
+                        }
+                        
+                        if (type == GUI_WINDOWBOX) textboxRec.height = WINDOW_SATUSBAR_HEIGHT;  // Defined inside raygui.h
+                        else if (type == GUI_GROUPBOX)
+                        {
+                            textboxRec.y -= 10;
+                            textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;
+                        }
+                        
                         textboxRec.x += layout.controls[selectedControl].ap->x;
                         textboxRec.y += layout.controls[selectedControl].ap->y;
                         
@@ -1911,6 +1944,22 @@ int main(int argc, char *argv[])
                     if (nameEditMode)
                     {
                         Rectangle textboxRec = layout.controls[selectedControl].rec;
+                        int type = layout.controls[selectedControl].type;
+                        if (type == GUI_CHECKBOX || type == GUI_LABEL || type == GUI_SLIDER || type == GUI_SLIDERBAR) 
+                        {
+                            int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
+                            int textWidth = MeasureText(layout.controls[selectedControl].name, fontSize);
+                            if (textboxRec.width < textWidth + 20) textboxRec.width = textWidth + 20;
+                            if (textboxRec.height < fontSize) textboxRec.height += fontSize;
+                        }
+                        
+                        if (type == GUI_WINDOWBOX) textboxRec.height = WINDOW_SATUSBAR_HEIGHT;  // Defined inside raygui.h
+                        else if (type == GUI_GROUPBOX)
+                        {
+                            textboxRec.y -= 10;
+                            textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;
+                        }
+                        
                         textboxRec.x += layout.controls[selectedControl].ap->x;
                         textboxRec.y += layout.controls[selectedControl].ap->y;
                         
@@ -1930,8 +1979,18 @@ int main(int argc, char *argv[])
                 if (focusedControl != -1)
                 {
                     // Focused rectangle
-                    if (focusedControl != selectedControl) DrawRectangleRec((Rectangle){ layout.controls[focusedControl].ap->x + layout.controls[focusedControl].rec.x, layout.controls[focusedControl].ap->y + layout.controls[focusedControl].rec.y, layout.controls[focusedControl].rec.width, layout.controls[focusedControl].rec.height }, Fade(RED, 0.1f));
-                    DrawRectangleLinesEx((Rectangle){ layout.controls[focusedControl].ap->x + layout.controls[focusedControl].rec.x, layout.controls[focusedControl].ap->y + layout.controls[focusedControl].rec.y, layout.controls[focusedControl].rec.width, layout.controls[focusedControl].rec.height }, 1, MAROON);
+                    Rectangle focusRec = layout.controls[focusedControl].rec;
+                    if (layout.controls[focusedControl].type == GUI_WINDOWBOX) focusRec.height = WINDOW_SATUSBAR_HEIGHT;  // Defined inside raygui.h;
+                    else if (layout.controls[focusedControl].type == GUI_GROUPBOX)
+                    {
+                        focusRec.y -= 10;
+                        focusRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;                            
+                    }
+                    focusRec.x += layout.controls[focusedControl].ap->x;
+                    focusRec.y += layout.controls[focusedControl].ap->y;
+                    
+                    if (focusedControl != selectedControl) DrawRectangleRec(focusRec, Fade(RED, 0.2f));
+                    DrawRectangleLinesEx(focusRec, 1, MAROON);
                     
                     if (layout.controls[focusedControl].ap->id > 0) DrawLine(layout.controls[focusedControl].ap->x, layout.controls[focusedControl].ap->y, layout.controls[focusedControl].ap->x + layout.controls[focusedControl].rec.x, layout.controls[focusedControl].ap->y + layout.controls[focusedControl].rec.y, RED);
                 }
@@ -1986,12 +2045,12 @@ int main(int argc, char *argv[])
                 GuiToggleGroup((Rectangle){palettePanel.x + paletteRecs[7].x ,palettePanel.y + paletteRecs[7].y, paletteRecs[7].width, paletteRecs[7].height}, listData, 3, 8);
                 GuiComboBox((Rectangle){palettePanel.x + paletteRecs[9].x ,palettePanel.y + paletteRecs[9].y, paletteRecs[9].width, paletteRecs[9].height},  listData, 3, 9);
                 GuiDropdownBox((Rectangle){palettePanel.x + paletteRecs[10].x ,palettePanel.y + paletteRecs[10].y, paletteRecs[10].width, paletteRecs[10].height}, listData, 3, &dropdownBoxActive, false);
-                GuiSpinner((Rectangle){palettePanel.x + paletteRecs[11].x ,palettePanel.y + paletteRecs[11].y, paletteRecs[11].width, paletteRecs[11].height}, &spinnerValue, 42, 0, 25, false);
-                GuiValueBox((Rectangle){palettePanel.x + paletteRecs[12].x ,palettePanel.y + paletteRecs[12].y, paletteRecs[12].width, paletteRecs[12].height}, &valueBoxValue, 42, 0, false);
+                GuiSpinner((Rectangle){palettePanel.x + paletteRecs[11].x ,palettePanel.y + paletteRecs[11].y, paletteRecs[11].width, paletteRecs[11].height}, &spinnerValue, 0, 100, 25, false);
+                GuiValueBox((Rectangle){palettePanel.x + paletteRecs[12].x ,palettePanel.y + paletteRecs[12].y, paletteRecs[12].width, paletteRecs[12].height}, &valueBoxValue, 0, 100, false);
                 GuiTextBox((Rectangle){palettePanel.x + paletteRecs[13].x ,palettePanel.y + paletteRecs[13].y, paletteRecs[13].width, paletteRecs[13].height}, "GUI_TEXTBOX", 7, false);
-                GuiSlider((Rectangle){palettePanel.x + paletteRecs[14].x ,palettePanel.y + paletteRecs[14].y, paletteRecs[14].width, paletteRecs[14].height}, 42, 14, 0);
-                GuiSliderBar((Rectangle){palettePanel.x + paletteRecs[15].x ,palettePanel.y + paletteRecs[15].y, paletteRecs[15].width, paletteRecs[15].height}, 42, 15, 0);
-                GuiProgressBar((Rectangle){palettePanel.x + paletteRecs[16].x ,palettePanel.y + paletteRecs[16].y, paletteRecs[16].width, paletteRecs[16].height}, 42, 16, 0);
+                GuiSlider((Rectangle){palettePanel.x + paletteRecs[14].x ,palettePanel.y + paletteRecs[14].y, paletteRecs[14].width, paletteRecs[14].height}, 40, 0, 100);
+                GuiSliderBar((Rectangle){palettePanel.x + paletteRecs[15].x ,palettePanel.y + paletteRecs[15].y, paletteRecs[15].width, paletteRecs[15].height}, 50, 0, 100);
+                GuiProgressBar((Rectangle){palettePanel.x + paletteRecs[16].x ,palettePanel.y + paletteRecs[16].y, paletteRecs[16].width, paletteRecs[16].height}, 60, 0, 100);
                 GuiStatusBar((Rectangle){palettePanel.x + paletteRecs[17].x ,palettePanel.y + paletteRecs[17].y, paletteRecs[17].width, paletteRecs[17].height}, "StatusBar", 10);
                 GuiListView((Rectangle){palettePanel.x + paletteRecs[18].x ,palettePanel.y + paletteRecs[18].y, paletteRecs[18].width, paletteRecs[18].height}, listData, 3, &listViewScrollIndex, &listViewActive, false);
                 GuiColorPicker((Rectangle){palettePanel.x + paletteRecs[19].x ,palettePanel.y + paletteRecs[19].y, paletteRecs[19].width, paletteRecs[19].height}, RED);
