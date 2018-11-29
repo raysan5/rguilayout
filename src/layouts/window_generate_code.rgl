@@ -2,17 +2,17 @@
 # rgl text file (v1.0) - raygui layout text file generated using rGuiLayout
 #
 # Total number of controls:     21
-# Anchor info:   a <id> <posx> <posy> <enabled>
+# Anchor info:   a <id> <name> <posx> <posy> <enabled>
 # Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
-a 000 0 0 1
-a 001 50 50 1
-a 002 0 0 0
-a 003 0 0 0
-a 004 0 0 0
-a 005 0 0 0
-a 006 0 0 0
-a 007 0 0 0
+a 000 anchor00 0 0 1
+a 001 windowAnchor 50 50 1
+a 002 anchor02 0 0 0
+a 003 anchor03 0 0 0
+a 004 anchor04 0 0 0
+a 005 anchor05 0 0 0
+a 006 anchor06 0 0 0
+a 007 anchor07 0 0 0
 c 000 0 generateWindow 0 0 400 225 1 Generate Code Options - layout
 c 001 4 lblName 10 35 65 25 1 Name:
 c 002 13 toolName 75 35 135 25 1 tool_name

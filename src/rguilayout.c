@@ -328,7 +328,8 @@ int main(int argc, char *argv[])
         layout.anchors[i].enabled = false;
         layout.anchors[i].hidding = false;
         memset(layout.anchors[i].name, 0, MAX_ANCHOR_NAME_LENGTH);
-        strcpy(layout.anchors[i].name, "anchor name");
+        if (i == 0) strcpy(layout.anchors[i].name, "worldAnchor");
+        else strcpy(layout.anchors[i].name, FormatText("anchor%02i", i));
     }
 
     layout.anchors[0].enabled = true;      // Enable layout parent anchor (0, 0)
@@ -1849,6 +1850,16 @@ int main(int argc, char *argv[])
                                         GuiTextBox(textboxRec, layout.controls[i].name, MAX_CONTROL_NAME_LENGTH, false);
                                         //DrawRectangleLinesEx(textboxRec,1, BLUE);
                                     }
+                                    
+                                    for (int i = 0; i < layout.anchorsCount; i++)
+                                    {
+                                        //layout.anchor[selectedAnchor].name
+                                        Rectangle textboxRec = (Rectangle) {layout.anchors[i].x, layout.anchors[i].y, MeasureText(layout.anchors[i].name, GuiGetStyle(DEFAULT, TEXT_SIZE)) + 10, GuiGetStyle(DEFAULT, TEXT_SIZE) + 5};
+
+                                        DrawRectangleRec(textboxRec, WHITE);
+                                        DrawRectangleRec(textboxRec, Fade(ORANGE, 0.1f));
+                                        GuiTextBox(textboxRec, layout.anchors[i].name, MAX_ANCHOR_NAME_LENGTH, false);
+                                    }
                                     GuiUnlock();
                                 }                            
                             }
@@ -1904,9 +1915,13 @@ int main(int argc, char *argv[])
                     // Name edit
                     if (nameEditMode)
                     {
-                        //layout.anchor[selectedAnchor].name
-                        Rectangle textboxRec = (Rectangle) {layout.anchors[selectedAnchor].x, layout.anchors[selectedAnchor].y, 200, 30};
+                        int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
+                        int textWidth = MeasureText(layout.anchors[selectedAnchor].name, fontSize);
+                        Rectangle textboxRec = (Rectangle) {layout.anchors[selectedAnchor].x, layout.anchors[selectedAnchor].y, textWidth + 15, fontSize + 5};
                         
+                        if (textboxRec.width < textWidth + 15) textboxRec.width = textWidth + 15;
+                        if (textboxRec.height < fontSize) textboxRec.height += fontSize;
+
                         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(ORANGE, 0.2f));
                         DrawText("Anchor name edit mode", 20, 20, 20, DARKGRAY);
                         if (GuiTextBox(textboxRec, layout.anchors[selectedAnchor].name, MAX_ANCHOR_NAME_LENGTH, nameEditMode)) nameEditMode = !nameEditMode;
@@ -2370,40 +2385,54 @@ static void LoadLayout(const char *fileName)
     int anchorX = 0;
     int anchorY = 0;
     int anchorCounter = 0;
+    
+    // Reset all the controls
+    layout.controlsCount = 0;
+    layout.anchorsCount = 0;
+    
+    for (int i = 0; i < MAX_GUI_CONTROLS; i++)
+    {
+        layout.controls[i].id = 0;
+        layout.controls[i].type = 0;
+        layout.controls[i].rec = (Rectangle){ 0, 0, 0, 0 };
+        memset(layout.controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
+        memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
+        layout.controls[i].ap = &layout.anchors[0];
+    }
+    //Reset all the anchors
+    for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
+    {
+        //
+        layout.anchors[i].id = i;
+        layout.anchors[i].x = 0;
+        layout.anchors[i].y = 0;
+        layout.anchors[i].enabled = false;
+        layout.anchors[i].hidding = false;
+        memset(layout.anchors[i].name, 0, MAX_ANCHOR_NAME_LENGTH);
+    }
 
     FILE *rglFile = fopen(fileName, "rt");
 
     if (rglFile != NULL)
-    {
-        // Reset all the controls
-        for (int i = 0; i < MAX_GUI_CONTROLS; i++)
-        {
-            layout.controls[i].id = 0;
-            layout.controls[i].type = 0;
-            layout.controls[i].rec = (Rectangle){ 0, 0, 0, 0 };
-            memset(layout.controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
-            memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
-            layout.controls[i].ap = &layout.anchors[0];
-        }
-        for (int i = 0; i < MAX_ANCHOR_POINTS; i++) layout.anchors[i].hidding = false;
-
+    {   
         fgets(buffer, 256, rglFile);
 
         if (buffer[0] != 'R')   // Text file!
         {
-            layout.controlsCount = 0;
-
             while (!feof(rglFile))
             {
                 if ((buffer[0] != '\n') && (buffer[0] != '#') && (buffer[0] == 'a'))
                 {
-                    sscanf(buffer, "a %03i %i %i %i", &layout.anchors[anchorCounter].id, &layout.anchors[anchorCounter].x, &layout.anchors[anchorCounter].y, &layout.anchors[anchorCounter].enabled);
-                    //printf("a %03i %i %i %i\n", layout.anchors[anchorCounter].id, layout.anchors[anchorCounter].x, layout.anchors[anchorCounter].y, layout.anchors[anchorCounter].enabled);
+                    // TODO: review anchors name loading
+                    sscanf(buffer, "a %03i %s %d %d %d", &layout.anchors[anchorCounter].id, layout.anchors[anchorCounter].name, &layout.anchors[anchorCounter].x, &layout.anchors[anchorCounter].y, &layout.anchors[anchorCounter].enabled);
+                    if (IsEqualText("", layout.anchors[anchorCounter].name)) strcpy(layout.anchors[anchorCounter].name, FormatText("anchor%02i", anchorCounter));
+                    printf("a %03d %s %d %d %d\n", layout.anchors[anchorCounter].id, layout.anchors[anchorCounter].name, layout.anchors[anchorCounter].x, layout.anchors[anchorCounter].y, layout.anchors[anchorCounter].enabled);
+                    if (layout.anchors[anchorCounter].enabled) layout.anchorsCount++;
                     anchorCounter++;
                 }
                 else if ((buffer[0] != '\n') && (buffer[0] != '#') && (buffer[0] == 'c'))
                 {
-                    sscanf(buffer, "c %d %i %s %f %f %f %f %d %[^\n]s", &layout.controls[layout.controlsCount].id, &layout.controls[layout.controlsCount].type, layout.controls[layout.controlsCount].name, &layout.controls[layout.controlsCount].rec.x, &layout.controls[layout.controlsCount].rec.y, &layout.controls[layout.controlsCount].rec.width, &layout.controls[layout.controlsCount].rec.height, &anchorId, layout.controls[layout.controlsCount].text);
+                    sscanf(buffer, "c %d %d %s %f %f %f %f %d %[^\n]s", &layout.controls[layout.controlsCount].id, &layout.controls[layout.controlsCount].type, layout.controls[layout.controlsCount].name, &layout.controls[layout.controlsCount].rec.x, &layout.controls[layout.controlsCount].rec.y, &layout.controls[layout.controlsCount].rec.width, &layout.controls[layout.controlsCount].rec.height, &anchorId, layout.controls[layout.controlsCount].text);
                     //printf("c %d %i %i %i %i %i %i %s\n", layout.controls[layout.controlsCount].id, layout.controls[layout.controlsCount].type, layout.controls[layout.controlsCount].rec.x, layout.controls[layout.controlsCount].rec.y, layout.controls[layout.controlsCount].rec.width, layout.controls[layout.controlsCount].rec.height, anchorId, layout.controls[layout.controlsCount].text);
 
                     layout.controls[layout.controlsCount].ap = &layout.anchors[anchorId];
@@ -2486,12 +2515,12 @@ static void SaveLayout(const char *fileName, bool binary)
              // Write some description comments
             fprintf(rglFile, "#\n# rgl text file (v%s) - raygui layout text file generated using rGuiLayout\n#\n", RGL_FILE_VERSION_TEXT);
             fprintf(rglFile, "# Total number of controls:     %i\n", layout.controlsCount);
-            fprintf(rglFile, "# Anchor info:   a <id> <posx> <posy> <enabled>\n");
+            fprintf(rglFile, "# Anchor info:   a <id> <name> <posx> <posy> <enabled>\n");
             fprintf(rglFile, "# Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>\n#\n");
 
             for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
             {
-                fprintf(rglFile, "a %03i %i %i %i\n", layout.anchors[i].id, layout.anchors[i].x, layout.anchors[i].y, layout.anchors[i].enabled);
+                fprintf(rglFile, "a %03i %s %i %i %i\n", layout.anchors[i].id, layout.anchors[i].name, layout.anchors[i].x, layout.anchors[i].y, layout.anchors[i].enabled);
             }
 
             for (int i = 0; i < layout.controlsCount; i++)
@@ -2626,72 +2655,65 @@ static void sappend(char *str, int *pos, const char *buffer)
 
 // Write controls variables code to file
 static void WriteControlsVariables(unsigned char *toolstr, int *pos, int index, GuiControl control, GuiLayoutConfig config)
-{    
-    if ((index > 0 && control.type != GUI_LABEL) || config.fullComments || config.exportAnchors) sappend(toolstr, pos, "    ");
-
-    if (control.type == GUI_LABEL && config.defineTexts)
-    {
-        sappend(toolstr, pos, FormatText("const char *%sText = \"%s\";\n", control.name, control.text));
-    }
-    
+{
     switch (control.type)
     {
         case GUI_WINDOWBOX:
         case GUI_TOGGLE:
         {
-            sappend(toolstr, pos, FormatText("bool %sActive = true;\n", control.name));
+            sappend(toolstr, pos, FormatText("bool %sActive = true;", control.name));
         } break;
         case GUI_CHECKBOX:
         {
-            sappend(toolstr, pos, FormatText("bool %sChecked = false;\n", control.name));
+            sappend(toolstr, pos, FormatText("bool %sChecked = false;", control.name));
         } break;
         case GUI_STATUSBAR:
         {
-            sappend(toolstr, pos, FormatText("char *%sText = \"%s\";\n", control.name, control.text));
+            sappend(toolstr, pos, FormatText("char *%sText = \"%s\";", control.name, control.text));
         } break;
         case GUI_LISTVIEW:
         case GUI_DROPDOWNBOX:
         {
-            if (config.fullVariables) sappend(toolstr, pos, FormatText("int %sCount = 3;\n    ", control.name));
-            sappend(toolstr, pos, FormatText("const char *%sTextList[3] = { \"ONE\", \"TWO\", \"THREE\" };\n", control.name));
-            sappend(toolstr, pos, FormatText("int %sActive = 0;\n", control.name));
-            sappend(toolstr, pos, FormatText("bool %sEditMode = false;\n", control.name));
+            if (config.fullVariables) sappend(toolstr, pos, FormatText("int %sCount = 3;\n\t", control.name));
+            sappend(toolstr, pos, FormatText("const char *%sTextList[3] = { \"ONE\", \"TWO\", \"THREE\" };", control.name));
+            sappend(toolstr, pos, FormatText("int %sActive = 0;", control.name));
+            sappend(toolstr, pos, FormatText("bool %sEditMode = false;", control.name));
         } break;
         case GUI_COMBOBOX:
         case GUI_TOGGLEGROUP:
         {
-            if (config.fullVariables) sappend(toolstr, pos, FormatText("int %sCount = 3;\n    ", control.name));
-            sappend(toolstr, pos, FormatText("const char *%sTextList[3] = { \"ONE\", \"TWO\", \"THREE\" };\n", control.name));
-            sappend(toolstr, pos, FormatText("int %sActive = 0;\n", control.name));
+            if (config.fullVariables) sappend(toolstr, pos, FormatText("int %sCount = 3;\n\t", control.name));
+            sappend(toolstr, pos, FormatText("const char *%sTextList[3] = { \"ONE\", \"TWO\", \"THREE\" };", control.name));
+            sappend(toolstr, pos, FormatText("int %sActive = 0;", control.name));
         } break;
         case GUI_SLIDER:
         case GUI_SLIDERBAR:
         {
             if (config.fullVariables)
             {
-                sappend(toolstr, pos, FormatText("const float %sMinValue = 0.0f;\n    ", control.name));
-                sappend(toolstr, pos, FormatText("const float %sMaxValue = 100.0f;\n    ", control.name));
+                sappend(toolstr, pos, FormatText("const float %sMinValue = 0.0f;\n\t", control.name));
+                sappend(toolstr, pos, FormatText("const float %sMaxValue = 100.0f;\n\t", control.name));
             }
-            sappend(toolstr, pos, FormatText("float %sValue = 50.0f;\n", control.name));
+            sappend(toolstr, pos, FormatText("float %sValue = 50.0f;", control.name));
 
         } break;
         case GUI_PROGRESSBAR:
         {
-            sappend(toolstr, pos, FormatText("float %sValue = 50.0f;\n", control.name));
+            sappend(toolstr, pos, FormatText("float %sValue = 50.0f;", control.name));
         } break;
         case GUI_VALUEBOX:
         case GUI_SPINNER:
         {
-            sappend(toolstr, pos, FormatText("int %sValue = 0;\n", control.name));
+            sappend(toolstr, pos, FormatText("int %sValue = 0;", control.name));
         } break;
         case GUI_COLORPICKER:
         {
-            sappend(toolstr, pos, FormatText("Color %sValue;\n", control.name));
+            sappend(toolstr, pos, FormatText("Color %sValue;", control.name));
         } break;
         case GUI_TEXTBOX:
         {
-            if (config.fullVariables) sappend(toolstr, pos, FormatText("int %sSize = %i;\n    ", control.name, MAX_CONTROL_TEXT_LENGTH));
-            sappend(toolstr, pos, FormatText("char %sText[%i] = \"%s\";\n", control.name, MAX_CONTROL_TEXT_LENGTH, control.text));
+            if (config.fullVariables) sappend(toolstr, pos, FormatText("int %sSize = %i;\n\t", control.name, MAX_CONTROL_TEXT_LENGTH));
+            sappend(toolstr, pos, FormatText("char %sText[%i] = \"%s\";", control.name, MAX_CONTROL_TEXT_LENGTH, control.text));
         } break;
         default: break;
     }
@@ -2794,64 +2816,75 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                    else if (IsEqualText(substr, "CONTROLS_FUNCTION_DECLARATION")) 
                    {
                         // Define required functions for calling
+                        int buttonsCount = 0;
                         for (int i = 0; i < layout.controlsCount; i++)
                         {
                             if (layout.controls[i].type == GUI_BUTTON) 
                             {
-                                sappend(toolstr, &codePos, FormatText("static void %s();        // %s: %s logic\n", layout.controls[i].name, controlTypeNameLow[layout.controls[i].type], layout.controls[i].name));
+                                buttonsCount++;
+                                sappend(toolstr, &codePos, FormatText("static void %s();", layout.controls[i].name));
+                                if (config.fullComments) sappend(toolstr, &codePos, FormatText("\t\t\t\t// %s: %s logic", controlTypeNameLow[layout.controls[i].type], layout.controls[i].name));
+                                sappend(toolstr, &codePos, "\n");
                             }
                         }
+                        if (buttonsCount > 0) codePos--;
                    }
                    else if (IsEqualText(substr, "CONTROLS_INITIALIZATION"))
                    {
                         // Anchors points export code
                         if (config.exportAnchors)
-                        {
-                            if (config.fullComments) sappend(toolstr, &codePos, "// Anchor points\n    ");
-                            
+                        {  
                             for(int i = 0; i < MAX_ANCHOR_POINTS; i++)
                             {
-                                for (int j = 0; j < layout.controlsCount; j++)
-                                {
-                                    if (layout.controls[j].ap->id == layout.anchors[i].id)
-                                    {
-                                        // TODO: review anchor name
-                                        if ((!config.exportAnchor0) && layout.controls[j].ap->id == 0) break;
-                                        sappend(toolstr, &codePos, FormatText("Vector2 %s%02i = { %i, %i };\n", "anchor", i, layout.anchors[i].x, layout.anchors[i].y));
-                                        break;
-                                    }
+                                if (layout.anchors[i].enabled)
+                                {                                  
+                                    sappend(toolstr, &codePos, FormatText("Vector2 %s = { %i, %i };", layout.anchors[i].name, layout.anchors[i].x, layout.anchors[i].y));                                    
+                                    if (config.fullComments) sappend(toolstr, &codePos, FormatText("\t// ID:%i Name:%s", layout.anchors[i].id, layout.anchors[i].name));
+                                    sappend(toolstr, &codePos, "\n\t");
                                 }
                             }
+                            sappend(toolstr, &codePos, "\n\t");
                         }
-
-                        //if (!config.fullComments) sappend(toolstr, &codePos, "\n");
 
                         // Generate controls required variables code
-                        for (int i = 0; i < layout.controlsCount; i++) 
+                        if (layout.controlsCount > 0)
                         {
-                            if(config.fullComments) sappend(toolstr, &codePos, FormatText("    // %s: %s\n", controlTypeNameLow[layout.controls[i].type], layout.controls[i].name));
-                            WriteControlsVariables(toolstr, &codePos, i, layout.controls[i], config);
+                            for (int i = 0; i < layout.controlsCount; i++) 
+                            {
+                                int type = layout.controls[i].type;
+                                if (type == GUI_LABEL)
+                                {
+                                    if (config.defineTexts) sappend(toolstr, &codePos, FormatText("const char *%sText = \"%s\";\n\t", layout.controls[i].name, layout.controls[i].text));
+                                }
+                                else if(type != GUI_GROUPBOX && type != GUI_LINE && type != GUI_PANEL && type != GUI_BUTTON && type != GUI_DUMMYREC)
+                                {
+                                    WriteControlsVariables(toolstr, &codePos, i, layout.controls[i], config);
+                                    if (config.fullComments) sappend(toolstr, &codePos, FormatText("\t// %s: %s", controlTypeNameLow[layout.controls[i].type], layout.controls[i].name));
+                                    sappend(toolstr, &codePos, "\n\t");
+                                }
+                            }
+                            codePos -= 2; // remove last \n\t
                         }
-                        codePos-= 4; // Delete last tab and \n
                         
                         if (config.defineRecs)
                         {
-                            // Define controls rectangles
-                            sappend(toolstr, &codePos, "\n    // Define controls rectangles\n");
-                            sappend(toolstr, &codePos, FormatText("    Rectangle layoutRecs[%i] = {\n", layout.controlsCount));
+                            sappend(toolstr, &codePos, "\n\n\t");
+                            // Define controls rectangles                            
+                            if (config.fullComments) sappend(toolstr, &codePos, "// Define controls rectangles\n\t");
+                            sappend(toolstr, &codePos, FormatText("Rectangle layoutRecs[%i] = {\n", layout.controlsCount));
                             
-                            //strcpy(text, FormatText("layoutRecs[%i]", index));
-
                             for (int i = 0; i < layout.controlsCount; i++)
                             {
-                                sappend(toolstr, &codePos, FormatText("        %s", GetControlRectangleText(i, layout.controls[i], config, true)));
-                                sappend(toolstr, &codePos, FormatText("        // %s: %s\n",controlTypeNameLow[layout.controls[i].type], layout.controls[i].name));
+                                sappend(toolstr, &codePos, FormatText("\t\t%s", GetControlRectangleText(i, layout.controls[i], config, true)));
+                                if (config.fullComments) sappend(toolstr, &codePos, FormatText("\t// %s: %s",controlTypeNameLow[layout.controls[i].type], layout.controls[i].name));
+                                sappend(toolstr, &codePos, "\n");
                             }
-                            sappend(toolstr, &codePos, "    };");
+                            sappend(toolstr, &codePos, "\t};");
                         }
                    }
                    else if (IsEqualText(substr, "CONTROLS_DRAWING")) 
                    {
+                       //for (int i = 0; i )
                         // Generate controls drawing code
                         for (int i = 0; i < layout.controlsCount; i++) WriteControlsDrawing(toolstr, &codePos, i, layout.controls[i], config);
                    }
@@ -2861,8 +2894,8 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                         {
                             if (layout.controls[i].type == GUI_BUTTON)
                             {
-                                sappend(toolstr, &codePos, FormatText("// %s: %s logic\n", controlTypeNameLow[layout.controls[i].type], layout.controls[i].name));
-                                sappend(toolstr, &codePos, FormatText("static void %s()\n{\n    // TODO: Implement control logic\n}\n\n", layout.controls[i].name));
+                                if(config.fullComments) sappend(toolstr, &codePos, FormatText("// %s: %s logic\n", controlTypeNameLow[layout.controls[i].type], layout.controls[i].name));
+                                sappend(toolstr, &codePos, FormatText("static void %s()\n{\n    // TODO: Implement control logic\n}\n", layout.controls[i].name));
                             }
                         }
                    }
@@ -2876,6 +2909,8 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
     
     substr = SubText(buffer, bufferPos, i - bufferPos);           
     strcpy(toolstr + codePos, substr);
+    
+    free(buffer);
     
     return toolstr;
 }
