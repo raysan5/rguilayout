@@ -2725,7 +2725,6 @@ static void WriteControlsDrawing(unsigned char *toolstr,int *pos, int index, Gui
     int i = index;
     char *rec = GetControlRectangleText(i, control, config, false);
 
-    if (index > 0) sappend(toolstr, pos, FormatText("\n            "));
     switch (control.type)
     {
         case GUI_LABEL:
@@ -2759,12 +2758,6 @@ static void WriteControlsDrawing(unsigned char *toolstr,int *pos, int index, Gui
         case GUI_LISTVIEW: sappend(toolstr, pos, FormatText("if (GuiListView(%s, %sTextList, %s, &%sScrollIndex, &%sActive, %sEditMode)) %sEditMode = !%sEditMode;", rec, control.name, GetControlParamText(control.type, control.name, config), control.name, control.name, control.name, control.name, control.name)); break;
         case GUI_TEXTBOX: sappend(toolstr, pos, FormatText("GuiTextBox(%s, %sText, %s, true);", rec, control.name, GetControlParamText(control.type, control.name, config))); break;
         case GUI_GROUPBOX: sappend(toolstr, pos, FormatText("GuiGroupBox(%s, \"%s\");", rec, control.text)); break;
-        case GUI_WINDOWBOX:
-        {
-            sappend(toolstr, pos, FormatText("if (%sActive)\n            {\n", control.name));
-            sappend(toolstr, pos, FormatText("                %sActive = !GuiWindowBox(%s, \"%s\");\n", control.name, rec, control.text));
-            sappend(toolstr, pos, "            }");
-        }break;
         case GUI_DUMMYREC: sappend(toolstr, pos, FormatText("GuiDummyRec(%s, \"%s\");", rec, control.text)); break;
         case GUI_DROPDOWNBOX: sappend(toolstr, pos, FormatText("if (GuiDropdownBox(%s, %sTextList, %s, &%sActive, %sEditMode)) %sEditMode = !%sEditMode;", rec, control.name, GetControlParamText(control.type, control.name, config), control.name, control.name, control.name, control.name)); break;
         case GUI_STATUSBAR: sappend(toolstr, pos, FormatText("GuiStatusBar(%s, %sText, 10);", rec, control.name)); break;
@@ -2881,15 +2874,54 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                             }
                             sappend(toolstr, &codePos, "\t};");
                         }
-                   }
-                   else if (IsEqualText(substr, "CONTROLS_DRAWING")) 
-                   {
-                       //for (int i = 0; i )
-                        // Generate controls drawing code
-                        for (int i = 0; i < layout.controlsCount; i++) WriteControlsDrawing(toolstr, &codePos, i, layout.controls[i], config);
-                   }
-                   else if (IsEqualText(substr, "CONTROLS_FUNCTION_DEFINITION"))
-                   {
+                    }
+                    else if (IsEqualText(substr, "CONTROLS_DRAWING") && layout.controlsCount > 0) 
+                    {                  
+                        bool draw[layout.controlsCount];
+                        for (int i = 0; i < layout.controlsCount; i++) draw[i] = false;
+                    
+                        for (int i = 0; i < layout.controlsCount; i++)
+                        {
+                            if (!draw[i])
+                            {
+                                if (layout.controls[i].type == GUI_WINDOWBOX)
+                                {
+                                   draw[i] = true;
+                                   
+                                    char *rec = GetControlRectangleText(i, layout.controls[i], config, false);
+
+                                    sappend(toolstr, &codePos, FormatText("if (%sActive)\n\t\t\t{\n", layout.controls[i].name));
+                                    sappend(toolstr, &codePos, FormatText("\t\t\t\t%sActive = !GuiWindowBox(%s, \"%s\");\n", layout.controls[i].name, rec, layout.controls[i].text));
+                                    
+                                    int windowAnchorID = layout.controls[i].ap->id;
+                                    
+                                    for (int j = 0; j < layout.controlsCount; j++)
+                                    {
+                                        if (!draw[j] && i != j && layout.controls[j].type != GUI_WINDOWBOX)
+                                        {
+                                            if (windowAnchorID == layout.controls[j].ap->id)
+                                            {
+                                                draw[j] = true;
+                                                
+                                                sappend(toolstr, &codePos, "\t\t\t\t");
+                                                WriteControlsDrawing(toolstr, &codePos, j, layout.controls[j], config);
+                                                sappend(toolstr, &codePos, "\n");
+                                            }
+                                        }
+                                    } 
+                                    sappend(toolstr, &codePos, "\t\t\t}");
+                               }
+                               else
+                               {
+                                   WriteControlsDrawing(toolstr, &codePos, i, layout.controls[i], config);
+                               }
+                               sappend(toolstr, &codePos, "\n\t\t\t");
+                            }
+                        }
+                        codePos -= 4; // Delete last \n\t\t\t
+                    }
+                    else if (IsEqualText(substr, "CONTROLS_FUNCTION_DEFINITION"))
+                    {
                         for (int i = 0; i < layout.controlsCount; i++)
                         {
                             if (layout.controls[i].type == GUI_BUTTON)
@@ -2898,12 +2930,12 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                                 sappend(toolstr, &codePos, FormatText("static void %s()\n{\n    // TODO: Implement control logic\n}\n", layout.controls[i].name));
                             }
                         }
-                   }
+                    }
                    
                    bufferPos += (j + 1);
                    break;
-               }               
-           }
+                }               
+            }
         }
     }
     
