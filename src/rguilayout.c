@@ -49,7 +49,6 @@
 #include "raylib.h"
 
 #define RAYGUI_IMPLEMENTATION
-#define RAYGUI_STYLE_LOADING
 #include "raygui.h"                         // Required for: IMGUI controls
 
 #undef RAYGUI_IMPLEMENTATION
