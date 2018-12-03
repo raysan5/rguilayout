@@ -5,14 +5,14 @@
 # Anchor info:   a <id> <posx> <posy> <enabled>
 # Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
-a 000 0 0 1
-a 001 50 25 1
-a 002 60 215 1
-a 003 60 400 1
-a 004 60 480 1
-a 005 60 575 1
-a 006 0 0 0
-a 007 0 0 0
+a 000 anchor00 0 0 1
+a 001 anchor00 50 25 1
+a 002 anchor00 60 215 1
+a 003 anchor00 60 400 1
+a 004 anchor00 60 480 1
+a 005 anchor00 60 575 1
+a 006 anchor00 0 0 0
+a 007 anchor00 0 0 0
 c 000 17 StatusBar000 0 0 210 25 1 SCENE SETTINGS
 c 001 3 Panel063 50 50 210 775 0 
 c 002 1 GroupBox010 10 40 190 135 1 Render Settings

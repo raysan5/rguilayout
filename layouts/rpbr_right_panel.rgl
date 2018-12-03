@@ -5,14 +5,14 @@
 # Anchor info:   a <id> <posx> <posy> <enabled>
 # Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
-a 000 0 0 1
-a 001 50 50 1
-a 002 60 460 1
-a 003 60 645 1
-a 004 60 275 1
-a 005 0 0 0
-a 006 0 0 0
-a 007 0 0 0
+a 000 anchor00 0 0 1
+a 001 anchor00 50 50 1
+a 002 anchor00 60 460 1
+a 003 anchor00 60 645 1
+a 004 anchor00 60 275 1
+a 005 anchor00 0 0 0
+a 006 anchor00 0 0 0
+a 007 anchor00 0 0 0
 c 000 17 StatusBar008 0 0 170 30 1 MATERIAL MAPS
 c 001 3 Panel014 50 80 170 745 0 
 c 002 1 GroupBox013 10 40 150 170 1 Albedo

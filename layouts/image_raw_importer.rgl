@@ -5,14 +5,14 @@
 # Anchor info:   a <id> <posx> <posy> <enabled>
 # Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
-a 000 0 0 1
-a 001 50 50 1
-a 002 0 0 0
-a 003 0 0 0
-a 004 0 0 0
-a 005 0 0 0
-a 006 0 0 0
-a 007 0 0 0
+a 000 anchor00 0 0 1
+a 001 anchor00 50 50 1
+a 002 anchor00 0 0 0
+a 003 anchor00 0 0 0
+a 004 anchor00 0 0 0
+a 005 anchor00 0 0 0
+a 006 anchor00 0 0 0
+a 007 anchor00 0 0 0
 c 000 0 importWindow 0 0 200 465 1 Image RAW Import Options
 c 001 4 lblImportFile 10 30 65 20 1 Import file:
 c 002 4 fileName 85 30 75 20 1 Untitled.raw
