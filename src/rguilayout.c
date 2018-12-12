@@ -2851,11 +2851,12 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiControl 
             if (fullVariables) 
             {
                 sappend(toolstr, pos, FormatText("int %sCount = 3;", control.name));
-                ENDLINEAPPEND(toolstr, pos);
-                TABAPPEND(toolstr, pos, tabs);                
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);                
             }
             sappend(toolstr, pos, FormatText("const char *%sTextList[3] = { \"ONE\", \"TWO\", \"THREE\" };", control.name));
+            ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs); 
             sappend(toolstr, pos, FormatText("int %sActive = 0;", control.name));
+            ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs); 
             sappend(toolstr, pos, FormatText("bool %sEditMode = false;", control.name));
         } break;
         case GUI_COMBOBOX:
@@ -2868,6 +2869,7 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiControl 
                 TABAPPEND(toolstr, pos, tabs);                
             }
             sappend(toolstr, pos, FormatText("const char *%sTextList[3] = { \"ONE\", \"TWO\", \"THREE\" };", control.name));
+            ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs); 
             sappend(toolstr, pos, FormatText("int %sActive = 0;", control.name));
         } break;
         case GUI_SLIDER:
@@ -3052,16 +3054,6 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                    }
                    else if (IsEqualText(substr, "CONTROLS_INITIALIZATION"))
                    {
-                        // Export Reference window (anchor point 0)
-                        // sappend(toolstr, &codePos, FormatText("Rectangle %s = { 0, 0, %i, %i };", layout.anchors[0].name, (int)layout.refWindow.width, (int)layout.refWindow.height));                                    
-                        // if (config.fullComments) 
-                        // {
-                            // TABAPPEND(toolstr, &codePos, 1);
-                            // sappend(toolstr, &codePos, FormatText("// Reference window"));
-                        // }
-                        // ENDLINEAPPEND(toolstr, &codePos);
-                        // TABAPPEND(toolstr, &codePos, tabs);
-
                         // Anchors points export code
                         if (config.exportAnchors && layout.anchorsCount > 1)
                         {  
@@ -3110,7 +3102,7 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                                     TABAPPEND(toolstr, &codePos, tabs);
                                 }
                             }
-                            codePos -= tabs+1; // remove last \n\t
+                            codePos -= tabs*4 + 1; // remove last \n\t
                         }
                         
                         if (config.defineRecs)
@@ -3142,45 +3134,122 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                         bool draw[layout.controlsCount];
                         for (int k = 0; k < layout.controlsCount; k++) draw[k] = false;
                     
+                        // If dropdown control exist, draw GuiLock condition
+                        bool dropDownExist = false;
                         for (int k = 0; k < layout.controlsCount; k++)
                         {
+                            if (layout.controls[k].type == GUI_DROPDOWNBOX)
+                            {
+                                if (!dropDownExist)
+                                {
+                                    dropDownExist = true;
+                                    sappend(toolstr, &codePos, "if (");
+                                }
+                                else
+                                {
+                                    sappend(toolstr, &codePos, " || ");
+                                }                                                
+                                sappend(toolstr, &codePos, FormatText("%sEditMode", layout.controls[k].name));
+                            }
+                        }
+                        if (dropDownExist)
+                        {
+                            sappend(toolstr, &codePos, ") GuiLock();");
+                            ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs);
+                        }
+                        
+                        // Draw GUI_WINDOWBOX
+                        for (int k = 0; k < layout.controlsCount; k++)
+                        {                            
                             if (!draw[k])
                             {
                                 if (layout.controls[k].type == GUI_WINDOWBOX)
-                                {
+                                {                     
                                     draw[k] = true;
                                    
                                     char *rec = GetControlRectangleText(k, layout.controls[k], config.defineRecs, config.exportAnchors);
-
-                                    sappend(toolstr, &codePos, FormatText("if (%sActive)\n\t\t\t{\n", layout.controls[k].name));
-                                    sappend(toolstr, &codePos, FormatText("\t\t\t\t%sActive = !GuiWindowBox(%s, \"%s\");\n", layout.controls[k].name, rec, layout.controls[k].text));
+                                    sappend(toolstr, &codePos, FormatText("if (%sActive)", layout.controls[k].name));
+                                    ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs);
+                                    sappend(toolstr, &codePos, "{");
+                                    ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs + 1);
+                                    sappend(toolstr, &codePos, FormatText("%sActive = !GuiWindowBox(%s, \"%s\");", layout.controls[k].name, rec, layout.controls[k].text));
+                                    ENDLINEAPPEND(toolstr, &codePos);
                                     
                                     int windowAnchorID = layout.controls[k].ap->id;
-                                    
+                                                                        
+                                    // Draw controls inside window
                                     for (int l = 0; l < layout.controlsCount; l++)
                                     {
-                                        if (!draw[l] && k != l && layout.controls[l].type != GUI_WINDOWBOX)
+                                        if (!draw[l] && k != l && layout.controls[l].type != GUI_WINDOWBOX  && layout.controls[l].type != GUI_DROPDOWNBOX)
                                         {
                                             if (windowAnchorID == layout.controls[l].ap->id)
                                             {
                                                 draw[l] = true;
                                                 
-                                                sappend(toolstr, &codePos, "\t\t\t\t");
+                                                TABAPPEND(toolstr, &codePos, tabs + 1);
                                                 WriteControlsDrawing(toolstr, &codePos, l, layout.controls[l], config);
-                                                sappend(toolstr, &codePos, "\n");
+                                                ENDLINEAPPEND(toolstr, &codePos);
                                             }
                                         }
                                     } 
-                                    sappend(toolstr, &codePos, "\t\t\t}");
-                               } 
-                               else
-                               {
-                                   WriteControlsDrawing(toolstr, &codePos, k, layout.controls[k], config);
-                               }
-                               sappend(toolstr, &codePos, "\n\t\t\t");
+                                    
+                                    // Draw GUI_DROPDOWNBOX inside GUI_WINDOWBOX
+                                    for (int l = 0; l < layout.controlsCount; l++)
+                                    {
+                                        if (!draw[l] && k != l && layout.controls[l].type == GUI_DROPDOWNBOX)
+                                        {
+                                            if (windowAnchorID == layout.controls[l].ap->id)
+                                            {
+                                                draw[l] = true;
+                                                
+                                                TABAPPEND(toolstr, &codePos, tabs + 1);
+                                                WriteControlsDrawing(toolstr, &codePos, l, layout.controls[l], config);
+                                                ENDLINEAPPEND(toolstr, &codePos);                                              
+                                            }
+                                        }
+                                    }
+                                    TABAPPEND(toolstr, &codePos, tabs);
+                                    sappend(toolstr, &codePos, "}");
+                                    ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs);
+                                }                                
                             }
                         }
-                        codePos -= 4; // Delete last \n\t\t\t
+                        
+                        // Draw the rest of controls
+                        for (int k = 0; k < layout.controlsCount; k++)
+                        {                            
+                            if (!draw[k])
+                            {    
+                                if (layout.controls[k].type != GUI_DROPDOWNBOX)
+                                {    
+                                    draw[k] = true;
+                                    WriteControlsDrawing(toolstr, &codePos, k, layout.controls[k], config);                                                                
+                                    ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs);
+                                }
+                            }
+                        }
+                        
+                        // Draw GUI_DROPDOWNBOX
+                        for (int k = 0; k < layout.controlsCount; k++)
+                        {                            
+                            if (!draw[k])
+                            {
+                                if (layout.controls[k].type == GUI_DROPDOWNBOX)
+                                {    
+                                    draw[k] = true;
+                                    WriteControlsDrawing(toolstr, &codePos, k, layout.controls[k], config);
+                                    ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs);
+                                }
+                            }
+                        }
+                        
+                        if (dropDownExist) 
+                        { 
+                            sappend(toolstr, &codePos, "GuiUnlock();"); 
+                            ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs);
+                        }
+
+                        codePos -= tabs*4 + 1; // Delete last tabs and \n
                     }
                     else if (IsEqualText(substr, "CONTROLS_FUNCTION_DEFINITION"))
                     {
@@ -3188,8 +3257,15 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                         {
                             if (layout.controls[k].type == GUI_BUTTON)
                             {
-                                if(config.fullComments) sappend(toolstr, &codePos, FormatText("// %s: %s logic\n", controlTypeNameLow[layout.controls[k].type], layout.controls[k].name));
-                                sappend(toolstr, &codePos, FormatText("static void %s()\n{\n    // TODO: Implement control logic\n}\n", layout.controls[k].name));
+                                if(config.fullComments) 
+                                {
+                                    sappend(toolstr, &codePos, FormatText("// %s: %s logic", controlTypeNameLow[layout.controls[k].type], layout.controls[k].name));
+                                    ENDLINEAPPEND(toolstr, &codePos);
+                                }
+                                sappend(toolstr, &codePos, FormatText("static void %s()", layout.controls[k].name)); ENDLINEAPPEND(toolstr, &codePos);
+                                sappend(toolstr, &codePos, "{"); ENDLINEAPPEND(toolstr, &codePos);
+                                TABAPPEND(toolstr, &codePos, 1); sappend(toolstr, &codePos, "// TODO: Implement control logic"); ENDLINEAPPEND(toolstr, &codePos);
+                                sappend(toolstr, &codePos, "}"); ENDLINEAPPEND(toolstr, &codePos);
                             }
                         }
                     }
