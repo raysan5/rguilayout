@@ -86,6 +86,9 @@
 
 #define PANELS_EASING_FRAMES        60      // Controls the easing time in frames
 
+#define TABAPPEND(x, y, z)          { for(int t = 0; t < z; t++) sappend(x, y, "    "); }
+#define ENDLINEAPPEND(x, y)         sappend(x, y, "\n");  
+
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
@@ -193,10 +196,11 @@ static bool DialogSaveLayout(void);                             // Show dialog: 
 static void DialogExportLayout(unsigned char *toolstr, const char *name);         // Show dialog: export layout file (.c)
 
 // Code generation functions
-static char *GetControlRectangleText(int index, GuiControl control, GuiLayoutConfig config, bool forceRecs);    // Get control rectangle text
+static char *GetControlRectangleText(int index, GuiControl control, bool defineRecs, bool exportAnchors);    // Get control rectangle text
 static char *GetControlParamText(int controlType, char *name, GuiLayoutConfig config);                          // Get control func parameters text
-static void WriteControlsVariables(unsigned char *toolstr, int *pos, int index, GuiControl control, GuiLayoutConfig config);         // Write controls variables code to file
+static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiControl control, bool fullVariables,int tabs);         // Write controls variables code to file
 static void WriteControlsDrawing(unsigned char *toolstr, int *pos, int index, GuiControl control, GuiLayoutConfig config); // Write controls drawing code to file
+static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiControl control, bool exportAnchors, bool fullComments, int tabs); // Write rectangle variables.
 static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayoutConfig config);
 
 //----------------------------------------------------------------------------------
@@ -1420,8 +1424,6 @@ int main(int argc, char *argv[])
                                     }
                                 }  
                             }
-
-                            
                         }
                         else // anchorLinkMode == true
                         {
@@ -1715,7 +1717,8 @@ int main(int argc, char *argv[])
                 layout.anchors[i].hidding = false;
             }
             
-            layout.anchorsCount = 0;
+            layout.anchors[0].enabled = true;
+            layout.anchorsCount = 1;
 
             SetWindowTitle(FormatText("rGuiLayout v%s", TOOL_VERSION_TEXT));
             strcpy(loadedFileName, "\0");
@@ -2738,36 +2741,56 @@ static void DialogExportLayout(unsigned char *toolstr, const char *name)
 //--------------------------------------------------------------------------------------------
 // Code generation functions
 //--------------------------------------------------------------------------------------------
+// Append one string at last position of a bigger string,
+// i.e. use string as a file to add keep adding other strings...
+// NOTE: It requires global variable [codeStrCurrentPos] for tracking
+static void sappend(char *str, int *pos, const char *buffer)
+{
+    strcpy(str + *pos, buffer);
+    *pos += strlen(buffer);
+}
+
+static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiControl control, bool exportAnchors, bool fullComments, int tabs)
+{
+    //sappend(toolstr, pos, FormatText("bool %sActive = true;", control.name));
+    if (exportAnchors && control.ap->id > 0)
+    {
+        sappend(toolstr, pos, FormatText("(Rectangle){ %s.x + %i, %s.y + %i, %i, %i }", control.ap->name, (int)control.rec.x, control.ap->name, (int)control.rec.y, (int)control.rec.width, (int)control.rec.height));
+    }
+    else
+    {
+        if (control.ap->id > 0) sappend(toolstr, pos, FormatText("(Rectangle){ %i, %i, %i, %i }", (int)control.rec.x + control.ap->x, (int)control.rec.y + control.ap->y, (int)control.rec.width, (int)control.rec.height));
+        else sappend(toolstr, pos, FormatText("(Rectangle){ %i, %i, %i, %i }", (int)control.rec.x - control.ap->x, (int)control.rec.y - control.ap->y, (int)control.rec.width, (int)control.rec.height));
+    }
+    if (fullComments) 
+    {
+        TABAPPEND(toolstr, pos, tabs);
+        sappend(toolstr, pos, FormatText("// %s: %s",controlTypeNameLow[control.type], control.name));
+    }
+}
 
 // Get control rectangle text (considering anchor or not)
-static char *GetControlRectangleText(int index, GuiControl control, GuiLayoutConfig config, bool forceRecs)
+static char *GetControlRectangleText(int index, GuiControl control, bool defineRecs, bool exportAnchors)
 {
     static char text[512];
     memset(text, 0, 512);
-
-    if (!config.defineRecs || forceRecs)
+    
+    if (defineRecs)
     {
-        if (config.exportAnchors)
+        strcpy(text, FormatText("layoutRecs[%i]", index));
+    }
+    else
+    {
+        if (exportAnchors && control.ap->id > 0)
         {
-            if (config.exportAnchor0) strcpy(text, FormatText("(Rectangle){ anchor%02i.x + %i, anchor%02i.y + %i, %i, %i }", control.ap->id, (int)control.rec.x, control.ap->id, (int)control.rec.y, (int)control.rec.width, (int)control.rec.height));
-            else
-            {
-                if (control.ap->id > 0) strcpy(text, FormatText("(Rectangle){ anchor%02i.x + %i, anchor%02i.y + %i, %i, %i }", control.ap->id, (int)control.rec.x, control.ap->id, (int)control.rec.y, (int)control.rec.width, (int)control.rec.height));
-                else strcpy(text, FormatText("(Rectangle){ %i, %i, %i, %i }", (int)control.rec.x, (int)control.rec.y, (int)control.rec.width, (int)control.rec.height));
-
-            }
+            strcpy(text, FormatText("(Rectangle){ %s.x + %i, %s.y + %i, %i, %i }", control.ap->name, (int)control.rec.x, control.ap->name, (int)control.rec.y, (int)control.rec.width, (int)control.rec.height));
         }
         else
         {
-            if (config.exportAnchor0)
-            {
-                if (control.ap->id > 0) strcpy(text, FormatText("(Rectangle){ %i, %i, %i, %i }", layout.anchors[control.ap->id].x + (int)control.rec.x, layout.anchors[control.ap->id].y + (int)control.rec.y, (int)control.rec.width, (int)control.rec.height));
-                else strcpy(text, FormatText("(Rectangle){ anchor%02i.x + %i, anchor%02i.y + %i, %i, %i }", control.ap->id, (int)control.rec.x, control.ap->id, (int)control.rec.y, (int)control.rec.width, (int)control.rec.height));
-            }
-            else strcpy(text, FormatText("(Rectangle){ %i, %i, %i, %i }", layout.anchors[control.ap->id].x + (int)control.rec.x, layout.anchors[control.ap->id].y + (int)control.rec.y, (int)control.rec.width, (int)control.rec.height));
+            if (control.ap->id > 0) strcpy(text, FormatText("(Rectangle){ %i, %i, %i, %i }", (int)control.rec.x + control.ap->x, (int)control.rec.y + control.ap->y, (int)control.rec.width, (int)control.rec.height));
+            else strcpy(text, FormatText("(Rectangle){ %i, %i, %i, %i }", (int)control.rec.x - control.ap->x, (int)control.rec.y - control.ap->y, (int)control.rec.width, (int)control.rec.height));
         }
-    }
-    else strcpy(text, FormatText("layoutRecs[%i]", index));
+    }    
 
     return text;
 }
@@ -2804,32 +2827,9 @@ static char *GetControlParamText(int controlType, char *name, GuiLayoutConfig co
     return text;
 }
 
-// Append one string at last position of a bigger string,
-// i.e. use string as a file to add keep adding other strings...
-// NOTE: It requires global variable [codeStrCurrentPos] for tracking
-static void sappend(char *str, int *pos, const char *buffer)
-{
-    strcpy(str + *pos, buffer);
-    *pos += strlen(buffer);
-}
-
 // Write controls variables code to file
-static void WriteControlsVariables(unsigned char *toolstr, int *pos, int index, GuiControl control, GuiLayoutConfig config)
-{
-    /* TODO: macros for tab and endline
-    
-    #define TABAPPEND(x, y, z) { for(int t = 0; t < z; t++) sappend(x, y, "    ") }
-    #define ENDLINEAPPEND(x, y) sappend(x, y, "\n")    
-    //TABAPPEND(toolstr, pos);
-    
-    #define MACRO(num, str) { \
-            printf("%d", num); \
-            printf(" is"); \
-            printf(" %s number", str);\
-            printf("\n");\
-           } 
-    */
-    
+static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiControl control, bool fullVariables, int tabs)
+{      
     switch (control.type)
     {
         case GUI_WINDOWBOX:
@@ -2848,7 +2848,12 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, int index, 
         case GUI_LISTVIEW:
         case GUI_DROPDOWNBOX:
         {
-            if (config.fullVariables) sappend(toolstr, pos, FormatText("int %sCount = 3;\n\t", control.name));
+            if (fullVariables) 
+            {
+                sappend(toolstr, pos, FormatText("int %sCount = 3;", control.name));
+                ENDLINEAPPEND(toolstr, pos);
+                TABAPPEND(toolstr, pos, tabs);                
+            }
             sappend(toolstr, pos, FormatText("const char *%sTextList[3] = { \"ONE\", \"TWO\", \"THREE\" };", control.name));
             sappend(toolstr, pos, FormatText("int %sActive = 0;", control.name));
             sappend(toolstr, pos, FormatText("bool %sEditMode = false;", control.name));
@@ -2856,17 +2861,27 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, int index, 
         case GUI_COMBOBOX:
         case GUI_TOGGLEGROUP:
         {
-            if (config.fullVariables) sappend(toolstr, pos, FormatText("int %sCount = 3;\n\t", control.name));
+            if (fullVariables) 
+            {
+                sappend(toolstr, pos, FormatText("int %sCount = 3;", control.name));
+                ENDLINEAPPEND(toolstr, pos);
+                TABAPPEND(toolstr, pos, tabs);                
+            }
             sappend(toolstr, pos, FormatText("const char *%sTextList[3] = { \"ONE\", \"TWO\", \"THREE\" };", control.name));
             sappend(toolstr, pos, FormatText("int %sActive = 0;", control.name));
         } break;
         case GUI_SLIDER:
         case GUI_SLIDERBAR:
         {
-            if (config.fullVariables)
+            if (fullVariables)
             {
-                sappend(toolstr, pos, FormatText("const float %sMinValue = 0.0f;\n\t", control.name));
-                sappend(toolstr, pos, FormatText("const float %sMaxValue = 100.0f;\n\t", control.name));
+                sappend(toolstr, pos, FormatText("const float %sMinValue = 0.0f;", control.name));
+                ENDLINEAPPEND(toolstr, pos);
+                TABAPPEND(toolstr, pos, tabs);                
+            
+                sappend(toolstr, pos, FormatText("const float %sMaxValue = 100.0f;", control.name));
+                ENDLINEAPPEND(toolstr, pos);
+                TABAPPEND(toolstr, pos, tabs); 
             }
             sappend(toolstr, pos, FormatText("float %sValue = 50.0f;", control.name));
 
@@ -2886,7 +2901,12 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, int index, 
         } break;
         case GUI_TEXTBOX:
         {
-            if (config.fullVariables) sappend(toolstr, pos, FormatText("int %sSize = %i;\n\t", control.name, MAX_CONTROL_TEXT_LENGTH));
+            if (fullVariables) 
+            {
+                sappend(toolstr, pos, FormatText("int %sSize = %i;", control.name, MAX_CONTROL_TEXT_LENGTH));
+                ENDLINEAPPEND(toolstr, pos);
+                TABAPPEND(toolstr, pos, tabs); 
+            }
             sappend(toolstr, pos, FormatText("char %sText[%i] = \"%s\";", control.name, MAX_CONTROL_TEXT_LENGTH, control.text));
         } break;
         default: break;
@@ -2894,10 +2914,9 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, int index, 
 }
 
 // Write controls drawing code to file
-static void WriteControlsDrawing(unsigned char *toolstr,int *pos, int index, GuiControl control, GuiLayoutConfig config)
+static void WriteControlsDrawing(unsigned char *toolstr, int *pos, int index, GuiControl control, GuiLayoutConfig config)
 {
-    int i = index;
-    char *rec = GetControlRectangleText(i, control, config, false);
+    char *rec = GetControlRectangleText(index, control, config.defineRecs, config.exportAnchors);
 
     switch (control.type)
     {
@@ -2946,7 +2965,7 @@ static void WriteControlsDrawing(unsigned char *toolstr,int *pos, int index, Gui
 static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayoutConfig config)
 {    
     #define MAX_CODE_SIZE            1024*512
-    #define MAX_VARIABLE_NAME_SIZE   64
+    #define MAX_VARIABLE_NAME_SIZE   64    
 
     unsigned char *toolstr = (unsigned char *)calloc(MAX_CODE_SIZE, sizeof(unsigned char));
     unsigned const char *substr = NULL;
@@ -2970,6 +2989,19 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
     {
         if ((buffer[i] == '$') && (buffer[i + 1] == '('))
         {
+            
+           int spaceWidth = 0;
+           for (int j = i-1; j >= 0; j--)
+           {
+               if(buffer[j] == ' ') spaceWidth++;
+               else 
+               {
+                   if (buffer[j] != '\n') spaceWidth = 0;                   
+                   break;
+               }
+           }
+           int tabs = (int)spaceWidth/4;
+           
            substr = SubText(buffer, bufferPos, i - bufferPos);
            
            strcpy(toolstr + codePos, substr);
@@ -2988,6 +3020,16 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                    else if (IsEqualText(substr, "TOOL_VERSION")) sappend(toolstr, &codePos, config.version);
                    else if (IsEqualText(substr, "TOOL_DESCRIPTION")) sappend(toolstr, &codePos, config.description);
                    else if (IsEqualText(substr, "TOOL_COMPANY")) sappend(toolstr, &codePos, config.company);
+                   else if (IsEqualText(substr, "WINDOW_WIDTH")) 
+                   {
+                       if(layout.refWindow.width > 0) sappend(toolstr, &codePos, FormatText("%i", (int)layout.refWindow.width));
+                       else sappend(toolstr, &codePos, FormatText("%i", 800));
+                   }
+                   else if (IsEqualText(substr, "WINDOW_HEIGHT"))
+                   {
+                       if(layout.refWindow.height > 0) sappend(toolstr, &codePos, FormatText("%i", (int)layout.refWindow.height));
+                       else sappend(toolstr, &codePos, FormatText("%i", 450));
+                   }
                    else if (IsEqualText(substr, "CONTROLS_FUNCTION_DECLARATION")) 
                    {
                         // Define required functions for calling
@@ -2998,8 +3040,12 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                             {
                                 buttonsCount++;
                                 sappend(toolstr, &codePos, FormatText("static void %s();", layout.controls[i].name));
-                                if (config.fullComments) sappend(toolstr, &codePos, FormatText("\t\t\t\t// %s: %s logic", controlTypeNameLow[layout.controls[i].type], layout.controls[i].name));
-                                sappend(toolstr, &codePos, "\n");
+                                if (config.fullComments) 
+                                {
+                                    TABAPPEND(toolstr, &codePos, 4);
+                                    sappend(toolstr, &codePos, FormatText("// %s: %s logic", controlTypeNameLow[layout.controls[i].type], layout.controls[i].name));
+                                }
+                                ENDLINEAPPEND(toolstr, &codePos);
                             }
                         }
                         if (buttonsCount > 0) codePos--;
@@ -3007,23 +3053,34 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                    else if (IsEqualText(substr, "CONTROLS_INITIALIZATION"))
                    {
                         // Export Reference window (anchor point 0)
-                        sappend(toolstr, &codePos, FormatText("Rectangle %s = { 0, 0, %i, %i };", layout.anchors[0].name, (int)layout.refWindow.width, (int)layout.refWindow.height));                                    
-                        if (config.fullComments) sappend(toolstr, &codePos, FormatText("\t// Reference window"));
-                        sappend(toolstr, &codePos, "\n\t");
+                        // sappend(toolstr, &codePos, FormatText("Rectangle %s = { 0, 0, %i, %i };", layout.anchors[0].name, (int)layout.refWindow.width, (int)layout.refWindow.height));                                    
+                        // if (config.fullComments) 
+                        // {
+                            // TABAPPEND(toolstr, &codePos, 1);
+                            // sappend(toolstr, &codePos, FormatText("// Reference window"));
+                        // }
+                        // ENDLINEAPPEND(toolstr, &codePos);
+                        // TABAPPEND(toolstr, &codePos, tabs);
 
                         // Anchors points export code
-                        if (config.exportAnchors)
+                        if (config.exportAnchors && layout.anchorsCount > 1)
                         {  
                             for(int k = 1; k < MAX_ANCHOR_POINTS; k++)
                             {
                                 if (layout.anchors[k].enabled)
                                 {                                  
                                     sappend(toolstr, &codePos, FormatText("Vector2 %s = { %i, %i };", layout.anchors[k].name, (int)layout.anchors[k].x, (int)layout.anchors[k].y));                                    
-                                    if (config.fullComments) sappend(toolstr, &codePos, FormatText("\t// ID:%i Name:%s", layout.anchors[k].id, layout.anchors[k].name));
-                                    sappend(toolstr, &codePos, "\n\t");
+                                    if (config.fullComments) 
+                                    {
+                                        TABAPPEND(toolstr, &codePos, 1);
+                                        sappend(toolstr, &codePos, FormatText("// ID:%i Name:%s", layout.anchors[k].id, layout.anchors[k].name));
+                                    }
+                                    ENDLINEAPPEND(toolstr, &codePos);
+                                    TABAPPEND(toolstr, &codePos, tabs);
                                 }
                             }
-                            sappend(toolstr, &codePos, "\n\t");
+                            ENDLINEAPPEND(toolstr, &codePos);
+                            TABAPPEND(toolstr, &codePos, tabs);
                         }
 
                         // Generate controls required variables code
@@ -3034,32 +3091,50 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                                 int type = layout.controls[k].type;
                                 if (type == GUI_LABEL)
                                 {
-                                    if (config.defineTexts) sappend(toolstr, &codePos, FormatText("const char *%sText = \"%s\";\n\t", layout.controls[k].name, layout.controls[k].text));
+                                    if (config.defineTexts) 
+                                    {
+                                        sappend(toolstr, &codePos, FormatText("const char *%sText = \"%s\";", layout.controls[k].name, layout.controls[k].text));
+                                        ENDLINEAPPEND(toolstr, &codePos);
+                                        TABAPPEND(toolstr, &codePos, tabs);
+                                    }
                                 }
                                 else if(type != GUI_GROUPBOX && type != GUI_LINE && type != GUI_PANEL && type != GUI_BUTTON && type != GUI_DUMMYREC)
                                 {
-                                    WriteControlsVariables(toolstr, &codePos, k, layout.controls[k], config);
-                                    if (config.fullComments) sappend(toolstr, &codePos, FormatText("\t// %s: %s", controlTypeNameLow[layout.controls[k].type], layout.controls[k].name));
-                                    sappend(toolstr, &codePos, "\n\t");
+                                    WriteControlsVariables(toolstr, &codePos, layout.controls[k], config.fullVariables, tabs);
+                                    if (config.fullComments) 
+                                    {
+                                        TABAPPEND(toolstr, &codePos, 1);
+                                        sappend(toolstr, &codePos, FormatText("// %s: %s", controlTypeNameLow[layout.controls[k].type], layout.controls[k].name));
+                                    }
+                                    ENDLINEAPPEND(toolstr, &codePos);
+                                    TABAPPEND(toolstr, &codePos, tabs);
                                 }
                             }
-                            codePos -= 2; // remove last \n\t
+                            codePos -= tabs+1; // remove last \n\t
                         }
                         
                         if (config.defineRecs)
                         {
-                            sappend(toolstr, &codePos, "\n\n\t");
+                            ENDLINEAPPEND(toolstr, &codePos);
+                            TABAPPEND(toolstr, &codePos, tabs);
                             // Define controls rectangles                            
-                            if (config.fullComments) sappend(toolstr, &codePos, "// Define controls rectangles\n\t");
-                            sappend(toolstr, &codePos, FormatText("Rectangle layoutRecs[%i] = {\n", layout.controlsCount));
+                            if (config.fullComments) 
+                            {
+                                sappend(toolstr, &codePos, "// Define controls rectangles");
+                                ENDLINEAPPEND(toolstr, &codePos);
+                                TABAPPEND(toolstr, &codePos, tabs);
+                            }
+                            sappend(toolstr, &codePos, FormatText("Rectangle layoutRecs[%i] = {", layout.controlsCount));
+                            ENDLINEAPPEND(toolstr, &codePos);
                             
                             for (int k = 0; k < layout.controlsCount; k++)
                             {
-                                sappend(toolstr, &codePos, FormatText("\t\t%s", GetControlRectangleText(k, layout.controls[k], config, true)));
-                                if (config.fullComments) sappend(toolstr, &codePos, FormatText("\t// %s: %s",controlTypeNameLow[layout.controls[k].type], layout.controls[k].name));
-                                sappend(toolstr, &codePos, "\n");
+                                TABAPPEND(toolstr, &codePos, tabs+1);
+                                WriteRectangleVariables(toolstr, &codePos, layout.controls[k], config.exportAnchors, config.fullComments, tabs);                              
+                                ENDLINEAPPEND(toolstr, &codePos);
                             }
-                            sappend(toolstr, &codePos, "\t};");
+                            TABAPPEND(toolstr, &codePos, tabs);
+                            sappend(toolstr, &codePos, "};");
                         }
                     }
                     else if (IsEqualText(substr, "CONTROLS_DRAWING") && layout.controlsCount > 0) 
@@ -3075,7 +3150,7 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                                 {
                                     draw[k] = true;
                                    
-                                    char *rec = GetControlRectangleText(k, layout.controls[k], config, false);
+                                    char *rec = GetControlRectangleText(k, layout.controls[k], config.defineRecs, config.exportAnchors);
 
                                     sappend(toolstr, &codePos, FormatText("if (%sActive)\n\t\t\t{\n", layout.controls[k].name));
                                     sappend(toolstr, &codePos, FormatText("\t\t\t\t%sActive = !GuiWindowBox(%s, \"%s\");\n", layout.controls[k].name, rec, layout.controls[k].text));

@@ -25,8 +25,8 @@ int main()
 {
     // Initialization
     //---------------------------------------------------------------------------------------
-    int screenWidth = 800;
-    int screenHeight = 450;
+    int screenWidth = $(WINDOW_WIDTH);
+    int screenHeight = $(WINDOW_HEIGHT);
 
     InitWindow(screenWidth, screenHeight, "$(TOOL_NAME)");
 
