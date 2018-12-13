@@ -61,7 +61,9 @@
 #include <stdlib.h>                         // Required for: calloc(), free()
 #include <stdarg.h>                         // Required for: va_list, va_start(), vfprintf(), va_end()
 #include <string.h>                         // Required for: strcpy(), strcat(), strlen()
-#include <stdio.h> 
+#include <stdio.h>                          // Required for: FILE, fopen(), fclose()...
+#include <ctype.h>                          // Required for: toupper(), tolower()
+
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
@@ -86,7 +88,7 @@
 
 #define PANELS_EASING_FRAMES        60      // Controls the easing time in frames
 
-#define MAX_UNDO_LEVELS             5       // Undo levels supported for the ring buffer
+#define MAX_UNDO_LEVELS             10       // Undo levels supported for the ring buffer
 
 #define TABAPPEND(x, y, z)          { for(int t = 0; t < z; t++) sappend(x, y, "    "); }
 #define ENDLINEAPPEND(x, y)         sappend(x, y, "\n");  
@@ -449,7 +451,7 @@ int main(int argc, char *argv[])
     GuiLayout *undoLayouts = NULL;
     int currentUndoIndex = 0;
     int firstUndoIndex = 0;
-    int savedUndoCounter = 0;
+    int lastUndoIndex = 0;
     int undoFrameCounter = 0;
     
     undoLayouts = (GuiLayout *)calloc(MAX_UNDO_LEVELS, sizeof(GuiLayout));
@@ -480,10 +482,8 @@ int main(int argc, char *argv[])
                     if (firstUndoIndex >= MAX_UNDO_LEVELS) firstUndoIndex = 0;
                     
                     undoLayouts[currentUndoIndex] = layout;
-                    
-                    // TODO: Problems with REDO logic
-                    if (currentUndoIndex > firstUndoIndex) savedUndoCounter = currentUndoIndex - firstUndoIndex;
-                    else if (currentUndoIndex < firstUndoIndex) savedUndoCounter = MAX_UNDO_LEVELS - firstUndoIndex + currentUndoIndex;
+
+                    lastUndoIndex = currentUndoIndex;
                 }
                 
                 undoFrameCounter = 0;
@@ -506,18 +506,17 @@ int main(int argc, char *argv[])
         // Recover next layout state from buffer
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Y))
         {
-            // TODO: REDO logic does not seem to work perfectly...
-            if (savedUndoCounter > 0)
+            if (currentUndoIndex != lastUndoIndex)
             {
-                currentUndoIndex++;
-                if (currentUndoIndex < 0) currentUndoIndex = MAX_UNDO_LEVELS - 1;
-                if (currentUndoIndex >= MAX_UNDO_LEVELS) currentUndoIndex = 0;
+                int nextUndoIndex = currentUndoIndex + 1;
+                if (nextUndoIndex >= MAX_UNDO_LEVELS) nextUndoIndex = 0;
                 
-                if (currentUndoIndex != firstUndoIndex)
+                if (nextUndoIndex != firstUndoIndex)
                 {
+                    currentUndoIndex = nextUndoIndex;
+
                     if (memcmp(&undoLayouts[currentUndoIndex], &layout, sizeof(GuiLayout)) != 0) layout = undoLayouts[currentUndoIndex];
                 }
-                else currentUndoIndex--;
             }
         }
         //----------------------------------------------------------------------------------
@@ -2456,38 +2455,74 @@ int main(int argc, char *argv[])
                 if ((codeOffsetY + codeHeight) < (GetScreenHeight() - 200)) codeOffsetY = -codeHeight + (GetScreenHeight() - 200); 
             }
             
-            // Undo layout info
-            DrawText("UNDO:", 225, 29, 20, DARKGRAY);
-            DrawText(FormatText("SAVES: %i", savedUndoCounter), 300 + 25*MAX_UNDO_LEVELS + 20, 29, 20, GREEN);
+            // Draw UNDO system info
+            //--------------------------------------------------------------------------------------------
+            DrawText("UNDO SYSTEM", 215, 34, 10, DARKGRAY);
+            
+            // Draw index marks
+            DrawRectangle(308 + 25*currentUndoIndex, 15, 8, 8, RED);
+            DrawRectangleLines(302 + 25*firstUndoIndex, 50 + 2, 8, 8, BLACK);
+            DrawRectangle(314 + 25*lastUndoIndex, 50 + 2, 8, 8, BLACK);
+            
+            // Draw background gray slots
             for (int i = 0; i < MAX_UNDO_LEVELS; i++) 
             {
-                if (i == currentUndoIndex) 
+                DrawRectangle(300 + 25*i, 25, 25, 25, LIGHTGRAY);
+                DrawRectangleLines(300 + 25*i, 25, 25, 25, GRAY);
+            }
+            
+            // Draw occupied slots: firstUndoIndex --> lastUndoIndex
+            if (firstUndoIndex <= lastUndoIndex)
+            {
+                for (int i = firstUndoIndex; i < lastUndoIndex + 1; i++)
                 {
-                    DrawRectangle(300 + 25*i, 25, 25, 25, GOLD);
-                    DrawRectangleLines(300 + 25*i, 25, 25, 25, ORANGE);
+                    DrawRectangle(300 + 25*i, 25, 25, 25, SKYBLUE);
+                    DrawRectangleLines(300 + 25*i, 25, 25, 25, BLUE);
                 }
-                else if (i < savedUndoCounter)
+            }
+            else if (lastUndoIndex < firstUndoIndex)
+            {
+                for (int i = firstUndoIndex; i < MAX_UNDO_LEVELS; i++)
                 {
-                    if (i < currentUndoIndex)
-                    {
-                        DrawRectangle(300 + 25*i, 25, 25, 25, GREEN);
-                        DrawRectangleLines(300 + 25*i, 25, 25, 25, LIME);
-                    }
-                    else
-                    {
-                        DrawRectangle(300 + 25*i, 25, 25, 25, Fade(GREEN, 0.5f));
-                        DrawRectangleLines(300 + 25*i, 25, 25, 25, Fade(LIME, 0.5f));
-                    }
-                }
-                else
-                {
-                    DrawRectangle(300 + 25*i, 25, 25, 25, LIGHTGRAY);
-                    DrawRectangleLines(300 + 25*i, 25, 25, 25, GRAY);
+                    DrawRectangle(300 + 25*i, 25, 25, 25, SKYBLUE);
+                    DrawRectangleLines(300 + 25*i, 25, 25, 25, BLUE);
                 }
                 
-                if (i == currentUndoIndex) DrawRectangle(308 + 25*i, 15, 8, 8, RED);
-                if (i == firstUndoIndex) DrawRectangle(308 + 25*i, 50 + 2, 8, 8, BLACK);
+                for (int i = 0; i < lastUndoIndex + 1; i++)
+                {
+                    DrawRectangle(300 + 25*i, 25, 25, 25, SKYBLUE);
+                    DrawRectangleLines(300 + 25*i, 25, 25, 25, BLUE);
+                }
             }
+            
+            // Draw occupied slots: firstUndoIndex --> currentUndoIndex
+            if (firstUndoIndex < currentUndoIndex)
+            {
+                for (int i = firstUndoIndex; i < currentUndoIndex; i++)
+                {
+                    DrawRectangle(300 + 25*i, 25, 25, 25, GREEN);
+                    DrawRectangleLines(300 + 25*i, 25, 25, 25, LIME);
+                }
+            }
+            else if (currentUndoIndex < firstUndoIndex)
+            {
+                for (int i = firstUndoIndex; i < MAX_UNDO_LEVELS; i++)
+                {
+                    DrawRectangle(300 + 25*i, 25, 25, 25, GREEN);
+                    DrawRectangleLines(300 + 25*i, 25, 25, 25, LIME);
+                }
+                
+                for (int i = 0; i < currentUndoIndex; i++)
+                {
+                    DrawRectangle(300 + 25*i, 25, 25, 25, GREEN);
+                    DrawRectangleLines(300 + 25*i, 25, 25, 25, LIME);
+                }
+            }
+            
+            // Draw current selected UNDO slot
+            DrawRectangle(300 + 25*currentUndoIndex, 25, 25, 25, GOLD);
+            DrawRectangleLines(300 + 25*currentUndoIndex, 25, 25, 25, ORANGE);
+            //--------------------------------------------------------------------------------------------
 
         EndDrawing();
         //----------------------------------------------------------------------------------
