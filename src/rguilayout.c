@@ -86,6 +86,8 @@
 
 #define PANELS_EASING_FRAMES        60      // Controls the easing time in frames
 
+#define MAX_UNDO_LEVELS             5       // Undo levels supported for the ring buffer
+
 #define TABAPPEND(x, y, z)          { for(int t = 0; t < z; t++) sappend(x, y, "    "); }
 #define ENDLINEAPPEND(x, y)         sappend(x, y, "\n");  
 
@@ -442,6 +444,16 @@ int main(int argc, char *argv[])
     unsigned char *toolCode = NULL; // Generated code string
     unsigned int codeHeight = 0;    // Generated code drawing size
     int codeOffsetY = 0;            // Code drawing Y offset
+    
+    // Undo system variables
+    GuiLayout *undoLayouts = NULL;
+    int currentUndoIndex = 0;
+    int firstUndoIndex = 0;
+    int savedUndoCounter = 0;
+    int undoFrameCounter = 0;
+    
+    undoLayouts = (GuiLayout *)calloc(MAX_UNDO_LEVELS, sizeof(GuiLayout));
+    for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], &layout, sizeof(GuiLayout));
 
     SetTargetFPS(120);
     //--------------------------------------------------------------------------------------
@@ -449,6 +461,67 @@ int main(int argc, char *argv[])
     // Main game loop
     while (!exitWindow)             // Detect window close button
     {
+        // Undo layout change logic
+        //----------------------------------------------------------------------------------
+        // Every second check if current layout has changed and record a new undo state
+        if (!dragMode && !orderEditMode && !resizeMode && !refWindowEditMode && 
+            !textEditMode && !nameEditMode && !anchorEditMode && !anchorLinkMode && !anchorMoveMode)
+        {
+            undoFrameCounter++;
+            
+            if (undoFrameCounter >= 120)
+            {
+                if (memcmp(&undoLayouts[currentUndoIndex], &layout, sizeof(GuiLayout)) != 0)
+                {
+                    // Move cursor to next available position to record undo
+                    currentUndoIndex++;
+                    if (currentUndoIndex >= MAX_UNDO_LEVELS) currentUndoIndex = 0;
+                    if (currentUndoIndex == firstUndoIndex) firstUndoIndex++;
+                    if (firstUndoIndex >= MAX_UNDO_LEVELS) firstUndoIndex = 0;
+                    
+                    undoLayouts[currentUndoIndex] = layout;
+                    
+                    // TODO: Problems with REDO logic
+                    if (currentUndoIndex > firstUndoIndex) savedUndoCounter = currentUndoIndex - firstUndoIndex;
+                    else if (currentUndoIndex < firstUndoIndex) savedUndoCounter = MAX_UNDO_LEVELS - firstUndoIndex + currentUndoIndex;
+                }
+                
+                undoFrameCounter = 0;
+            }
+        }
+        else undoFrameCounter = 120;
+        
+        // Recover previous layout state from buffer
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Z))
+        {
+            if (currentUndoIndex != firstUndoIndex)
+            {
+                currentUndoIndex--;
+                if (currentUndoIndex < 0) currentUndoIndex = MAX_UNDO_LEVELS - 1;
+                
+                if (memcmp(&undoLayouts[currentUndoIndex], &layout, sizeof(GuiLayout)) != 0) layout = undoLayouts[currentUndoIndex];
+            }
+        }
+        
+        // Recover next layout state from buffer
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Y))
+        {
+            // TODO: REDO logic does not seem to work perfectly...
+            if (savedUndoCounter > 0)
+            {
+                currentUndoIndex++;
+                if (currentUndoIndex < 0) currentUndoIndex = MAX_UNDO_LEVELS - 1;
+                if (currentUndoIndex >= MAX_UNDO_LEVELS) currentUndoIndex = 0;
+                
+                if (currentUndoIndex != firstUndoIndex)
+                {
+                    if (memcmp(&undoLayouts[currentUndoIndex], &layout, sizeof(GuiLayout)) != 0) layout = undoLayouts[currentUndoIndex];
+                }
+                else currentUndoIndex--;
+            }
+        }
+        //----------------------------------------------------------------------------------
+        
         // Dropped files logic
         //----------------------------------------------------------------------------------
         if (IsFileDropped())
@@ -465,6 +538,10 @@ int main(int argc, char *argv[])
                 LoadLayout(droppedFileName);
                 strcpy(loadedFileName, droppedFileName);
                 SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
+
+                for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], &layout, sizeof(GuiLayout));
+                currentUndoIndex = 0;
+                firstUndoIndex = 0;
             }
             else if (IsFileExtension(droppedFileName, ".rgs")) GuiLoadStyle(droppedFileName);
             else if (IsFileExtension(droppedFileName, ".png")) // Tracemap image
@@ -2295,7 +2372,7 @@ int main(int argc, char *argv[])
                     GuiWindowExportCode(&windowExportCodeState);
                     if (windowExportCodeState.exportButtonPressed)
                     {
-                        windowExportCodeState.active = false;
+                        //windowExportCodeState.active = false;
                         strcpy(config.name, windowExportCodeState.nameText);
                         strcpy(config.version, windowExportCodeState.versionText);
                         strcpy(config.company, windowExportCodeState.companyText);
@@ -2378,6 +2455,39 @@ int main(int argc, char *argv[])
                 if (codeOffsetY > 0) codeOffsetY = 0;
                 if ((codeOffsetY + codeHeight) < (GetScreenHeight() - 200)) codeOffsetY = -codeHeight + (GetScreenHeight() - 200); 
             }
+            
+            // Undo layout info
+            DrawText("UNDO:", 225, 29, 20, DARKGRAY);
+            DrawText(FormatText("SAVES: %i", savedUndoCounter), 300 + 25*MAX_UNDO_LEVELS + 20, 29, 20, GREEN);
+            for (int i = 0; i < MAX_UNDO_LEVELS; i++) 
+            {
+                if (i == currentUndoIndex) 
+                {
+                    DrawRectangle(300 + 25*i, 25, 25, 25, GOLD);
+                    DrawRectangleLines(300 + 25*i, 25, 25, 25, ORANGE);
+                }
+                else if (i < savedUndoCounter)
+                {
+                    if (i < currentUndoIndex)
+                    {
+                        DrawRectangle(300 + 25*i, 25, 25, 25, GREEN);
+                        DrawRectangleLines(300 + 25*i, 25, 25, 25, LIME);
+                    }
+                    else
+                    {
+                        DrawRectangle(300 + 25*i, 25, 25, 25, Fade(GREEN, 0.5f));
+                        DrawRectangleLines(300 + 25*i, 25, 25, 25, Fade(LIME, 0.5f));
+                    }
+                }
+                else
+                {
+                    DrawRectangle(300 + 25*i, 25, 25, 25, LIGHTGRAY);
+                    DrawRectangleLines(300 + 25*i, 25, 25, 25, GRAY);
+                }
+                
+                if (i == currentUndoIndex) DrawRectangle(308 + 25*i, 15, 8, 8, RED);
+                if (i == firstUndoIndex) DrawRectangle(308 + 25*i, 50 + 2, 8, 8, BLACK);
+            }
 
         EndDrawing();
         //----------------------------------------------------------------------------------
@@ -2386,6 +2496,8 @@ int main(int argc, char *argv[])
     // De-Initialization
     //--------------------------------------------------------------------------------------
     UnloadTexture(tracemap);
+    
+    free(undoLayouts);
     if (toolCode != NULL) free(toolCode);
 
     CloseWindow();        // Close window and OpenGL context
