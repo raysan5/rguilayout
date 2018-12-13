@@ -2,17 +2,17 @@
 # rgl text file (v1.0) - raygui layout text file generated using rGuiLayout
 #
 # Total number of controls:     22
-# Anchor info:   a <id> <posx> <posy> <enabled>
+# Anchor info:   a <id> <name> <posx> <posy> <enabled>
 # Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
 a 000 anchor00 0 0 1
-a 001 anchor00 100 50 1
-a 002 anchor00 0 0 0
-a 003 anchor00 0 0 0
-a 004 anchor00 0 0 0
-a 005 anchor00 0 0 0
-a 006 anchor00 0 0 0
-a 007 anchor00 0 0 0
+a 001 anchor01 100 50 1
+a 002 anchor02 0 0 0
+a 003 anchor03 0 0 0
+a 004 anchor04 0 0 0
+a 005 anchor05 0 0 0
+a 006 anchor06 0 0 0
+a 007 anchor07 0 0 0
 c 000 3 controlsPanel -10 -10 150 865 1 
 c 001 0 WindowBox 0 0 130 50 1 WindowBox
 c 002 1 GroupBox 0 60 130 30 1 GroupBox
@@ -22,7 +22,7 @@ c 005 4 Label 0 160 131 25 1 Label (SAMPLE TEXT)
 c 006 5 Button 0 190 130 30 1 Button
 c 007 6 Toggle 0 230 90 25 1 Toggle
 c 008 8 CheckBox 105 235 15 15 1 
-c 009 7 ToggleGroup 0 265 130 25 1 
+c 009 7 ToggleGroup 0 265 45 25 1 
 c 010 9 ComboBox 0 300 130 25 1 
 c 011 10 DropdownBox 0 335 130 25 1 
 c 012 11 Spinner 0 370 130 25 1 
