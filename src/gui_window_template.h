@@ -3,8 +3,8 @@
 *   raygui layout - $(GUILAYOUT_NAME)
 *
 *   MODULE USAGE:
-*       #define GUI_$(GUILAYOUT_NAME)_IMPLEMENTATION
-*       #include "gui_$(GUILAYOUT_NAME).h"
+*       #define GUI_$(GUILAYOUT_NAME_UPPER)_IMPLEMENTATION
+*       #include "gui_$(GUILAYOUT_NAME_LOWER).h"
 *
 *   LICENSE: Propietary License
 *
@@ -18,8 +18,8 @@
 
 #include "raylib.h"
 
-#ifndef $(GUILAYOUT_NAME)_H
-#define $(GUILAYOUT_NAME)_H
+#ifndef $(GUILAYOUT_NAME_UPPER)_H
+#define $(GUILAYOUT_NAME_UPPER)_H
 
 $(GUILAYOUT_STRUCT_TYPE)
 
@@ -30,23 +30,23 @@ extern "C" {            // Prevents name mangling of functions
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
-$(GUILAYOUT_FUNCTIONS_DECLARATION)
+$(GUILAYOUT_FUNCTIONS_DECLARATION_H)
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // $(GUILAYOUT_NAME)_H
+#endif // $(GUILAYOUT_NAME_UPPER)_H
 
 /***********************************************************************************
 *
-*   $(GUILAYOUT_NAME) IMPLEMENTATION
+*   $(GUILAYOUT_NAME_UPPER) IMPLEMENTATION
 *
 ************************************************************************************/
-#if defined($(GUILAYOUT_NAME)_IMPLEMENTATION)
+#if defined($(GUILAYOUT_NAME_UPPER)_IMPLEMENTATION)
 
 #include "raygui.h"
 
-$(GUILAYOUT_FUNCTIONS_DEFINITION)
+$(GUILAYOUT_FUNCTIONS_DEFINITION_H)
 
-#endif // $(GUILAYOUT_NAME)_IMPLEMENTATION
+#endif // $(GUILAYOUT_NAME_UPPER)_IMPLEMENTATION

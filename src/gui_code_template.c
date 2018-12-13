@@ -1,10 +1,10 @@
 /*******************************************************************************************
 *
-*   $(TOOL_NAME) v$(TOOL_VERSION) - $(TOOL_DESCRIPTION)
+*   $(GUILAYOUT_NAME) v$(GUILAYOUT_VERSION) - $(GUILAYOUT_DESCRIPTION)
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2018 $(TOOL_COMPANY)
+*   Copyright (c) 2018 $(GUILAYOUT_COMPANY)
 *
 **********************************************************************************************/
 
@@ -16,7 +16,7 @@
 //----------------------------------------------------------------------------------
 // Controls Functions Declaration
 //----------------------------------------------------------------------------------
-$(CONTROLS_FUNCTION_DECLARATION)
+$(GUILAYOUT_FUNCTION_DECLARATION_C)
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -25,14 +25,14 @@ int main()
 {
     // Initialization
     //---------------------------------------------------------------------------------------
-    int screenWidth = $(WINDOW_WIDTH);
-    int screenHeight = $(WINDOW_HEIGHT);
+    int screenWidth = $(GUILAYOUT_WINDOW_WIDTH);
+    int screenHeight = $(GUILAYOUT_WINDOW_HEIGHT);
 
-    InitWindow(screenWidth, screenHeight, "$(TOOL_NAME)");
+    InitWindow(screenWidth, screenHeight, "$(GUILAYOUT_NAME)");
 
-    // $(TOOL_NAME): controls initialization
+    // $(GUILAYOUT_NAME): controls initialization
     //----------------------------------------------------------------------------------
-    $(CONTROLS_INITIALIZATION)
+    $(GUILAYOUT_INITIALIZATION_C)
     //----------------------------------------------------------------------------------
 
     SetTargetFPS(60);
@@ -54,7 +54,7 @@ int main()
 
             // raygui: controls drawing
             //----------------------------------------------------------------------------------
-            $(CONTROLS_DRAWING)
+            $(GUILAYOUT_DRAWING_C)
             //----------------------------------------------------------------------------------
 
         EndDrawing();
@@ -72,4 +72,4 @@ int main()
 //------------------------------------------------------------------------------------
 // Controls Functions Definitions (local)
 //------------------------------------------------------------------------------------
-$(CONTROLS_FUNCTION_DEFINITION)
+$(GUILAYOUT_FUNCTION_DEFINITION_C)

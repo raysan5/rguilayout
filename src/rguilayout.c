@@ -2311,7 +2311,8 @@ int main(int argc, char *argv[])
                         config.fullComments = windowExportCodeState.exportComments;
                         config.cropWindow = windowExportCodeState.cropToWindow;
 
-                        unsigned char *template = LoadText("gui_code_template.c");
+                        // unsigned char *template = LoadText("gui_code_template.c");
+                        unsigned char *template = LoadText("gui_window_template.h");
                         unsigned char *toolstr = GenerateLayoutCodeFromFile(template, config);
                         DialogExportLayout(toolstr, FormatText("%s.c", config.name));
 
@@ -2750,6 +2751,46 @@ static void sappend(char *str, int *pos, const char *buffer)
     *pos += strlen(buffer);
 }
 
+static char *UpperText(const char *text)
+{
+    static char buffer[128] = { 0 };
+    
+    for (int i = 0; i < 128; i++)
+    {
+        if (text[i] != '\0')
+        {
+            buffer[i] = (char)toupper(text[i]);
+        }
+        else
+        {
+            buffer[i] = '\0';
+            break;
+        }
+    }
+    
+    return buffer;
+} 
+
+static char *LowerText(const char *text)
+{
+    static char buffer[128] = { 0 };
+    
+    for (int i = 0; i < 128; i++)
+    {
+        if (text[i] != '\0')
+        {
+            buffer[i] = (char)tolower(text[i]);
+        }
+        else
+        {
+            buffer[i] = '\0';
+            break;
+        }
+    }
+    
+    return buffer;
+} 
+
 static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiControl control, bool exportAnchors, bool fullComments, int tabs)
 {
     //sappend(toolstr, pos, FormatText("bool %sActive = true;", control.name));
@@ -3016,24 +3057,27 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
            {
                if (buffer[i + j] == ')')
                {
-                   substr = SubText(buffer, i, j);
+                    substr = SubText(buffer, i, j);
 
-                   if (IsEqualText(substr, "TOOL_NAME")) sappend(toolstr, &codePos, config.name);
-                   else if (IsEqualText(substr, "TOOL_VERSION")) sappend(toolstr, &codePos, config.version);
-                   else if (IsEqualText(substr, "TOOL_DESCRIPTION")) sappend(toolstr, &codePos, config.description);
-                   else if (IsEqualText(substr, "TOOL_COMPANY")) sappend(toolstr, &codePos, config.company);
-                   else if (IsEqualText(substr, "WINDOW_WIDTH")) 
-                   {
+                    if (IsEqualText(substr, "GUILAYOUT_NAME")) sappend(toolstr, &codePos, config.name);
+                    else if (IsEqualText(substr, "GUILAYOUT_NAME_UPPER")) sappend(toolstr, &codePos, UpperText(config.name));                    
+                    else if (IsEqualText(substr, "GUILAYOUT_NAME_LOWER")) sappend(toolstr, &codePos, LowerText(config.name));                    
+                    else if (IsEqualText(substr, "GUILAYOUT_VERSION")) sappend(toolstr, &codePos, config.version);
+                    else if (IsEqualText(substr, "GUILAYOUT_DESCRIPTION")) sappend(toolstr, &codePos, config.description);
+                    else if (IsEqualText(substr, "GUILAYOUT_COMPANY")) sappend(toolstr, &codePos, config.company);
+                    else if (IsEqualText(substr, "GUILAYOUT_WINDOW_WIDTH")) 
+                    {
                        if(layout.refWindow.width > 0) sappend(toolstr, &codePos, FormatText("%i", (int)layout.refWindow.width));
                        else sappend(toolstr, &codePos, FormatText("%i", 800));
-                   }
-                   else if (IsEqualText(substr, "WINDOW_HEIGHT"))
-                   {
+                    }
+                    else if (IsEqualText(substr, "GUILAYOUT_WINDOW_HEIGHT"))
+                    {
                        if(layout.refWindow.height > 0) sappend(toolstr, &codePos, FormatText("%i", (int)layout.refWindow.height));
                        else sappend(toolstr, &codePos, FormatText("%i", 450));
-                   }
-                   else if (IsEqualText(substr, "CONTROLS_FUNCTION_DECLARATION")) 
-                   {
+                    }
+                    // C IMPLEMENTATION 
+                    else if (IsEqualText(substr, "GUILAYOUT_FUNCTION_DECLARATION_C")) 
+                    {
                         // Define required functions for calling
                         int buttonsCount = 0;
                         for (int i = 0; i < layout.controlsCount; i++)
@@ -3051,9 +3095,9 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                             }
                         }
                         if (buttonsCount > 0) codePos--;
-                   }
-                   else if (IsEqualText(substr, "CONTROLS_INITIALIZATION"))
-                   {
+                    }
+                    else if (IsEqualText(substr, "GUILAYOUT_INITIALIZATION_C"))
+                    {
                         // Anchors points export code
                         if (config.exportAnchors && layout.anchorsCount > 1)
                         {  
@@ -3129,7 +3173,7 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                             sappend(toolstr, &codePos, "};");
                         }
                     }
-                    else if (IsEqualText(substr, "CONTROLS_DRAWING") && layout.controlsCount > 0) 
+                    else if (IsEqualText(substr, "GUILAYOUT_DRAWING_C") && layout.controlsCount > 0) 
                     {                  
                         bool draw[layout.controlsCount];
                         for (int k = 0; k < layout.controlsCount; k++) draw[k] = false;
@@ -3251,7 +3295,7 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
 
                         codePos -= tabs*4 + 1; // Delete last tabs and \n
                     }
-                    else if (IsEqualText(substr, "CONTROLS_FUNCTION_DEFINITION"))
+                    else if (IsEqualText(substr, "GUILAYOUT_FUNCTION_DEFINITION_C"))
                     {
                         for (int k = 0; k < layout.controlsCount; k++)
                         {
@@ -3269,7 +3313,18 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                             }
                         }
                     }
-                   
+                
+                    // H IMPLEMENTATION
+                    else if (IsEqualText(substr, "GUILAYOUT_STRUCT_TYPE"))
+                    {
+                        sappend(toolstr, &codePos, "typedef struct {");
+                        ENDLINEAPPEND(toolstr, &codePos);
+                        sappend(toolstr, &codePos, "} GuiLayoutState;");
+                    }
+                    else if (IsEqualText(substr, "GUILAYOUT_FUNCTIONS_DECLARATION_H")){}
+                    else if (IsEqualText(substr, "GUILAYOUT_FUNCTIONS_DEFINITION_H")){}
+                    
+                    
                    bufferPos += (j + 1);
                    break;
                 }               
