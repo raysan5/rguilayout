@@ -73,7 +73,7 @@ GuiWindowExportCodeState InitGuiWindowExportCode(void)
     state.rec = (Rectangle){ GetScreenWidth()/2 - 200, GetScreenHeight()/2 - 112 , 400, 226 };
     // Name text
     state.nameTextSize = 32;
-    strcpy(state.nameText, "file_name");
+    strcpy(state.nameText, "LayoutName");
     state.nameTextEdit = false;
     // Version text
     state.versionTextSize = 16;
@@ -90,7 +90,7 @@ GuiWindowExportCodeState InitGuiWindowExportCode(void)
     state.companyTextEdit = false;
     // Description text
     state.descriptionTextSize = 256;
-    strcpy(state.descriptionText, "tool description");
+    strcpy(state.descriptionText, "layout description");
     state.descriptionTextEdit = false;
     // Export options    
     state.exportRects = false;
