@@ -343,6 +343,7 @@ int main(int argc, char *argv[])
     layout.anchors[0].enabled = true;      // Enable layout parent anchor (0, 0)
     layout.anchorsCount = 1;
     layout.controlsCount = 0;
+    
     // Initialize layout controls data
     for (int i = 0; i < MAX_GUI_CONTROLS; i++)
     {
@@ -438,7 +439,7 @@ int main(int argc, char *argv[])
     int listViewActive = 0;
     
     // Code generation variables
-    unsigned char *code = NULL;     // Generated code string
+    unsigned char *toolCode = NULL; // Generated code string
     unsigned int codeHeight = 0;    // Generated code drawing size
     int codeOffsetY = 0;            // Code drawing Y offset
 
@@ -499,13 +500,6 @@ int main(int argc, char *argv[])
         
         // Show code generation window
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) { }
-
-        // Generate code from layout (using current config)
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_K)) 
-        {
-            if (code != NULL) free(code);
-            //code = GenerateLayoutCode(config);
-        }
         //----------------------------------------------------------------------------------
 
         // Basic program flow logic
@@ -1785,6 +1779,7 @@ int main(int argc, char *argv[])
                     DrawText(FormatText("[%i]", (int)layout.refWindow.height), layout.refWindow.x + layout.refWindow.width + 5, layout.refWindow.y + layout.refWindow.height - 20, 20,positionColor);
                 }
             }
+            
             // Draws the controls placed on the grid
             GuiLock();
             for (int i = 0; i < layout.controlsCount; i++)
@@ -1832,6 +1827,7 @@ int main(int argc, char *argv[])
                 }
             }
             GuiUnlock();
+            
             // Draw reference window
             anchorSelectedColor = DARKGRAY;
             anchorCircleColor = DARKGRAY;
@@ -2315,11 +2311,10 @@ int main(int argc, char *argv[])
 
                         // unsigned char *template = LoadText("gui_code_template.c");
                         unsigned char *template = LoadText("gui_window_template.h");
-                        unsigned char *toolstr = GenerateLayoutCodeFromFile(template, config);
-                        //DialogExportLayout(toolstr, FormatText("%s.c", config.name));
-                        DialogExportLayout(toolstr, FormatText("%s.h", config.name));
+                        toolCode = GenerateLayoutCodeFromFile(template, config);
+                        //DialogExportLayout(toolCode, FormatText("%s.c", config.name));
+                        DialogExportLayout(toolCode, FormatText("%s.h", config.name));
 
-                        free(toolstr);
                         free(template);
                     }
                 }                
@@ -2351,31 +2346,37 @@ int main(int argc, char *argv[])
             if (selectedControl != -1) GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, FormatText("SELECTED CONTROL: #%03i  |  %s  |  REC (%i, %i, %i, %i)  |  %s", selectedControl, controlTypeName[layout.controls[selectedControl].type], (int)layout.controls[selectedControl].rec.x, (int)layout.controls[selectedControl].rec.y, (int)layout.controls[selectedControl].rec.width, (int)layout.controls[selectedControl].rec.height, layout.controls[selectedControl].name), 15);
             else GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, "", 15);
             
-            if (IsKeyDown(KEY_Q) && (code != NULL)) // codeViewMode
+            // Draw generated code
+            if ((windowExportCodeState.active) && (toolCode != NULL))
             {
-                DrawRectangle(0, 0, 700, GetScreenHeight(), RAYWHITE);
-                DrawRectangleLines(0, 0, 700, GetScreenHeight(), DARKGRAY);
+                DrawRectangle(0, 100, 700, GetScreenHeight() - 200, RAYWHITE);
+                DrawRectangleLines(0, 100, 700, GetScreenHeight() - 200, DARKGRAY);
                 
                 int linesCounter = 0;
-                unsigned char *currentLine = code;
+                unsigned char *currentLine = toolCode;
                 
-                // TODO: Only process/draw lines inside screen
                 while (currentLine)
                 {
                     char *nextLine = strchr(currentLine, '\n');
-                    if (nextLine) *nextLine = '\0';  // Temporarily terminate the current line
-                    DrawText(currentLine, 10, codeOffsetY + 10 + 15*linesCounter, 10, BLUE);
-                    if (nextLine) *nextLine = '\n';  // Restore newline-char, just to be tidy
+                    if (nextLine) *nextLine = '\0';     // Temporarily terminate the current line
+                    
+                    // Only draw lines inside text panel
+                    if (((codeOffsetY + 20*linesCounter) > 0) && 
+                        ((codeOffsetY + 20*linesCounter) < (GetScreenHeight() - 200))) DrawText(currentLine, 10, 100 + codeOffsetY + 20*linesCounter, 10, BLUE);
+                    
+                    if (nextLine) *nextLine = '\n';     // Restore newline-char, just to be tidy
                     currentLine = nextLine ? (nextLine + 1) : NULL;
                     linesCounter++;
                 }
                 
-                // TODO: Move this code to update: codeViewMode ?
-                codeHeight = 10 + 15*linesCounter;
-
-                codeOffsetY -= GetMouseWheelMove()*20;
-                //if (codeOffsetY < 0) codeOffsetY = 0;
-                //if (codeOffsetY > (codeHeight - GetScreenHeight())) codeOffsetY = (codeHeight - GetScreenHeight()); 
+                DrawRectangle(700, 100, 10, GetScreenHeight() - 200, LIGHTGRAY);
+                DrawRectangle(700, 100 - ((float)(GetScreenHeight() - 200)/codeHeight)*codeOffsetY, 10, ((float)(GetScreenHeight() - 200)/codeHeight)*(GetScreenHeight() - 200), DARKGRAY);
+                
+                // TODO: Move this code to update
+                codeHeight = 10 + 20*linesCounter;
+                codeOffsetY += GetMouseWheelMove()*20;
+                if (codeOffsetY > 0) codeOffsetY = 0;
+                if ((codeOffsetY + codeHeight) < (GetScreenHeight() - 200)) codeOffsetY = -codeHeight + (GetScreenHeight() - 200); 
             }
 
         EndDrawing();
@@ -2385,6 +2386,7 @@ int main(int argc, char *argv[])
     // De-Initialization
     //--------------------------------------------------------------------------------------
     UnloadTexture(tracemap);
+    if (toolCode != NULL) free(toolCode);
 
     CloseWindow();        // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
@@ -2583,7 +2585,6 @@ static void LoadLayout(const char *fileName)
                     // TODO: review anchors name loading
                     sscanf(buffer, "a %03i %s %d %d %d", &layout.anchors[anchorCounter].id, layout.anchors[anchorCounter].name, &layout.anchors[anchorCounter].x, &layout.anchors[anchorCounter].y, &layout.anchors[anchorCounter].enabled);
                     if (IsEqualText("", layout.anchors[anchorCounter].name)) strcpy(layout.anchors[anchorCounter].name, FormatText("anchor%02i", anchorCounter));
-                    printf("a %03d %s %d %d %d\n", layout.anchors[anchorCounter].id, layout.anchors[anchorCounter].name, layout.anchors[anchorCounter].x, layout.anchors[anchorCounter].y, layout.anchors[anchorCounter].enabled);
                     if (layout.anchors[anchorCounter].enabled) layout.anchorsCount++;
                     anchorCounter++;
                 }
@@ -2623,13 +2624,9 @@ static void LoadLayout(const char *fileName)
                 (signature[3] == ' ')) fread(&layout, 1, sizeof(GuiLayout), rglFile);
             else TraceLog(LOG_WARNING, "[raygui] Invalid layout file");
 
-            printf("[GuiLayout] Controls counter: %i\n", layout.controlsCount);
-
             fclose(rglFile);
         }
     }
-
-    printf("[GuiLayout] Layout data loaded successfully\n");
 }
 
 // Save gui layout information
@@ -3194,7 +3191,7 @@ static void  WriteControlsVariablesInit(unsigned char *toolstr, int *pos, GuiCon
 static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayoutConfig config)
 {    
     #define MAX_CODE_SIZE            1024*512
-    #define MAX_VARIABLE_NAME_SIZE   64    
+    #define MAX_VARIABLE_NAME_SIZE   64
 
     unsigned char *toolstr = (unsigned char *)calloc(MAX_CODE_SIZE, sizeof(unsigned char));
     unsigned const char *substr = NULL;
