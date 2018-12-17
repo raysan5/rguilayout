@@ -52,8 +52,9 @@
 #include "raygui.h"                         // Required for: IMGUI controls
 
 #undef RAYGUI_IMPLEMENTATION
-#define GUI_WINDOW_EXPORT_CODE_IMPLEMENTATION
-#include "gui_window_export_code.h"
+
+#define GUI_WINDOW_CODEGEN_IMPLEMENTATION
+#include "gui_window_codegen.h"
 
 #include "external/easings.h"               // Required for: Easing animations math
 #include "external/tinyfiledialogs.h"       // Required for: Open/Save file dialogs
@@ -415,7 +416,7 @@ int main(int argc, char *argv[])
 
     // Export Window Layout: controls initialization
     //----------------------------------------------------------------------------------------
-    GuiWindowExportCodeState windowExportCodeState = InitGuiWindowExportCode();
+    GuiWindowCodegenState windowCodegenState = InitGuiWindowCodegen();
     //----------------------------------------------------------------------------------------
 
     // Generate code configuration
@@ -443,12 +444,7 @@ int main(int argc, char *argv[])
     int valueBoxValue = 0;
     int listViewScrollIndex = 0;
     int listViewActive = 0;
-    
-    // Code generation variables
-    unsigned char *toolCode = NULL; // Generated code string
-    unsigned int codeHeight = 0;    // Generated code drawing size
-    int codeOffsetY = 0;            // Code drawing Y offset
-    
+
     // Undo system variables
     GuiLayout *undoLayouts = NULL;
     int currentUndoIndex = 0;
@@ -593,7 +589,7 @@ int main(int argc, char *argv[])
             if (IsKeyPressed(KEY_ESCAPE))
             {
                 // Close windows logic
-                if (windowExportCodeState.active) windowExportCodeState.active = false;
+                if (windowCodegenState.codeGenWindowActive) windowCodegenState.codeGenWindowActive = false;
                 else if (resetWindowActive) resetWindowActive = false;
                 else if (layout.controlsCount <= 0 && layout.anchorsCount <= 1) exitWindow = true;  // Quit application
                 else
@@ -604,7 +600,7 @@ int main(int argc, char *argv[])
                 }
             }
 
-            if (!windowExportCodeState.active && !closingWindowActive && !resetWindowActive)
+            if (!windowCodegenState.codeGenWindowActive && !closingWindowActive && !resetWindowActive)
             {
                 // Enables or disables snapMode if not in textEditMode
                 if (IsKeyPressed(KEY_S)) 
@@ -659,8 +655,31 @@ int main(int argc, char *argv[])
                 {
                     // Open reset window
                     if (IsKeyPressed(KEY_N)) resetWindowActive = true;
+                    
                     // Activate code generation export window
-                    if (IsKeyPressed(KEY_ENTER)) windowExportCodeState.active = true;
+                    if (IsKeyPressed(KEY_ENTER)) 
+                    {
+                        strcpy(config.name, windowCodegenState.toolNameText);
+                        strcpy(config.version, windowCodegenState.toolVersionText);
+                        strcpy(config.company, windowCodegenState.companyText);
+                        strcpy(config.description, windowCodegenState.toolDescriptionText);
+                        config.width = 800;         // TODO: Really needed?
+                        config.height = 800;        // TODO: Really needed?
+                        config.defineRecs = windowCodegenState.defineRecsChecked;
+                        config.defineTexts = windowCodegenState.defineTextsChecked;
+                        config.exportAnchors = windowCodegenState.exportAnchorsChecked;
+                        config.fullVariables = windowCodegenState.fullVariablesChecked;
+                        config.fullComments = windowCodegenState.fullCommentsChecked;
+                        config.cropWindow = false;  // TODO: Really needed?
+
+                        // unsigned char *template = LoadText("gui_code_template.c");
+                        unsigned char *template = LoadText("gui_window_template.h");
+
+                        windowCodegenState.generatedCode = GenerateLayoutCodeFromFile(template, config);
+                        windowCodegenState.codeGenWindowActive = true;
+                        
+                        free(template);
+                    }
                 }
             }            
         }
@@ -719,7 +738,7 @@ int main(int argc, char *argv[])
 
         // LAYOUT LOGIC
         // ---------------------------------------------------------------------------------------------
-        if (!closingWindowActive && !windowExportCodeState.active && !resetWindowActive)
+        if (!closingWindowActive && !windowCodegenState.codeGenWindowActive && !resetWindowActive)
         {
             if (!nameEditMode)
             {
@@ -1957,7 +1976,7 @@ int main(int argc, char *argv[])
                 }
             }
             
-            if (!closingWindowActive && !windowExportCodeState.active && !resetWindowActive)
+            if (!closingWindowActive && !windowCodegenState.codeGenWindowActive && !resetWindowActive)
             {
                 if (!(CheckCollisionPointRec(mouse, palettePanel)))
                 {
@@ -2368,32 +2387,14 @@ int main(int argc, char *argv[])
                 }
                 
                 // Draw export options window
-                if (windowExportCodeState.active) 
+                if (windowCodegenState.codeGenWindowActive) 
                 {
-                    GuiWindowExportCode(&windowExportCodeState);
-                    if (windowExportCodeState.exportButtonPressed)
+                    GuiWindowCodegen(&windowCodegenState);
+                    
+                    if (windowCodegenState.exportCodeButtonPressed)
                     {
-                        //windowExportCodeState.active = false;
-                        strcpy(config.name, windowExportCodeState.nameText);
-                        strcpy(config.version, windowExportCodeState.versionText);
-                        strcpy(config.company, windowExportCodeState.companyText);
-                        strcpy(config.description, windowExportCodeState.descriptionText);
-                        config.width = windowExportCodeState.windowWidth;
-                        config.height = windowExportCodeState.windowHeight;
-                        config.defineRecs = windowExportCodeState.exportRects;
-                        config.defineTexts = windowExportCodeState.exportText;
-                        config.exportAnchors = windowExportCodeState.exportAnchors;
-                        config.fullVariables = windowExportCodeState.exportVariables;
-                        config.fullComments = windowExportCodeState.exportComments;
-                        config.cropWindow = windowExportCodeState.cropToWindow;
-
-                        // unsigned char *template = LoadText("gui_code_template.c");
-                        unsigned char *template = LoadText("gui_window_template.h");
-                        toolCode = GenerateLayoutCodeFromFile(template, config);
-                        //DialogExportLayout(toolCode, FormatText("%s.c", config.name));
-                        DialogExportLayout(toolCode, FormatText("%s.h", config.name));
-
-                        free(template);
+                        DialogExportLayout(windowCodegenState.generatedCode, FormatText("%s.h", config.name));
+                        windowCodegenState.codeGenWindowActive = false;
                     }
                 }                
              
@@ -2423,40 +2424,7 @@ int main(int argc, char *argv[])
             GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, FormatText("CONTROLS COUNT: %i", layout.controlsCount), 20);
             if (selectedControl != -1) GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, FormatText("SELECTED CONTROL: #%03i  |  %s  |  REC (%i, %i, %i, %i)  |  %s", selectedControl, controlTypeName[layout.controls[selectedControl].type], (int)layout.controls[selectedControl].rec.x, (int)layout.controls[selectedControl].rec.y, (int)layout.controls[selectedControl].rec.width, (int)layout.controls[selectedControl].rec.height, layout.controls[selectedControl].name), 15);
             else GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, "", 15);
-            
-            // Draw generated code
-            if ((windowExportCodeState.active) && (toolCode != NULL))
-            {
-                DrawRectangle(0, 100, 700, GetScreenHeight() - 200, RAYWHITE);
-                DrawRectangleLines(0, 100, 700, GetScreenHeight() - 200, DARKGRAY);
-                
-                int linesCounter = 0;
-                unsigned char *currentLine = toolCode;
-                
-                while (currentLine)
-                {
-                    char *nextLine = strchr(currentLine, '\n');
-                    if (nextLine) *nextLine = '\0';     // Temporarily terminate the current line
-                    
-                    // Only draw lines inside text panel
-                    if (((codeOffsetY + 20*linesCounter) > 0) && 
-                        ((codeOffsetY + 20*linesCounter) < (GetScreenHeight() - 200))) DrawText(currentLine, 10, 100 + codeOffsetY + 20*linesCounter, 10, BLUE);
-                    
-                    if (nextLine) *nextLine = '\n';     // Restore newline-char, just to be tidy
-                    currentLine = nextLine ? (nextLine + 1) : NULL;
-                    linesCounter++;
-                }
-                
-                DrawRectangle(700, 100, 10, GetScreenHeight() - 200, LIGHTGRAY);
-                DrawRectangle(700, 100 - ((float)(GetScreenHeight() - 200)/codeHeight)*codeOffsetY, 10, ((float)(GetScreenHeight() - 200)/codeHeight)*(GetScreenHeight() - 200), DARKGRAY);
-                
-                // TODO: Move this code to update
-                codeHeight = 10 + 20*linesCounter;
-                codeOffsetY += GetMouseWheelMove()*20;
-                if (codeOffsetY > 0) codeOffsetY = 0;
-                if ((codeOffsetY + codeHeight) < (GetScreenHeight() - 200)) codeOffsetY = -codeHeight + (GetScreenHeight() - 200); 
-            }
-            
+                        
             // Draw UNDO system info
             //--------------------------------------------------------------------------------------------
             DrawText("UNDO SYSTEM", 215, 34, 10, DARKGRAY);
@@ -2534,8 +2502,8 @@ int main(int argc, char *argv[])
     //--------------------------------------------------------------------------------------
     UnloadTexture(tracemap);
     
+    if (windowCodegenState.generatedCode != NULL) free(windowCodegenState.generatedCode);
     free(undoLayouts);
-    if (toolCode != NULL) free(toolCode);
 
     CloseWindow();        // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
@@ -3811,22 +3779,22 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                         }
                         
                         ENDLINEAPPEND(toolstr, &codePos);
-                        sappend(toolstr, &codePos, FormatText("} GuiLayout%sState;", config.name));
+                        sappend(toolstr, &codePos, FormatText("} Gui%sState;", config.name));
                     }
                     else if (IsEqualText(substr, "GUILAYOUT_FUNCTIONS_DECLARATION_H"))
                     {
-                        sappend(toolstr, &codePos, FormatText("GuiLayout%sState InitGuiLayout%s(void);", config.name, config.name));
+                        sappend(toolstr, &codePos, FormatText("Gui%sState InitGui%s(void);", config.name, config.name));
                         ENDLINEAPPEND(toolstr, &codePos);
                         TABAPPEND(toolstr, &codePos, tabs);
-                        sappend(toolstr, &codePos, FormatText("void GuiLayout%s (GuiLayout%sState *state);", config.name, config.name));
+                        sappend(toolstr, &codePos, FormatText("void Gui%s(Gui%sState *state);", config.name, config.name));
                     }
-                    else if (IsEqualText(substr, "GUILAYOUT_FUNCTIONS_DEFINITION_H"))
+                    else if (IsEqualText(substr, "GUILAYOUT_FUNCTION_INITIALIZE_H"))
                     {
                         // Export InitGuiLayout function definition
-                        sappend(toolstr, &codePos, FormatText("GuiLayout%sState InitGuiLayout%s(void)", config.name, config.name));
+                        sappend(toolstr, &codePos, FormatText("Gui%sState InitGui%s(void)", config.name, config.name));
                         ENDLINEAPPEND(toolstr, &codePos);
                         sappend(toolstr, &codePos, "{"); ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs + 1);
-                        sappend(toolstr, &codePos, FormatText("GuiLayout%sState state = { 0 };", config.name));
+                        sappend(toolstr, &codePos, FormatText("Gui%sState state = { 0 };", config.name));
                         ENDLINEAPPEND(toolstr, &codePos); ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs + 1);
                         
                         // Init anchors
@@ -3871,9 +3839,9 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                                 int type = layout.controls[k].type;
                                 if(type != GUI_LABEL && type != GUI_GROUPBOX && type != GUI_LINE && type != GUI_PANEL && type != GUI_BUTTON && type != GUI_DUMMYREC)
                                 {         
-                                    sappend(toolstr, &codePos, "state.");
+                                    //sappend(toolstr, &codePos, "state.");
                                     WriteControlsVariablesInit(toolstr, &codePos, layout.controls[k], config.fullVariables, tabs+1);
-                                     if (config.fullComments) 
+                                    if (config.fullComments) 
                                     {
                                         TABAPPEND(toolstr, &codePos, 1);
                                         sappend(toolstr, &codePos, FormatText("// %s: %s", controlTypeNameLow[layout.controls[k].type], layout.controls[k].name));
@@ -3885,11 +3853,13 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                             codePos -= (tabs + 1)*4 + 1; // remove last \n\t
                         } 
 
+                        // Define controls rectangles if required
                         if (config.defineRecs)
                         {
                             ENDLINEAPPEND(toolstr, &codePos);
                             ENDLINEAPPEND(toolstr, &codePos);
                             TABAPPEND(toolstr, &codePos, tabs + 1);
+                            
                             // Define controls rectangles                            
                             if (config.fullComments) 
                             {
@@ -3897,7 +3867,7 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                                 ENDLINEAPPEND(toolstr, &codePos);
                                 TABAPPEND(toolstr, &codePos, tabs + 1);
                             }
-                                                        
+
                             for (int k = 0; k < layout.controlsCount; k++)
                             {
                                 sappend(toolstr, &codePos, FormatText("state.layoutRecs[%i] = ", k));
@@ -3905,16 +3875,20 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                                 ENDLINEAPPEND(toolstr, &codePos);
                                 TABAPPEND(toolstr, &codePos, tabs + 1);
                             }
+
                             codePos -= (tabs + 1)*4 + 1;
-                        }         
+                        }
+                        
+                        // Return gui state after defining all its variables
+                        sappend(toolstr, &codePos, "    return state;\n");
                         
                         ENDLINEAPPEND(toolstr, &codePos);
                         sappend(toolstr, &codePos, "}");  
                     }    
-                    else if (IsEqualText(substr, "GUILAYOUT_DRAWING_H") && layout.controlsCount > 0) 
+                    else if (IsEqualText(substr, "GUILAYOUT_FUNCTION_DRAWING_H") && layout.controlsCount > 0) 
                     {
                         // Export GuiLayout draw function
-                        sappend(toolstr, &codePos, FormatText("void GuiLayout%s (GuiLayout%sState *state)", config.name, config.name));
+                        sappend(toolstr, &codePos, FormatText("void Gui%s(Gui%sState *state)", config.name, config.name));
                         ENDLINEAPPEND(toolstr, &codePos);
                         sappend(toolstr, &codePos, "{"); ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs + 1);
                         
@@ -4009,34 +3983,34 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                                     ENDLINEAPPEND(toolstr, &codePos);
                                     
                                     int windowAnchorID = layout.controls[k].ap->id;
-                                                                        
+
                                     // Draw controls inside window
-                                    for (int l = 0; l < layout.controlsCount; l++)
+                                    for (int m = 0; m < layout.controlsCount; m++)
                                     {
-                                        if (!draw[l] && k != l && layout.controls[l].type != GUI_WINDOWBOX  && layout.controls[l].type != GUI_DROPDOWNBOX)
+                                        if (!draw[m] && k != m && layout.controls[m].type != GUI_WINDOWBOX  && layout.controls[m].type != GUI_DROPDOWNBOX)
                                         {
-                                            if (windowAnchorID == layout.controls[l].ap->id)
+                                            if (windowAnchorID == layout.controls[m].ap->id)
                                             {
-                                                draw[l] = true;
+                                                draw[m] = true;
                                                 
                                                 TABAPPEND(toolstr, &codePos, tabs + 2);
-                                                WriteControlsDrawingH(toolstr, &codePos, l, layout.controls[l], config);
+                                                WriteControlsDrawingH(toolstr, &codePos, m, layout.controls[m], config);
                                                 ENDLINEAPPEND(toolstr, &codePos);
                                             }
                                         }
                                     } 
                                     
                                     // Draw GUI_DROPDOWNBOX inside GUI_WINDOWBOX
-                                    for (int l = 0; l < layout.controlsCount; l++)
+                                    for (int m = 0; m < layout.controlsCount; m++)
                                     {
-                                        if (!draw[l] && k != l && layout.controls[l].type == GUI_DROPDOWNBOX)
+                                        if (!draw[m] && k != m && layout.controls[m].type == GUI_DROPDOWNBOX)
                                         {
-                                            if (windowAnchorID == layout.controls[l].ap->id)
+                                            if (windowAnchorID == layout.controls[m].ap->id)
                                             {
-                                                draw[l] = true;
+                                                draw[m] = true;
                                                 
                                                 TABAPPEND(toolstr, &codePos, tabs + 2);
-                                                WriteControlsDrawingH(toolstr, &codePos, l, layout.controls[l], config);
+                                                WriteControlsDrawingH(toolstr, &codePos, m, layout.controls[m], config);
                                                 ENDLINEAPPEND(toolstr, &codePos);                                              
                                             }
                                         }

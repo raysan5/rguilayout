@@ -5,34 +5,34 @@
 # Anchor info:   a <id> <name> <posx> <posy> <enabled>
 # Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
-a 000 anchor00 0 0 1
-a 001 anchorWindow 50 50 1
-a 002 anchor02 580 85 1
-a 003 anchor03 580 335 1
-a 004 anchor04 580 515 1
-a 005 anchor05 0 0 0
-a 006 anchor06 0 0 0
-a 007 anchor07 0 0 0
-c 000 0 codeGenWindow 0 0 720 700 1 Code Generation Window
-c 001 3 codePanel 10 35 510 650 1 
-c 002 1 layoutInfoGroup 0 0 180 230 2 Layout Info
-c 003 4 lblName 540 45 50 25 1 Name:
-c 004 13 toolName 590 45 110 25 1 layoutName
-c 005 4 lblVersion 540 75 50 25 1 Version:
-c 006 13 toolVersion 590 75 110 25 1 1.2.0-dev
-c 007 4 lblCompany 540 105 50 25 1 Company:
-c 008 13 company 590 105 110 25 1 raylibtech
-c 009 4 lblDescription 540 135 100 25 1 Short Description:
-c 010 13 toolDescription 540 155 160 100 1 tool_description
-c 011 1 codeGenGroup 0 0 180 160 3 Code Generation Options
-c 012 10 codeTemplate 540 300 160 25 1 
-c 013 8 exportAnchors 550 335 15 15 1 Export anchors
-c 014 8 fullVariables 550 355 15 15 1 Export full variables
-c 015 8 defineRecs 550 375 15 15 1 Define Rectangles
-c 016 8 defineTexts 550 395 15 15 1 Define text as const
-c 017 8 fullComments 550 415 15 15 1 Include detailed comments
-c 018 1 guiStyleGroup 0 0 180 90 4 Gui Style Options
+a 000 anchor00 50 50 1
+a 001 anchor01 0 0 1
+a 002 anchor02 670 35 1
+a 003 anchor03 670 280 1
+a 004 anchor04 670 455 1
+a 005 anchor05 -50 -50 0
+a 006 anchor06 -50 -50 0
+a 007 anchor07 -50 -50 0
+c 000 0 codeGenWindow 0 0 900 640 1 Code Generation Window
+c 001 3 codePanel 10 35 640 590 1 
+c 002 1 layoutInfoGroup 0 0 220 230 2 Layout Info
+c 003 4 lblName 10 10 50 25 2 Name:
+c 004 13 toolName 60 10 150 25 2 layoutName
+c 005 4 lblVersion 10 40 50 25 2 Version:
+c 006 13 toolVersion 60 40 150 25 2 1.2.0-dev
+c 007 4 lblCompany 10 70 50 25 2 Company:
+c 008 13 company 60 70 150 25 2 raylibtech
+c 009 4 lblDescription 10 100 100 25 2 Short Description:
+c 010 13 toolDescription 10 120 200 100 2 tool_description
+c 011 1 codeGenGroup 0 0 220 160 3 Code Generation Options
+c 012 10 codeTemplate 10 15 195 25 3 
+c 013 8 exportAnchors 20 50 15 15 3 Export anchors
+c 014 8 fullVariables 20 70 15 15 3 Export full variables
+c 015 8 defineRecs 20 90 15 15 3 Define Rectangles
+c 016 8 defineTexts 20 110 15 15 3 Define text as const
+c 017 8 fullComments 20 130 15 15 3 Include detailed comments
+c 018 1 guiStyleGroup 0 0 220 65 4 Gui Style Options
 c 019 8 CheckBox019 20 15 15 15 4 Export gui style
 c 020 8 CheckBox021 20 35 15 15 4 Embbed gui font
-c 021 5 GenerateCode 530 615 180 30 1 Export Generated Code
-c 022 5 CompileCode 530 655 180 30 1 Compile Code
+c 021 5 GenerateCode 670 555 220 30 1 Export Generated Code
+c 022 5 ExecuteCode 670 595 220 30 1 Execute Code

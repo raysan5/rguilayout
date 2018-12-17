@@ -18,8 +18,8 @@
 
 #include "raylib.h"
 
-#ifndef $(GUILAYOUT_NAME_UPPER)_H
-#define $(GUILAYOUT_NAME_UPPER)_H
+#ifndef GUI_$(GUILAYOUT_NAME_UPPER)_H
+#define GUI_$(GUILAYOUT_NAME_UPPER)_H
 
 $(GUILAYOUT_STRUCT_TYPE)
 
@@ -36,19 +36,19 @@ $(GUILAYOUT_FUNCTIONS_DECLARATION_H)
 }
 #endif
 
-#endif // $(GUILAYOUT_NAME_UPPER)_H
+#endif // GUI_$(GUILAYOUT_NAME_UPPER)_H
 
 /***********************************************************************************
 *
-*   $(GUILAYOUT_NAME_UPPER) IMPLEMENTATION
+*   GUI_$(GUILAYOUT_NAME_UPPER) IMPLEMENTATION
 *
 ************************************************************************************/
-#if defined($(GUILAYOUT_NAME_UPPER)_IMPLEMENTATION)
+#if defined(GUI_$(GUILAYOUT_NAME_UPPER)_IMPLEMENTATION)
 
 #include "raygui.h"
 
-$(GUILAYOUT_FUNCTIONS_DEFINITION_H)
+$(GUILAYOUT_FUNCTION_INITIALIZE_H)
 
-$(GUILAYOUT_DRAWING_H)
+$(GUILAYOUT_FUNCTION_DRAWING_H)
 
-#endif // $(GUILAYOUT_NAME_UPPER)_IMPLEMENTATION
+#endif // GUI_$(GUILAYOUT_NAME_UPPER)_IMPLEMENTATION
