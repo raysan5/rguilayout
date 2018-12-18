@@ -3817,12 +3817,12 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                             }
                             sappend(toolstr, &codePos, FormatText("Rectangle layoutRecs[%i];", layout.controlsCount));                            
                         }
-                        ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs+1);
+                        ENDLINEAPPEND(toolstr, &codePos); ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs+1);
                         sappend(toolstr, &codePos, "// Custom state variables (depend on development software)");
                         ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs+1);
                         sappend(toolstr, &codePos, "// NOTE: This variables should be added manually if required");
                         
-                        ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs);
+                        ENDLINEAPPEND(toolstr, &codePos); ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs);
                         sappend(toolstr, &codePos, FormatText("} Gui%sState;", PascalText(config.name)));
                     }
                     else if (IsEqualText(substr, "GUILAYOUT_FUNCTIONS_DECLARATION_H"))
@@ -3928,7 +3928,7 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                         
                         // Return gui state after defining all its variables
                         ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs+1);
-                        sappend(toolstr, &codePos, "    return state;");
+                        sappend(toolstr, &codePos, "return state;");
                         
                         ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs);
                         sappend(toolstr, &codePos, "}");  
