@@ -5,25 +5,25 @@
 # Anchor info:   a <id> <name> <posx> <posy> <enabled>
 # Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
-a 000 anchor00 50 50 1
+a 000 anchor00 175 100 1
 a 001 anchor01 0 0 1
-a 002 anchor02 670 35 1
-a 003 anchor03 670 280 1
-a 004 anchor04 670 455 1
-a 005 anchor05 -50 -50 0
-a 006 anchor06 -50 -50 0
-a 007 anchor07 -50 -50 0
+a 002 anchor02 665 35 1
+a 003 anchor03 665 285 1
+a 004 anchor04 665 460 1
+a 005 anchor05 -175 -100 0
+a 006 anchor06 -175 -100 0
+a 007 anchor07 -175 -100 0
 c 000 0 codeGenWindow 0 0 900 640 1 Code Generation Window
 c 001 3 codePanel 10 35 640 590 1 
-c 002 1 layoutInfoGroup 0 0 220 230 2 Layout Info
+c 002 1 layoutInfoGroup 0 0 220 235 2 Layout Info
 c 003 4 lblName 10 10 50 25 2 Name:
-c 004 13 toolName 60 10 150 25 2 layoutName
+c 004 13 toolName 60 10 150 25 2 layout_name
 c 005 4 lblVersion 10 40 50 25 2 Version:
-c 006 13 toolVersion 60 40 150 25 2 1.2.0-dev
+c 006 13 toolVersion 60 40 150 25 2 1.0.0
 c 007 4 lblCompany 10 70 50 25 2 Company:
-c 008 13 company 60 70 150 25 2 raylibtech
+c 008 13 company 60 70 150 25 2 raylib technologies
 c 009 4 lblDescription 10 100 100 25 2 Short Description:
-c 010 13 toolDescription 10 120 200 100 2 tool_description
+c 010 13 toolDescription 10 125 200 100 2 Tool Description
 c 011 1 codeGenGroup 0 0 220 160 3 Code Generation Options
 c 012 10 codeTemplate 10 15 195 25 3 
 c 013 8 exportAnchors 20 50 15 15 3 Export anchors
