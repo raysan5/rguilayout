@@ -423,7 +423,7 @@ int main(int argc, char *argv[])
     GuiLayoutConfig config = { 0 };
     config.width = 800;
     config.height = 600;
-    strcpy(config.name, "LayoutName");
+    strcpy(config.name, "window_codegen");
     strcpy(config.version, TOOL_VERSION_TEXT);
     strcpy(config.company, "raylib technologies");
     strcpy(config.description, "tool description");
@@ -2620,7 +2620,7 @@ static void ProcessCommandLine(int argc, char *argv[])
 
         config.width = 800;
         config.height = 600;
-        strcpy(config.name, "LayoutName");
+        strcpy(config.name, "window_codegen");
         strcpy(config.version, TOOL_VERSION_TEXT);
         strcpy(config.company, "raylib technologies");
         strcpy(config.description, "tool description");
@@ -2671,10 +2671,10 @@ static void LoadLayout(const char *fileName)
         memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
         layout.controls[i].ap = &layout.anchors[0];
     }
-    //Reset all the anchors
+    
+    // Reset all the anchors
     for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
     {
-        //
         layout.anchors[i].id = i;
         layout.anchors[i].x = 0;
         layout.anchors[i].y = 0;
@@ -2695,32 +2695,42 @@ static void LoadLayout(const char *fileName)
         {
             while (!feof(rglFile))
             {
-                // TODO: read reference window data
-                
-                if ((buffer[0] != '\n') && (buffer[0] != '#') && (buffer[0] == 'a'))
+                switch (buffer[0])
                 {
-                    // TODO: review anchors name loading
-                    sscanf(buffer, "a %03i %s %d %d %d", &layout.anchors[anchorCounter].id, layout.anchors[anchorCounter].name, &layout.anchors[anchorCounter].x, &layout.anchors[anchorCounter].y, &layout.anchors[anchorCounter].enabled);
-                    if (IsEqualText("", layout.anchors[anchorCounter].name)) strcpy(layout.anchors[anchorCounter].name, FormatText("anchor%02i", anchorCounter));
-                    if (layout.anchors[anchorCounter].enabled) layout.anchorsCount++;
-                    anchorCounter++;
+                    case 'r':
+                    {
+                        sscanf(buffer, "r %f %f %f %f", &layout.refWindow.x, &layout.refWindow.y, &layout.refWindow.width, &layout.refWindow.height);
+                    } break;
+                    case 'a':
+                    {
+                        sscanf(buffer, "a %03i %s %d %d %d", &layout.anchors[anchorCounter].id, layout.anchors[anchorCounter].name, &layout.anchors[anchorCounter].x, &layout.anchors[anchorCounter].y, &layout.anchors[anchorCounter].enabled);
+                        if (IsEqualText("", layout.anchors[anchorCounter].name)) strcpy(layout.anchors[anchorCounter].name, FormatText("anchor%02i", anchorCounter));
+                        if (layout.anchors[anchorCounter].enabled) layout.anchorsCount++;
+                        anchorCounter++;
+                    } break;
+                    case 'c':
+                    {
+                        sscanf(buffer, "c %d %d %s %f %f %f %f %d %[^\n]s", &layout.controls[layout.controlsCount].id, &layout.controls[layout.controlsCount].type, layout.controls[layout.controlsCount].name, &layout.controls[layout.controlsCount].rec.x, &layout.controls[layout.controlsCount].rec.y, &layout.controls[layout.controlsCount].rec.width, &layout.controls[layout.controlsCount].rec.height, &anchorId, layout.controls[layout.controlsCount].text);
+                        layout.controls[layout.controlsCount].ap = &layout.anchors[anchorId];
+                        layout.controlsCount++;
+                    } break;
+                    default: break;
                 }
-                else if ((buffer[0] != '\n') && (buffer[0] != '#') && (buffer[0] == 'c'))
-                {
-                    sscanf(buffer, "c %d %d %s %f %f %f %f %d %[^\n]s", &layout.controls[layout.controlsCount].id, &layout.controls[layout.controlsCount].type, layout.controls[layout.controlsCount].name, &layout.controls[layout.controlsCount].rec.x, &layout.controls[layout.controlsCount].rec.y, &layout.controls[layout.controlsCount].rec.width, &layout.controls[layout.controlsCount].rec.height, &anchorId, layout.controls[layout.controlsCount].text);
-                    //printf("c %d %i %i %i %i %i %i %s\n", layout.controls[layout.controlsCount].id, layout.controls[layout.controlsCount].type, layout.controls[layout.controlsCount].rec.x, layout.controls[layout.controlsCount].rec.y, layout.controls[layout.controlsCount].rec.width, layout.controls[layout.controlsCount].rec.height, anchorId, layout.controls[layout.controlsCount].text);
 
-                    layout.controls[layout.controlsCount].ap = &layout.anchors[anchorId];
-                    layout.controlsCount++;
-                }
                 fgets(buffer, 256, rglFile);
+            }
+            
+            for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
+            {
+                layout.anchors[i].x += layout.anchors[0].x;
+                layout.anchors[i].y += layout.anchors[0].y;
             }
         }
         else tryBinary = true;
 
         fclose(rglFile);
     }
-
+/*
     if (tryBinary)
     {
         FILE *rglFile = fopen(fileName, "rb");
@@ -2744,6 +2754,7 @@ static void LoadLayout(const char *fileName)
             fclose(rglFile);
         }
     }
+*/
 }
 
 // Save gui layout information
@@ -2789,9 +2800,9 @@ static void SaveLayout(const char *fileName, bool binary)
             fprintf(rglFile, "# Anchor info:   a <id> <name> <posx> <posy> <enabled>\n");
             fprintf(rglFile, "# Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>\n#\n");
 
-            
+            printf("r %i %i %i %i\n", (int)layout.refWindow.x, (int)layout.refWindow.y, (int)layout.refWindow.width, (int)layout.refWindow.height);
             // TODO: add reference window data
-            
+            fprintf(rglFile, "r %i %i %i %i\n", (int)layout.refWindow.x, (int)layout.refWindow.y, (int)layout.refWindow.width, (int)layout.refWindow.height);
             fprintf(rglFile, "a %03i %s %i %i %i\n", layout.anchors[0].id, layout.anchors[0].name, layout.anchors[0].x, layout.anchors[0].y, layout.anchors[0].enabled);
             for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
             {
@@ -2907,6 +2918,35 @@ static char *LowerText(const char *text)
     
     return buffer;
 } 
+
+static char *PascalText(const char *text)
+{
+    static char buffer[128] = { 0 };
+    
+    buffer[0] = (char)toupper(text[0]);
+    
+    int j = 1;
+    for (int i = 1; i < 128; i++)
+    {
+        if (text[j] != '\0')
+        {
+            if(text[j] != '_') buffer[i] = text[j];
+            else
+            {
+                j++;
+                buffer[i] = (char)toupper(text[j]);                
+            }
+        }
+        else
+        {
+            buffer[i] = '\0';
+            break;
+        }
+        j++;
+    }
+    
+    return buffer;
+}
 
 static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiControl control, bool exportAnchors, bool fullComments, int tabs)
 {
@@ -3445,8 +3485,8 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                     substr = SubText(buffer, i, j);
 
                     if (IsEqualText(substr, "GUILAYOUT_NAME")) sappend(toolstr, &codePos, config.name);
-                    else if (IsEqualText(substr, "GUILAYOUT_NAME_UPPER")) sappend(toolstr, &codePos, UpperText(config.name));                    
-                    else if (IsEqualText(substr, "GUILAYOUT_NAME_LOWER")) sappend(toolstr, &codePos, LowerText(config.name));                    
+                    else if (IsEqualText(substr, "GUILAYOUT_NAME_UPPERCASE")) sappend(toolstr, &codePos, UpperText(config.name));                    
+                    else if (IsEqualText(substr, "GUILAYOUT_NAME_LOWERCASE")) sappend(toolstr, &codePos, LowerText(config.name));                    
                     else if (IsEqualText(substr, "GUILAYOUT_VERSION")) sappend(toolstr, &codePos, config.version);
                     else if (IsEqualText(substr, "GUILAYOUT_DESCRIPTION")) sappend(toolstr, &codePos, config.description);
                     else if (IsEqualText(substr, "GUILAYOUT_COMPANY")) sappend(toolstr, &codePos, config.company);
@@ -3777,24 +3817,28 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                             }
                             sappend(toolstr, &codePos, FormatText("Rectangle layoutRecs[%i];", layout.controlsCount));                            
                         }
+                        ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs+1);
+                        sappend(toolstr, &codePos, "// Custom state variables (depend on development software)")
+                        ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs+1);
+                        sappend(toolstr, &codePos, "// NOTE: This variables should be added manually if required")
                         
-                        ENDLINEAPPEND(toolstr, &codePos);
-                        sappend(toolstr, &codePos, FormatText("} Gui%sState;", config.name));
+                        ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs);
+                        sappend(toolstr, &codePos, FormatText("} Gui%sState;", PascalText(config.name)));
                     }
                     else if (IsEqualText(substr, "GUILAYOUT_FUNCTIONS_DECLARATION_H"))
                     {
-                        sappend(toolstr, &codePos, FormatText("Gui%sState InitGui%s(void);", config.name, config.name));
+                        sappend(toolstr, &codePos, FormatText("Gui%sState InitGui%s(void);", PascalText(config.name), PascalText(config.name)));
                         ENDLINEAPPEND(toolstr, &codePos);
                         TABAPPEND(toolstr, &codePos, tabs);
-                        sappend(toolstr, &codePos, FormatText("void Gui%s(Gui%sState *state);", config.name, config.name));
+                        sappend(toolstr, &codePos, FormatText("void Gui%s(Gui%sState *state);", PascalText(config.name), PascalText(config.name)));
                     }
                     else if (IsEqualText(substr, "GUILAYOUT_FUNCTION_INITIALIZE_H"))
                     {
                         // Export InitGuiLayout function definition
-                        sappend(toolstr, &codePos, FormatText("Gui%sState InitGui%s(void)", config.name, config.name));
+                        sappend(toolstr, &codePos, FormatText("Gui%sState InitGui%s(void)", PascalText(config.name), PascalText(config.name)));
                         ENDLINEAPPEND(toolstr, &codePos);
                         sappend(toolstr, &codePos, "{"); ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs + 1);
-                        sappend(toolstr, &codePos, FormatText("Gui%sState state = { 0 };", config.name));
+                        sappend(toolstr, &codePos, FormatText("Gui%sState state = { 0 };", PascalText(config.name)));
                         ENDLINEAPPEND(toolstr, &codePos); ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs + 1);
                         
                         // Init anchors
@@ -3879,16 +3923,20 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                             codePos -= (tabs + 1)*4 + 1;
                         }
                         
-                        // Return gui state after defining all its variables
-                        sappend(toolstr, &codePos, "    return state;\n");
+                        ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs+1);
+                        sappend(toolstr, &codePos, "// Custom state variables (depend on development software)")
                         
-                        ENDLINEAPPEND(toolstr, &codePos);
+                        // Return gui state after defining all its variables
+                        ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs+1);
+                        sappend(toolstr, &codePos, "    return state;");
+                        
+                        ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs);
                         sappend(toolstr, &codePos, "}");  
                     }    
                     else if (IsEqualText(substr, "GUILAYOUT_FUNCTION_DRAWING_H") && layout.controlsCount > 0) 
                     {
                         // Export GuiLayout draw function
-                        sappend(toolstr, &codePos, FormatText("void Gui%s(Gui%sState *state)", config.name, config.name));
+                        sappend(toolstr, &codePos, FormatText("void Gui%s(Gui%sState *state)", PascalText(config.name), PascalText(config.name)));
                         ENDLINEAPPEND(toolstr, &codePos);
                         sappend(toolstr, &codePos, "{"); ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs + 1);
                         

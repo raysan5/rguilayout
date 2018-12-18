@@ -81,7 +81,7 @@ GuiWindowCodegenState InitGuiWindowCodegen(void)
 
     state.codeGenWindowActive = false;
     
-    strcpy(state.toolNameText,"LayoutName");
+    strcpy(state.toolNameText,"window_codegen");
     state.toolNameEditMode = false;
     strcpy(state.toolVersionText,"1.0.0");
     state.toolVersionEditMode = false;
@@ -99,7 +99,7 @@ GuiWindowCodegenState InitGuiWindowCodegen(void)
     state.CheckBox019Checked = false;
     state.CheckBox021Checked = false;
 
-    state.exportCodeButtonPressed = false;
+    state.exportCodeButtonPressed = false; // TODO GEN
     
     // Custom variables initialization
     state.generatedCode = NULL;
@@ -117,13 +117,15 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
     const char *lblDescriptionText = "Short Description:";
     const char *codeTemplateTextList[3] = { "STANDARD CODE FILE (.c)", "PORTABLE CODE FILE (.h)", "CUSTOM CODE FILE" };
     
+    // TODO: Additional const values (text and values)
+    
     if (state->codeGenWindowActive)
     {
         if (state->codeTemplateEditMode) GuiLock();
 
         state->codeGenWindowActive = !GuiWindowBox((Rectangle){ 50, 50, 900, 640 }, "Code Generation Window");
         GuiPanel((Rectangle){ 60, 85, 640, 590 });
-        state->exportCodeButtonPressed = GuiButton((Rectangle){ 715, 605, 220, 30 }, "Export Generated Code");
+        state->exportCodeButtonPressed = GuiButton((Rectangle){ 715, 605, 220, 30 }, "Export Generated Code");  //TODO
         GuiDisable(); if (GuiButton((Rectangle){ 715, 645, 220, 30 }, "Execute Code")) {} GuiEnable();
         GuiGroupBox((Rectangle){ 715, 85, 220, 230 }, "Layout Info");
         GuiLabel((Rectangle){ 725, 95, 50, 25 }, lblNameText);
@@ -135,6 +137,7 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         GuiLabel((Rectangle){ 725, 185, 100, 25 }, lblDescriptionText);
         if (GuiTextBoxMulti((Rectangle){ 725, 205, 200, 100 }, state->toolDescriptionText, 64, state->toolDescriptionEditMode)) state->toolDescriptionEditMode = !state->toolDescriptionEditMode;
         GuiGroupBox((Rectangle){ 715, 330, 220, 160 }, "Code Generation Options");
+        // TODO: checked state->
         state->exportAnchorsChecked = GuiCheckBoxEx((Rectangle){ 735, 380, 15, 15 }, state->exportAnchorsChecked, "Export anchors");
         state->fullVariablesChecked = GuiCheckBoxEx((Rectangle){ 735, 400, 15, 15 }, state->fullVariablesChecked, "Export full variables");
         state->defineRecsChecked = GuiCheckBoxEx((Rectangle){ 735, 420, 15, 15 }, state->defineRecsChecked, "Define Rectangles");

@@ -5,6 +5,7 @@
 # Anchor info:   a <id> <name> <posx> <posy> <enabled>
 # Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
+r 0 0 -1 -1
 a 000 anchor00 0 0 1
 a 001 windowAnchor 50 50 1
 a 002 anchor02 0 0 0

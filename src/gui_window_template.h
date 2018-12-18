@@ -3,8 +3,8 @@
 *   raygui layout - $(GUILAYOUT_NAME)
 *
 *   MODULE USAGE:
-*       #define GUI_$(GUILAYOUT_NAME_UPPER)_IMPLEMENTATION
-*       #include "gui_$(GUILAYOUT_NAME_LOWER).h"
+*       #define GUI_$(GUILAYOUT_NAME_UPPERCASE)_IMPLEMENTATION
+*       #include "gui_$(GUILAYOUT_NAME).h"
 *
 *   LICENSE: Propietary License
 *
@@ -18,8 +18,8 @@
 
 #include "raylib.h"
 
-#ifndef GUI_$(GUILAYOUT_NAME_UPPER)_H
-#define GUI_$(GUILAYOUT_NAME_UPPER)_H
+#ifndef GUI_$(GUILAYOUT_NAME_UPPERCASE)_H
+#define GUI_$(GUILAYOUT_NAME_UPPERCASE)_H
 
 $(GUILAYOUT_STRUCT_TYPE)
 
@@ -36,14 +36,14 @@ $(GUILAYOUT_FUNCTIONS_DECLARATION_H)
 }
 #endif
 
-#endif // GUI_$(GUILAYOUT_NAME_UPPER)_H
+#endif // GUI_$(GUILAYOUT_NAME_UPPERCASE)_H
 
 /***********************************************************************************
 *
-*   GUI_$(GUILAYOUT_NAME_UPPER) IMPLEMENTATION
+*   GUI_$(GUILAYOUT_NAME_UPPERCASE) IMPLEMENTATION
 *
 ************************************************************************************/
-#if defined(GUI_$(GUILAYOUT_NAME_UPPER)_IMPLEMENTATION)
+#if defined(GUI_$(GUILAYOUT_NAME_UPPERCASE)_IMPLEMENTATION)
 
 #include "raygui.h"
 
@@ -51,4 +51,4 @@ $(GUILAYOUT_FUNCTION_INITIALIZE_H)
 
 $(GUILAYOUT_FUNCTION_DRAWING_H)
 
-#endif // GUI_$(GUILAYOUT_NAME_UPPER)_IMPLEMENTATION
+#endif // GUI_$(GUILAYOUT_NAME_UPPERCASE)_IMPLEMENTATION
