@@ -5,15 +5,15 @@
 # Anchor info:   a <id> <name> <posx> <posy> <enabled>
 # Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
-r 655 710 -1 -1
-a 000 anchor00 655 710 1
-a 001 anchor01 -555 -671 1
-a 002 anchor02 -576 -598 1
-a 003 anchor03 -456 -377 1
-a 004 anchor04 -655 -710 0
-a 005 anchor05 -655 -710 0
-a 006 anchor06 -655 -710 0
-a 007 anchor07 -655 -710 0
+r 36 12 593 719
+a 000 anchor00 36 12 1
+a 001 anchor01 64 27 1
+a 002 anchor02 43 100 1
+a 003 anchor03 163 321 1
+a 004 anchor04 -36 -12 0
+a 005 anchor05 -36 -12 0
+a 006 anchor06 -36 -12 0
+a 007 anchor07 -36 -12 0
 c 000 0 WindowBox000 0 0 125 50 1 SAMPLE TEXT
 c 001 1 GroupBox001 0 0 125 30 2 SAMPLE TEXT
 c 002 2 Line002 72 159 125 25 0 

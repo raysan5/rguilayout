@@ -2850,7 +2850,7 @@ static bool DialogSaveLayout(void)
 // Show save layout dialog
 static void DialogExportLayout(unsigned char *toolstr, const char *name)
 {
-    const char *filters[] = { "*.c", "*.go", "*.lua" };
+    const char *filters[] = { "*.c", "*.h", "*.go", "*.lua" };
     const char *fileName = tinyfd_saveFileDialog("Export code file", name, 3, filters, "Code file");
 
     if (fileName != NULL)
@@ -3923,8 +3923,9 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                             codePos -= (tabs + 1)*4 + 1;
                         }
                         
-                        ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs+1);
+                        ENDLINEAPPEND(toolstr, &codePos); ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs+1);
                         sappend(toolstr, &codePos, "// Custom variables initialization");
+                        ENDLINEAPPEND(toolstr, &codePos);
                         
                         // Return gui state after defining all its variables
                         ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs+1);
