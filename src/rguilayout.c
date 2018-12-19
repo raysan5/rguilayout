@@ -269,7 +269,13 @@ static char *GetControlParamText(int controlType, char *name, GuiLayoutConfig co
 static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiControl control, bool fullVariables,int tabs);         // Write controls variables code to file
 static void WriteControlsDrawing(unsigned char *toolstr, int *pos, int index, GuiControl control, GuiLayoutConfig config); // Write controls drawing code to file
 static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiControl control, bool exportAnchors, bool fullComments, int tabs); // Write rectangle variables.
+
+// .H generation functions
+static void WriteAnchorsH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, bool initialize, int tabs);
+static void WriteControlVariablesH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, bool initialize, int tabs);
 static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayoutConfig config, int tabs);
+static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, int tabs);
+
 static void WriteConstVariables(unsigned char *toolstr, int *pos, GuiControl control, int tabs);
 static void  WriteControlsVariablesInit(unsigned char *toolstr, int *pos, GuiControl control, bool fullVariables, int tabs);
 static void WriteControlsDrawingH(unsigned char *toolstr, int *pos, int index, GuiControl control, GuiLayoutConfig config);
@@ -3231,8 +3237,40 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, int index, Gu
 }
 
 // Export H functions
-static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayoutConfig config, int tabs)
+static void WriteAnchorsH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, bool initialize, int tabs)
+{   
+    if (config.fullComments) 
+    {
+        sappend(toolstr, pos, "// Define anchors");
+        ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+    }
+    
+    for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
+    {
+        GuiAnchorPoint anchor = layout.anchors[i];
+        
+        if (anchor.enabled)
+        {
+            sappend(toolstr, pos, FormatText("Vector2 %s;", anchor.name));
+            
+            if (config.fullComments)
+            {
+                TABAPPEND(toolstr, pos, 3);
+                sappend(toolstr, pos, FormatText("// ANCHOR ID:%i", anchor.id));
+            }
+            
+            ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+        }
+    }
+}
+static void WriteControlVariablesH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, bool initialize, int tabs)
 {
+    if (config.fullComments) 
+    {
+        sappend(toolstr, pos, "// Define controls variables");
+        ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+    }
+        
     for (int i = 0; i < layout.controlsCount; i++)
     {
         bool drawVariables = true;
@@ -3356,9 +3394,56 @@ static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayoutConfig config
             ENDLINEAPPEND(toolstr, pos);
             TABAPPEND(toolstr, pos, tabs);
         }
-    }
-    *pos -= tabs*4 + 1; // Remove last \n\t
+    }    
 }
+static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayoutConfig config, int tabs)
+{
+    TABAPPEND(toolstr, pos, tabs);
+    sappend(toolstr, pos, "typedef struct {");
+    ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs+1);  
+                        
+    // Write anchors variables
+    if (config.exportAnchors && layout.anchorsCount > 1)
+    {        
+        WriteAnchorsH(toolstr, pos, config, false, tabs+1);
+        ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs+1);
+    }
+    
+    // Write controls variables
+    if (layout.controlsCount > 0)
+    {
+        WriteControlVariablesH(toolstr, pos, config, false, tabs+1);
+        *pos -= (tabs+1)*4 + 1; // Remove last \n\t        
+    }
+    
+    // Export rectangles
+    if (config.defineRecs)
+    {
+        ENDLINEAPPEND(toolstr, pos); ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs+1);
+        // Write rectangles                            
+        if (config.fullComments) 
+        {
+            sappend(toolstr, pos, "// Define rectangles");
+            ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs+1);
+        }
+        sappend(toolstr, pos, FormatText("Rectangle layoutRecs[%i];", layout.controlsCount));                            
+    }
+    
+    ENDLINEAPPEND(toolstr, pos); ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs+1);
+    sappend(toolstr, pos, "// Custom state variables (depend on development software)");
+    ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs+1);
+    sappend(toolstr, pos, "// NOTE: This variables should be added manually if required");
+
+    ENDLINEAPPEND(toolstr, pos); ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+    sappend(toolstr, pos, FormatText("} Gui%sState;", PascalText(config.name)));
+}
+static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, int tabs)
+{
+    sappend(toolstr, pos, FormatText("Gui%sState InitGui%s(void);", PascalText(config.name), PascalText(config.name)));
+    ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+    sappend(toolstr, pos, FormatText("void Gui%s(Gui%sState *state);", PascalText(config.name), PascalText(config.name)));
+}
+
 
 static void WriteConstVariables(unsigned char *toolstr, int *pos, GuiControl control, int tabs)
 {
@@ -3845,80 +3930,12 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                 
                     // H IMPLEMENTATION
                     else if (IsEqualText(substr, "GUILAYOUT_STRUCT_TYPE"))
-                    {
-                        sappend(toolstr, &codePos, "typedef struct {");
-                        ENDLINEAPPEND(toolstr, &codePos);
-                        TABAPPEND(toolstr, &codePos, tabs + 1);
-                        
-                        // Export anchor points code
-                        if (config.exportAnchors && layout.anchorsCount > 1)
-                        {
-                            if (config.fullComments) 
-                            {
-                                sappend(toolstr, &codePos, "// Define anchors");
-                                ENDLINEAPPEND(toolstr, &codePos);
-                                TABAPPEND(toolstr, &codePos, tabs+1);
-                            }
-                            for(int k = 1; k < MAX_ANCHOR_POINTS; k++)
-                            {
-                                if (layout.anchors[k].enabled)
-                                {                                  
-                                    sappend(toolstr, &codePos, FormatText("Vector2 %s;", layout.anchors[k].name));                                    
-                                    if (config.fullComments) 
-                                    {
-                                        TABAPPEND(toolstr, &codePos, 1);
-                                        sappend(toolstr, &codePos, FormatText("// ID:%i Name:%s", layout.anchors[k].id, layout.anchors[k].name));
-                                    }
-                                    ENDLINEAPPEND(toolstr, &codePos);
-                                    TABAPPEND(toolstr, &codePos, tabs+1);
-                                }
-                            }
-                            ENDLINEAPPEND(toolstr, &codePos);
-                            TABAPPEND(toolstr, &codePos, tabs+1);
-                        }
-                        
-                        // Export controls required variables
-                        if (layout.controlsCount > 0)
-                        {
-                            if (config.fullComments) 
-                            {
-                                sappend(toolstr, &codePos, "// Define controls variables");
-                                ENDLINEAPPEND(toolstr, &codePos);
-                                TABAPPEND(toolstr, &codePos, tabs+1);
-                            }
-                            
-                            WriteStruct(toolstr, &codePos, config, tabs+1);
-                        }
-
-                        // Export rectangles
-                        if (config.defineRecs)
-                        {
-                            ENDLINEAPPEND(toolstr, &codePos);
-                            ENDLINEAPPEND(toolstr, &codePos);
-                            TABAPPEND(toolstr, &codePos, tabs+1);
-                            // Define controls rectangles                            
-                            if (config.fullComments) 
-                            {
-                                sappend(toolstr, &codePos, "// Define controls rectangles");
-                                ENDLINEAPPEND(toolstr, &codePos);
-                                TABAPPEND(toolstr, &codePos, tabs+1);
-                            }
-                            sappend(toolstr, &codePos, FormatText("Rectangle layoutRecs[%i];", layout.controlsCount));                            
-                        }
-                        ENDLINEAPPEND(toolstr, &codePos); ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs+1);
-                        sappend(toolstr, &codePos, "// Custom state variables (depend on development software)");
-                        ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs+1);
-                        sappend(toolstr, &codePos, "// NOTE: This variables should be added manually if required");
-                        
-                        ENDLINEAPPEND(toolstr, &codePos); ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs);
-                        sappend(toolstr, &codePos, FormatText("} Gui%sState;", PascalText(config.name)));
+                    {   
+                        WriteStruct(toolstr, &codePos, config, tabs);
                     }
                     else if (IsEqualText(substr, "GUILAYOUT_FUNCTIONS_DECLARATION_H"))
                     {
-                        sappend(toolstr, &codePos, FormatText("Gui%sState InitGui%s(void);", PascalText(config.name), PascalText(config.name)));
-                        ENDLINEAPPEND(toolstr, &codePos);
-                        TABAPPEND(toolstr, &codePos, tabs);
-                        sappend(toolstr, &codePos, FormatText("void Gui%s(Gui%sState *state);", PascalText(config.name), PascalText(config.name)));
+                        WriteFunctionsDeclarationH(toolstr, &codePos, config, tabs);
                     }
                     else if (IsEqualText(substr, "GUILAYOUT_FUNCTION_INITIALIZE_H"))
                     {
