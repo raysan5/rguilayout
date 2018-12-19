@@ -78,6 +78,7 @@
 #define ANCHOR_RADIUS               20      // Default anchor radius
 
 #define MAX_CONTROL_TEXT_LENGTH     64      // Maximum length of control text
+#define MAX_CONTROL_TEXTMULTI_LENGTH     512      // Maximum length of control text
 #define MAX_CONTROL_NAME_LENGTH     32      // Maximum length of control name (used on code generation)
 #define MAX_ANCHOR_NAME_LENGTH      32
 
@@ -98,27 +99,33 @@
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
 typedef enum {
-    GUI_WINDOWBOX = 0,  //textEditMode
-    GUI_GROUPBOX,       //textEditMode
+    GUI_WINDOWBOX = 0,
+    GUI_GROUPBOX,
     GUI_LINE,
     GUI_PANEL,
-    GUI_LABEL,          //textEditMode
-    GUI_BUTTON,         //textEditMode
-    GUI_TOGGLE,         //textEditMode
+    GUI_LABEL,
+    GUI_BUTTON,
+    GUI_LABELBUTTON,
+    GUI_IMAGEBUTTONEX,
+    GUI_CHECKBOXEX,
+    GUI_TOGGLE,
     GUI_TOGGLEGROUP,
-    GUI_CHECKBOX,       //textEditMode
     GUI_COMBOBOX,
     GUI_DROPDOWNBOX,
-    GUI_SPINNER,
+    GUI_TEXTBOX,
+    GUI_TEXTMULTIBOX,
     GUI_VALUEBOX,
-    GUI_TEXTBOX,        //textEditMode
-    GUI_SLIDER,         //textEditMode
-    GUI_SLIDERBAR,      //textEditMode
-    GUI_PROGRESSBAR,
-    GUI_STATUSBAR,      //textEditMode
+    GUI_SPINNER,
+    GUI_SLIDEREX,
+    GUI_SLIDERBAREX,
+    GUI_PROGRESSBAREX,
+    GUI_STATUSBAR,
+    GUI_SCROLLPANEL,
     GUI_LISTVIEW,
     GUI_COLORPICKER,
-    GUI_DUMMYREC        //textEditMode
+    GUI_MESSAGEBOX,
+    GUI_DUMMYREC,
+    GUI_GRID
 } GuiControlType;
 
 // Anchor point type
@@ -162,11 +169,11 @@ typedef struct {
     unsigned char description[256];
     bool defineRecs;
     bool exportAnchors;
-    bool exportAnchor0;
+    bool exportAnchor0;     // TODO: remove propertie. Deprecated...
     bool fullComments;
     bool defineTexts;
-    bool cropWindow;
-    bool fullVariables;
+    bool cropWindow;        // TODO: remove propertie. Deprecated...
+    bool fullVariables;     // TODO: remove propertie. Deprecated...
 } GuiLayoutConfig;
 
 //----------------------------------------------------------------------------------
@@ -174,10 +181,66 @@ typedef struct {
 //----------------------------------------------------------------------------------
 static GuiLayout layout = { 0 };
 
-const char *controlTypeName[] = { "WINDOWBOX", "GROUPBOX", "LINE", "PANEL", "LABEL", "BUTTON", "TOGGLE", "TOGGLEGROUP", "CHECKBOX", "COMBOBOX", "DROPDOWNBOX", "SPINNER", "VALUEBOX", "TEXTBOX", "SLIDER", "SLIDERBAR", "PROGRESSBAR", "STATUSBAR", "LISTVIEW", "COLORPICKER", "DUMMYREC" };
-const char *controlTypeNameLow[] = { "WindowBox", "GroupBox", "Line", "Panel", "Label", "Button", "Toggle", "ToggleGroup", "CheckBox", "ComboBox", "DropdownBox", "Spinner", "ValueBox", "TextBox", "Slider", "SliderBar", "ProgressBar", "StatusBar", "ListView", "ColorPicker", "DummyRec" };
-const char *controlTypeNameShort[] = { "wdwbox", "grpbox", "lne", "pnl", "lbl", "btn", "tgl", "tglgrp", "chkbox", "combox", "ddwnbox", "spnr", "vlbox", "txtbox", "sldr", "sldrb", "prgssb", "stsb", "lstvw", "clrpckr", "dmyrc" };
-
+const char *controlTypeName[] = 
+{     
+    "WINDOWBOX",
+    "GROUPBOX",
+    "LINE",
+    "PANEL",
+    "LABEL",
+    "BUTTON",
+    "LABELBUTTON",
+    "IMAGEBUTTONEX",
+    "CHECKBOXEX",
+    "TOGGLE",
+    "TOGGLEGROUP",
+    "COMBOBOX",
+    "DROPDOWNBOX",
+    "TEXTBOX",
+    "TEXTMULTIBOX",
+    "VALUEBOX",
+    "SPINNER",
+    "SLIDEREX",
+    "SLIDERBAREX",
+    "PROGRESSBAREX",
+    "STATUSBAR",
+    "SCROLLPANEL",
+    "LISTVIEW",
+    "COLORPICKER",
+    "MESSAGEBOX",
+    "DUMMYREC",
+    "GRID" 
+};
+const char *controlTypeNameLow[] = 
+{     
+    "WindowBox",
+    "GroupBox",
+    "Line",
+    "Panel",
+    "Label",
+    "Button",
+    "LabelButton",
+    "ImageButtonEx",
+    "CheckBoxEx",
+    "Toggle",
+    "ToggleGroup",
+    "ComboBox",
+    "DropdownBox",
+    "TextBox",
+    "TextmultiBox",
+    "ValueBOx",
+    "Spinner",
+    "SliderEx",
+    "SliderBarEx",
+    "PrograssBarEx",
+    "StatusBar",
+    "ScrollPanel",
+    "ListView",
+    "ColorPicker",
+    "MessageBox",
+    "DummyRec",
+    "Grid" 
+};
 static char loadedFileName[256] = { 0 };    // Loaded layout file name
 
 static unsigned int codeStrCurrentPos = 0;  // Track generated code string position
@@ -206,7 +269,7 @@ static char *GetControlParamText(int controlType, char *name, GuiLayoutConfig co
 static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiControl control, bool fullVariables,int tabs);         // Write controls variables code to file
 static void WriteControlsDrawing(unsigned char *toolstr, int *pos, int index, GuiControl control, GuiLayoutConfig config); // Write controls drawing code to file
 static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiControl control, bool exportAnchors, bool fullComments, int tabs); // Write rectangle variables.
-static void WriteStruct(unsigned char *toolstr, int *pos, GuiControl control, bool fullVariables, int tabs);
+static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayoutConfig config, int tabs);
 static void WriteConstVariables(unsigned char *toolstr, int *pos, GuiControl control, int tabs);
 static void  WriteControlsVariablesInit(unsigned char *toolstr, int *pos, GuiControl control, bool fullVariables, int tabs);
 static void WriteControlsDrawingH(unsigned char *toolstr, int *pos, int index, GuiControl control, GuiLayoutConfig config);
@@ -1182,9 +1245,9 @@ int main(int argc, char *argv[])
                                         else if (IsKeyReleased(KEY_T))
                                         {
                                             if (layout.controls[selectedControl].type == GUI_LABEL ||
-                                                layout.controls[selectedControl].type == GUI_CHECKBOX ||
-                                                layout.controls[selectedControl].type == GUI_SLIDERBAR ||
-                                                layout.controls[selectedControl].type == GUI_SLIDER ||
+                                                layout.controls[selectedControl].type == GUI_CHECKBOXEX ||
+                                                layout.controls[selectedControl].type == GUI_SLIDERBAREX ||
+                                                layout.controls[selectedControl].type == GUI_SLIDEREX ||
                                                 layout.controls[selectedControl].type == GUI_TEXTBOX ||
                                                 layout.controls[selectedControl].type == GUI_BUTTON ||
                                                 layout.controls[selectedControl].type == GUI_TOGGLE || 
@@ -1906,15 +1969,15 @@ int main(int argc, char *argv[])
                         case GUI_BUTTON: GuiButton((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text); break;
                         case GUI_TOGGLE: GuiToggle((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, false); break;
                         case GUI_TOGGLEGROUP: GuiToggleGroup((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, listData, 3, 1); break;
-                        case GUI_CHECKBOX: GuiCheckBoxEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, false, layout.controls[i].text); break;
+                        case GUI_CHECKBOXEX: GuiCheckBoxEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, false, layout.controls[i].text); break;
                         case GUI_COMBOBOX: GuiComboBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, listData, 3, 1); break;
                         case GUI_DROPDOWNBOX: GuiDropdownBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, listData, 3, &dropdownBoxActive, false); break;
                         case GUI_SPINNER: GuiSpinner((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, &spinnerValue, 42, 3, 25, false); break;
                         case GUI_VALUEBOX: GuiValueBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, &valueBoxValue, 42, 100, false); break;
                         case GUI_TEXTBOX: GuiTextBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
-                        case GUI_SLIDER: GuiSliderEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, 42, 0, 100, layout.controls[i].text, true); break;
-                        case GUI_SLIDERBAR: GuiSliderBarEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, 40, 0, 100, layout.controls[i].text, true); break;
-                        case GUI_PROGRESSBAR: GuiProgressBarEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, 40, 0, 100, true); break;
+                        case GUI_SLIDEREX: GuiSliderEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, 42, 0, 100, layout.controls[i].text, true); break;
+                        case GUI_SLIDERBAREX: GuiSliderBarEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, 40, 0, 100, layout.controls[i].text, true); break;
+                        case GUI_PROGRESSBAREX: GuiProgressBarEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, 40, 0, 100, true); break;
                         case GUI_STATUSBAR: GuiStatusBar((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, 15); break;
                         case GUI_LISTVIEW: GuiListView((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, listViewData, 4, &listViewScrollIndex, &listViewActive, false); break;
                         case GUI_COLORPICKER: GuiColorPicker((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, RED); break;
@@ -1999,15 +2062,15 @@ int main(int argc, char *argv[])
                                     case GUI_BUTTON: GuiButton(defaultRec[selectedTypeDraw], "GUI_BUTTON"); break;
                                     case GUI_TOGGLE: GuiToggle(defaultRec[selectedTypeDraw], "GUI_TOGGLE", false); break;
                                     case GUI_TOGGLEGROUP: GuiToggleGroup(defaultRec[selectedTypeDraw], listData, 3, 1); break;
-                                    case GUI_CHECKBOX: GuiCheckBoxEx(defaultRec[selectedTypeDraw], false, "TEXT SAMPLE"); break;
+                                    case GUI_CHECKBOXEX: GuiCheckBoxEx(defaultRec[selectedTypeDraw], false, "TEXT SAMPLE"); break;
                                     case GUI_COMBOBOX: GuiComboBox(defaultRec[selectedTypeDraw], listData, 3, 1); break;
                                     case GUI_DROPDOWNBOX: GuiDropdownBox(defaultRec[selectedTypeDraw], listData, 3, &dropdownBoxActive, false); break;
                                     case GUI_SPINNER: GuiSpinner(defaultRec[selectedTypeDraw], &spinnerValue, 42, 3, 25, false); break;
                                     case GUI_VALUEBOX: GuiValueBox(defaultRec[selectedTypeDraw], &valueBoxValue, 42, 100, false); break;
                                     case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedTypeDraw], "GUI_TEXTBOX", 7, false); break;
-                                    case GUI_SLIDER: GuiSliderEx(defaultRec[selectedTypeDraw], 42, 0, 100, "TEXT SAMPLE", true); break;
-                                    case GUI_SLIDERBAR: GuiSliderBarEx(defaultRec[selectedTypeDraw], 40, 0, 100, "TEXT SAMPLE", true); break;
-                                    case GUI_PROGRESSBAR: GuiProgressBarEx(defaultRec[selectedTypeDraw], 40, 0, 100, true); break;
+                                    case GUI_SLIDEREX: GuiSliderEx(defaultRec[selectedTypeDraw], 42, 0, 100, "TEXT SAMPLE", true); break;
+                                    case GUI_SLIDERBAREX: GuiSliderBarEx(defaultRec[selectedTypeDraw], 40, 0, 100, "TEXT SAMPLE", true); break;
+                                    case GUI_PROGRESSBAREX: GuiProgressBarEx(defaultRec[selectedTypeDraw], 40, 0, 100, true); break;
                                     case GUI_STATUSBAR: GuiStatusBar(defaultRec[selectedTypeDraw], "STATUS BAR", 15); break;
                                     case GUI_LISTVIEW: GuiListView(defaultRec[selectedTypeDraw], listViewData, 4, &listViewScrollIndex, &listViewActive, false); break;
                                     case GUI_COLORPICKER: GuiColorPicker(defaultRec[selectedTypeDraw], RED); break;
@@ -2033,7 +2096,7 @@ int main(int argc, char *argv[])
                                     {
                                         Rectangle textboxRec = layout.controls[i].rec;
                                         int type = layout.controls[i].type;
-                                        if (type == GUI_CHECKBOX || type == GUI_LABEL || type == GUI_SLIDER || type == GUI_SLIDERBAR) 
+                                        if (type == GUI_CHECKBOXEX || type == GUI_LABEL || type == GUI_SLIDEREX || type == GUI_SLIDERBAREX) 
                                         {
                                             int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
                                             int textWidth = MeasureText(layout.controls[i].name, fontSize);
@@ -2194,7 +2257,7 @@ int main(int argc, char *argv[])
                     {               
                         Rectangle textboxRec = layout.controls[selectedControl].rec;
                         int type = layout.controls[selectedControl].type;
-                        if (type == GUI_CHECKBOX || type == GUI_LABEL || type == GUI_SLIDER || type == GUI_SLIDERBAR) 
+                        if (type == GUI_CHECKBOXEX || type == GUI_LABEL || type == GUI_SLIDEREX || type == GUI_SLIDERBAREX) 
                         {
                             int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
                             int textWidth = MeasureText(layout.controls[selectedControl].text, fontSize);
@@ -2225,7 +2288,7 @@ int main(int argc, char *argv[])
                     {
                         Rectangle textboxRec = layout.controls[selectedControl].rec;
                         int type = layout.controls[selectedControl].type;
-                        if (type == GUI_CHECKBOX || type == GUI_LABEL || type == GUI_SLIDER || type == GUI_SLIDERBAR) 
+                        if (type == GUI_CHECKBOXEX || type == GUI_LABEL || type == GUI_SLIDEREX || type == GUI_SLIDERBAREX) 
                         {
                             int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
                             int textWidth = MeasureText(layout.controls[selectedControl].name, fontSize);
@@ -3002,8 +3065,8 @@ static char *GetControlParamText(int controlType, char *name, GuiLayoutConfig co
 
     switch(controlType)
     {
-        case GUI_SLIDER:
-        case GUI_SLIDERBAR:
+        case GUI_SLIDEREX:
+        case GUI_SLIDERBAREX:
         {
             if (config.fullVariables) strcpy(text, FormatText("%sMinValue, %sMaxValue", name, name));
             else strcpy(text, "0, 100");
@@ -3036,7 +3099,7 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiControl 
         {
             sappend(toolstr, pos, FormatText("bool %sActive = true;", control.name));
         } break;
-        case GUI_CHECKBOX:
+        case GUI_CHECKBOXEX:
         {
             sappend(toolstr, pos, FormatText("bool %sChecked = false;", control.name));
         } break;
@@ -3071,8 +3134,8 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiControl 
             ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs); 
             sappend(toolstr, pos, FormatText("int %sActive = 0;", control.name));
         } break;
-        case GUI_SLIDER:
-        case GUI_SLIDERBAR:
+        case GUI_SLIDEREX:
+        case GUI_SLIDERBAREX:
         {
             if (fullVariables)
             {
@@ -3087,7 +3150,7 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiControl 
             sappend(toolstr, pos, FormatText("float %sValue = 50.0f;", control.name));
 
         } break;
-        case GUI_PROGRESSBAR:
+        case GUI_PROGRESSBAREX:
         {
             sappend(toolstr, pos, FormatText("float %sValue = 50.0f;", control.name));
         } break;
@@ -3135,20 +3198,20 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, int index, Gu
         case GUI_VALUEBOX: sappend(toolstr, pos, FormatText("if (GuiValueBox(%s, %sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;", rec, control.name, control.name, control.name, control.name)); break;
         case GUI_TOGGLE: sappend(toolstr, pos, FormatText("%sActive = GuiToggle(%s, \"%s\", %sActive);", control.name, rec, control.text, control.name)); break;
         case GUI_TOGGLEGROUP: sappend(toolstr, pos, FormatText("%sActive = GuiToggleGroup(%s, %sTextList, %s, %sActive);", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.name)); break;
-        case GUI_SLIDER:
+        case GUI_SLIDEREX:
         {
             if (control.text[0] != '\0') sappend(toolstr, pos, FormatText("%sValue = GuiSliderEx(%s, %sValue, %s, \"%s\", true);", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.text));
             else sappend(toolstr, pos, FormatText("%sValue = GuiSlider(%s, %sValue, %s);", control.name, rec, control.name, GetControlParamText(control.type, control.name, config)));
         } break;
-        case GUI_SLIDERBAR:
+        case GUI_SLIDERBAREX:
         {
             if (control.text[0] != '\0') sappend(toolstr, pos, FormatText("%sValue = GuiSliderBarEx(%s, %sValue, %s, \"%s\", true);", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.text));
             else sappend(toolstr, pos, FormatText("%sValue = GuiSliderBar(%s, %sValue, %s);", control.name, rec, control.name, GetControlParamText(control.type, control.name, config)));
         } break;
-        case GUI_PROGRESSBAR: sappend(toolstr, pos, FormatText("%sValue = GuiProgressBarEx(%s, %sValue, 0, 100, true);", control.name, rec, control.name)); break;
+        case GUI_PROGRESSBAREX: sappend(toolstr, pos, FormatText("%sValue = GuiProgressBarEx(%s, %sValue, 0, 100, true);", control.name, rec, control.name)); break;
         case GUI_SPINNER: sappend(toolstr, pos, FormatText("if (GuiSpinner(%s, %sValue, 0, 100, 25, %sEditMode)) %sEditMode = !%sEditMode;", rec, control.name, control.name, control.name, control.name)); break;
         case GUI_COMBOBOX: sappend(toolstr, pos, FormatText("%sActive = GuiComboBox(%s, %sTextList, %s, %sActive);", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.name)); break;
-        case GUI_CHECKBOX:
+        case GUI_CHECKBOXEX:
         {
             if (control.text[0] != '\0') sappend(toolstr, pos, FormatText("%sChecked = GuiCheckBoxEx(%s, %sChecked, \"%s\");", control.name, rec, control.name, control.text));
             else sappend(toolstr, pos, FormatText("%sChecked = GuiCheckBox(%s, %sChecked);", control.name, rec, control.name));
@@ -3168,94 +3231,133 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, int index, Gu
 }
 
 // Export H functions
-static void WriteStruct(unsigned char *toolstr, int *pos, GuiControl control, bool fullVariables, int tabs)
+static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayoutConfig config, int tabs)
 {
-    switch (control.type)
+    for (int i = 0; i < layout.controlsCount; i++)
     {
-        case GUI_WINDOWBOX:
-        case GUI_TOGGLE:
+        bool drawVariables = true;
+        GuiControl control = layout.controls[i];
+        switch(control.type)
         {
-            sappend(toolstr, pos, FormatText("bool %sActive;", control.name));
-        } break;
-        case GUI_CHECKBOX:
-        {
-            sappend(toolstr, pos, FormatText("bool %sChecked;", control.name));
-        } break;
-        case GUI_STATUSBAR:
-        {
-            sappend(toolstr, pos, FormatText("char *%sText;", control.name));
-        } break;
-        case GUI_LISTVIEW:
-        case GUI_DROPDOWNBOX:
-        {
-            if (fullVariables) 
+            case GUI_WINDOWBOX:
             {
-                sappend(toolstr, pos, FormatText("int %sCount;", control.name));
-                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);                
-            } 
-                
-            sappend(toolstr, pos, FormatText("int %sActive;", control.name));
-            ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs); 
-            sappend(toolstr, pos, FormatText("bool %sEditMode;", control.name));
-        } break;
-        case GUI_COMBOBOX:
-        case GUI_TOGGLEGROUP:
-        {
-            if (fullVariables) 
+                sappend(toolstr, pos, FormatText("bool %sActive;", control.name));
+            } break;
+            case GUI_BUTTON:
             {
-                sappend(toolstr, pos, FormatText("int %sCount;", control.name));
-                ENDLINEAPPEND(toolstr, pos);
-                TABAPPEND(toolstr, pos, tabs);                
+                sappend(toolstr, pos, FormatText("bool %sPressed", control.name));
+            } break;
+            case GUI_LABELBUTTON:
+            {
+                sappend(toolstr, pos, FormatText("bool %sPressed", control.name));
+            } break;
+            case GUI_IMAGEBUTTONEX:
+            {
+                sappend(toolstr, pos, FormatText("bool %sPressed", control.name));
+            } break;
+            case GUI_CHECKBOXEX:
+            {
+                sappend(toolstr, pos, FormatText("bool %sChecked", control.name));
+            } break;
+            case GUI_TOGGLE:
+            {
+                sappend(toolstr, pos, FormatText("bool %sActive", control.name));
+            } break;
+            case GUI_TOGGLEGROUP:
+            {
+                sappend(toolstr, pos, FormatText("int %sActive", control.name));
+            } break;
+            case GUI_COMBOBOX:
+            {
+                sappend(toolstr, pos, FormatText("int %sActive", control.name));
+            } break;
+            case GUI_DROPDOWNBOX:
+            {
+                sappend(toolstr, pos, FormatText("bool %sEditMode;", control.name));
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+                sappend(toolstr, pos, FormatText("int %sActive;", control.name));                                 
+            } break;
+            case GUI_TEXTBOX:
+            {
+                sappend(toolstr, pos, FormatText("bool %sEditMode;", control.name));
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+                sappend(toolstr, pos, FormatText("unsigned char %sText[%i];", control.name, MAX_CONTROL_TEXT_LENGTH));
+            } break;
+            case GUI_TEXTMULTIBOX:
+            {
+                sappend(toolstr, pos, FormatText("bool %sEditMode;", control.name));
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+                sappend(toolstr, pos, FormatText("unsigned char %sTextMulti[%i];", control.name, MAX_CONTROL_TEXTMULTI_LENGTH));
+            } break;
+            case GUI_VALUEBOX:
+            {
+                sappend(toolstr, pos, FormatText("bool %sEditMode;", control.name));
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+                sappend(toolstr, pos, FormatText("int %sValue;", control.name));
+            } break;
+            case GUI_SPINNER:
+            {
+                sappend(toolstr, pos, FormatText("bool %sEditMode;", control.name));
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+                sappend(toolstr, pos, FormatText("int %sValue;", control.name));
+            } break;
+            case GUI_SLIDEREX:
+            {
+                sappend(toolstr, pos, FormatText("float %sValue;", control.name));
+            } break;
+            case GUI_SLIDERBAREX:
+            {
+                sappend(toolstr, pos, FormatText("float %sValue;", control.name));
+            } break;
+            case GUI_PROGRESSBAREX:
+            {
+                sappend(toolstr, pos, FormatText("float %sValue;", control.name));
+            } break;
+            case GUI_LISTVIEW:
+            {
+                sappend(toolstr, pos, FormatText("bool %sEditMode;", control.name));
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+                sappend(toolstr, pos, FormatText("int %sActive;", control.name));
+            } break;
+            case GUI_COLORPICKER:
+            {
+                sappend(toolstr, pos, FormatText("Color %sValue;", control.name));
+            } break;
+            case GUI_MESSAGEBOX:
+            {
+                sappend(toolstr, pos, FormatText("bool %sPressed", control.name));
+            } break;
+            case GUI_GRID:
+            {
+                sappend(toolstr, pos, FormatText("int %sSpacing", control.name));
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+                sappend(toolstr, pos, FormatText("int %sSubdivs", control.name));
+            } break;
+            case GUI_GROUPBOX:
+            case GUI_LINE:
+            case GUI_PANEL:
+            case GUI_LABEL:
+            case GUI_DUMMYREC:
+            case GUI_STATUSBAR:
+            case GUI_SCROLLPANEL:
+            default: 
+            {
+                drawVariables = false;
+            }break;
+        }
+        
+        if(drawVariables)
+        {
+            if (config.fullComments) 
+            {
+                TABAPPEND(toolstr, pos, 3);
+                sappend(toolstr, pos, FormatText("// %s: %s", controlTypeNameLow[layout.controls[i].type], layout.controls[i].name));
             }
-            //sappend(toolstr, pos, FormatText("const char *%sTextList[3];", control.name));
-            //ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs); 
-            sappend(toolstr, pos, FormatText("int %sActive;", control.name));
-        } break;
-        case GUI_SLIDER:
-        case GUI_SLIDERBAR:
-        {
-            // if (fullVariables)
-            // {
-                // sappend(toolstr, pos, FormatText("const float %sMinValue;", control.name));
-                // ENDLINEAPPEND(toolstr, pos);
-                // TABAPPEND(toolstr, pos, tabs);                
-            
-                // sappend(toolstr, pos, FormatText("const float %sMaxValue;", control.name));
-                // ENDLINEAPPEND(toolstr, pos);
-                // TABAPPEND(toolstr, pos, tabs); 
-            // }
-            sappend(toolstr, pos, FormatText("float %sValue;", control.name));
-
-        } break;
-        case GUI_PROGRESSBAR:
-        {
-            sappend(toolstr, pos, FormatText("float %sValue;", control.name));
-        } break;
-        case GUI_VALUEBOX:
-        case GUI_SPINNER:
-        {
-            sappend(toolstr, pos, FormatText("int %sValue;", control.name));
-            ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs); 
-            sappend(toolstr, pos, FormatText("bool %sEditMode;", control.name));
-        } break;
-        case GUI_COLORPICKER:
-        {
-            sappend(toolstr, pos, FormatText("Color %sValue;", control.name));
-        } break;
-        case GUI_TEXTBOX:
-        {
-            if (fullVariables) 
-            {
-                sappend(toolstr, pos, FormatText("int %sSize;", control.name));
-                ENDLINEAPPEND(toolstr, pos);
-                TABAPPEND(toolstr, pos, tabs); 
-            }
-            sappend(toolstr, pos, FormatText("unsigned char %sText[%i];", control.name, MAX_CONTROL_TEXT_LENGTH));
-            ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs); 
-            sappend(toolstr, pos, FormatText("bool %sEditMode;", control.name));
-        } break;
-        default: break;
+            ENDLINEAPPEND(toolstr, pos);
+            TABAPPEND(toolstr, pos, tabs);
+        }
     }
+    *pos -= tabs*4 + 1; // Remove last \n\t
 }
 
 static void WriteConstVariables(unsigned char *toolstr, int *pos, GuiControl control, int tabs)
@@ -3272,8 +3374,8 @@ static void WriteConstVariables(unsigned char *toolstr, int *pos, GuiControl con
         {
             sappend(toolstr, pos, FormatText("const char *%sTextList[3] = { \"ONE\", \"TWO\", \"TRHEE\" };", control.name));
         } break;
-        case GUI_SLIDER:
-        case GUI_SLIDERBAR:
+        case GUI_SLIDEREX:
+        case GUI_SLIDERBAREX:
         {
             sappend(toolstr, pos, FormatText("const float %sMinValue = 0.0f;", control.name));
             ENDLINEAPPEND(toolstr, pos);
@@ -3295,7 +3397,7 @@ static void  WriteControlsVariablesInit(unsigned char *toolstr, int *pos, GuiCon
         {
             sappend(toolstr, pos, FormatText("state.%sActive = true;", control.name));
         } break;
-        case GUI_CHECKBOX:
+        case GUI_CHECKBOXEX:
         {
             sappend(toolstr, pos, FormatText("state.%sChecked = false;", control.name));
         } break;
@@ -3337,8 +3439,8 @@ static void  WriteControlsVariablesInit(unsigned char *toolstr, int *pos, GuiCon
             //ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs); 
             sappend(toolstr, pos, FormatText("state.%sActive = 0;", control.name));
         } break;
-        case GUI_SLIDER:
-        case GUI_SLIDERBAR:
+        case GUI_SLIDEREX:
+        case GUI_SLIDERBAREX:
         {
             // if (fullVariables)
             // {
@@ -3353,7 +3455,7 @@ static void  WriteControlsVariablesInit(unsigned char *toolstr, int *pos, GuiCon
             sappend(toolstr, pos, FormatText("state.%sValue = 50.0f;", control.name));
 
         } break;
-        case GUI_PROGRESSBAR:
+        case GUI_PROGRESSBAREX:
         {
             sappend(toolstr, pos, FormatText("state.%sValue = 50.0f;", control.name));
         } break;
@@ -3399,20 +3501,20 @@ static void WriteControlsDrawingH(unsigned char *toolstr, int *pos, int index, G
         case GUI_VALUEBOX: sappend(toolstr, pos, FormatText("if (GuiValueBox(%s, state->%sValue, 0, 100, state->%sEditMode)) state->%sEditMode = !state->%sEditMode;", rec, control.name, control.name, control.name, control.name)); break;
         case GUI_TOGGLE: sappend(toolstr, pos, FormatText("state->%sActive = GuiToggle(%s, \"%s\", state->%sActive);", control.name, rec, control.text, control.name)); break;
         case GUI_TOGGLEGROUP: sappend(toolstr, pos, FormatText("state->%sActive = GuiToggleGroup(%s, %sTextList, state->%s, state->%sActive);", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.name)); break;
-        case GUI_SLIDER:
+        case GUI_SLIDEREX:
         {
             if (control.text[0] != '\0') sappend(toolstr, pos, FormatText("state->%sValue = GuiSliderEx(%s, state->%sValue, %s, \"%s\", true);", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.text));
             else sappend(toolstr, pos, FormatText("state->%sValue = GuiSlider(%s, state->%sValue, %s);", control.name, rec, control.name, GetControlParamText(control.type, control.name, config)));
         } break;
-        case GUI_SLIDERBAR:
+        case GUI_SLIDERBAREX:
         {
             if (control.text[0] != '\0') sappend(toolstr, pos, FormatText("%sValue = GuiSliderBarEx(%s, %sValue, %s, \"%s\", true);", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.text));
             else sappend(toolstr, pos, FormatText("state->%sValue = GuiSliderBar(%s, state->%sValue, %s);", control.name, rec, control.name, GetControlParamText(control.type, control.name, config)));
         } break;
-        case GUI_PROGRESSBAR: sappend(toolstr, pos, FormatText("state->%sValue = GuiProgressBarEx(%s, state->%sValue, 0, 100, true);", control.name, rec, control.name)); break;
+        case GUI_PROGRESSBAREX: sappend(toolstr, pos, FormatText("state->%sValue = GuiProgressBarEx(%s, state->%sValue, 0, 100, true);", control.name, rec, control.name)); break;
         case GUI_SPINNER: sappend(toolstr, pos, FormatText("if (GuiSpinner(%s, state->%sValue, 0, 100, 25, state->%sEditMode)) state->%sEditMode = !state->%sEditMode;", rec, control.name, control.name, control.name, control.name)); break;
         case GUI_COMBOBOX: sappend(toolstr, pos, FormatText("state->%sActive = GuiComboBox(%s, %sTextList, state->%s, state->%sActive);", control.name, rec, control.name, GetControlParamText(control.type, control.name, config), control.name)); break;
-        case GUI_CHECKBOX:
+        case GUI_CHECKBOXEX:
         {
             if (control.text[0] != '\0') sappend(toolstr, pos, FormatText("%sChecked = GuiCheckBoxEx(%s, %sChecked, \"%s\");", control.name, rec, control.name, control.text));
             else sappend(toolstr, pos, FormatText("state->%sChecked = GuiCheckBox(%s, state->%sChecked);", control.name, rec, control.name));
@@ -3784,22 +3886,8 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                                 ENDLINEAPPEND(toolstr, &codePos);
                                 TABAPPEND(toolstr, &codePos, tabs+1);
                             }
-                            for (int k = 0; k < layout.controlsCount; k++) 
-                            {
-                                int type = layout.controls[k].type;
-                                if(type != GUI_LABEL && type != GUI_GROUPBOX && type != GUI_LINE && type != GUI_PANEL && type != GUI_BUTTON && type != GUI_DUMMYREC)
-                                {                                
-                                    WriteStruct(toolstr, &codePos, layout.controls[k], config.fullVariables, tabs+1);
-                                     if (config.fullComments) 
-                                    {
-                                        TABAPPEND(toolstr, &codePos, 1);
-                                        sappend(toolstr, &codePos, FormatText("// %s: %s", controlTypeNameLow[layout.controls[k].type], layout.controls[k].name));
-                                    }
-                                    ENDLINEAPPEND(toolstr, &codePos);
-                                    TABAPPEND(toolstr, &codePos, tabs+1);
-                                }                            
-                            }           
-                            codePos -= (tabs + 1)*4 + 1; // remove last \n\t
+                            
+                            WriteStruct(toolstr, &codePos, config, tabs+1);
                         }
 
                         // Export rectangles
@@ -3950,7 +4038,7 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                         for (int k = 0; k < layout.controlsCount; k++) 
                         {
                             int type = layout.controls[k].type;
-                            if(type == GUI_LISTVIEW || type == GUI_DROPDOWNBOX || type == GUI_COMBOBOX || type == GUI_TOGGLEGROUP || type == GUI_SLIDER || type == GUI_SLIDERBAR)
+                            if(type == GUI_LISTVIEW || type == GUI_DROPDOWNBOX || type == GUI_COMBOBOX || type == GUI_TOGGLEGROUP || type == GUI_SLIDEREX || type == GUI_SLIDERBAREX)
                             {
                                 WriteConstVariables(toolstr, &codePos, layout.controls[k], tabs+1);
                                 if (config.fullComments) 
