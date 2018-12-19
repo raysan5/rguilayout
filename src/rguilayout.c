@@ -123,9 +123,7 @@ typedef enum {
     GUI_SCROLLPANEL,
     GUI_LISTVIEW,
     GUI_COLORPICKER,
-    GUI_MESSAGEBOX,
-    GUI_DUMMYREC,
-    GUI_GRID
+    GUI_DUMMYREC
 } GuiControlType;
 
 // Anchor point type
@@ -183,33 +181,33 @@ static GuiLayout layout = { 0 };
 
 const char *controlTypeName[] = 
 {     
-    "WINDOWBOX",
-    "GROUPBOX",
-    "LINE",
-    "PANEL",
-    "LABEL",
-    "BUTTON",
-    "LABELBUTTON",
+    "WINDOWBOX",    
+    "GROUPBOX",     
+    "LINE",         
+    "PANEL",        
+    "LABEL",        
+    "BUTTON",       
+    "LABELBUTTON",  
     "IMAGEBUTTONEX",
-    "CHECKBOXEX",
-    "TOGGLE",
-    "TOGGLEGROUP",
-    "COMBOBOX",
-    "DROPDOWNBOX",
-    "TEXTBOX",
-    "TEXTMULTIBOX",
-    "VALUEBOX",
-    "SPINNER",
-    "SLIDEREX",
-    "SLIDERBAREX",
+    "CHECKBOXEX",   
+    "TOGGLE",       
+    "TOGGLEGROUP",  
+    "COMBOBOX",     
+    "DROPDOWNBOX",  
+    "TEXTBOX",      
+    "TEXTMULTIBOX", 
+    "VALUEBOX",     
+    "SPINNER",      
+    "SLIDEREX",     
+    "SLIDERBAREX",  
     "PROGRESSBAREX",
-    "STATUSBAR",
-    "SCROLLPANEL",
-    "LISTVIEW",
-    "COLORPICKER",
-    "MESSAGEBOX",
-    "DUMMYREC",
-    "GRID" 
+    "STATUSBAR",    
+    "SCROLLPANEL",  
+    "LISTVIEW",     
+    "COLORPICKER",  
+    "MESSAGEBOX",   
+    "DUMMYREC",     
+    "GRID"          
 };
 const char *controlTypeNameLow[] = 
 {     
@@ -271,13 +269,13 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, int index, Gu
 static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiControl control, bool exportAnchors, bool fullComments, int tabs); // Write rectangle variables.
 
 // .H generation functions
-static void WriteAnchorsH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, bool initialize, int tabs);
-static void WriteControlVariablesH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, bool initialize, int tabs);
+static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayoutConfig config, bool define, bool initialize, const char* preText, int tabs);
+static void WriteControlVariablesH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs);
 static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayoutConfig config, int tabs);
 static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, int tabs);
+static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, int tabs);
 
 static void WriteConstVariables(unsigned char *toolstr, int *pos, GuiControl control, int tabs);
-static void  WriteControlsVariablesInit(unsigned char *toolstr, int *pos, GuiControl control, bool fullVariables, int tabs);
 static void WriteControlsDrawingH(unsigned char *toolstr, int *pos, int index, GuiControl control, GuiLayoutConfig config);
 static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayoutConfig config);
 
@@ -313,7 +311,7 @@ int main(int argc, char *argv[])
 
     // GUI usage mode - Initialization
     //--------------------------------------------------------------------------------------
-    const int screenWidth = 800;
+    const int screenWidth = 1000;
     const int screenHeight = 800;
 
     SetTraceLog(0);                             // Disable trace log messsages
@@ -386,21 +384,25 @@ int main(int argc, char *argv[])
         (Rectangle){ 0, 0, 125, 35 },           // GUI_PANEL
         (Rectangle){ 0, 0, 126, 25 },           // GUI_LABEL
         (Rectangle){ 0, 0, 125, 30 },           // GUI_BUTTON
-        (Rectangle){ 0, 0, 90, 25 },            // GUI_TOGGLE
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_TOGGLEGROUP
+        (Rectangle){ 0, 0, 125, 30 },           // GUI_LABELBUTTON
+        (Rectangle){ 0, 0, 125, 125 },            // GUI_IMAGEBUTTONEX
         (Rectangle){ 0, 0, 15, 15},             // GUI_CHECKBOX
+        (Rectangle){ 0, 0, 90, 25 },            // GUI_TOGGLE
+        (Rectangle){ 0, 0, 125/3, 25 },           // GUI_TOGGLEGROUP
         (Rectangle){ 0, 0, 125, 25 },           // GUI_COMBOBOX
         (Rectangle){ 0, 0, 125, 25 },           // GUI_DROPDOWNBOX
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_SPINNER
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_VALUEBOX
         (Rectangle){ 0, 0, 125, 25 },           // GUI_TEXTBOX
+        (Rectangle){ 0, 0, 125, 75 },           // GUI_TEXTMULTIBOX
+        (Rectangle){ 0, 0, 125, 25 },           // GUI_VALUEBOX
+        (Rectangle){ 0, 0, 125, 25 },           // GUI_SPINNER
         (Rectangle){ 0, 0, 125, 15 },           // GUI_SLIDER
         (Rectangle){ 0, 0, 125, 15 },           // GUI_SLIDERBAR
         (Rectangle){ 0, 0, 125, 15 },           // GUI_PROGRESSBAR
         (Rectangle){ 0, 0, 125, 25 },           // GUI_STATUSBAR
+        (Rectangle){ 0, 0, 125, 75 },           // GUI_SCROLLPANEL
         (Rectangle){ 0, 0, 125, 75 },           // GUI_LISTVIEW
         (Rectangle){ 0, 0, 95, 95 },            // GUI_COLORPICKER
-        (Rectangle){ 0, 0, 125, 30 }            // GUI_DUMMYREC
+        (Rectangle){ 0, 0, 125, 30 },            // GUI_DUMMYREC
     };
 
     // Initialize anchor points to default values
@@ -450,27 +452,33 @@ int main(int argc, char *argv[])
         (Rectangle){ 5, 140, 125, 35 },   // Panel
         (Rectangle){ 5, 185, 126, 25 },   // Label
         (Rectangle){ 5, 220, 125, 30 },   // Button
+        (Rectangle){ 5, 220, 125, 30 },   // LabelButton
+        (Rectangle){ 5, 220, 125, 30 },   // ImageButtonEx
+        (Rectangle){ 105, 265, 15, 15 },  // CheckBox
         (Rectangle){ 5, 260, 90, 25 },    // Toggle
         (Rectangle){ 5, 295, 125, 25 },   // ToggleGroup
-        (Rectangle){ 105, 265, 15, 15 },  // CheckBox
         (Rectangle){ 5, 330, 125, 25 },   // ComboBox
         (Rectangle){ 5, 365, 125, 25 },   // DropdownBox
-        (Rectangle){ 5, 400, 125, 25 },   // Spinner
-        (Rectangle){ 5, 435, 125, 25 },   // ValueBox
         (Rectangle){ 5, 470, 125, 25 },   // TextBox
+        (Rectangle){ 5, 470, 125, 25 },   // TextBoxMulti
+        (Rectangle){ 5, 435, 125, 25 },   // ValueBox
+        (Rectangle){ 5, 400, 125, 25 },   // Spinner
         (Rectangle){ 5, 505, 125, 15 },   // Slider
         (Rectangle){ 5, 530, 125, 15 },   // SliderBar
         (Rectangle){ 5, 555, 125, 15 },   // ProgressBar
         (Rectangle){ 5, 580, 125, 25 },   // StatusBar
+        (Rectangle){ 5, 580, 125, 25 },   // ScrollPanel
         (Rectangle){ 5, 615, 125, 75 },   // ListView
         (Rectangle){ 5, 700, 95, 95 },    // ColorPicker
-        (Rectangle){ 5, 800, 125, 30 }    // DummyRec
-    };
-
-    // Tracemap (background image for reference) variables
-    Texture2D tracemap = { 0 };
-    Rectangle tracemapRec = { 0 };
-    bool tracemapBlocked = false;
+        (Rectangle){ 5, 800, 125, 30 },    // MessageBox
+        (Rectangle){ 5, 800, 125, 30 },    // DummyRec
+        (Rectangle){ 5, 800, 125, 30 }    // Grid
+   
+    };                                                                       
+    // Tracemap (background image for reference) variables          
+    Texture2D tracemap = { 0 };                                     
+    Rectangle tracemapRec = { 0 };                                  
+    bool tracemapBlocked = false;                                   
     bool tracemapFocused = false;
     bool tracemapSelected = false;
     float tracemapFade = 0.5f;
@@ -910,8 +918,19 @@ int main(int argc, char *argv[])
                                         layout.controls[layout.controlsCount].type = selectedType;
                                         layout.controls[layout.controlsCount].rec = (Rectangle){ defaultRec[selectedType].x, defaultRec[selectedType].y, defaultRec[selectedType].width, defaultRec[selectedType].height };
                                         
-                                        if ((layout.controls[layout.controlsCount].type == GUI_LABEL) || (layout.controls[layout.controlsCount].type == GUI_TEXTBOX) || (layout.controls[layout.controlsCount].type == GUI_BUTTON) || (layout.controls[layout.controlsCount].type == GUI_TOGGLE)
-                                            || (layout.controls[layout.controlsCount].type == GUI_GROUPBOX) || (layout.controls[layout.controlsCount].type == GUI_WINDOWBOX) || (layout.controls[layout.controlsCount].type == GUI_STATUSBAR) || (layout.controls[layout.controlsCount].type == GUI_DUMMYREC)) strcpy(layout.controls[layout.controlsCount].text, "SAMPLE TEXT");
+                                        if ((layout.controls[layout.controlsCount].type == GUI_LABEL) 
+                                            || (layout.controls[layout.controlsCount].type == GUI_TEXTBOX) 
+                                            || (layout.controls[layout.controlsCount].type == GUI_TEXTMULTIBOX)
+                                            || (layout.controls[layout.controlsCount].type == GUI_BUTTON)
+                                            || (layout.controls[layout.controlsCount].type == GUI_LABELBUTTON)
+                                            || (layout.controls[layout.controlsCount].type == GUI_IMAGEBUTTONEX)                                                    
+                                            || (layout.controls[layout.controlsCount].type == GUI_TOGGLE)
+                                            || (layout.controls[layout.controlsCount].type == GUI_GROUPBOX) 
+                                            || (layout.controls[layout.controlsCount].type == GUI_WINDOWBOX) 
+                                            || (layout.controls[layout.controlsCount].type == GUI_STATUSBAR) 
+                                            || (layout.controls[layout.controlsCount].type == GUI_DUMMYREC)
+                                            ) 
+                                            strcpy(layout.controls[layout.controlsCount].text, "SAMPLE TEXT");
                                         
                                         strcpy(layout.controls[layout.controlsCount].name, FormatText("%s%03i", controlTypeNameLow[layout.controls[layout.controlsCount].type], layout.controlsCount));
                                         
@@ -1255,7 +1274,10 @@ int main(int argc, char *argv[])
                                                 layout.controls[selectedControl].type == GUI_SLIDERBAREX ||
                                                 layout.controls[selectedControl].type == GUI_SLIDEREX ||
                                                 layout.controls[selectedControl].type == GUI_TEXTBOX ||
+                                                layout.controls[selectedControl].type == GUI_TEXTMULTIBOX ||
                                                 layout.controls[selectedControl].type == GUI_BUTTON ||
+                                                layout.controls[selectedControl].type == GUI_LABELBUTTON ||
+                                                layout.controls[selectedControl].type == GUI_IMAGEBUTTONEX ||
                                                 layout.controls[selectedControl].type == GUI_TOGGLE || 
                                                 layout.controls[selectedControl].type == GUI_GROUPBOX ||
                                                 layout.controls[selectedControl].type == GUI_WINDOWBOX ||
@@ -1973,18 +1995,22 @@ int main(int argc, char *argv[])
                         }break; 
                         case GUI_LABEL: GuiLabel((Rectangle){ anchorOffset.x + layout.controls[i].rec.x /*- refPoint.x*/, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text); break;
                         case GUI_BUTTON: GuiButton((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text); break;
+                        case GUI_LABELBUTTON: GuiLabelButton((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text); break;
+                        case GUI_IMAGEBUTTONEX: GuiImageButtonEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, GetTextureDefault(), (Rectangle){0,0,1,1}, layout.controls[i].text); break;
+                        case GUI_CHECKBOXEX: GuiCheckBoxEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, false, layout.controls[i].text); break;
                         case GUI_TOGGLE: GuiToggle((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, false); break;
                         case GUI_TOGGLEGROUP: GuiToggleGroup((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, listData, 3, 1); break;
-                        case GUI_CHECKBOXEX: GuiCheckBoxEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, false, layout.controls[i].text); break;
                         case GUI_COMBOBOX: GuiComboBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, listData, 3, 1); break;
                         case GUI_DROPDOWNBOX: GuiDropdownBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, listData, 3, &dropdownBoxActive, false); break;
-                        case GUI_SPINNER: GuiSpinner((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, &spinnerValue, 42, 3, 25, false); break;
-                        case GUI_VALUEBOX: GuiValueBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, &valueBoxValue, 42, 100, false); break;
                         case GUI_TEXTBOX: GuiTextBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
+                        case GUI_TEXTMULTIBOX: GuiTextBoxMulti((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
+                        case GUI_VALUEBOX: GuiValueBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, &valueBoxValue, 42, 100, false); break;
+                        case GUI_SPINNER: GuiSpinner((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, &spinnerValue, 42, 3, 25, false); break;
                         case GUI_SLIDEREX: GuiSliderEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, 42, 0, 100, layout.controls[i].text, true); break;
                         case GUI_SLIDERBAREX: GuiSliderBarEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, 40, 0, 100, layout.controls[i].text, true); break;
                         case GUI_PROGRESSBAREX: GuiProgressBarEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, 40, 0, 100, true); break;
                         case GUI_STATUSBAR: GuiStatusBar((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, 15); break;
+                        case GUI_SCROLLPANEL: GuiDummyRec((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, "NOT AVAIBLE"); break;
                         case GUI_LISTVIEW: GuiListView((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, listViewData, 4, &listViewScrollIndex, &listViewActive, false); break;
                         case GUI_COLORPICKER: GuiColorPicker((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, RED); break;
                         case GUI_DUMMYREC: GuiDummyRec((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text); break;
@@ -2058,26 +2084,31 @@ int main(int argc, char *argv[])
                                 // Draw the default rectangle of the control selected
                                 GuiLock();
                                 GuiFade(0.5f);
+                               
                                 switch (selectedTypeDraw)
                                 {
                                     case GUI_WINDOWBOX: GuiWindowBox(defaultRec[selectedTypeDraw], "WINDOW BOX"); break;
                                     case GUI_GROUPBOX: GuiGroupBox(defaultRec[selectedTypeDraw], "GROUP BOX"); break;
                                     case GUI_LINE: GuiLine(defaultRec[selectedTypeDraw], 1); break;
                                     case GUI_PANEL: GuiPanel(defaultRec[selectedTypeDraw]); break;
-                                    case GUI_LABEL: GuiLabel(defaultRec[selectedTypeDraw], "TEXT SAMPLE"); break;
-                                    case GUI_BUTTON: GuiButton(defaultRec[selectedTypeDraw], "GUI_BUTTON"); break;
-                                    case GUI_TOGGLE: GuiToggle(defaultRec[selectedTypeDraw], "GUI_TOGGLE", false); break;
+                                    case GUI_LABEL: GuiLabel(defaultRec[selectedTypeDraw], "LABEL TEXT"); break;
+                                    case GUI_BUTTON: GuiButton(defaultRec[selectedTypeDraw], "BUTTON"); break;
+                                    case GUI_LABELBUTTON: GuiLabelButton(defaultRec[selectedTypeDraw], "LABEL_BUTTON"); break;
+                                    case GUI_IMAGEBUTTONEX: GuiImageButtonEx(defaultRec[selectedTypeDraw], GetTextureDefault(), (Rectangle){0,0,1,1}, "IMAGE BUTTON"); break;
+                                    case GUI_CHECKBOXEX: GuiCheckBoxEx(defaultRec[selectedTypeDraw], false, "CHECK BOX"); break;
+                                    case GUI_TOGGLE: GuiToggle(defaultRec[selectedTypeDraw], "TOGGLE", false); break;
                                     case GUI_TOGGLEGROUP: GuiToggleGroup(defaultRec[selectedTypeDraw], listData, 3, 1); break;
-                                    case GUI_CHECKBOXEX: GuiCheckBoxEx(defaultRec[selectedTypeDraw], false, "TEXT SAMPLE"); break;
                                     case GUI_COMBOBOX: GuiComboBox(defaultRec[selectedTypeDraw], listData, 3, 1); break;
                                     case GUI_DROPDOWNBOX: GuiDropdownBox(defaultRec[selectedTypeDraw], listData, 3, &dropdownBoxActive, false); break;
-                                    case GUI_SPINNER: GuiSpinner(defaultRec[selectedTypeDraw], &spinnerValue, 42, 3, 25, false); break;
+                                    case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedTypeDraw], "TEXT BOX", 7, false); break;
+                                    case GUI_TEXTMULTIBOX: GuiTextBoxMulti(defaultRec[selectedTypeDraw], "MULTI TEX BOX", 7, false);break;
                                     case GUI_VALUEBOX: GuiValueBox(defaultRec[selectedTypeDraw], &valueBoxValue, 42, 100, false); break;
-                                    case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedTypeDraw], "GUI_TEXTBOX", 7, false); break;
-                                    case GUI_SLIDEREX: GuiSliderEx(defaultRec[selectedTypeDraw], 42, 0, 100, "TEXT SAMPLE", true); break;
-                                    case GUI_SLIDERBAREX: GuiSliderBarEx(defaultRec[selectedTypeDraw], 40, 0, 100, "TEXT SAMPLE", true); break;
+                                    case GUI_SPINNER: GuiSpinner(defaultRec[selectedTypeDraw], &spinnerValue, 42, 3, 25, false); break;
+                                    case GUI_SLIDEREX: GuiSliderEx(defaultRec[selectedTypeDraw], 42, 0, 100, "SLIDER", true); break;
+                                    case GUI_SLIDERBAREX: GuiSliderBarEx(defaultRec[selectedTypeDraw], 40, 0, 100, "SLIDER BAR", true); break;
                                     case GUI_PROGRESSBAREX: GuiProgressBarEx(defaultRec[selectedTypeDraw], 40, 0, 100, true); break;
                                     case GUI_STATUSBAR: GuiStatusBar(defaultRec[selectedTypeDraw], "STATUS BAR", 15); break;
+                                    case GUI_SCROLLPANEL: GuiDummyRec(defaultRec[selectedTypeDraw], "NOT AVAILABLE"); break;
                                     case GUI_LISTVIEW: GuiListView(defaultRec[selectedTypeDraw], listViewData, 4, &listViewScrollIndex, &listViewActive, false); break;
                                     case GUI_COLORPICKER: GuiColorPicker(defaultRec[selectedTypeDraw], RED); break;
                                     case GUI_DUMMYREC: GuiDummyRec(defaultRec[selectedTypeDraw], "DUMMY REC"); break;
@@ -2093,7 +2124,7 @@ int main(int argc, char *argv[])
                                 // Draw cursor position
                                 positionColor = MAROON;
                                 if (snapMode) positionColor = LIME;
-                                DrawText(FormatText("[%i, %i, %i, %i]", (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y, (int)defaultRec[selectedType].width, (int)defaultRec[selectedType].height), (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
+                                DrawText(FormatText("[%i, %i, %i, %i]", (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y, (int)defaultRec[selectedType].width, (int)defaultRec[selectedType].height), (int)defaultRec[selectedType].x,(int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
                             
                                 if (showNamesMode)
                                 {
@@ -2285,8 +2316,12 @@ int main(int argc, char *argv[])
                         }                        
                         
                         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(SKYBLUE, 0.2f));
-                        DrawText("Control text edit mode", 20, 25, 20, DARKGRAY);
-                        if (GuiTextBox(textboxRec, layout.controls[selectedControl].text, MAX_CONTROL_TEXT_LENGTH, textEditMode)) textEditMode = !textEditMode;
+                        DrawText("Control text edit mode", 20, 25, 20, DARKGRAY);                        
+                        if (layout.controls[selectedControl].type == GUI_TEXTMULTIBOX)
+                        {
+                            if (GuiTextBoxMulti(textboxRec, layout.controls[selectedControl].text, MAX_CONTROL_TEXTMULTI_LENGTH, textEditMode)) textEditMode = !textEditMode;
+                        }
+                        else if (GuiTextBox(textboxRec, layout.controls[selectedControl].text, MAX_CONTROL_TEXT_LENGTH, textEditMode)) textEditMode = !textEditMode;
                     }
                     
                     // Name edit
@@ -2493,7 +2528,8 @@ int main(int argc, char *argv[])
             GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, FormatText("CONTROLS COUNT: %i", layout.controlsCount), 20);
             if (selectedControl != -1) GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, FormatText("SELECTED CONTROL: #%03i  |  %s  |  REC (%i, %i, %i, %i)  |  %s", selectedControl, controlTypeName[layout.controls[selectedControl].type], (int)layout.controls[selectedControl].rec.x, (int)layout.controls[selectedControl].rec.y, (int)layout.controls[selectedControl].rec.width, (int)layout.controls[selectedControl].rec.height, layout.controls[selectedControl].name), 15);
             else GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, "", 15);
-                        
+            
+            /*
             // Draw UNDO system info
             //--------------------------------------------------------------------------------------------
             DrawText("UNDO SYSTEM", 215, 34, 10, DARKGRAY);
@@ -2562,7 +2598,8 @@ int main(int argc, char *argv[])
             DrawRectangle(300 + 25*currentUndoIndex, 25, 25, 25, GOLD);
             DrawRectangleLines(300 + 25*currentUndoIndex, 25, 25, 25, ORANGE);
             //--------------------------------------------------------------------------------------------
-
+            */
+            
         EndDrawing();
         //----------------------------------------------------------------------------------
     }
@@ -3237,11 +3274,12 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, int index, Gu
 }
 
 // Export H functions
-static void WriteAnchorsH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, bool initialize, int tabs)
+static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs)
 {   
     if (config.fullComments) 
     {
-        sappend(toolstr, pos, "// Define anchors");
+        if(define) sappend(toolstr, pos, "// Define anchors");
+        else if(initialize) sappend(toolstr, pos, "// Init anchors");
         ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
     }
     
@@ -3251,7 +3289,11 @@ static void WriteAnchorsH(unsigned char *toolstr, int *pos, GuiLayoutConfig conf
         
         if (anchor.enabled)
         {
-            sappend(toolstr, pos, FormatText("Vector2 %s;", anchor.name));
+            if(define) sappend(toolstr, pos, "Vector2 ");
+            else sappend(toolstr, pos, FormatText("%s", preText));
+            sappend(toolstr, pos, FormatText("%s", anchor.name));
+            if (initialize) sappend(toolstr, pos, FormatText(" = { %i, %i }", (int)layout.anchors[i].x, (int)layout.anchors[i].y));
+            sappend(toolstr, pos, ";");
             
             if (config.fullComments)
             {
@@ -3261,13 +3303,15 @@ static void WriteAnchorsH(unsigned char *toolstr, int *pos, GuiLayoutConfig conf
             
             ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
         }
-    }
+    }    
+    ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);   
 }
-static void WriteControlVariablesH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, bool initialize, int tabs)
+static void WriteControlVariablesH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs)
 {
     if (config.fullComments) 
     {
-        sappend(toolstr, pos, "// Define controls variables");
+        if(define) sappend(toolstr, pos, "// Define controls variables");
+        else if(initialize) sappend(toolstr, pos, "// Initilize controls variables");
         ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
     }
         
@@ -3279,97 +3323,114 @@ static void WriteControlVariablesH(unsigned char *toolstr, int *pos, GuiLayoutCo
         {
             case GUI_WINDOWBOX:
             {
-                sappend(toolstr, pos, FormatText("bool %sActive;", control.name));
+                if(define) sappend(toolstr, pos, "bool ");
+                else sappend(toolstr, pos, FormatText("%s", preText));
+                sappend(toolstr, pos, FormatText("%sActive", control.name));
+                if (initialize) sappend(toolstr, pos, " = true");
+                sappend(toolstr, pos, ";");
             } break;
             case GUI_BUTTON:
-            {
-                sappend(toolstr, pos, FormatText("bool %sPressed", control.name));
-            } break;
             case GUI_LABELBUTTON:
-            {
-                sappend(toolstr, pos, FormatText("bool %sPressed", control.name));
-            } break;
             case GUI_IMAGEBUTTONEX:
             {
-                sappend(toolstr, pos, FormatText("bool %sPressed", control.name));
+                if(define) sappend(toolstr, pos, "bool ");
+                else sappend(toolstr, pos, FormatText("%s", preText));
+                sappend(toolstr, pos, FormatText("%sPressed", control.name));
+                if (initialize) sappend(toolstr, pos, " = false");
+                sappend(toolstr, pos, ";");
             } break;
             case GUI_CHECKBOXEX:
             {
-                sappend(toolstr, pos, FormatText("bool %sChecked", control.name));
+                if(define) sappend(toolstr, pos, "bool ");
+                else sappend(toolstr, pos, FormatText("%s", preText));
+                sappend(toolstr, pos, FormatText("%sChecked", control.name));
+                if (initialize) sappend(toolstr, pos, " = false");
+                sappend(toolstr, pos, ";");
             } break;
             case GUI_TOGGLE:
             {
-                sappend(toolstr, pos, FormatText("bool %sActive", control.name));
+                if(define) sappend(toolstr, pos, "bool ");
+                else sappend(toolstr, pos, FormatText("%s", preText));
+                sappend(toolstr, pos, FormatText("%sActive", control.name));
+                if (initialize) sappend(toolstr, pos, " = true");
+                sappend(toolstr, pos, ";");
             } break;
             case GUI_TOGGLEGROUP:
-            {
-                sappend(toolstr, pos, FormatText("int %sActive", control.name));
-            } break;
             case GUI_COMBOBOX:
             {
-                sappend(toolstr, pos, FormatText("int %sActive", control.name));
+                if(define) sappend(toolstr, pos, "int ");
+                else sappend(toolstr, pos, FormatText("%s", preText));
+                sappend(toolstr, pos, FormatText("%sActive", control.name));
+                if (initialize) sappend(toolstr, pos, "= 0");
+                sappend(toolstr, pos, ";");
             } break;
             case GUI_DROPDOWNBOX:
-            {
-                sappend(toolstr, pos, FormatText("bool %sEditMode;", control.name));
-                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-                sappend(toolstr, pos, FormatText("int %sActive;", control.name));                                 
-            } break;
-            case GUI_TEXTBOX:
-            {
-                sappend(toolstr, pos, FormatText("bool %sEditMode;", control.name));
-                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-                sappend(toolstr, pos, FormatText("unsigned char %sText[%i];", control.name, MAX_CONTROL_TEXT_LENGTH));
-            } break;
-            case GUI_TEXTMULTIBOX:
-            {
-                sappend(toolstr, pos, FormatText("bool %sEditMode;", control.name));
-                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-                sappend(toolstr, pos, FormatText("unsigned char %sTextMulti[%i];", control.name, MAX_CONTROL_TEXTMULTI_LENGTH));
-            } break;
-            case GUI_VALUEBOX:
-            {
-                sappend(toolstr, pos, FormatText("bool %sEditMode;", control.name));
-                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-                sappend(toolstr, pos, FormatText("int %sValue;", control.name));
-            } break;
-            case GUI_SPINNER:
-            {
-                sappend(toolstr, pos, FormatText("bool %sEditMode;", control.name));
-                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-                sappend(toolstr, pos, FormatText("int %sValue;", control.name));
-            } break;
-            case GUI_SLIDEREX:
-            {
-                sappend(toolstr, pos, FormatText("float %sValue;", control.name));
-            } break;
-            case GUI_SLIDERBAREX:
-            {
-                sappend(toolstr, pos, FormatText("float %sValue;", control.name));
-            } break;
-            case GUI_PROGRESSBAREX:
-            {
-                sappend(toolstr, pos, FormatText("float %sValue;", control.name));
-            } break;
             case GUI_LISTVIEW:
             {
-                sappend(toolstr, pos, FormatText("bool %sEditMode;", control.name));
+                if(define) sappend(toolstr, pos, "bool ");
+                else sappend(toolstr, pos, FormatText("%s", preText));
+                sappend(toolstr, pos, FormatText("%sEditMode", control.name));
+                if (initialize) sappend(toolstr, pos, " = false");
+                sappend(toolstr, pos, ";");
                 ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-                sappend(toolstr, pos, FormatText("int %sActive;", control.name));
+                if(define) sappend(toolstr, pos, "int ");
+                else sappend(toolstr, pos, FormatText("%s", preText));
+                sappend(toolstr, pos, FormatText("%sActive", control.name));
+                if (initialize) sappend(toolstr, pos, " = 0");
+                sappend(toolstr, pos, ";");
+            } break;
+            case GUI_TEXTBOX:
+            case GUI_TEXTMULTIBOX:
+            {
+                if (define) sappend(toolstr, pos, "bool ");
+                else sappend(toolstr, pos, FormatText("%s", preText));
+                sappend(toolstr, pos, FormatText("%sEditMode", control.name));
+                if (initialize) sappend(toolstr, pos, " = false");
+                sappend(toolstr, pos, ";");
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+                
+                if (define) 
+                {
+                    sappend(toolstr, pos, FormatText("unsigned char %sText[%i]", control.name, MAX_CONTROL_TEXT_LENGTH));
+                    if (initialize) sappend(toolstr, pos, FormatText(" = \"%s\"", control.text));                        
+                }
+                else if (initialize) sappend(toolstr, pos, FormatText("strcpy(%s%sText, \"%s\")", preText, control.name, control.text));
+                sappend(toolstr, pos, ";");
+                
+            } break;
+            case GUI_VALUEBOX:
+            case GUI_SPINNER:
+            {
+                if (define) sappend(toolstr, pos, "bool ");
+                else sappend(toolstr, pos, FormatText("%s", preText));
+                sappend(toolstr, pos, FormatText("%sEditMode", control.name));
+                if (initialize) sappend(toolstr, pos, " = false");
+                sappend(toolstr, pos, ";");
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+                if (define) sappend(toolstr, pos, "int ");
+                else sappend(toolstr, pos, FormatText("%s", preText));
+                sappend(toolstr, pos, FormatText("%sValue", control.name));
+                if (initialize) sappend(toolstr, pos, " = 0");
+                sappend(toolstr, pos, ";");
+    
+            } break;
+            case GUI_SLIDEREX:
+            case GUI_SLIDERBAREX:
+            case GUI_PROGRESSBAREX:
+            {
+                if(define) sappend(toolstr, pos, "float ");
+                else sappend(toolstr, pos, FormatText("%s", preText));
+                sappend(toolstr, pos, FormatText("%sValue", control.name));
+                if (initialize) sappend(toolstr, pos, " = 0.0f");
+                sappend(toolstr, pos, ";");
             } break;
             case GUI_COLORPICKER:
             {
-                sappend(toolstr, pos, FormatText("Color %sValue;", control.name));
-            } break;
-            case GUI_MESSAGEBOX:
-            {
-                sappend(toolstr, pos, FormatText("bool %sPressed", control.name));
-            } break;
-            case GUI_GRID:
-            {
-                sappend(toolstr, pos, FormatText("int %sSpacing", control.name));
-                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-                sappend(toolstr, pos, FormatText("int %sSubdivs", control.name));
+                if(define) sappend(toolstr, pos, "Color ");
+                else sappend(toolstr, pos, FormatText("%s", preText));
+                sappend(toolstr, pos, FormatText("%sValue", control.name));
+                //TODO if (initialize) sappend(toolstr, pos, FormatText(" = { %i, %i }", (int)layout.anchors[i].x, (int)layout.anchors[i].y));
+                sappend(toolstr, pos, ";");
             } break;
             case GUI_GROUPBOX:
             case GUI_LINE:
@@ -3394,7 +3455,8 @@ static void WriteControlVariablesH(unsigned char *toolstr, int *pos, GuiLayoutCo
             ENDLINEAPPEND(toolstr, pos);
             TABAPPEND(toolstr, pos, tabs);
         }
-    }    
+    } 
+    *pos -= tabs*4 + 1; // Remove last \n\t      
 }
 static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayoutConfig config, int tabs)
 {
@@ -3403,18 +3465,10 @@ static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayoutConfig config
     ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs+1);  
                         
     // Write anchors variables
-    if (config.exportAnchors && layout.anchorsCount > 1)
-    {        
-        WriteAnchorsH(toolstr, pos, config, false, tabs+1);
-        ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs+1);
-    }
+    if (config.exportAnchors && layout.anchorsCount > 1) WriteAnchors(toolstr, pos, config, true, false, "", tabs+1);        
     
     // Write controls variables
-    if (layout.controlsCount > 0)
-    {
-        WriteControlVariablesH(toolstr, pos, config, false, tabs+1);
-        *pos -= (tabs+1)*4 + 1; // Remove last \n\t        
-    }
+    if (layout.controlsCount > 0) WriteControlVariablesH(toolstr, pos, config, true, true, "", tabs+1);
     
     // Export rectangles
     if (config.defineRecs)
@@ -3443,7 +3497,65 @@ static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayo
     ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
     sappend(toolstr, pos, FormatText("void Gui%s(Gui%sState *state);", PascalText(config.name), PascalText(config.name)));
 }
+static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, int tabs)
+{
+     // Export InitGuiLayout function definition
+    sappend(toolstr, pos, FormatText("Gui%sState InitGui%s(void)", PascalText(config.name), PascalText(config.name)));
+    ENDLINEAPPEND(toolstr, pos);
+    sappend(toolstr, pos, "{"); ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs + 1);
+    sappend(toolstr, pos, FormatText("Gui%sState state = { 0 };", PascalText(config.name)));
+    ENDLINEAPPEND(toolstr, pos); ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs + 1);
+    
+    // Init anchors
+    if (config.exportAnchors && layout.anchorsCount > 1)
+    {
+        WriteAnchors(toolstr, pos, config, false, true, "state.", tabs+1);
+    }
+    
+    // Init controls variables
+    if (layout.controlsCount > 0)
+    {
+        WriteControlVariablesH(toolstr, pos, config, false, true, "state.", tabs+1);
+    } 
 
+    // Define controls rectangles if required
+    if (config.defineRecs)
+    {
+        ENDLINEAPPEND(toolstr, pos);
+        ENDLINEAPPEND(toolstr, pos);
+        TABAPPEND(toolstr, pos, tabs + 1);
+        
+        // Define controls rectangles                            
+        if (config.fullComments) 
+        {
+            sappend(toolstr, pos, "// Init controls rectangles");
+            ENDLINEAPPEND(toolstr, pos);
+            TABAPPEND(toolstr, pos, tabs + 1);
+        }
+
+        for (int k = 0; k < layout.controlsCount; k++)
+        {
+            sappend(toolstr, pos, FormatText("state.layoutRecs[%i] = ", k));
+            WriteRectangleVariables(toolstr, pos, layout.controls[k], config.exportAnchors, config.fullComments, tabs);                              
+            ENDLINEAPPEND(toolstr, pos);
+            TABAPPEND(toolstr, pos, tabs + 1);
+        }
+
+        *pos -= (tabs + 1)*4 + 1;
+    }
+    
+    ENDLINEAPPEND(toolstr, pos); ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs+1);
+    sappend(toolstr, pos, "// Custom variables initialization");
+    ENDLINEAPPEND(toolstr, pos);
+    
+    // Return gui state after defining all its variables
+    ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs+1);
+    sappend(toolstr, pos, "return state;");
+    
+    ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+    sappend(toolstr, pos, "}");  
+
+}
 
 static void WriteConstVariables(unsigned char *toolstr, int *pos, GuiControl control, int tabs)
 {
@@ -3469,103 +3581,6 @@ static void WriteConstVariables(unsigned char *toolstr, int *pos, GuiControl con
             
         } break;
         
-        default: break;
-    }
-}
-
-static void  WriteControlsVariablesInit(unsigned char *toolstr, int *pos, GuiControl control, bool fullVariables, int tabs)
-{
-    switch (control.type)
-    {
-        case GUI_WINDOWBOX:
-        case GUI_TOGGLE:
-        {
-            sappend(toolstr, pos, FormatText("state.%sActive = true;", control.name));
-        } break;
-        case GUI_CHECKBOXEX:
-        {
-            sappend(toolstr, pos, FormatText("state.%sChecked = false;", control.name));
-        } break;
-        case GUI_STATUSBAR:
-        {
-            sappend(toolstr, pos, FormatText("strcpy(state.%sText, \"%s\");", control.name, control.text));
-        } break;
-        case GUI_LISTVIEW:
-        case GUI_DROPDOWNBOX:
-        {
-            if (fullVariables) 
-            {
-                sappend(toolstr, pos, FormatText("state.%sCount = 3;", control.name));
-                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);   
-            }
-            //sappend(toolstr, pos, FormatText("strcpy(state.%sTextList[0],\"ONE\");", control.name));
-            //ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-            //sappend(toolstr, pos, FormatText("strcpy(state.%sTextList[1],\"TWO\");", control.name));
-            //ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-            //sappend(toolstr, pos, FormatText("strcpy(state.%sTextList[2],\"THREE\");", control.name));
-            //ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-            sappend(toolstr, pos, FormatText("state.%sActive = 0;", control.name));
-            ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs); 
-            sappend(toolstr, pos, FormatText("state.%sEditMode = false;", control.name));
-        } break;
-        case GUI_COMBOBOX:
-        case GUI_TOGGLEGROUP:
-        {
-            if (fullVariables) 
-            {
-                sappend(toolstr, pos, FormatText("state.%sCount = 3;", control.name));
-                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-            }
-            //sappend(toolstr, pos, FormatText("strcpy(state.%sTextList[0],\"ONE\");", control.name));
-            //ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-            //sappend(toolstr, pos, FormatText("strcpy(state.%sTextList[1],\"TWO\");", control.name));
-            //ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-            //sappend(toolstr, pos, FormatText("strcpy(state.%sTextList[2],\"THREE\");", control.name));
-            //ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs); 
-            sappend(toolstr, pos, FormatText("state.%sActive = 0;", control.name));
-        } break;
-        case GUI_SLIDEREX:
-        case GUI_SLIDERBAREX:
-        {
-            // if (fullVariables)
-            // {
-                // sappend(toolstr, pos, FormatText("%sMinValue = 0.0f;", control.name));
-                // ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);                
-                // sappend(toolstr, pos, "state.");
-                
-                // sappend(toolstr, pos, FormatText("%sMaxValue = 100.0f;", control.name));
-                // ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs); 
-                // sappend(toolstr, pos, "state.");
-            // }
-            sappend(toolstr, pos, FormatText("state.%sValue = 50.0f;", control.name));
-
-        } break;
-        case GUI_PROGRESSBAREX:
-        {
-            sappend(toolstr, pos, FormatText("state.%sValue = 50.0f;", control.name));
-        } break;
-        case GUI_VALUEBOX:
-        case GUI_SPINNER:
-        {
-            sappend(toolstr, pos, FormatText("state.%sValue = 0;", control.name));
-            ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs); 
-            sappend(toolstr, pos, FormatText("state.%sEditMode = false;", control.name));
-        } break;
-        case GUI_COLORPICKER:
-        {
-            sappend(toolstr, pos, FormatText("state.%sValue;", control.name));
-        } break;
-        case GUI_TEXTBOX:
-        {
-            if (fullVariables) 
-            {
-                sappend(toolstr, pos, FormatText("state.%sSize = %i;", control.name, MAX_CONTROL_TEXT_LENGTH));
-                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs); 
-            }            
-            sappend(toolstr, pos, FormatText("strcpy(state.%sText,\"%s\");", control.name, control.text));
-            ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs); 
-            sappend(toolstr, pos, FormatText("state.%sEditMode = false;", control.name));
-        } break;
         default: break;
     }
 }
@@ -3645,30 +3660,30 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
         if ((buffer[i] == '$') && (buffer[i + 1] == '('))
         {
             
-           int spaceWidth = 0;
-           for (int j = i-1; j >= 0; j--)
-           {
-               if(buffer[j] == ' ') spaceWidth++;
-               else 
-               {
-                   if (buffer[j] != '\n') spaceWidth = 0;                   
-                   break;
-               }
-           }
-           int tabs = (int)spaceWidth/4;
+            int spaceWidth = 0;
+            for (int j = i-1; j >= 0; j--)
+            {
+                if(buffer[j] == ' ') spaceWidth++;
+                else 
+                {
+                    if (buffer[j] != '\n') spaceWidth = 0;                   
+                    break;
+                }
+            }
+            int tabs = (int)spaceWidth/4;
            
-           substr = SubText(buffer, bufferPos, i - bufferPos);
+            substr = SubText(buffer, bufferPos, i - bufferPos);
            
-           strcpy(toolstr + codePos, substr);
-           codePos = strlen(toolstr); 
+            strcpy(toolstr + codePos, substr);
+            codePos = strlen(toolstr); 
            
-           i += 2;
-           bufferPos = i;
+            i += 2;
+            bufferPos = i;
            
-           for (int j = 0; j < MAX_VARIABLE_NAME_SIZE; j++)
-           {
-               if (buffer[i + j] == ')')
-               {
+            for (int j = 0; j < MAX_VARIABLE_NAME_SIZE; j++)
+            {
+                if (buffer[i + j] == ')')
+                {
                     substr = SubText(buffer, i, j);
 
                     if (IsEqualText(substr, "GUILAYOUT_NAME")) sappend(toolstr, &codePos, config.name);
@@ -3679,12 +3694,12 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                     else if (IsEqualText(substr, "GUILAYOUT_COMPANY")) sappend(toolstr, &codePos, config.company);
                     else if (IsEqualText(substr, "GUILAYOUT_WINDOW_WIDTH")) 
                     {
-                       if(layout.refWindow.width > 0) sappend(toolstr, &codePos, FormatText("%i", (int)layout.refWindow.width));
+                       if (layout.refWindow.width > 0) sappend(toolstr, &codePos, FormatText("%i", (int)layout.refWindow.width));
                        else sappend(toolstr, &codePos, FormatText("%i", 800));
                     }
                     else if (IsEqualText(substr, "GUILAYOUT_WINDOW_HEIGHT"))
                     {
-                       if(layout.refWindow.height > 0) sappend(toolstr, &codePos, FormatText("%i", (int)layout.refWindow.height));
+                       if (layout.refWindow.height > 0) sappend(toolstr, &codePos, FormatText("%i", (int)layout.refWindow.height));
                        else sappend(toolstr, &codePos, FormatText("%i", 450));
                     }
                     
@@ -3939,105 +3954,7 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                     }
                     else if (IsEqualText(substr, "GUILAYOUT_FUNCTION_INITIALIZE_H"))
                     {
-                        // Export InitGuiLayout function definition
-                        sappend(toolstr, &codePos, FormatText("Gui%sState InitGui%s(void)", PascalText(config.name), PascalText(config.name)));
-                        ENDLINEAPPEND(toolstr, &codePos);
-                        sappend(toolstr, &codePos, "{"); ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs + 1);
-                        sappend(toolstr, &codePos, FormatText("Gui%sState state = { 0 };", PascalText(config.name)));
-                        ENDLINEAPPEND(toolstr, &codePos); ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs + 1);
-                        
-                        // Init anchors
-                        if (config.exportAnchors && layout.anchorsCount > 1)
-                        {
-                            if (config.fullComments) 
-                            {
-                                sappend(toolstr, &codePos, "// Init anchors");
-                                ENDLINEAPPEND(toolstr, &codePos);
-                                TABAPPEND(toolstr, &codePos, tabs+1);
-                            }                            
-                            for(int k = 1; k < MAX_ANCHOR_POINTS; k++)
-                            {
-                                if (layout.anchors[k].enabled)
-                                {    
-                                    sappend(toolstr, &codePos, "state.");
-                                    sappend(toolstr, &codePos, FormatText("%s = { %i, %i };", layout.anchors[k].name, (int)layout.anchors[k].x, (int)layout.anchors[k].y));                                    
-                                    if (config.fullComments) 
-                                    {
-                                        TABAPPEND(toolstr, &codePos, 1);
-                                        sappend(toolstr, &codePos, FormatText("// ID:%i Name:%s", layout.anchors[k].id, layout.anchors[k].name));
-                                    }
-                                    ENDLINEAPPEND(toolstr, &codePos);
-                                    TABAPPEND(toolstr, &codePos, tabs+1);
-                                }
-                            }
-                            ENDLINEAPPEND(toolstr, &codePos);
-                            TABAPPEND(toolstr, &codePos, tabs+1);
-                        }
-                        
-                        // Init controls variables
-                        if (layout.controlsCount > 0)
-                        {
-                            if (config.fullComments) 
-                            {
-                                sappend(toolstr, &codePos, "// Init controls variables");
-                                ENDLINEAPPEND(toolstr, &codePos);
-                                TABAPPEND(toolstr, &codePos, tabs+1);
-                            }
-                            for (int k = 0; k < layout.controlsCount; k++) 
-                            {
-                                int type = layout.controls[k].type;
-                                if(type != GUI_LABEL && type != GUI_GROUPBOX && type != GUI_LINE && type != GUI_PANEL && type != GUI_BUTTON && type != GUI_DUMMYREC)
-                                {         
-                                    //sappend(toolstr, &codePos, "state.");
-                                    WriteControlsVariablesInit(toolstr, &codePos, layout.controls[k], config.fullVariables, tabs+1);
-                                    if (config.fullComments) 
-                                    {
-                                        TABAPPEND(toolstr, &codePos, 1);
-                                        sappend(toolstr, &codePos, FormatText("// %s: %s", controlTypeNameLow[layout.controls[k].type], layout.controls[k].name));
-                                    }
-                                    ENDLINEAPPEND(toolstr, &codePos);
-                                    TABAPPEND(toolstr, &codePos, tabs+1);
-                                }                            
-                            }           
-                            codePos -= (tabs + 1)*4 + 1; // remove last \n\t
-                        } 
-
-                        // Define controls rectangles if required
-                        if (config.defineRecs)
-                        {
-                            ENDLINEAPPEND(toolstr, &codePos);
-                            ENDLINEAPPEND(toolstr, &codePos);
-                            TABAPPEND(toolstr, &codePos, tabs + 1);
-                            
-                            // Define controls rectangles                            
-                            if (config.fullComments) 
-                            {
-                                sappend(toolstr, &codePos, "// Init controls rectangles");
-                                ENDLINEAPPEND(toolstr, &codePos);
-                                TABAPPEND(toolstr, &codePos, tabs + 1);
-                            }
-
-                            for (int k = 0; k < layout.controlsCount; k++)
-                            {
-                                sappend(toolstr, &codePos, FormatText("state.layoutRecs[%i] = ", k));
-                                WriteRectangleVariables(toolstr, &codePos, layout.controls[k], config.exportAnchors, config.fullComments, tabs);                              
-                                ENDLINEAPPEND(toolstr, &codePos);
-                                TABAPPEND(toolstr, &codePos, tabs + 1);
-                            }
-
-                            codePos -= (tabs + 1)*4 + 1;
-                        }
-                        
-                        ENDLINEAPPEND(toolstr, &codePos); ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs+1);
-                        sappend(toolstr, &codePos, "// Custom variables initialization");
-                        ENDLINEAPPEND(toolstr, &codePos);
-                        
-                        // Return gui state after defining all its variables
-                        ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs+1);
-                        sappend(toolstr, &codePos, "return state;");
-                        
-                        ENDLINEAPPEND(toolstr, &codePos); TABAPPEND(toolstr, &codePos, tabs);
-                        sappend(toolstr, &codePos, "}");  
+                        WriteFunctionInitializeH(toolstr, &codePos, config, tabs);                        
                     }    
                     else if (IsEqualText(substr, "GUILAYOUT_FUNCTION_DRAWING_H") && layout.controlsCount > 0) 
                     {
@@ -4217,8 +4134,9 @@ static unsigned char *GenerateLayoutCodeFromFile(unsigned char *buffer, GuiLayou
                         sappend(toolstr, &codePos, "}");
                     }
                     
-                   bufferPos += (j + 1);
-                   break;
+                    bufferPos += (j + 1);
+                    
+                    break;
                 }               
             }
         }

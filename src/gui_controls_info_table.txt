@@ -6,15 +6,15 @@
     - Panel         |          |                |            |      x
     - Label         |    x     |        x       |            |      x
     - Button        |    x     |        x       |            |      x
-    - LabelButton   |    x     |        x       |            |      !
-    - ImageButtonEx |    x     |        x       |            |
+    -- LabelButton   |    x     |        x       |            |      !
+    -- ImageButtonEx |    x     |        x       |            |
     - CheckBoxEx    |    x     |        x       |            |      x
     - Toggle        |    x     |        x       |            |      x
     - ToggleGroup   |   xxx    |       xxx      |     x      |      x
     - ComboBox      |   xxx    |       xxx      |     x      |      x
     - DropdownBox   |   xxx    |       xxx      |     x      |      x
     - TextBox       |    x     |        .       |     x      |      x
-    - TextBoxMulti  |    x     |        .       |     x      |      !
+    -- TextBoxMulti  |    x     |        .       |     x      |      !
     - ValueBox      |          |                |     x      |      x
     - Spinner       |          |                |     x      |      x
     - SliderEx      |    x     |        x       |     x      |      x
@@ -24,8 +24,6 @@
     - ScrollPanel   |          |                |            |
     - ListView      |   xxx    |       xxx      |     x      |      x
     - ColorPicker   |          |                |            |      x
-    - MessageBox    |    x     |        .       |            |
     - DummyRec      |    x     |                |            |      x
-    - Grid          |          |                |     !      |
     
 NOTE: All *Ex controls are the base version but including text.

@@ -153,24 +153,28 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         // Draw generated code
         if (state->generatedCode != NULL)
         {
-            Rectangle codePanel = { 60, 85, 640, 590 };
-            
-            int linesCounter = 0;
-            unsigned char *currentLine = state->generatedCode;
-            
-            while (currentLine)
-            {
-                char *nextLine = strchr(currentLine, '\n');
-                if (nextLine) *nextLine = '\0';     // Temporarily terminate the current line
+            BeginScissorMode(60, 85, 620, 590);
+                Rectangle codePanel = { 60, 85, 640, 590 };
                 
-                // Only draw lines inside text panel
-                if (((state->codeOffsetY + 20*linesCounter) >= 0) && 
-                    ((state->codeOffsetY + 20*linesCounter) < (codePanel.height - 2))) DrawText(currentLine, codePanel.x + 10, codePanel.y + state->codeOffsetY + 20*linesCounter, 10, BLUE);
+                DrawRectangleLines(60, 85, 640, 590, GREEN);
                 
-                if (nextLine) *nextLine = '\n';     // Restore newline-char, just to be tidy
-                currentLine = nextLine ? (nextLine + 1) : NULL;
-                linesCounter++;
-            }
+                int linesCounter = 0;
+                unsigned char *currentLine = state->generatedCode;
+                
+                while (currentLine)
+                {
+                    char *nextLine = strchr(currentLine, '\n');
+                    if (nextLine) *nextLine = '\0';     // Temporarily terminate the current line
+                    
+                    // Only draw lines inside text panel
+                    if (((state->codeOffsetY + 20*linesCounter) >= 0) && 
+                        ((state->codeOffsetY + 20*linesCounter) < (codePanel.height - 2))) DrawText(currentLine, codePanel.x + 10, codePanel.y + state->codeOffsetY + 20*linesCounter, 10, BLUE);
+                    
+                    if (nextLine) *nextLine = '\n';     // Restore newline-char, just to be tidy
+                    currentLine = nextLine ? (nextLine + 1) : NULL;
+                    linesCounter++;
+                }
+            EndScissorMode();    
             
             DrawRectangle(codePanel.x + codePanel.width - 11, codePanel.y + 1, 10, codePanel.height - 2, LIGHTGRAY);
             DrawRectangle(codePanel.x + codePanel.width - 11, codePanel.y - ((codePanel.height - 2)/state->codeHeight)*state->codeOffsetY, 10, ((codePanel.height - 2)/state->codeHeight)*(codePanel.height - 2), DARKGRAY);
