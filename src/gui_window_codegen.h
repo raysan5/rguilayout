@@ -115,7 +115,7 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
     const char *lblVersionText = "Version:";
     const char *lblCompanyText = "Company:";
     const char *lblDescriptionText = "Short Description:";
-    const char *codeTemplateTextList[3] = { "STANDARD CODE FILE (.c)", "PORTABLE CODE FILE (.h)", "CUSTOM CODE FILE" };
+    const char *codeTemplateText = "STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h);CUSTOM CODE FILE";
     
     // TODO: Additional const values (text and values)
     
@@ -138,15 +138,14 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         if (GuiTextBoxMulti((Rectangle){ 725, 205, 200, 100 }, state->toolDescriptionText, 64, state->toolDescriptionEditMode)) state->toolDescriptionEditMode = !state->toolDescriptionEditMode;
         GuiGroupBox((Rectangle){ 715, 330, 220, 160 }, "Code Generation Options");
         // TODO: checked state->
-        state->exportAnchorsChecked = GuiCheckBoxEx((Rectangle){ 735, 380, 15, 15 }, state->exportAnchorsChecked, "Export anchors");
-        state->fullVariablesChecked = GuiCheckBoxEx((Rectangle){ 735, 400, 15, 15 }, state->fullVariablesChecked, "Export full variables");
-        state->defineRecsChecked = GuiCheckBoxEx((Rectangle){ 735, 420, 15, 15 }, state->defineRecsChecked, "Define Rectangles");
-        state->defineTextsChecked = GuiCheckBoxEx((Rectangle){ 735, 440, 15, 15 }, state->defineTextsChecked, "Define text as const");
-        state->fullCommentsChecked = GuiCheckBoxEx((Rectangle){ 735, 460, 15, 15 }, state->fullCommentsChecked, "Include detailed comments");
+        state->exportAnchorsChecked = GuiCheckBox((Rectangle){ 735, 380, 15, 15 }, "Export anchors", state->exportAnchorsChecked);
+        state->defineRecsChecked = GuiCheckBox((Rectangle){ 735, 420, 15, 15 }, "Define Rectangles", state->defineRecsChecked);
+        state->defineTextsChecked = GuiCheckBox((Rectangle){ 735, 440, 15, 15 }, "Define text as const", state->defineTextsChecked);
+        state->fullCommentsChecked = GuiCheckBox((Rectangle){ 735, 460, 15, 15 }, "Include detailed comments", state->fullCommentsChecked);
         GuiGroupBox((Rectangle){ 715, 505, 220, 65 }, "Gui Style Options");
-        state->CheckBox019Checked = GuiCheckBoxEx((Rectangle){ 735, 520, 15, 15 }, state->CheckBox019Checked, "Export gui style");
-        state->CheckBox021Checked = GuiCheckBoxEx((Rectangle){ 735, 540, 15, 15 }, state->CheckBox021Checked, "Embbed gui font");
-        if (GuiDropdownBox((Rectangle){ 725, 345, 195, 25 }, codeTemplateTextList, 3, &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
+        state->CheckBox019Checked = GuiCheckBox((Rectangle){ 735, 520, 15, 15 }, "Export gui style", state->CheckBox019Checked);
+        state->CheckBox021Checked = GuiCheckBox((Rectangle){ 735, 540, 15, 15 }, "Embbed gui font", state->CheckBox021Checked);
+        if (GuiDropdownBox((Rectangle){ 725, 345, 195, 25 }, codeTemplateText, &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
 
         GuiUnlock();
 
