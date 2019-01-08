@@ -86,6 +86,7 @@
 //----------------------------------------------------------------------------------
 static GuiLayout layout = { 0 };            // Full gui layout
 static char loadedFileName[256] = { 0 };    // Loaded layout file name
+static bool saveChangesRequired = false;    // Flag to notice save changes are required
 
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
@@ -391,6 +392,13 @@ int main(int argc, char *argv[])
                     undoLayouts[currentUndoIndex] = layout;
 
                     lastUndoIndex = currentUndoIndex;
+                    
+                    // Set a '*' mark on loaded file name to notice save requirement
+                    if ((loadedFileName[0] != '\0') && !saveChangesRequired)
+                    {
+                        saveChangesRequired = true;
+                        SetWindowTitle(FormatText("rGuiLayout v%s - %s*", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
+                    }
                 }
 
                 undoFrameCounter = 0;
@@ -478,7 +486,12 @@ int main(int argc, char *argv[])
         else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S))
         {
             if (loadedFileName[0] == '\0') DialogSaveLayout();
-            else SaveLayout(loadedFileName, false);
+            else
+            {
+                SaveLayout(loadedFileName, false);
+                saveChangesRequired = false;
+                SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
+            }
         }
 
         // Show code generation window
@@ -492,7 +505,7 @@ int main(int argc, char *argv[])
                 // Close windows logic
                 if (windowCodegenState.codeGenWindowActive) windowCodegenState.codeGenWindowActive = false;
                 else if (resetWindowActive) resetWindowActive = false;
-                else if (layout.controlsCount <= 0 && layout.anchorsCount <= 1) exitWindow = true;  // Quit application
+                else if ((layout.controlsCount <= 0) && (layout.anchorsCount <= 1)) exitWindow = true;  // Quit application
                 else
                 {
                     closingWindowActive = !closingWindowActive;
@@ -2913,6 +2926,8 @@ static bool DialogSaveLayout(void)
         strcpy(loadedFileName, outFileName);
         SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
         success = true;
+        
+        saveChangesRequired = false;
     }
 
     return success;
