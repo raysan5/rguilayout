@@ -20,13 +20,13 @@ c 002 13 toolName 75 35 135 25 1 tool_name
 c 003 4 lblVersion 225 35 50 25 1 Version:
 c 004 13 toolVersion 275 35 115 25 1 1.2.0-dev
 c 005 4 lblWindowSize 10 65 65 25 1 Window size:
-c 006 12 width 75 65 60 25 1 File name:
+c 006 15 width 75 65 60 25 1 320
 c 007 4 lblx 140 65 10 25 1 x
-c 008 12 height 150 65 60 25 1 Untitled
+c 008 15 height 150 65 60 25 1 240
 c 009 4 lblCompany 225 65 50 25 1 Company:
 c 010 13 company 275 65 115 25 1 raysan5
 c 011 4 lblDescription 10 95 65 25 1 Description:
-c 012 13 toolDescription 75 95 315 55 1 tool_description
+c 012 14 toolDescription 75 95 315 55 1 tool_description
 c 013 8 defineRecs 10 160 15 15 1 Define Rectangles
 c 014 8 defineTexts 10 180 15 15 1 Define text const
 c 015 8 fullVariables 10 200 15 15 1 Full variables
