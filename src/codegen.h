@@ -919,7 +919,7 @@ static void WriteControlVariablesH(unsigned char *toolstr, int *pos, GuiLayout l
                 sappend(toolstr, pos, ";");
             } break;
             case GUI_TEXTBOX:
-            case GUI_TEXTMULTIBOX:
+            case GUI_TEXTBOXMULTI:
             {
                 if (define) sappend(toolstr, pos, "bool ");
                 else sappend(toolstr, pos, FormatText("%s", preText));
