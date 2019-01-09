@@ -32,32 +32,38 @@
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
+
+// Controls type id
+// WARNING: Do not change those values to avoid breaking all layouts created
+// In case a control type needs to be removed, just remove it without changing values
+// In case a control type needs to be added, just add at the end or use an empty space value
+// WARNING: Controls names array (defined below) MUST be aligned with GuiControlType enum values
 typedef enum {
-    GUI_WINDOWBOX = 0,
-    GUI_GROUPBOX,
-    GUI_LINE,
-    GUI_PANEL,
-    GUI_LABEL,
-    GUI_BUTTON,
-    GUI_LABELBUTTON,
-    GUI_IMAGEBUTTONEX,
-    GUI_CHECKBOX,
-    GUI_TOGGLE,
-    GUI_TOGGLEGROUP,
-    GUI_COMBOBOX,
-    GUI_DROPDOWNBOX,
-    GUI_TEXTBOX,
-    GUI_TEXTMULTIBOX,
-    GUI_VALUEBOX,
-    GUI_SPINNER,
-    GUI_SLIDEREX,
-    GUI_SLIDERBAREX,
-    GUI_PROGRESSBAREX,
-    GUI_STATUSBAR,
-    GUI_SCROLLPANEL,
-    GUI_LISTVIEW,
-    GUI_COLORPICKER,
-    GUI_DUMMYREC
+    GUI_WINDOWBOX       = 0,
+    GUI_GROUPBOX        = 1,
+    GUI_LINE            = 2,
+    GUI_PANEL           = 3,
+    GUI_LABEL           = 4,
+    GUI_BUTTON          = 5,
+    GUI_LABELBUTTON     = 6,
+    GUI_IMAGEBUTTONEX   = 7,
+    GUI_CHECKBOX        = 8,
+    GUI_TOGGLE          = 9,
+    GUI_TOGGLEGROUP     = 10,
+    GUI_COMBOBOX        = 11,
+    GUI_DROPDOWNBOX     = 12,
+    GUI_TEXTBOX         = 13,
+    GUI_TEXTBOXMULTI    = 14,
+    GUI_VALUEBOX        = 15,
+    GUI_SPINNER         = 16,
+    GUI_SLIDEREX        = 17,
+    GUI_SLIDERBAREX     = 18,
+    GUI_PROGRESSBAREX   = 19,
+    GUI_STATUSBAR       = 20,
+    GUI_SCROLLPANEL     = 21,
+    GUI_LISTVIEW        = 22,
+    GUI_COLORPICKER     = 23,
+    GUI_DUMMYREC        = 24
 } GuiControlType;
 
 // Anchor point type
@@ -106,6 +112,9 @@ typedef struct {
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
+
+// Control type names
+// WARNING: Controls names MUST be aligned with GuiControlType enum values
 const char *controlTypeName[] =
 {
     "WindowBox",
