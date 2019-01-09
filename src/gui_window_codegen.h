@@ -182,8 +182,7 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
             state->codeHeight = 20*linesCounter;
             state->codeOffsetY += GetMouseWheelMove()*20;
             if (state->codeOffsetY > 0) state->codeOffsetY = 0;
-            if ((state->codeOffsetY + state->codeHeight) < (codePanel.height - 2)) state->codeOffsetY = -state->codeHeight + (GetScreenHeight() - 200); 
-        }
+            if (state->codeOffsetY < (codePanel.height - state->codeHeight)) state->codeOffsetY = codePanel.height - state->codeHeight;        }
     }
 }
 
