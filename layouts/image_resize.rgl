@@ -1,10 +1,11 @@
 #
-# rgl text file (v1.0) - raygui layout text file generated using rGuiLayout
+# rgl text file (v2.0) - raygui layout text file generated using rGuiLayout
 #
 # Total number of controls:     19
-# Anchor info:   a <id> <posx> <posy> <enabled>
+# Anchor info:   a <id> <name> <posx> <posy> <enabled>
 # Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
+r 0 0 -1 -1
 a 000 anchor00 0 0 1
 a 001 anchor00 50 50 1
 a 002 anchor00 205 160 1
@@ -15,13 +16,14 @@ a 006 anchor00 0 0 0
 a 007 anchor00 0 0 0
 c 000 0 resizeWindow 0 0 220 210 1 Image Resize Options
 c 001 4 lblResize 10 35 60 25 1 Resize:
-c 002 12 width 75 35 60 25 1 
+c 002 15 width 75 35 60 25 1 
 c 003 4 lblx 140 35 15 25 1 x
-c 004 12 height 150 35 60 25 1 
+c 004 15 height 150 35 60 25 1 
 c 005 4 lblAlgorythm 10 70 65 25 1 Algorythm:
-c 006 9 algorythm 75 70 135 25 1 
+c 006 11 algorythm 75 70 135 25 1 Nearest;Bilinear
 c 007 8 lockAspect 20 110 15 15 1 Lock Aspect Ratio
 c 008 8 canvasResize 20 135 15 15 1 Canvas Resize
+#c 009 10 canvasAnchor 0 0 15 15 2 ;;;;;
 c 009 8 checkTopLeft 0 0 15 15 2 
 c 010 8 checkTop 14 0 15 15 2 
 c 011 8 checkTopRight 28 0 15 15 2 

@@ -1,10 +1,11 @@
 #
-# rgl text file (v1.0) - raygui layout text file generated using rGuiLayout
+# rgl text file (v2.0) - raygui layout text file generated using rGuiLayout
 #
 # Total number of controls:     17
-# Anchor info:   a <id> <posx> <posy> <enabled>
+# Anchor info:   a <id> <name> <posx> <posy> <enabled>
 # Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
+r 0 0 -1 -1
 a 000 anchor00 0 0 1
 a 001 anchor00 0 0 0
 a 002 anchor00 50 50 1
@@ -25,7 +26,7 @@ c 008 4 mipmaps 95 90 70 20 2 01
 c 009 4 lblScaleFilter 10 110 80 20 2 Scale filter:
 c 010 4 scaleFilter 95 110 70 20 2 BILINEAR
 c 011 1 groupSelectedPixel 10 145 150 85 2 Selected Pixel
-c 012 20 pixelBox 20 155 65 65 2 <pixel>
+c 012 24 pixelBox 20 155 65 65 2 <pixel>
 c 013 4 compR 100 155 50 20 2 R: 205
 c 014 4 compG 100 170 50 20 2 G: 150
 c 015 4 compB 100 185 50 20 2 B: 80
