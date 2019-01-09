@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
         (Rectangle){ 0, 0, 125, 25 },           // GUI_COMBOBOX
         (Rectangle){ 0, 0, 125, 25 },           // GUI_DROPDOWNBOX
         (Rectangle){ 0, 0, 125, 25 },           // GUI_TEXTBOX
-        (Rectangle){ 0, 0, 125, 75 },           // GUI_TEXTMULTIBOX
+        (Rectangle){ 0, 0, 125, 75 },           // GUI_TEXTBOXMULTI
         (Rectangle){ 0, 0, 125, 25 },           // GUI_VALUEBOX
         (Rectangle){ 0, 0, 125, 25 },           // GUI_SPINNER
         (Rectangle){ 0, 0, 125, 15 },           // GUI_SLIDER
@@ -755,7 +755,7 @@ int main(int argc, char *argv[])
 
                                         if ((layout.controls[layout.controlsCount].type == GUI_LABEL)
                                             || (layout.controls[layout.controlsCount].type == GUI_TEXTBOX)
-                                            || (layout.controls[layout.controlsCount].type == GUI_TEXTMULTIBOX)
+                                            || (layout.controls[layout.controlsCount].type == GUI_TEXTBOXMULTI)
                                             || (layout.controls[layout.controlsCount].type == GUI_BUTTON)
                                             || (layout.controls[layout.controlsCount].type == GUI_LABELBUTTON)
                                             || (layout.controls[layout.controlsCount].type == GUI_IMAGEBUTTONEX)
@@ -1952,7 +1952,7 @@ int main(int argc, char *argv[])
                         case GUI_COMBOBOX: GuiComboBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, 1); break;
                         case GUI_DROPDOWNBOX: GuiDropdownBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, &dropdownBoxActive, false); break;
                         case GUI_TEXTBOX: GuiTextBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
-                        case GUI_TEXTMULTIBOX: GuiTextBoxMulti((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
+                        case GUI_TEXTBOXMULTI: GuiTextBoxMulti((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
                         case GUI_VALUEBOX: GuiValueBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, &valueBoxValue, 42, 100, false); break;
                         case GUI_SPINNER: GuiSpinner((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, &spinnerValue, 42, 3, 25, false); break;
                         case GUI_SLIDEREX: GuiSliderEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, 42, 0, 100, true); break;
@@ -2050,7 +2050,7 @@ int main(int argc, char *argv[])
                                     case GUI_COMBOBOX: GuiComboBox(defaultRec[selectedTypeDraw], "ONE;TWO;THREE", 1); break;
                                     case GUI_DROPDOWNBOX: GuiDropdownBox(defaultRec[selectedTypeDraw], "ONE;TWO;THREE", &dropdownBoxActive, false); break;
                                     case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedTypeDraw], "TEXT BOX", 7, false); break;
-                                    case GUI_TEXTMULTIBOX: GuiTextBoxMulti(defaultRec[selectedTypeDraw], "MULTI TEX BOX", 7, false);break;
+                                    case GUI_TEXTBOXMULTI: GuiTextBoxMulti(defaultRec[selectedTypeDraw], "MULTI TEX BOX", 7, false);break;
                                     case GUI_VALUEBOX: GuiValueBox(defaultRec[selectedTypeDraw], &valueBoxValue, 42, 100, false); break;
                                     case GUI_SPINNER: GuiSpinner(defaultRec[selectedTypeDraw], &spinnerValue, 42, 3, 25, false); break;
                                     case GUI_SLIDEREX: GuiSliderEx(defaultRec[selectedTypeDraw], "SLIDER", 42, 0, 100, true); break;
@@ -2287,7 +2287,7 @@ int main(int argc, char *argv[])
                         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(SKYBLUE, 0.2f));
                         DrawText("Control text edit mode", 20, 25, 20, DARKGRAY);
                         
-                        if (layout.controls[selectedControl].type == GUI_TEXTMULTIBOX)
+                        if (layout.controls[selectedControl].type == GUI_TEXTBOXMULTI)
                         {
                             if (GuiTextBoxMulti(textboxRec, layout.controls[selectedControl].text, MAX_CONTROL_TEXTMULTI_LENGTH, textEditMode)) textEditMode = !textEditMode;
                         }
