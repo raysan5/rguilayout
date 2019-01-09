@@ -890,6 +890,13 @@ int main(int argc, char *argv[])
                             //--------------------------------------------------------------------------
                             Rectangle rec = layout.controls[selectedControl].rec;
                             
+                            // NOTE: We must consider anchor offset!
+                            if (layout.controls[selectedControl].ap->id > 0)
+                            {
+                                rec.x += layout.controls[selectedControl].ap->x;
+                                rec.y += layout.controls[selectedControl].ap->y;
+                            }
+                            
                             if (CheckCollisionPointRec(mouse, rec) && 
                                 CheckCollisionPointRec(mouse, (Rectangle){ rec.x + rec.width - MOUSE_SCALE_MARK_SIZE, rec.y + rec.height - MOUSE_SCALE_MARK_SIZE, MOUSE_SCALE_MARK_SIZE, MOUSE_SCALE_MARK_SIZE }))
                             {
@@ -907,6 +914,13 @@ int main(int argc, char *argv[])
                                 
                                 if (rec.width < MOUSE_SCALE_MARK_SIZE) rec.width = MOUSE_SCALE_MARK_SIZE;
                                 if (rec.height < MOUSE_SCALE_MARK_SIZE) rec.height = MOUSE_SCALE_MARK_SIZE;
+                                
+                                // NOTE: We must consider anchor offset!
+                                if (layout.controls[selectedControl].ap->id > 0)
+                                {
+                                    rec.x -= layout.controls[selectedControl].ap->x;
+                                    rec.y -= layout.controls[selectedControl].ap->y;
+                                }
                                 
                                 layout.controls[selectedControl].rec = rec;
                                 
@@ -2368,6 +2382,13 @@ int main(int argc, char *argv[])
                 if (mouseScaleReady) 
                 {
                     Rectangle selectedRec = layout.controls[selectedControl].rec;
+                    
+                    if (layout.controls[selectedControl].ap->id > 0)
+                    {
+                        selectedRec.x += layout.controls[selectedControl].ap->x;
+                        selectedRec.y += layout.controls[selectedControl].ap->y;
+                    }
+
                     DrawRectangleLinesEx(selectedRec, 2, RED);
                     DrawTriangle((Vector2){ selectedRec.x + selectedRec.width - MOUSE_SCALE_MARK_SIZE, selectedRec.y + selectedRec.height }, 
                                  (Vector2){ selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height },
