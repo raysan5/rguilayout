@@ -40,6 +40,6 @@ To compile the code, you need raygui library (single-file header-only) and rayli
 
 ## License
 
-*Copyright (c) 2016-2019 raylib technologies (@raylibtech). All Rights Reserved. Check LICENSE for details.*
+*Copyright (c) 2016-2019 raylib technologies ([@raylibtech](https://twitter.com/raylibtech)). All Rights Reserved.* Check [LICENSE](LICENSE) for details.
 
 In case you want a custom version of the tool, just get in touch: ray[at]raylibtech.com
