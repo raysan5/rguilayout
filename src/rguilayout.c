@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
     bool refWindowEditMode = false;         // Refence window edit mode
     bool mouseScaleReady = false;           // Mouse is on position to start control scaling
     bool mouseScaleMode = false;            // Control is being scaled by mouse
-    
+
     bool multiSelectMode = false;
     Rectangle multiSelectRec = { 0 };
     Vector2 multiSelectStartPos = { 0 };
@@ -392,7 +392,7 @@ int main(int argc, char *argv[])
                     undoLayouts[currentUndoIndex] = layout;
 
                     lastUndoIndex = currentUndoIndex;
-                    
+
                     // Set a '*' mark on loaded file name to notice save requirement
                     if ((loadedFileName[0] != '\0') && !saveChangesRequired)
                     {
@@ -639,6 +639,7 @@ int main(int argc, char *argv[])
                 {
                     paletteSelect = i;
                     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) selectedType = i;
+
                     break;
                 }
                 else paletteSelect = -1;
@@ -706,7 +707,7 @@ int main(int argc, char *argv[])
                         if (!dragMode)
                         {
                             focusedControl = -1;
-                            
+
                             // Focus control logic
                             if (!anchorEditMode && focusedAnchor == -1)
                             {
@@ -751,7 +752,8 @@ int main(int argc, char *argv[])
                                         // Config new control
                                         layout.controls[layout.controlsCount].id = layout.controlsCount;
                                         layout.controls[layout.controlsCount].type = selectedType;
-                                        layout.controls[layout.controlsCount].rec = (Rectangle){ defaultRec[selectedType].x, defaultRec[selectedType].y, defaultRec[selectedType].width, defaultRec[selectedType].height };
+                                        layout.controls[layout.controlsCount].rec = (Rectangle){ defaultRec[selectedType].x, defaultRec[selectedType].y,
+                                                                                    defaultRec[selectedType].width, defaultRec[selectedType].height };
 
                                         if ((layout.controls[layout.controlsCount].type == GUI_LABEL)
                                             || (layout.controls[layout.controlsCount].type == GUI_TEXTBOX)
@@ -764,11 +766,11 @@ int main(int argc, char *argv[])
                                             || (layout.controls[layout.controlsCount].type == GUI_GROUPBOX)
                                             || (layout.controls[layout.controlsCount].type == GUI_WINDOWBOX)
                                             || (layout.controls[layout.controlsCount].type == GUI_STATUSBAR)
-                                            || (layout.controls[layout.controlsCount].type == GUI_DUMMYREC)) 
+                                            || (layout.controls[layout.controlsCount].type == GUI_DUMMYREC))
                                         {
                                             strcpy(layout.controls[layout.controlsCount].text, "SAMPLE TEXT");
                                         }
-                                            
+
                                         if ((layout.controls[layout.controlsCount].type == GUI_TOGGLEGROUP)
                                             || (layout.controls[layout.controlsCount].type == GUI_COMBOBOX)
                                             || (layout.controls[layout.controlsCount].type == GUI_DROPDOWNBOX))
@@ -776,16 +778,19 @@ int main(int argc, char *argv[])
                                             strcpy(layout.controls[layout.controlsCount].text, "ONE;TWO;THREE");
                                         }
 
-                                        strcpy(layout.controls[layout.controlsCount].name, FormatText("%s%03i", controlTypeName[layout.controls[layout.controlsCount].type], layout.controlsCount));
+                                        strcpy(layout.controls[layout.controlsCount].name,
+                                               FormatText("%s%03i", controlTypeName[layout.controls[layout.controlsCount].type], layout.controlsCount));
 
                                         layout.controls[layout.controlsCount].ap = &layout.anchors[0];        // Default anchor point (0, 0)
 
                                         // If we create new control inside a windowbox, then anchor the new control to the windowbox anchor
                                         for (int i = layout.controlsCount; i >= 0; i--)
                                         {
-                                            if (layout.controls[i].type == GUI_WINDOWBOX || layout.controls[i].type == GUI_GROUPBOX)
+                                            if ((layout.controls[i].type == GUI_WINDOWBOX) || (layout.controls[i].type == GUI_GROUPBOX))
                                             {
-                                                if (CheckCollisionPointRec(mouse, (Rectangle){ layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }))
+                                                if (CheckCollisionPointRec(mouse, (Rectangle){ layout.controls[i].ap->x + layout.controls[i].rec.x,
+                                                                                               layout.controls[i].ap->y + layout.controls[i].rec.y,
+                                                                                               layout.controls[i].rec.width, layout.controls[i].rec.height }))
                                                 {
                                                     layout.controls[layout.controlsCount].ap = layout.controls[i].ap;
                                                     break;
@@ -794,7 +799,8 @@ int main(int argc, char *argv[])
                                         }
 
                                         // Create anchor for windowbox control if we can
-                                        if (layout.anchorsCount < MAX_ANCHOR_POINTS && (layout.controls[layout.controlsCount].type == GUI_WINDOWBOX || layout.controls[layout.controlsCount].type == GUI_GROUPBOX))
+                                        if ((layout.anchorsCount < MAX_ANCHOR_POINTS) &&
+                                            ((layout.controls[layout.controlsCount].type == GUI_WINDOWBOX) || (layout.controls[layout.controlsCount].type == GUI_GROUPBOX)))
                                         {
                                             for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
                                             {
@@ -889,45 +895,47 @@ int main(int argc, char *argv[])
                             // Mouse resize mode logic
                             //--------------------------------------------------------------------------
                             Rectangle rec = layout.controls[selectedControl].rec;
-                            
+
                             // NOTE: We must consider anchor offset!
                             if (layout.controls[selectedControl].ap->id > 0)
                             {
                                 rec.x += layout.controls[selectedControl].ap->x;
                                 rec.y += layout.controls[selectedControl].ap->y;
                             }
-                            
-                            if (CheckCollisionPointRec(mouse, rec) && 
-                                CheckCollisionPointRec(mouse, (Rectangle){ rec.x + rec.width - MOUSE_SCALE_MARK_SIZE, rec.y + rec.height - MOUSE_SCALE_MARK_SIZE, MOUSE_SCALE_MARK_SIZE, MOUSE_SCALE_MARK_SIZE }))
+
+                            if (CheckCollisionPointRec(mouse, rec) &&
+                                CheckCollisionPointRec(mouse, (Rectangle){ rec.x + rec.width - MOUSE_SCALE_MARK_SIZE,
+                                                                           rec.y + rec.height - MOUSE_SCALE_MARK_SIZE,
+                                                                           MOUSE_SCALE_MARK_SIZE, MOUSE_SCALE_MARK_SIZE }))
                             {
                                 mouseScaleReady = true;
                                 if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) mouseScaleMode = true;
                             }
                             else mouseScaleReady = false;
-                            
+
                             if (mouseScaleMode)
                             {
                                 mouseScaleReady = true;
-                                
+
                                 rec.width = (mouse.x - rec.x);
                                 rec.height = (mouse.y - rec.y);
-                                
+
                                 if (rec.width < MOUSE_SCALE_MARK_SIZE) rec.width = MOUSE_SCALE_MARK_SIZE;
                                 if (rec.height < MOUSE_SCALE_MARK_SIZE) rec.height = MOUSE_SCALE_MARK_SIZE;
-                                
+
                                 // NOTE: We must consider anchor offset!
                                 if (layout.controls[selectedControl].ap->id > 0)
                                 {
                                     rec.x -= layout.controls[selectedControl].ap->x;
                                     rec.y -= layout.controls[selectedControl].ap->y;
                                 }
-                                
+
                                 layout.controls[selectedControl].rec = rec;
-                                
+
                                 if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) mouseScaleMode = false;
                             }
                             //--------------------------------------------------------------------------
-                            
+
                             if (!anchorLinkMode)
                             {
                                 if (dragMode && !mouseScaleMode)
@@ -986,7 +994,8 @@ int main(int argc, char *argv[])
                                             layout.controls[layout.controlsCount].rec.x += 10;
                                             layout.controls[layout.controlsCount].rec.y += 10;
                                             strcpy(layout.controls[layout.controlsCount].text, layout.controls[selectedControl].text);
-                                            strcpy(layout.controls[layout.controlsCount].name, FormatText("%s%03i", controlTypeName[layout.controls[layout.controlsCount].type], layout.controlsCount));
+                                            strcpy(layout.controls[layout.controlsCount].name,
+                                                   FormatText("%s%03i", controlTypeName[layout.controls[layout.controlsCount].type], layout.controlsCount));
                                             layout.controls[layout.controlsCount].ap = layout.controls[selectedControl].ap;            // Default anchor point (0, 0)
 
                                             layout.controlsCount++;
@@ -1106,7 +1115,7 @@ int main(int argc, char *argv[])
                                             controlPosX -= layout.controls[selectedControl].ap->x;
                                             controlPosY -= layout.controls[selectedControl].ap->y;
                                         }
-                                        
+
                                         layout.controls[selectedControl].rec.x = controlPosX;
                                         layout.controls[selectedControl].rec.y = controlPosY;
                                         //---------------------------------------------------------------------
@@ -1143,13 +1152,14 @@ int main(int argc, char *argv[])
                                         else if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !mouseScaleMode)
                                         {
                                             panOffset = mouse;
-                                            
+
                                             if (useGlobalPos && (layout.controls[selectedControl].ap->id != 0))
                                             {
-                                                prevPosition = (Vector2){ layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x, layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y };
+                                                prevPosition = (Vector2){ layout.controls[selectedControl].rec.x + layout.controls[selectedControl].ap->x,
+                                                                          layout.controls[selectedControl].rec.y + layout.controls[selectedControl].ap->y };
                                             }
                                             else prevPosition = (Vector2){ layout.controls[selectedControl].rec.x, layout.controls[selectedControl].rec.y };
-                                            
+
                                             dragMode = true;
                                         }
 
@@ -1212,28 +1222,28 @@ int main(int argc, char *argv[])
                     {
                         multiSelectMode = true;
                         multiSelectStartPos = mouse;
-                        
+
                         multiSelectRec.x = multiSelectStartPos.x;
                         multiSelectRec.y = multiSelectStartPos.y;
                     }
-                    
+
                     if (multiSelectMode)
                     {
                         multiSelectRec.width = mouse.x - multiSelectStartPos.x;
                         multiSelectRec.height = mouse.y - multiSelectStartPos.y;
-                        
-                        if (multiSelectRec.width < 0) 
+
+                        if (multiSelectRec.width < 0)
                         {
                             multiSelectRec.x = mouse.x;
                             multiSelectRec.width *= -1;
                         }
-                        
-                        if (multiSelectRec.height < 0) 
+
+                        if (multiSelectRec.height < 0)
                         {
                             multiSelectRec.y = mouse.y;
                             multiSelectRec.height *= -1;
                         }
-                        
+
                         if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON))
                         {
                             // Check all the controls inside the selection rectangle
@@ -1245,20 +1255,20 @@ int main(int argc, char *argv[])
                                     multiSelectCount++;
                                 }
                             }
-                            
+
                             multiSelectMode = false;
                         }
                     }
-                    
+
                     // Reset multi selection
                     if ((multiSelectCount > 0) && IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
                     {
                         for (int i = 0; i < 20; i++) multiSelectControls[i] = -1;
                         multiSelectCount = 0;
                     }
-                    
+
                     // TODO: Multi selection move logic
-                    
+
                     // Multi selection delete logic
                     if ((multiSelectCount > 0) && IsKeyPressed(KEY_DELETE))
                     {
@@ -1274,9 +1284,9 @@ int main(int argc, char *argv[])
                                 strcpy(layout.controls[i].name, layout.controls[i + 1].name);
                                 layout.controls[i].ap = layout.controls[i + 1].ap;
                             }
-                            
+
                             layout.controlsCount--;
-                            
+
                             // As we moved all controls one position, we need to update selected
                             // controls position for next control deletion
                             for (int i = 0; i < multiSelectCount; i++) multiSelectControls[i] -= 1;
@@ -1290,13 +1300,13 @@ int main(int argc, char *argv[])
                         selectedControl = -1;
                     }
                     //----------------------------------------------------------------------------------------------
-                    
+
                     // Anchors selection and edition logic
                     //----------------------------------------------------------------------------------------------
                     if (!dragMode)
                     {
                         focusedAnchor = -1;
-                        
+
                         // Checks if mouse is over an anchor
                         for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
                         {
@@ -1337,7 +1347,7 @@ int main(int argc, char *argv[])
                             }
                         }
                     }
-                    
+
                     // Unselect anchor
                     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
                     {
@@ -1506,7 +1516,8 @@ int main(int argc, char *argv[])
                                                 framesCounterMovement = 0;
                                             }
                                         }
-                                        if (selectedAnchor == 0) layout.refWindow = (Rectangle){layout.anchors[0].x, layout.anchors[0].y, layout.refWindow.width, layout.refWindow.height};
+                                        if (selectedAnchor == 0) layout.refWindow = (Rectangle){layout.anchors[0].x, layout.anchors[0].y,
+                                                                                                layout.refWindow.width, layout.refWindow.height};
 
                                         // Activate anchor position edit mode
                                         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
@@ -1914,7 +1925,11 @@ int main(int argc, char *argv[])
                         if (useGlobalPos) positionColor = RED;
                         if (snapMode) positionColor = LIME;
                         if (!dragMode && precisionMode) positionColor = BLUE;
-                        DrawText(FormatText("[%i, %i, %i, %i]", (int)tracemapRec.x, (int)tracemapRec.y, (int)tracemapRec.width, (int)tracemapRec.height), tracemapRec.x, tracemapRec.y - 20, 20, positionColor);
+                        DrawText(FormatText("[%i, %i, %i, %i]",
+                                            (int)tracemapRec.x,
+                                            (int)tracemapRec.y,
+                                            (int)tracemapRec.width,
+                                            (int)tracemapRec.height), tracemapRec.x, tracemapRec.y - 20, 20, positionColor);
                     }
                 }
             }
@@ -1926,8 +1941,12 @@ int main(int argc, char *argv[])
                 {
                     DrawRectangleRec(layout.refWindow, Fade(BLACK, 0.1f));
 
-                    DrawText(FormatText("[%i]", (int)layout.refWindow.width), layout.refWindow.x + layout.refWindow.width - MeasureText(FormatText("[%i]", (int)layout.refWindow.width), 20) - 5, layout.refWindow.y + layout.refWindow.height + 5, 20,positionColor);
-                    DrawText(FormatText("[%i]", (int)layout.refWindow.height), layout.refWindow.x + layout.refWindow.width + 5, layout.refWindow.y + layout.refWindow.height - 20, 20,positionColor);
+                    DrawText(FormatText("[%i]", (int)layout.refWindow.width),
+                             layout.refWindow.x + layout.refWindow.width - MeasureText(FormatText("[%i]",(int)layout.refWindow.width), 20) - 5,
+                             layout.refWindow.y + layout.refWindow.height + 5, 20, positionColor);
+                    DrawText(FormatText("[%i]", (int)layout.refWindow.height),
+                             layout.refWindow.x + layout.refWindow.width + 5,
+                             layout.refWindow.y + layout.refWindow.height - 20, 20, positionColor);
                 }
             }
 
@@ -1937,46 +1956,47 @@ int main(int argc, char *argv[])
             {
                 if (!layout.controls[i].ap->hidding)
                 {
-                    Vector2 anchorOffset = (Vector2){0,0};
-                    if (layout.controls[i].ap->id > 0) anchorOffset = (Vector2){layout.controls[i].ap->x, layout.controls[i].ap->y};
+                    Vector2 anchorOffset = (Vector2){ 0, 0 };
+                    if (layout.controls[i].ap->id > 0) anchorOffset = (Vector2){ layout.controls[i].ap->x, layout.controls[i].ap->y };
+                    Rectangle rec = { anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height };
+
                     switch (layout.controls[i].type)
                     {
                         case GUI_WINDOWBOX:
                         {
-                            // TODO: review fade
                             GuiFade(0.8f);
-                            GuiWindowBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text);
+                            GuiWindowBox(rec, layout.controls[i].text);
                             GuiFade(1.0f);
                         }break;
-                        case GUI_GROUPBOX: GuiGroupBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text); break;
-                        case GUI_LINE: GuiLine((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, 1); break;
+                        case GUI_GROUPBOX: GuiGroupBox(rec, layout.controls[i].text); break;
+                        case GUI_LINE: GuiLine(rec, 1); break;
                         case GUI_PANEL:
                         {
                             GuiFade(0.8f);
-                            GuiPanel((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height });
+                            GuiPanel(rec);
                             GuiFade(1.0f);
                         }break;
-                        case GUI_LABEL: GuiLabel((Rectangle){ anchorOffset.x + layout.controls[i].rec.x /*- refPoint.x*/, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text); break;
-                        case GUI_BUTTON: GuiButton((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text); break;
-                        case GUI_LABELBUTTON: GuiLabelButton((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text); break;
-                        case GUI_IMAGEBUTTONEX: GuiImageButtonEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, GetTextureDefault(), (Rectangle){0,0,1,1}, layout.controls[i].text); break;
-                        case GUI_CHECKBOX: GuiCheckBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, false); break;
-                        case GUI_TOGGLE: GuiToggle((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, false); break;
-                        case GUI_TOGGLEGROUP: GuiToggleGroup((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, 1); break;
-                        case GUI_COMBOBOX: GuiComboBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, 1); break;
-                        case GUI_DROPDOWNBOX: GuiDropdownBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, &dropdownBoxActive, false); break;
-                        case GUI_TEXTBOX: GuiTextBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
-                        case GUI_TEXTBOXMULTI: GuiTextBoxMulti((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
-                        case GUI_VALUEBOX: GuiValueBox((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, &valueBoxValue, 42, 100, false); break;
-                        case GUI_SPINNER: GuiSpinner((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, &spinnerValue, 42, 3, 25, false); break;
-                        case GUI_SLIDEREX: GuiSliderEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, 42, 0, 100, true); break;
-                        case GUI_SLIDERBAREX: GuiSliderBarEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, 40, 0, 100, true); break;
-                        case GUI_PROGRESSBAREX: GuiProgressBarEx((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, 40, 0, 100, true); break;
-                        case GUI_STATUSBAR: GuiStatusBar((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text, 15); break;
-                        case GUI_SCROLLPANEL: GuiDummyRec((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, "NOT AVAILABLE"); break;
-                        case GUI_LISTVIEW: GuiListView((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, listViewData, 4, &listViewScrollIndex, &listViewActive, false); break;
-                        case GUI_COLORPICKER: GuiColorPicker((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, RED); break;
-                        case GUI_DUMMYREC: GuiDummyRec((Rectangle){ anchorOffset.x + layout.controls[i].rec.x, anchorOffset.y + layout.controls[i].rec.y, layout.controls[i].rec.width, layout.controls[i].rec.height }, layout.controls[i].text); break;
+                        case GUI_LABEL: GuiLabel(rec, layout.controls[i].text); break;
+                        case GUI_BUTTON: GuiButton(rec, layout.controls[i].text); break;
+                        case GUI_LABELBUTTON: GuiLabelButton(rec, layout.controls[i].text); break;
+                        case GUI_IMAGEBUTTONEX: GuiImageButtonEx(rec, GetTextureDefault(), (Rectangle){ 0, 0, 1, 1 }, layout.controls[i].text); break;
+                        case GUI_CHECKBOX: GuiCheckBox(rec, layout.controls[i].text, false); break;
+                        case GUI_TOGGLE: GuiToggle(rec, layout.controls[i].text, false); break;
+                        case GUI_TOGGLEGROUP: GuiToggleGroup(rec, layout.controls[i].text, 1); break;
+                        case GUI_COMBOBOX: GuiComboBox(rec, layout.controls[i].text, 1); break;
+                        case GUI_DROPDOWNBOX: GuiDropdownBox(rec, layout.controls[i].text, &dropdownBoxActive, false); break;
+                        case GUI_TEXTBOX: GuiTextBox(rec, layout.controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
+                        case GUI_TEXTBOXMULTI: GuiTextBoxMulti(rec, layout.controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
+                        case GUI_VALUEBOX: GuiValueBox(rec, &valueBoxValue, 42, 100, false); break;
+                        case GUI_SPINNER: GuiSpinner(rec, &spinnerValue, 42, 3, 25, false); break;
+                        case GUI_SLIDEREX: GuiSliderEx(rec, layout.controls[i].text, 42, 0, 100, true); break;
+                        case GUI_SLIDERBAREX: GuiSliderBarEx(rec, layout.controls[i].text, 40, 0, 100, true); break;
+                        case GUI_PROGRESSBAREX: GuiProgressBarEx(rec, 40, 0, 100, true); break;
+                        case GUI_STATUSBAR: GuiStatusBar(rec, layout.controls[i].text, 15); break;
+                        case GUI_SCROLLPANEL: GuiDummyRec(rec, "NOT AVAILABLE"); break;
+                        case GUI_LISTVIEW: GuiListView(rec, listViewData, 4, &listViewScrollIndex, &listViewActive, false); break;
+                        case GUI_COLORPICKER: GuiColorPicker(rec, RED); break;
+                        case GUI_DUMMYREC: GuiDummyRec(rec, layout.controls[i].text); break;
                         default: break;
                     }
                 }
@@ -2087,7 +2107,9 @@ int main(int argc, char *argv[])
                                 // Draw cursor position
                                 positionColor = MAROON;
                                 if (snapMode) positionColor = LIME;
-                                DrawText(FormatText("[%i, %i, %i, %i]", (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y, (int)defaultRec[selectedType].width, (int)defaultRec[selectedType].height), (int)defaultRec[selectedType].x,(int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
+                                DrawText(FormatText("[%i, %i, %i, %i]", (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y,
+                                         (int)defaultRec[selectedType].width, (int)defaultRec[selectedType].height),
+                                         (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
 
                                 if (showNamesMode)
                                 {
@@ -2125,7 +2147,8 @@ int main(int argc, char *argv[])
                                     for (int i = 0; i < layout.anchorsCount; i++)
                                     {
                                         //layout.anchor[selectedAnchor].name
-                                        Rectangle textboxRec = (Rectangle) {layout.anchors[i].x, layout.anchors[i].y, MeasureText(layout.anchors[i].name, GuiGetStyle(DEFAULT, TEXT_SIZE)) + 10, GuiGetStyle(DEFAULT, TEXT_SIZE) + 5};
+                                        Rectangle textboxRec = (Rectangle) { layout.anchors[i].x, layout.anchors[i].y,
+                                                                             MeasureText(layout.anchors[i].name, GuiGetStyle(DEFAULT, TEXT_SIZE)) + 10, GuiGetStyle(DEFAULT, TEXT_SIZE) + 5};
 
                                         DrawRectangleRec(textboxRec, WHITE);
                                         DrawRectangleRec(textboxRec, Fade(ORANGE, 0.1f));
@@ -2144,7 +2167,7 @@ int main(int argc, char *argv[])
                         }
                     }
                 }
-                
+
                 // Focused anchor draws
                 if (focusedAnchor != 1)
                 {
@@ -2155,12 +2178,15 @@ int main(int argc, char *argv[])
                         if (layout.controls[i].ap->id == focusedAnchor)
                         {
                             if (focusedAnchor == 0) DrawLine(layout.controls[i].ap->x, layout.controls[i].ap->y, layout.controls[i].rec.x, layout.controls[i].rec.y, LIGHTGRAY);
-                            else if (!layout.controls[i].ap->hidding) DrawLine(layout.controls[i].ap->x, layout.controls[i].ap->y, layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, RED);
+                            else if (!layout.controls[i].ap->hidding)
+                            {
+                                DrawLine(layout.controls[i].ap->x, layout.controls[i].ap->y, layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, RED);
+                            }
                             else DrawLine(layout.controls[i].ap->x, layout.controls[i].ap->y, layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, GRAY);
                         }
                     }
                 }
-                
+
                 // Selected anchor draws
                 if (selectedAnchor != -1)
                 {
@@ -2169,10 +2195,26 @@ int main(int argc, char *argv[])
                     if (snapMode) positionColor = LIME;
                     if (!dragMode && precisionMode) positionColor = BLUE;
 
-                    if (selectedAnchor > 0) DrawText(FormatText("[%i, %i]", (int)(layout.anchors[selectedAnchor].x - layout.refWindow.x), (int)(layout.anchors[selectedAnchor].y - layout.refWindow.y)), layout.anchors[selectedAnchor].x + ANCHOR_RADIUS, layout.anchors[selectedAnchor].y - 38, 20, positionColor);
+                    if (selectedAnchor > 0)
+                    {
+                        DrawText(FormatText("[%i, %i]",
+                                            (int)(layout.anchors[selectedAnchor].x - layout.refWindow.x),
+                                            (int)(layout.anchors[selectedAnchor].y - layout.refWindow.y)),
+                                            layout.anchors[selectedAnchor].x + ANCHOR_RADIUS,
+                                            layout.anchors[selectedAnchor].y - 38, 20, positionColor);
+                    }
                     else
                     {
-                        if (layout.refWindow.width > 0 && layout.refWindow.height > 0) DrawText(FormatText("[%i, %i, %i, %i]", (int)(layout.refWindow.x), (int)(layout.refWindow.y), (int)(layout.refWindow.width), (int)(layout.refWindow.height)), layout.anchors[selectedAnchor].x + ANCHOR_RADIUS, layout.anchors[selectedAnchor].y - 38, 20, positionColor);
+                        if ((layout.refWindow.width > 0) && (layout.refWindow.height > 0))
+                        {
+                            DrawText(FormatText("[%i, %i, %i, %i]",
+                                                (int)layout.refWindow.x,
+                                                (int)layout.refWindow.y,
+                                                (int)layout.refWindow.width,
+                                                (int)layout.refWindow.height),
+                                                layout.anchors[selectedAnchor].x + ANCHOR_RADIUS,
+                                                layout.anchors[selectedAnchor].y - 38, 20, positionColor);
+                        }
                         else DrawText(FormatText("[%i, %i]", (int)(layout.refWindow.x), (int)(layout.refWindow.y)), layout.anchors[selectedAnchor].x + ANCHOR_RADIUS, layout.anchors[selectedAnchor].y - 38, 20, positionColor);
                     }
                     // Anchor links
@@ -2182,7 +2224,10 @@ int main(int argc, char *argv[])
                         if (layout.controls[i].ap->id == selectedAnchor)
                         {
                             if (selectedAnchor == 0) DrawLine(layout.controls[i].ap->x, layout.controls[i].ap->y, layout.controls[i].rec.x, layout.controls[i].rec.y, LIGHTGRAY);
-                            else if (!layout.controls[i].ap->hidding) DrawLine(layout.controls[i].ap->x, layout.controls[i].ap->y, layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, RED);
+                            else if (!layout.controls[i].ap->hidding)
+                            {
+                                DrawLine(layout.controls[i].ap->x, layout.controls[i].ap->y, layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, RED);
+                            }
                             else DrawLine(layout.controls[i].ap->x, layout.controls[i].ap->y, layout.controls[i].ap->x + layout.controls[i].rec.x, layout.controls[i].ap->y + layout.controls[i].rec.y, GRAY);
                         }
                     }
@@ -2193,7 +2238,7 @@ int main(int argc, char *argv[])
                         if (selectedAnchor == 0) DrawLine(layout.anchors[selectedAnchor].x, layout.anchors[selectedAnchor].y, mouse.x, mouse.y, BLACK);
                         else DrawLine(layout.anchors[selectedAnchor].x, layout.anchors[selectedAnchor].y, mouse.x, mouse.y, RED);
                     }
-                    
+
                     // Draw name edit mode
                     if (nameEditMode)
                     {
@@ -2209,10 +2254,10 @@ int main(int argc, char *argv[])
                         if (GuiTextBox(textboxRec, layout.anchors[selectedAnchor].name, MAX_ANCHOR_NAME_LENGTH, nameEditMode)) nameEditMode = !nameEditMode;
                     }
                 }
-                
+
                 // Draw multi selected controls
                 if (multiSelectMode) DrawRectangleLinesEx(multiSelectRec, 1, BLACK);
-                
+
                 if (multiSelectCount > 0)
                 {
                     for (int i = 0; i < multiSelectCount; i++)
@@ -2243,7 +2288,7 @@ int main(int argc, char *argv[])
                     }
 
                     DrawRectangleRec(selectedRec, Fade(selectedControlColor, 0.3f));
-                    
+
                     // Control Link
                     if (layout.controls[selectedControl].ap->id > 0) DrawLine(layout.controls[selectedControl].ap->x, layout.controls[selectedControl].ap->y, selectedRec.x, selectedRec.y, RED);
 
@@ -2258,12 +2303,30 @@ int main(int argc, char *argv[])
 
                     if (!useGlobalPos)
                     {
-                        if (layout.controls[selectedControl].ap->id > 0) DrawText(FormatText("[%i, %i, %i, %i]", (int)(layout.controls[selectedControl].rec.x) , (int)(layout.controls[selectedControl].rec.y), (int)layout.controls[selectedControl].rec.width, (int)layout.controls[selectedControl].rec.height), selectedRec.x, selectedRec.y - 30, 20, positionColor);
-                        else DrawText(FormatText("[%i, %i, %i, %i]", (int)(selectedRec.x - layout.refWindow.x) , (int)(selectedRec.y - layout.refWindow.y), (int)layout.controls[selectedControl].rec.width, (int)layout.controls[selectedControl].rec.height), selectedRec.x, selectedRec.y - 30, 20, positionColor);
+                        if (layout.controls[selectedControl].ap->id > 0)
+                        {
+                            DrawText(FormatText("[%i, %i, %i, %i]",
+                                                (int)(layout.controls[selectedControl].rec.x),
+                                                (int)(layout.controls[selectedControl].rec.y),
+                                                (int)layout.controls[selectedControl].rec.width,
+                                                (int)layout.controls[selectedControl].rec.height),
+                                                selectedRec.x, selectedRec.y - 30, 20, positionColor);
+                        }
+                        else DrawText(FormatText("[%i, %i, %i, %i]",
+                                                (int)(selectedRec.x - layout.refWindow.x),
+                                                (int)(selectedRec.y - layout.refWindow.y),
+                                                (int)layout.controls[selectedControl].rec.width,
+                                                (int)layout.controls[selectedControl].rec.height),
+                                                selectedRec.x, selectedRec.y - 30, 20, positionColor);
                     }
                     else
                     {
-                        DrawText(FormatText("[%i, %i, %i, %i]", (int)(selectedRec.x - layout.refWindow.x), (int)(selectedRec.y - layout.refWindow.y), (int)layout.controls[selectedControl].rec.width, (int)layout.controls[selectedControl].rec.height), selectedRec.x, selectedRec.y - 30, 20, positionColor);
+                        DrawText(FormatText("[%i, %i, %i, %i]",
+                                            (int)(selectedRec.x - layout.refWindow.x),
+                                            (int)(selectedRec.y - layout.refWindow.y),
+                                            (int)layout.controls[selectedControl].rec.width,
+                                            (int)layout.controls[selectedControl].rec.height),
+                                            selectedRec.x, selectedRec.y - 30, 20, positionColor);
                     }
 
                     // Text edit
@@ -2271,11 +2334,11 @@ int main(int argc, char *argv[])
                     {
                         Rectangle textboxRec = layout.controls[selectedControl].rec;
                         int type = layout.controls[selectedControl].type;
-                        if (type == GUI_CHECKBOX || 
-                            type == GUI_LABEL || 
-                            type == GUI_TOGGLEGROUP || 
-                            type == GUI_COMBOBOX || 
-                            type == GUI_DROPDOWNBOX || 
+                        if (type == GUI_CHECKBOX ||
+                            type == GUI_LABEL ||
+                            type == GUI_TOGGLEGROUP ||
+                            type == GUI_COMBOBOX ||
+                            type == GUI_DROPDOWNBOX ||
                             type == GUI_SLIDEREX ||
                             type == GUI_SLIDERBAREX)
                         {
@@ -2300,7 +2363,7 @@ int main(int argc, char *argv[])
 
                         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(SKYBLUE, 0.2f));
                         DrawText("Control text edit mode", 20, 25, 20, DARKGRAY);
-                        
+
                         if (layout.controls[selectedControl].type == GUI_TEXTBOXMULTI)
                         {
                             if (GuiTextBoxMulti(textboxRec, layout.controls[selectedControl].text, MAX_CONTROL_TEXTMULTI_LENGTH, textEditMode)) textEditMode = !textEditMode;
@@ -2346,7 +2409,12 @@ int main(int argc, char *argv[])
                     {
                         for (int i = layout.controlsCount - 1; i >= 0; i--)
                         {
-                            if (layout.controls[i].ap->id > 0) DrawText(FormatText("[%i]", layout.controls[i].id), layout.controls[i].rec.x + layout.controls[i].ap->x + layout.controls[i].rec.width, layout.controls[i].rec.y + layout.controls[i].ap->y - 10, 10, BLUE);
+                            if (layout.controls[i].ap->id > 0)
+                            {
+                                DrawText(FormatText("[%i]", layout.controls[i].id),
+                                         layout.controls[i].rec.x + layout.controls[i].ap->x + layout.controls[i].rec.width,
+                                         layout.controls[i].rec.y + layout.controls[i].ap->y - 10, 10, BLUE);
+                            }
                             else DrawText(FormatText("[%i]", layout.controls[i].id), layout.controls[i].rec.x + layout.controls[i].rec.width, layout.controls[i].rec.y - 10, 10, BLUE);
                         }
                     }
@@ -2357,7 +2425,7 @@ int main(int argc, char *argv[])
                 {
                     // Focused rectangle
                     Rectangle focusRec = layout.controls[focusedControl].rec;
-                    
+
                     if (layout.controls[focusedControl].type == GUI_WINDOWBOX) focusRec.height = WINDOW_SATUSBAR_HEIGHT;
                     else if (layout.controls[focusedControl].type == GUI_GROUPBOX)
                     {
@@ -2372,17 +2440,17 @@ int main(int argc, char *argv[])
                     }
 
                     if (focusedControl != selectedControl) DrawRectangleRec(focusRec, Fade(RED, 0.1f));
-                    
+
                     DrawRectangleLinesEx(focusRec, 1, MAROON);
 
                     if (layout.controls[focusedControl].ap->id > 0) DrawLine(layout.controls[focusedControl].ap->x, layout.controls[focusedControl].ap->y, focusRec.x, focusRec.y, RED);
                 }
-                
+
                 // Draw mouse scale mode selector
-                if (mouseScaleReady) 
+                if (mouseScaleReady)
                 {
                     Rectangle selectedRec = layout.controls[selectedControl].rec;
-                    
+
                     if (layout.controls[selectedControl].ap->id > 0)
                     {
                         selectedRec.x += layout.controls[selectedControl].ap->x;
@@ -2390,7 +2458,7 @@ int main(int argc, char *argv[])
                     }
 
                     DrawRectangleLinesEx(selectedRec, 2, RED);
-                    DrawTriangle((Vector2){ selectedRec.x + selectedRec.width - MOUSE_SCALE_MARK_SIZE, selectedRec.y + selectedRec.height }, 
+                    DrawTriangle((Vector2){ selectedRec.x + selectedRec.width - MOUSE_SCALE_MARK_SIZE, selectedRec.y + selectedRec.height },
                                  (Vector2){ selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height },
                                  (Vector2){ selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height - MOUSE_SCALE_MARK_SIZE }, RED);
                 }
@@ -2460,12 +2528,24 @@ int main(int argc, char *argv[])
                 GuiDummyRec((Rectangle){palettePanel.x + paletteRecs[20].x ,palettePanel.y + paletteRecs[20].y, paletteRecs[20].width, paletteRecs[20].height}, "DummyRec");
                 GuiUnlock();
 
-                DrawRectangleRec((Rectangle){palettePanel.x + paletteRecs[selectedType].x, palettePanel.y + paletteRecs[selectedType].y, paletteRecs[selectedType].width, paletteRecs[selectedType].height}, Fade(RED, 0.5f));
+                DrawRectangleRec((Rectangle){ palettePanel.x + paletteRecs[selectedType].x,
+                                              palettePanel.y + paletteRecs[selectedType].y,
+                                              paletteRecs[selectedType].width,
+                                              paletteRecs[selectedType].height }, Fade(RED, 0.5f));
 
                 if (paletteSelect > -1)
                 {
-                    if (selectedType != paletteSelect) DrawRectangleRec((Rectangle){palettePanel.x + paletteRecs[paletteSelect].x, palettePanel.y + paletteRecs[paletteSelect].y, paletteRecs[paletteSelect].width, paletteRecs[paletteSelect].height}, Fade(RED, 0.1f));
-                    DrawRectangleLinesEx((Rectangle){palettePanel.x + paletteRecs[paletteSelect].x, palettePanel.y + paletteRecs[paletteSelect].y, paletteRecs[paletteSelect].width, paletteRecs[paletteSelect].height}, 1, MAROON);
+                    if (selectedType != paletteSelect)
+                    {
+                        DrawRectangleRec((Rectangle){ palettePanel.x + paletteRecs[paletteSelect].x,
+                                                      palettePanel.y + paletteRecs[paletteSelect].y,
+                                                      paletteRecs[paletteSelect].width,
+                                                      paletteRecs[paletteSelect].height}, Fade(RED, 0.1f));
+                    }
+                    DrawRectangleLinesEx((Rectangle){ palettePanel.x + paletteRecs[paletteSelect].x,
+                                                      palettePanel.y + paletteRecs[paletteSelect].y,
+                                                      paletteRecs[paletteSelect].width,
+                                                      paletteRecs[paletteSelect].height }, 1, MAROON);
                 }
             }
             else    // (closingWindowActive || windowCodegenState.codeGenWindowActive || resetWindowActive)
@@ -2529,7 +2609,15 @@ int main(int argc, char *argv[])
             GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, FormatText("MOUSE: (%i, %i)", (int)mouse.x, (int)mouse.y), 15);
             GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (snapMode ? "SNAP: ON" : "SNAP: OFF"), 10);
             GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, FormatText("CONTROLS COUNT: %i", layout.controlsCount), 20);
-            if (selectedControl != -1) GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, FormatText("SELECTED CONTROL: #%03i  |  %s  |  REC (%i, %i, %i, %i)  |  %s", selectedControl, TextToUpper(controlTypeName[layout.controls[selectedControl].type]), (int)layout.controls[selectedControl].rec.x, (int)layout.controls[selectedControl].rec.y, (int)layout.controls[selectedControl].rec.width, (int)layout.controls[selectedControl].rec.height, layout.controls[selectedControl].name), 15);
+            if (selectedControl != -1)
+            {
+                GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24},
+                             FormatText("SELECTED CONTROL: #%03i  |  %s  |  REC (%i, %i, %i, %i)  |  %s",
+                                        selectedControl, TextToUpper(controlTypeName[layout.controls[selectedControl].type]),
+                                        (int)layout.controls[selectedControl].rec.x, (int)layout.controls[selectedControl].rec.y,
+                                        (int)layout.controls[selectedControl].rec.width, (int)layout.controls[selectedControl].rec.height,
+                                        layout.controls[selectedControl].name), 15);
+            }
             else GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, "", 15);
 
             /*
@@ -2808,14 +2896,28 @@ static void LoadLayout(const char *fileName)
                     } break;
                     case 'a':
                     {
-                        sscanf(buffer, "a %03i %s %d %d %d", &layout.anchors[anchorCounter].id, layout.anchors[anchorCounter].name, &layout.anchors[anchorCounter].x, &layout.anchors[anchorCounter].y, &layout.anchors[anchorCounter].enabled);
+                        sscanf(buffer, "a %03i %s %d %d %d",
+                                       &layout.anchors[anchorCounter].id,
+                                       layout.anchors[anchorCounter].name,
+                                       &layout.anchors[anchorCounter].x,
+                                       &layout.anchors[anchorCounter].y,
+                                       &layout.anchors[anchorCounter].enabled);
                         if (TextIsEqual("", layout.anchors[anchorCounter].name)) strcpy(layout.anchors[anchorCounter].name, FormatText("anchor%02i", anchorCounter));
                         if (layout.anchors[anchorCounter].enabled) layout.anchorsCount++;
                         anchorCounter++;
                     } break;
                     case 'c':
                     {
-                        sscanf(buffer, "c %d %d %s %f %f %f %f %d %[^\n]s", &layout.controls[layout.controlsCount].id, &layout.controls[layout.controlsCount].type, layout.controls[layout.controlsCount].name, &layout.controls[layout.controlsCount].rec.x, &layout.controls[layout.controlsCount].rec.y, &layout.controls[layout.controlsCount].rec.width, &layout.controls[layout.controlsCount].rec.height, &anchorId, layout.controls[layout.controlsCount].text);
+                        sscanf(buffer, "c %d %d %s %f %f %f %f %d %[^\n]s",
+                                       &layout.controls[layout.controlsCount].id,
+                                       &layout.controls[layout.controlsCount].type,
+                                       layout.controls[layout.controlsCount].name,
+                                       &layout.controls[layout.controlsCount].rec.x,
+                                       &layout.controls[layout.controlsCount].rec.y,
+                                       &layout.controls[layout.controlsCount].rec.width,
+                                       &layout.controls[layout.controlsCount].rec.height,
+                                       &anchorId,
+                                       layout.controls[layout.controlsCount].text);
                         layout.controls[layout.controlsCount].ap = &layout.anchors[anchorId];
                         layout.controlsCount++;
                     } break;
@@ -2908,15 +3010,29 @@ static void SaveLayout(const char *fileName, bool binary)
             printf("r %i %i %i %i\n", (int)layout.refWindow.x, (int)layout.refWindow.y, (int)layout.refWindow.width, (int)layout.refWindow.height);
             fprintf(rglFile, "r %i %i %i %i\n", (int)layout.refWindow.x, (int)layout.refWindow.y, (int)layout.refWindow.width, (int)layout.refWindow.height);
             fprintf(rglFile, "a %03i %s %i %i %i\n", layout.anchors[0].id, layout.anchors[0].name, layout.anchors[0].x, layout.anchors[0].y, layout.anchors[0].enabled);
-            
+
             for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
             {
-                fprintf(rglFile, "a %03i %s %i %i %i\n", layout.anchors[i].id, layout.anchors[i].name, (int)(layout.anchors[i].x - layout.refWindow.x), (int)(layout.anchors[i].y - layout.refWindow.y), layout.anchors[i].enabled);
+                fprintf(rglFile, "a %03i %s %i %i %i\n",
+                                 layout.anchors[i].id,
+                                 layout.anchors[i].name,
+                                 (int)(layout.anchors[i].x - layout.refWindow.x),
+                                 (int)(layout.anchors[i].y - layout.refWindow.y),
+                                 layout.anchors[i].enabled);
             }
 
             for (int i = 0; i < layout.controlsCount; i++)
             {
-                fprintf(rglFile, "c %03i %i %s %i %i %i %i %i %s\n", layout.controls[i].id, layout.controls[i].type, layout.controls[i].name, (int)layout.controls[i].rec.x, (int)layout.controls[i].rec.y, (int)layout.controls[i].rec.width, (int)layout.controls[i].rec.height, layout.controls[i].ap->id, layout.controls[i].text);
+                fprintf(rglFile, "c %03i %i %s %i %i %i %i %i %s\n",
+                                 layout.controls[i].id,
+                                 layout.controls[i].type,
+                                 layout.controls[i].name,
+                                 (int)layout.controls[i].rec.x,
+                                 (int)layout.controls[i].rec.y,
+                                 (int)layout.controls[i].rec.width,
+                                 (int)layout.controls[i].rec.height,
+                                 layout.controls[i].ap->id,
+                                 layout.controls[i].text);
             }
 
             fclose(rglFile);
@@ -2947,7 +3063,7 @@ static bool DialogSaveLayout(void)
         strcpy(loadedFileName, outFileName);
         SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
         success = true;
-        
+
         saveChangesRequired = false;
     }
 
