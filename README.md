@@ -40,8 +40,6 @@ To compile the code, you need raygui library (single-file header-only) and rayli
 
 ## License
 
-rGuiLayout is **open source software**. rGuiLayout source code is licensed under an unmodified [zlib/libpng license](LICENSE).
+*Copyright (c) 2016-2019 raylib technologies (@raylibtech). All Rights Reserved. Check LICENSE for details.*
 
-Despite being open source and free for everybody willing to compile it, [consider a small donation](https://www.paypal.com/donate/?token=Oo3h2bHS9ux4lNzahXhmH3oaAqQpBeeMy2zNoH1lxHuD5Vdi1-B6XlPRlEyEzLmBb7rGwG) for the development efforts or [contributing to raylib patreon](https://www.patreon.com/raylib) to help the author keep working on open source software for games development.
-
-*Copyright (c) 2016-2018 Ramon Santamaria ([@raysan5](https://twitter.com/raysan5))*
+In case you want a custom version of the tool, just get in touch: ray[at]raylibtech.com
