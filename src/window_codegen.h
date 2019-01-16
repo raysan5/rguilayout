@@ -171,7 +171,7 @@ GuiWindowCodegenState InitGuiWindowCodegen(void)
 void GuiWindowCodegen(GuiWindowCodegenState *state)
 {
     // Const variables
-    const char *Label004Text = "SAMPLE TEXT";    // Label: Label004
+    const char *Label004Text = "SAMPLE TEXT";    // LABEL: Label004
     const char *DropdownBox010TextList[3] = { "ONE", "TWO", "TRHEE" };    // ToggleGroup: DropdownBox010
     const char *Spinner011TextList[3] = { "ONE", "TWO", "TRHEE" };    // ComboBox: Spinner011
     const char *ValueBox012TextList[3] = { "ONE", "TWO", "TRHEE" };    // DropdownBox: ValueBox012
