@@ -186,10 +186,7 @@ int main(int argc, char *argv[])
 
     int movePixel = 1;
     int movePerFrame = 1;
-
     int textArrayPos = 0;
-
-    const char *listViewData[4] = { "One", "Two", "Three", "Four" }; // ListView default data
 
     // Anchors control variables
     GuiAnchorPoint auxAnchor = { 9, 0, 0, 0 };
@@ -1994,7 +1991,7 @@ int main(int argc, char *argv[])
                         case GUI_PROGRESSBAREX: GuiProgressBarEx(rec, 40, 0, 100, true); break;
                         case GUI_STATUSBAR: GuiStatusBar(rec, layout.controls[i].text, 15); break;
                         case GUI_SCROLLPANEL: GuiDummyRec(rec, "NOT AVAILABLE"); break;
-                        case GUI_LISTVIEW: GuiListView(rec, listViewData, 4, &listViewScrollIndex, &listViewActive, false); break;
+                        case GUI_LISTVIEW: GuiListView(rec, "One;Two;Three;Four", &listViewActive, &listViewScrollIndex, false); break;
                         case GUI_COLORPICKER: GuiColorPicker(rec, RED); break;
                         case GUI_DUMMYREC: GuiDummyRec(rec, layout.controls[i].text); break;
                         default: break;
@@ -2092,7 +2089,7 @@ int main(int argc, char *argv[])
                                     case GUI_PROGRESSBAREX: GuiProgressBarEx(defaultRec[selectedTypeDraw], 40, 0, 100, true); break;
                                     case GUI_STATUSBAR: GuiStatusBar(defaultRec[selectedTypeDraw], "STATUS BAR", 15); break;
                                     case GUI_SCROLLPANEL: GuiDummyRec(defaultRec[selectedTypeDraw], "NOT AVAILABLE"); break;
-                                    case GUI_LISTVIEW: GuiListView(defaultRec[selectedTypeDraw], listViewData, 4, &listViewScrollIndex, &listViewActive, false); break;
+                                    case GUI_LISTVIEW: GuiListView(defaultRec[selectedTypeDraw], "One;Two;Three;Four", &listViewActive, &listViewScrollIndex, false); break;
                                     case GUI_COLORPICKER: GuiColorPicker(defaultRec[selectedTypeDraw], RED); break;
                                     case GUI_DUMMYREC: GuiDummyRec(defaultRec[selectedTypeDraw], "DUMMY REC"); break;
                                     default: break;
@@ -2523,7 +2520,7 @@ int main(int argc, char *argv[])
                 GuiSliderBar((Rectangle){palettePanel.x + paletteRecs[15].x ,palettePanel.y + paletteRecs[15].y, paletteRecs[15].width, paletteRecs[15].height}, 50, 0, 100);
                 GuiProgressBar((Rectangle){palettePanel.x + paletteRecs[16].x ,palettePanel.y + paletteRecs[16].y, paletteRecs[16].width, paletteRecs[16].height}, 60, 0, 100);
                 GuiStatusBar((Rectangle){palettePanel.x + paletteRecs[17].x ,palettePanel.y + paletteRecs[17].y, paletteRecs[17].width, paletteRecs[17].height}, "StatusBar", 10);
-                GuiListView((Rectangle){palettePanel.x + paletteRecs[18].x ,palettePanel.y + paletteRecs[18].y, paletteRecs[18].width, paletteRecs[18].height}, listViewData, 3, &listViewScrollIndex, &listViewActive, false);
+                GuiListView((Rectangle){palettePanel.x + paletteRecs[18].x ,palettePanel.y + paletteRecs[18].y, paletteRecs[18].width, paletteRecs[18].height}, "One;Two;Three", &listViewActive, &listViewScrollIndex, false);
                 GuiColorPicker((Rectangle){palettePanel.x + paletteRecs[19].x ,palettePanel.y + paletteRecs[19].y, paletteRecs[19].width, paletteRecs[19].height}, RED);
                 GuiDummyRec((Rectangle){palettePanel.x + paletteRecs[20].x ,palettePanel.y + paletteRecs[20].y, paletteRecs[20].width, paletteRecs[20].height}, "DummyRec");
                 GuiUnlock();
