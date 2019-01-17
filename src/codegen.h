@@ -423,7 +423,7 @@ static void WriteFunctionDrawingH(unsigned char *toolstr, int *pos, GuiLayout la
 // Generic writting code functions (.c/.h)
 //----------------------------------------------------------------------------------
 
-// Write rectangle variables code
+// Write rectangle variables code (.c/.h)
 static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiControl control, bool exportAnchors, bool fullComments, int tabs)
 {
     //sappend(toolstr, pos, FormatText("bool %sActive = true;", control.name));
@@ -443,7 +443,7 @@ static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiControl
     }
 }
 
-// Write anchors code
+// Write anchors code (.c/.h)
 static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs)
 {
     if (config.fullComments)
@@ -477,7 +477,7 @@ static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout layout, Gui
     ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
 }
 
-// Write controls "text as const" code
+// Write controls "text as const" code (.c/.h)
 static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs)
 {
     // Const variables and define text
@@ -502,9 +502,9 @@ static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout layout, G
             case GUI_IMAGEBUTTONEX:
             case GUI_CHECKBOX:
             case GUI_TOGGLE:
-            case GUI_SLIDEREX:
-            case GUI_SLIDERBAREX:
-            case GUI_PROGRESSBAREX:
+            case GUI_SLIDER:
+            case GUI_SLIDERBAR:
+            case GUI_PROGRESSBAR:
             case GUI_TOGGLEGROUP:
             case GUI_COMBOBOX:
             case GUI_DROPDOWNBOX:
@@ -526,7 +526,7 @@ static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout layout, G
     if (drawConstText) ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
 }
 
-// Write controls variables code
+// Write controls variables code (.c/.h)
 static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs)
 {
     if (config.fullComments)
@@ -644,9 +644,9 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
                 sappend(toolstr, pos, ";");
 
             } break;
-            case GUI_SLIDEREX:
-            case GUI_SLIDERBAREX:
-            case GUI_PROGRESSBAREX:
+            case GUI_SLIDER:
+            case GUI_SLIDERBAR:
+            case GUI_PROGRESSBAR:
             {
                 if (define) sappend(toolstr, pos, "float ");
                 else sappend(toolstr, pos, FormatText("%s", preText));
@@ -689,7 +689,7 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
     *pos -= tabs*4 + 1; // Remove last \n\t
 }
 
-// Write controls drawing code (full block)
+// Write controls drawing code (full block) (.c/.h)
 static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, const char *preText, int tabs)
 {
     if (config.fullComments)
@@ -823,7 +823,7 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout lay
     *pos -= (tabs)*4 + 1; // Delete last tabs and \n
 }
 
-// Write control drawing code (individual controls)
+// Write control drawing code (individual controls) (.c/.h)
 static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiControl control, GuiLayoutConfig config, const char *preText)
 {
     char *rec = GetControlRectangleText(index, control, config.defineRecs, config.exportAnchors, true);
@@ -850,9 +850,9 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiCon
         case GUI_TEXTBOXMULTI: sappend(toolstr, pos, FormatText("if (GuiTextBoxMulti(%s, %sText, %i, %sEditMode)) %sEditMode = !%sEditMode;", rec, name, MAX_CONTROL_TEXT_LENGTH, name, name, name)); break;
         case GUI_VALUEBOX: sappend(toolstr, pos, FormatText("if (GuiValueBox(%s, &%sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;", rec, name, name, name, name)); break;
         case GUI_SPINNER: sappend(toolstr, pos, FormatText("if (GuiSpinner(%s, &%sValue, 0, 100, 25, %sEditMode)) %sEditMode = !%sEditMode;", rec, name, name, name, name)); break;
-        case GUI_SLIDEREX: sappend(toolstr, pos, FormatText("%sValue = GuiSliderEx(%s, %s, %sValue, 0, 100, true);", name, rec, text, name)); break;
-        case GUI_SLIDERBAREX: sappend(toolstr, pos, FormatText("%sValue = GuiSliderBarEx(%s, %s, %sValue, 0, 100, true);", name, rec, text, name)); break;
-        case GUI_PROGRESSBAREX: sappend(toolstr, pos, FormatText("%sValue = GuiProgressBarEx(%s, %sValue, 0, 1, true);", name, rec, name)); break;
+        case GUI_SLIDER: sappend(toolstr, pos, FormatText("%sValue = GuiSlider(%s, %s, %sValue, 0, 100, true);", name, rec, text, name)); break;
+        case GUI_SLIDERBAR: sappend(toolstr, pos, FormatText("%sValue = GuiSliderBar(%s, %s, %sValue, 0, 100, true);", name, rec, text, name)); break;
+        case GUI_PROGRESSBAR: sappend(toolstr, pos, FormatText("%sValue = GuiProgressBar(%s, %s, %sValue, 0, 1, true);", name, rec, text, name)); break;
         case GUI_STATUSBAR: sappend(toolstr, pos, FormatText("GuiStatusBar(%s, %s, 15);", rec, text)); break;
         case GUI_SCROLLPANEL: sappend(toolstr, pos, FormatText("%ScrollOffset = GuiScrollPanel(%s, %s, %ScrollOffset)", name, rec, rec, name)); break;
         case GUI_LISTVIEW: sappend(toolstr, pos, FormatText("if (GuiListView(%s, %s, &%sActive, &%sScrollIndex, %sEditMode)) %sEditMode = !%sEditMode;", rec, text, name, name, name, name, name)); break;
@@ -905,9 +905,9 @@ static char *GetControlTextParam(GuiControl control, bool defineText)
         case GUI_IMAGEBUTTONEX:
         case GUI_CHECKBOX:
         case GUI_TOGGLE:
-        case GUI_SLIDEREX:
-        case GUI_SLIDERBAREX:
-        case GUI_PROGRESSBAREX:
+        case GUI_SLIDER:
+        case GUI_SLIDERBAR:
+        case GUI_PROGRESSBAR:
         case GUI_TOGGLEGROUP:
         case GUI_COMBOBOX:
         case GUI_DROPDOWNBOX:
