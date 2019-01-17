@@ -69,7 +69,7 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout lay
 static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiControl control, GuiLayoutConfig config, const char *preText);
 
 // Get controls specific texts functions
-static char *GetControlRectangleText(int index, GuiControl control, bool defineRecs, bool exportAnchors, bool exportH);
+static char *GetControlRectangleText(int index, GuiControl control, bool defineRecs, bool exportAnchors,  const char *preText);
 static char *GetControlTextParam(GuiControl control, bool defineText);
 static char *GetControlNameParam(char *controlName, const char *preText);
 
@@ -735,7 +735,7 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout lay
             {
                 draw[i] = true;
 
-                char *rec = GetControlRectangleText(i, layout.controls[i], config.defineRecs, config.exportAnchors, true);
+                char *rec = GetControlRectangleText(i, layout.controls[i], config.defineRecs, config.exportAnchors, preText);
 
                 sappend(toolstr, pos, FormatText("if (%sActive)", GetControlNameParam(layout.controls[i].name, preText)));
                 ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
@@ -826,7 +826,7 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout lay
 // Write control drawing code (individual controls) (.c/.h)
 static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiControl control, GuiLayoutConfig config, const char *preText)
 {
-    char *rec = GetControlRectangleText(index, control, config.defineRecs, config.exportAnchors, true);
+    char *rec = GetControlRectangleText(index, control, config.defineRecs, config.exportAnchors, preText);
     char *text = GetControlTextParam(control, config.defineTexts);
     char *name = GetControlNameParam(control.name, preText);
 
@@ -863,15 +863,14 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiCon
 }
 
 // Get controls rectangle text
-static char *GetControlRectangleText(int index, GuiControl control, bool defineRecs, bool exportAnchors, bool exportH)
+static char *GetControlRectangleText(int index, GuiControl control, bool defineRecs, bool exportAnchors, const char *preText)
 {
     static char text[512];
     memset(text, 0, 512);
 
-    if (defineRecs)
+    if (defineRecs) 
     {
-        if (exportH) strcpy(text, FormatText("state->layoutRecs[%i]", index));
-        else strcpy(text, FormatText("layoutRecs[%i]", index));
+        strcpy(text, FormatText("%slayoutRecs[%i]", preText, index));
     }
     else
     {
