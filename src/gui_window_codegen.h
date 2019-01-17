@@ -40,13 +40,13 @@ typedef struct {
     bool fullCommentsChecked;
     bool CheckBox019Checked;
     bool CheckBox021Checked;
-    bool exportCodeButtonPressed;   // TODO: Additional variable required by .h for buttons
+    bool exportCodeButtonPressed;
     
     // Custom state variables (depend on development software)
     // NOTE: This variables should be added manually if required
-    unsigned char *generatedCode;   // Generated code string
+    unsigned char *codeText;        // Generated code string
     unsigned int codeHeight;        // Generated code drawing size
-    int codeOffsetY;                // Code drawing Y offset
+    Vector2 codeOffset;             // Code drawing scroll panel offset
     
 } GuiWindowCodegenState;
 
@@ -102,9 +102,9 @@ GuiWindowCodegenState InitGuiWindowCodegen(void)
     state.exportCodeButtonPressed = false; // TODO GEN
     
     // Custom variables initialization
-    state.generatedCode = NULL;
+    state.codeText = NULL;
     state.codeHeight = 0;
-    state.codeOffsetY = 0;
+    state.codeOffset = (Vector2){ 0, 0 };
     
     return state;
 }
@@ -124,8 +124,7 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         if (state->codeTemplateEditMode) GuiLock();
 
         state->codeGenWindowActive = !GuiWindowBox((Rectangle){ 50, 50, 900, 640 }, "Code Generation Window");
-        GuiPanel((Rectangle){ 60, 85, 640, 590 });
-        state->exportCodeButtonPressed = GuiButton((Rectangle){ 715, 605, 220, 30 }, "Export Generated Code");  //TODO
+        state->exportCodeButtonPressed = GuiButton((Rectangle){ 715, 605, 220, 30 }, "Export Generated Code");
         GuiDisable(); if (GuiButton((Rectangle){ 715, 645, 220, 30 }, "Execute Code")) {} GuiEnable();
         GuiGroupBox((Rectangle){ 715, 85, 220, 230 }, "Layout Info");
         GuiLabel((Rectangle){ 725, 95, 50, 25 }, lblNameText);
@@ -150,39 +149,34 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         GuiUnlock();
 
         // Draw generated code
-        if (state->generatedCode != NULL)
+        if (state->codeText != NULL)
         {
-            BeginScissorMode(60, 85, 620, 590);
-                Rectangle codePanel = { 60, 85, 640, 590 };
-                
-                DrawRectangleLines(60, 85, 640, 590, GREEN);
-                
-                int linesCounter = 0;
-                unsigned char *currentLine = state->generatedCode;
+            Rectangle codePanel = { 60, 85, 640, 590 };
+            
+            state->codeOffset = GuiScrollPanel(codePanel, (Rectangle){ codePanel.x, codePanel.y, codePanel.width, state->codeHeight }, state->codeOffset);
+            
+            BeginScissorMode(codePanel.x, codePanel.y, codePanel.width, codePanel.height);
+                unsigned int linesCounter = 0;
+                unsigned char *currentLine = state->codeText;
                 
                 while (currentLine)
                 {
                     char *nextLine = strchr(currentLine, '\n');
-                    if (nextLine) *nextLine = '\0';     // Temporarily terminate the current line
+                    if (nextLine) *nextLine = '\0';     // Temporaly terminating the current line
                     
                     // Only draw lines inside text panel
-                    if (((state->codeOffsetY + 20*linesCounter) >= 0) && 
-                        ((state->codeOffsetY + 20*linesCounter) < (codePanel.height - 2))) DrawText(currentLine, codePanel.x + 10, codePanel.y + state->codeOffsetY + 20*linesCounter, 10, BLUE);
+                    if (((state->codeOffset.y + 20*linesCounter) >= 0) && 
+                        ((state->codeOffset.y + 20*linesCounter) < (codePanel.height - 2))) DrawText(currentLine, codePanel.x + 10, codePanel.y + state->codeOffset.y + 20*linesCounter, 10, DARKBLUE);
                     
                     if (nextLine) *nextLine = '\n';     // Restore newline-char, just to be tidy
                     currentLine = nextLine ? (nextLine + 1) : NULL;
+                    
                     linesCounter++;
                 }
-            EndScissorMode();    
+            EndScissorMode();
             
-            DrawRectangle(codePanel.x + codePanel.width - 11, codePanel.y + 1, 10, codePanel.height - 2, LIGHTGRAY);
-            DrawRectangle(codePanel.x + codePanel.width - 11, codePanel.y - ((codePanel.height - 2)/state->codeHeight)*state->codeOffsetY, 10, ((codePanel.height - 2)/state->codeHeight)*(codePanel.height - 2), DARKGRAY);
-            
-            // Update
             state->codeHeight = 20*linesCounter;
-            state->codeOffsetY += GetMouseWheelMove()*20;
-            if (state->codeOffsetY > 0) state->codeOffsetY = 0;
-            if (state->codeOffsetY < (codePanel.height - state->codeHeight)) state->codeOffsetY = codePanel.height - state->codeHeight;        }
+        }
     }
 }
 

@@ -582,7 +582,7 @@ int main(int argc, char *argv[])
                         //unsigned char *template = LoadText("gui_code_template.c");
                         unsigned char *template = LoadText("gui_window_template.h");
 
-                        windowCodegenState.generatedCode = GenerateLayoutCode(template, layout, config);
+                        windowCodegenState.codeText = GenerateLayoutCode(template, layout, config);
                         windowCodegenState.codeGenWindowActive = true;
 
                         free(template);
@@ -2577,7 +2577,7 @@ int main(int argc, char *argv[])
 
                     if (windowCodegenState.exportCodeButtonPressed)
                     {
-                        DialogExportLayout(windowCodegenState.generatedCode, FormatText("%s.h", config.name));
+                        DialogExportLayout(windowCodegenState.codeText, FormatText("%s.h", config.name));
                         windowCodegenState.codeGenWindowActive = false;
                     }
                 }
@@ -2696,7 +2696,7 @@ int main(int argc, char *argv[])
     //--------------------------------------------------------------------------------------
     UnloadTexture(tracemap);
 
-    if (windowCodegenState.generatedCode != NULL) free(windowCodegenState.generatedCode);
+    if (windowCodegenState.codeText != NULL) free(windowCodegenState.codeText);
     free(undoLayouts);
 
     CloseWindow();        // Close window and OpenGL context
