@@ -579,8 +579,8 @@ int main(int argc, char *argv[])
                         config.defineTexts = windowCodegenState.defineTextsChecked;
                         config.fullComments = windowCodegenState.fullCommentsChecked;
 
-                        unsigned char *template = LoadText("gui_code_template.c");
-                        //unsigned char *template = LoadText("gui_window_template.h");
+                        //unsigned char *template = LoadText("gui_code_template.c");
+                        unsigned char *template = LoadText("gui_window_template.h");
 
                         windowCodegenState.generatedCode = GenerateLayoutCode(template, layout, config);
                         windowCodegenState.codeGenWindowActive = true;
