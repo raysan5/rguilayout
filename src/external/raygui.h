@@ -351,7 +351,7 @@ RAYGUIDEF void GuiDummyRec(Rectangle bounds, const char *text);                 
 
 // Advance controls set
 RAYGUIDEF bool GuiListView(Rectangle bounds, const char *text, int *active, int *scrollIndex, bool editMode);   // List View control, returns selected list element index
-RAYGUIDEF bool GuiListViewEx(Rectangle bounds, char **text, int count, int *enabledElements, int *active, int *focus, int *scrollIndex, bool editMode); // List View with extended parameters
+RAYGUIDEF bool GuiListViewEx(Rectangle bounds, char **text, int count, int *enabled, int *active, int *focus, int *scrollIndex, bool editMode); // List View with extended parameters
 RAYGUIDEF Color GuiColorPicker(Rectangle bounds, Color color);                                          // Color Picker control
 RAYGUIDEF bool GuiMessageBox(Rectangle bounds, const char *windowTitle, const char *message);           // Message Box control, displays a message
 RAYGUIDEF Vector2 GuiGrid(Rectangle bounds, float spacing, int subdivs);                                // Grid
@@ -2292,8 +2292,10 @@ RAYGUIDEF bool GuiListView(Rectangle bounds, const char *text, int *active, int 
 }
 
 // List View control extended parameters
-// NOTE: Elements could be disabled individually and focused element could be obtained
-RAYGUIDEF bool GuiListViewEx(Rectangle bounds, char **text, int count, int *enabledElements, int *active, int *focus, int *scrollIndex, bool editMode)
+// NOTE: Elements could be disabled individually and focused element could be obtained:
+//  int *enabled defines an array with enabled elements inside the list
+//  int *focus returns focused element (may be not pressed)    
+RAYGUIDEF bool GuiListViewEx(Rectangle bounds, char **text, int count, int *enabled, int *active, int *focus, int *scrollIndex, bool editMode)
 {
     GuiControlState state = guiState;
     bool pressed = false;
@@ -2458,7 +2460,7 @@ RAYGUIDEF bool GuiListViewEx(Rectangle bounds, char **text, int count, int *enab
 
             for (int i = startIndex; i < endIndex; i++)
             {
-                if ((enabledElements != NULL) && (enabledElements[i] == 0))
+                if ((enabled != NULL) && (enabled[i] == 0))
                 {
                     GuiDisable();
                     GuiListElement((Rectangle){ posX, bounds.y + GuiGetStyle(LISTVIEW, ELEMENTS_PADDING) + GuiGetStyle(DEFAULT, BORDER_WIDTH) + (i - startIndex)*(GuiGetStyle(LISTVIEW, ELEMENTS_HEIGHT) + GuiGetStyle(LISTVIEW, ELEMENTS_PADDING)), elementWidth, GuiGetStyle(LISTVIEW, ELEMENTS_HEIGHT) }, text[i], false, false);
@@ -2479,7 +2481,7 @@ RAYGUIDEF bool GuiListViewEx(Rectangle bounds, char **text, int count, int *enab
 
             for (int i = startIndex; i < endIndex; i++)
             {
-                if ((enabledElements != NULL) && (enabledElements[i] == 0))
+                if ((enabled != NULL) && (enabled[i] == 0))
                 {
                     GuiDisable();
                     GuiListElement((Rectangle){ posX, bounds.y + GuiGetStyle(LISTVIEW, ELEMENTS_PADDING) + GuiGetStyle(DEFAULT, BORDER_WIDTH) + (i - startIndex)*(GuiGetStyle(LISTVIEW, ELEMENTS_HEIGHT) + GuiGetStyle(LISTVIEW, ELEMENTS_PADDING)), elementWidth, GuiGetStyle(LISTVIEW, ELEMENTS_HEIGHT) }, text[i], false, false);
@@ -2495,7 +2497,7 @@ RAYGUIDEF bool GuiListViewEx(Rectangle bounds, char **text, int count, int *enab
 
             for (int i = startIndex; i < endIndex; i++)
             {
-                if ((enabledElements != NULL) && (enabledElements[i] == 0))
+                if ((enabled != NULL) && (enabled[i] == 0))
                 {
                     GuiDisable();
                     GuiListElement((Rectangle){ posX, bounds.y + GuiGetStyle(LISTVIEW, ELEMENTS_PADDING) + GuiGetStyle(DEFAULT, BORDER_WIDTH) + (i - startIndex)*(GuiGetStyle(LISTVIEW, ELEMENTS_HEIGHT) + GuiGetStyle(LISTVIEW, ELEMENTS_PADDING)), elementWidth, GuiGetStyle(LISTVIEW, ELEMENTS_HEIGHT) }, text[i], false, false);

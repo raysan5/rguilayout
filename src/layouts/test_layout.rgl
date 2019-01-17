@@ -1,7 +1,7 @@
 #
 # rgl text file (v1.0) - raygui layout text file generated using rGuiLayout
 #
-# Total number of controls:     25
+# Total number of controls:     27
 # Anchor info:   a <id> <name> <posx> <posy> <enabled>
 # Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
@@ -39,3 +39,5 @@ c 021 21 ScrollPanel021 460 275 125 75 0
 c 022 22 ListView022 460 355 125 75 0 
 c 023 23 ColorPicker023 50 325 95 95 0 
 c 024 24 MessageBox024 255 365 125 30 0 SAMPLE TEXT
+c 025 4 Label025 1 24 126 25 1 SAMPLE TEXT
+c 026 12 DropdownBox026 4 41 125 25 1 ONE;TWO;THREE
