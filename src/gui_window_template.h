@@ -1,6 +1,6 @@
 /*******************************************************************************************
 *
-*   raygui layout - $(GUILAYOUT_NAME)
+*   $(GUILAYOUT_NAME) v$(GUILAYOUT_VERSION) - $(GUILAYOUT_DESCRIPTION)
 *
 *   MODULE USAGE:
 *       #define GUI_$(GUILAYOUT_NAME_UPPERCASE)_IMPLEMENTATION

@@ -2,9 +2,13 @@
 *
 *   $(GUILAYOUT_NAME) v$(GUILAYOUT_VERSION) - $(GUILAYOUT_DESCRIPTION)
 *
-*   LICENSE: zlib/libpng
+*   LICENSE: Propietary License
 *
-*   Copyright (c) 2018 $(GUILAYOUT_COMPANY)
+*   Copyright (c) 2018 raylib technologies (@raylibtech). All Rights Reserved.
+*
+*   Unauthorized copying of this file, via any medium is strictly prohibited
+*   This project is proprietary and confidential unless the owner allows
+*   usage in any other form by expresely written permission.
 *
 **********************************************************************************************/
 
