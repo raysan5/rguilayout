@@ -26,9 +26,6 @@
 #define MAX_CONTROL_NAME_LENGTH     32      // Maximum length of control name (used on code generation)
 #define MAX_ANCHOR_NAME_LENGTH      32
 
-#define TABAPPEND(x, y, z)          { for (int t = 0; t < z; t++) sappend(x, y, "    "); }
-#define ENDLINEAPPEND(x, y)         sappend(x, y, "\n");
-
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
