@@ -73,6 +73,7 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiCon
 
 // Get controls specific texts functions
 static char *GetControlRectangleText(int index, GuiControl control, bool defineRecs, bool exportAnchors,  const char *preText);
+static char *GetScrollPanelContainerRecText(int index, GuiControl control, bool defineRecs, bool exportAnchors, const char *preText);
 static char *GetControlTextParam(GuiControl control, bool defineText);
 static char *GetControlNameParam(char *controlName, const char *preText);
 
@@ -686,6 +687,17 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
                     TextAppend(toolstr, "{ 0, 0 }", pos);
                 }
                 TextAppend(toolstr, ";", pos);
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+                if (define) TextAppend(toolstr, "Vector2 ", pos);
+                else TextAppend(toolstr, FormatText("%s", preText), pos);
+                TextAppend(toolstr, FormatText("%sContainerOffset", control.name), pos);
+                if (initialize)
+                {
+                    TextAppend(toolstr, " = ", pos);
+                    if(!define) TextAppend(toolstr, "(Vector2)", pos);
+                    TextAppend(toolstr, "{ 0, 0 }", pos);
+                }
+                TextAppend(toolstr, ";", pos);
             // TODO SCROLLPANEL
             break;
             case GUI_GROUPBOX:
@@ -879,7 +891,11 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiCon
         case GUI_SLIDERBAR: TextAppend(toolstr, FormatText("%sValue = GuiSliderBar(%s, %s, %sValue, 0, 100, true);", name, rec, text, name), pos); break;
         case GUI_PROGRESSBAR: TextAppend(toolstr, FormatText("%sValue = GuiProgressBar(%s, %s, %sValue, 0, 1, true);", name, rec, text, name), pos); break;
         case GUI_STATUSBAR: TextAppend(toolstr, FormatText("GuiStatusBar(%s, %s, 15);", rec, text), pos); break;
-        case GUI_SCROLLPANEL: TextAppend(toolstr, FormatText("%sScrollOffset = GuiScrollPanel(%s, %s, %sScrollOffset);", name, rec, rec, name), pos); break;
+        case GUI_SCROLLPANEL: 
+        {
+            char *containerRec = GetScrollPanelContainerRecText(index, control, config.defineRecs, config.exportAnchors, preText);
+            TextAppend(toolstr, FormatText("%sScrollOffset = GuiScrollPanel(%s, %s, %sScrollOffset);", name, containerRec, rec, name), pos); break;
+        }
         case GUI_LISTVIEW: TextAppend(toolstr, FormatText("if (GuiListView(%s, %s, &%sActive, &%sScrollIndex, %sEditMode)) %sEditMode = !%sEditMode;", rec, text, name, name, name, name, name), pos); break;
         case GUI_COLORPICKER: TextAppend(toolstr, FormatText("%sValue = GuiColorPicker(%s, %sValue);", name, rec, name), pos); break;
         case GUI_DUMMYREC: TextAppend(toolstr, FormatText("GuiDummyRec(%s, %s);", rec, text), pos); break;
@@ -911,6 +927,30 @@ static char *GetControlRectangleText(int index, GuiControl control, bool defineR
     }
 
     return text;
+}
+static char *GetScrollPanelContainerRecText(int index, GuiControl control, bool defineRecs, bool exportAnchors, const char *preText)
+{
+    static char text[512];
+    memset(text, 0, 512);
+    
+    if(defineRecs)
+    {
+        strcpy(text, FormatText("(Rectangle){%slayoutRecs[%i].x, %slayoutRecs[%i].y, %slayoutRecs[%i].width - %s%sContainerOffset.x, %slayoutRecs[%i].height - %s%sContainerOffset.y }", preText, index, preText, index, preText, index, preText, control.name, preText, index, preText, control.name));
+    }
+    else
+    {
+        if (exportAnchors && control.ap->id > 0)
+        {
+            strcpy(text, FormatText("(Rectangle){ %s%s.x + %i, %s%s.y + %i, %i - %s%sContainerOffset.x, %i - %s%sContainerOffset.y }", preText, control.ap->name, (int)control.rec.x, preText, control.ap->name, (int)control.rec.y, (int)control.rec.width, preText, control.name, (int)control.rec.height, preText, control.name));
+        }
+        else
+        {
+            // DOING
+            if (control.ap->id > 0) strcpy(text, FormatText("(Rectangle){ %i, %i, %i - %s%sContainerOffset.x, %i - %s%sContainerOffset.y }", (int)control.rec.x + control.ap->x, (int)control.rec.y + control.ap->y, (int)control.rec.width, (int)control.rec.height));
+            else strcpy(text, FormatText("(Rectangle){ %i, %i, %i - %s%sContainerOffset.x, %i - %s%sContainerOffset.y}", (int)control.rec.x - control.ap->x, (int)control.rec.y - control.ap->y, (int)control.rec.width, preText, control.name, (int)control.rec.height, preText, control.name));
+
+        }
+    }
 }
 
 // Get controls parameters text
