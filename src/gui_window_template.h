@@ -1,10 +1,13 @@
 /*******************************************************************************************
 *
-*   $(GUILAYOUT_NAME) v$(GUILAYOUT_VERSION) - $(GUILAYOUT_DESCRIPTION)
+*   $(GUILAYOUT_NAME_PASCALCASE) v$(GUILAYOUT_VERSION) - $(GUILAYOUT_DESCRIPTION)
 *
 *   MODULE USAGE:
 *       #define GUI_$(GUILAYOUT_NAME_UPPERCASE)_IMPLEMENTATION
 *       #include "gui_$(GUILAYOUT_NAME).h"
+*
+*       INIT: Gui$(GUILAYOUT_NAME_PASCALCASE)State state = InitGui$(GUILAYOUT_NAME_PASCALCASE)();
+*       DRAW: Gui$(GUILAYOUT_NAME_PASCALCASE)(&state);
 *
 *   LICENSE: Propietary License
 *
@@ -17,6 +20,10 @@
 **********************************************************************************************/
 
 #include "raylib.h"
+
+// WARNING: raygui implementation is expected to be defined before including this header
+#undef RAYGUI_IMPLEMENTATION
+#include "raygui.h"
 
 #ifndef GUI_$(GUILAYOUT_NAME_UPPERCASE)_H
 #define GUI_$(GUILAYOUT_NAME_UPPERCASE)_H

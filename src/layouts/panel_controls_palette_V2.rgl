@@ -5,38 +5,38 @@
 # Anchor info:   a <id> <name> <posx> <posy> <enabled>
 # Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
-r 425 25 -1 -1
-a 000 anchor00 425 25 1
-a 001 anchor01 0 0 1
-a 002 anchor02 -425 -25 0
-a 003 anchor03 -425 -25 0
-a 004 anchor04 -425 -25 0
-a 005 anchor05 -425 -25 0
-a 006 anchor06 -425 -25 0
-a 007 anchor07 -425 -25 0
-c 000 3 backgroundPanel 0 0 135 950 1 
-c 001 0 windowBox 5 5 125 50 1 WindowBox
-c 002 1 groupBox 5 70 125 30 1 GroupBox
-c 003 2 line 5 105 125 25 1 
-c 004 3 panel 5 135 125 35 1 
-c 005 4 label 5 175 126 25 1 Label SAMPLE TEXT
-c 006 5 button 5 205 125 30 1 Button
-c 007 6 labelBtn 5 240 90 30 1 Label Button
-c 008 7 imageBtn 100 240 30 30 1 ST
-c 009 9 toggle 40 275 90 25 1 Toggle
-c 010 8 checkBox 15 280 15 15 1 
-c 011 13 textBox 5 395 125 25 1 TextBox
-c 012 14 multitextBox 5 425 125 75 1 MultiTextBox
-c 013 15 valueBox 5 505 125 25 1 
-c 014 16 spinner 5 535 125 25 1 
-c 015 17 sliderEx 5 565 125 15 1 
-c 016 18 sliderBarEx 5 585 125 15 1 
-c 017 19 progressBarEx 5 605 125 15 1 
-c 018 20 statusBar 5 625 125 25 1 StatusBar
-c 019 21 scrollPanel 5 655 125 75 1 
-c 020 22 listView 5 735 125 75 1 
-c 021 23 colorPicker 5 815 95 95 1 
-c 022 24 dummyRec 5 915 125 30 1 DummyRec
-c 023 10 ToggleGroup026 5 305 40 25 1 ONE;TWO;THREE
-c 024 11 ComboBox026 5 335 125 25 1 ONE;TWO;THREE
-c 025 12 DropdownBox026 5 365 125 25 1 ONE;TWO;THREE
+r 405 25 -1 -1
+a 000 anchor00 405 25 1
+a 001 mainAnchor 0 0 1
+a 002 anchor02 -405 -25 0
+a 003 anchor03 -405 -25 0
+a 004 anchor04 -405 -25 0
+a 005 anchor05 -405 -25 0
+a 006 anchor06 -405 -25 0
+a 007 anchor07 -405 -25 0
+c 000 21 container 0 0 155 950 1 
+c 001 1 groupBox 25 70 125 30 1 GroupBox
+c 002 0 windowBox 25 5 125 50 1 WindowBox
+c 003 2 line 25 105 125 25 1 
+c 004 3 panel 25 135 125 35 1 
+c 005 4 label 25 175 126 25 1 Label SAMPLE TEXT
+c 006 5 button 25 205 125 30 1 Button
+c 007 6 labelBtn 25 240 90 30 1 Label Button
+c 008 7 imageBtn 120 240 30 30 1 IM
+c 009 9 toggle 60 275 90 25 1 Toggle
+c 010 8 checkBox 35 280 15 15 1 
+c 011 13 textBox 25 395 125 25 1 TextBox
+c 012 14 multitextBox 25 425 125 75 1 MultiTextBox
+c 013 15 valueBox 25 505 125 25 1 
+c 014 16 spinner 25 535 125 25 1 
+c 015 17 sliderEx 25 565 125 15 1 
+c 016 18 sliderBarEx 25 585 125 15 1 
+c 017 19 progressBarEx 25 605 125 15 1 
+c 018 20 statusBar 25 625 125 25 1 StatusBar
+c 019 21 scrollPanel 25 655 125 75 1 
+c 020 22 listView 25 735 125 75 1 ONE;TWO
+c 021 23 colorPicker 25 815 95 95 1 
+c 022 24 dummyRec 25 915 125 30 1 DummyRec
+c 023 10 ToggleGroup026 25 305 40 25 1 ONE;TWO;THREE
+c 024 11 ComboBox026 25 335 125 25 1 ONE;TWO;THREE
+c 025 12 DropdownBox026 25 365 125 25 1 ONE;TWO;THREE

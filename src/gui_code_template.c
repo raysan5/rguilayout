@@ -1,6 +1,6 @@
 /*******************************************************************************************
 *
-*   $(GUILAYOUT_NAME) v$(GUILAYOUT_VERSION) - $(GUILAYOUT_DESCRIPTION)
+*   $(GUILAYOUT_NAME_PASCALCASE) v$(GUILAYOUT_VERSION) - $(GUILAYOUT_DESCRIPTION)
 *
 *   LICENSE: Propietary License
 *
@@ -54,7 +54,7 @@ int main()
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
-            ClearBackground(GetColor(style[DEFAULT_BACKGROUND_COLOR]));
+            ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR))); 
 
             // raygui: controls drawing
             //----------------------------------------------------------------------------------
