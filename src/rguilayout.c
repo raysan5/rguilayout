@@ -276,38 +276,6 @@ int main(int argc, char *argv[])
     int paletteDeltaPositionX = 0;
     bool paletteActive = false;
 
-    // Define palette rectangles
-    Rectangle paletteRecs[CONTROLS_TYPE_NUM] = {
-        (Rectangle){ 5, 5, 125, 50 },     // WindowBox
-        (Rectangle){ 5, 65, 125, 30 },    // GroupBox
-        (Rectangle){ 5, 105, 125, 25 },   // Line
-        (Rectangle){ 5, 140, 125, 35 },   // Panel
-        (Rectangle){ 5, 185, 126, 25 },   // Label
-        (Rectangle){ 5, 220, 125, 30 },   // Button
-        (Rectangle){ 5, 220, 125, 30 },   // LabelButton
-        (Rectangle){ 5, 220, 125, 30 },   // ImageButtonEx
-        (Rectangle){ 105, 265, 15, 15 },  // CheckBox
-        (Rectangle){ 5, 260, 90, 25 },    // Toggle
-        (Rectangle){ 5, 295, 125, 25 },   // ToggleGroup
-        (Rectangle){ 5, 330, 125, 25 },   // ComboBox
-        (Rectangle){ 5, 365, 125, 25 },   // DropdownBox
-        (Rectangle){ 5, 470, 125, 25 },   // TextBox
-        (Rectangle){ 5, 470, 125, 25 },   // TextBoxMulti
-        (Rectangle){ 5, 435, 125, 25 },   // ValueBox
-        (Rectangle){ 5, 400, 125, 25 },   // Spinner
-        (Rectangle){ 5, 505, 125, 15 },   // Slider
-        (Rectangle){ 5, 530, 125, 15 },   // SliderBar
-        (Rectangle){ 5, 555, 125, 15 },   // ProgressBar
-        (Rectangle){ 5, 580, 125, 25 },   // StatusBar
-        (Rectangle){ 5, 580, 125, 25 },   // ScrollPanel
-        (Rectangle){ 5, 615, 125, 75 },   // ListView
-        (Rectangle){ 5, 700, 95, 95 },    // ColorPicker
-        (Rectangle){ 5, 800, 125, 30 },    // MessageBox
-        (Rectangle){ 5, 800, 125, 30 },    // DummyRec
-        (Rectangle){ 5, 800, 125, 30 }    // Grid
-
-    };
-
     // Tracemap (background image for reference) variables
     Texture2D tracemap = { 0 };
     Rectangle tracemapRec = { 0 };
@@ -327,7 +295,7 @@ int main(int argc, char *argv[])
     // Export Window Layout: controls initialization
     //----------------------------------------------------------------------------------------
     GuiWindowCodegenState windowCodegenState = InitGuiWindowCodegen();
-    GuiControlsPaletteState controlsPalettestate = InitGuiControlsPalette();    
+    GuiControlsPaletteState paletteState = InitGuiControlsPalette();    
     //----------------------------------------------------------------------------------------
 
     // Generate code configuration
@@ -649,7 +617,7 @@ int main(int argc, char *argv[])
             helpPositionX = (int)EaseCubicInOut(helpCounter, helpStartPositionX, helpDeltaPositionX, PANELS_EASING_FRAMES);
         }
 
-        // Toggle palette selector
+        // Toggle palette selector        
         palettePanel.x = GetScreenWidth() + paletteOffset;
         if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && (focusedAnchor == -1) && (focusedControl == -1))
         {
@@ -672,7 +640,7 @@ int main(int argc, char *argv[])
         {
             for (int i = 0; i < CONTROLS_TYPE_NUM; i++)
             {
-                if (CheckCollisionPointRec(mouse, (Rectangle){palettePanel.x + paletteRecs[i].x, palettePanel.y + paletteRecs[i].y, paletteRecs[i].width, paletteRecs[i].height}))
+                if (CheckCollisionPointRec(mouse, paletteState.layoutRecs[i+1]))
                 {
                     paletteSelect = i;
                     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) selectedType = i;
@@ -682,6 +650,16 @@ int main(int argc, char *argv[])
                 else paletteSelect = -1;
             }
         }
+        
+        paletteState.containerAnchor.x = palettePanel.x;
+        paletteState.containerAnchor.y = palettePanel.y;
+        paletteState.containerBoundsOffset.y = 950 - GetScreenHeight() + 50;
+        if (paletteState.containerBoundsOffset.y < 0) paletteState.containerBoundsOffset.y = 0;
+        
+        paletteState.controlsAnchor = paletteState.containerAnchor;
+        paletteState.controlsAnchor.y += paletteState.containerScrollOffset.y;
+        
+        UpdateControlsPaletteRecs(&paletteState);
         //----------------------------------------------------------------------------------------------
 
         // Layout edition logic
@@ -709,7 +687,10 @@ int main(int argc, char *argv[])
 
                     // Palette selected control
                     //----------------------------------------------------------------------------------------------
-                    if (focusedControl == -1) selectedType -= GetMouseWheelMove();  // Select type with mouse wheel
+                    if (!CheckCollisionPointRec(mouse, paletteState.layoutRecs[0]))
+                    {
+                        if (focusedControl == -1) selectedType -= GetMouseWheelMove();  // Select type with mouse wheel
+                    }                    
 
                     if (selectedType < GUI_WINDOWBOX) selectedType = GUI_WINDOWBOX;
                     else if (selectedType > GUI_DUMMYREC) selectedType = GUI_DUMMYREC;
@@ -2547,51 +2528,23 @@ int main(int argc, char *argv[])
                 }
 
                 // Draw right panel controls palette
-                GuiControlsPalette(&controlsPalettestate);
-                /*GuiLock();                
-                GuiPanel(palettePanel);
-                GuiWindowBox((Rectangle){palettePanel.x + paletteRecs[0].x ,palettePanel.y + paletteRecs[0].y, paletteRecs[0].width, paletteRecs[0].height}, "WindowBox");
-                GuiGroupBox((Rectangle){palettePanel.x + paletteRecs[1].x ,palettePanel.y + paletteRecs[1].y, paletteRecs[1].width, paletteRecs[1].height}, "GroupBox");
-                GuiLine((Rectangle){palettePanel.x + paletteRecs[2].x ,palettePanel.y + paletteRecs[2].y, paletteRecs[2].width, paletteRecs[2].height}, 1);
-                GuiPanel((Rectangle){palettePanel.x + paletteRecs[3].x ,palettePanel.y + paletteRecs[3].y, paletteRecs[3].width, paletteRecs[3].height});
-                GuiLabel((Rectangle){palettePanel.x + paletteRecs[4].x ,palettePanel.y + paletteRecs[4].y, paletteRecs[4].width, paletteRecs[4].height}, "Label");
-                GuiButton((Rectangle){palettePanel.x + paletteRecs[5].x ,palettePanel.y + paletteRecs[5].y, paletteRecs[5].width, paletteRecs[5].height}, "Button");
-                GuiToggle((Rectangle){palettePanel.x + paletteRecs[6].x ,palettePanel.y + paletteRecs[6].y, paletteRecs[6].width, paletteRecs[6].height}, "Toggle", false);
-                GuiCheckBox((Rectangle){palettePanel.x + paletteRecs[8].x ,palettePanel.y + paletteRecs[8].y, paletteRecs[8].width, paletteRecs[8].height}, "CheckBox", false);
-                GuiToggleGroup((Rectangle){palettePanel.x + paletteRecs[7].x ,palettePanel.y + paletteRecs[7].y, paletteRecs[7].width, paletteRecs[7].height}, "ONE;TWO;THREE", 8);
-                GuiComboBox((Rectangle){palettePanel.x + paletteRecs[9].x ,palettePanel.y + paletteRecs[9].y, paletteRecs[9].width, paletteRecs[9].height}, "ONE;TWO;THREE", 9);
-                GuiDropdownBox((Rectangle){palettePanel.x + paletteRecs[10].x ,palettePanel.y + paletteRecs[10].y, paletteRecs[10].width, paletteRecs[10].height}, "ONE;TWO;THREE", &dropdownBoxActive, false);
-                GuiSpinner((Rectangle){palettePanel.x + paletteRecs[11].x ,palettePanel.y + paletteRecs[11].y, paletteRecs[11].width, paletteRecs[11].height}, &spinnerValue, 0, 100, 25, false);
-                GuiValueBox((Rectangle){palettePanel.x + paletteRecs[12].x ,palettePanel.y + paletteRecs[12].y, paletteRecs[12].width, paletteRecs[12].height}, &valueBoxValue, 0, 100, false);
-                GuiTextBox((Rectangle){palettePanel.x + paletteRecs[13].x ,palettePanel.y + paletteRecs[13].y, paletteRecs[13].width, paletteRecs[13].height}, "TextBox", 7, false);
-                GuiSlider((Rectangle){palettePanel.x + paletteRecs[14].x ,palettePanel.y + paletteRecs[14].y, paletteRecs[14].width, paletteRecs[14].height}, NULL, 40, 0, 100, false);
-                GuiSliderBar((Rectangle){palettePanel.x + paletteRecs[15].x ,palettePanel.y + paletteRecs[15].y, paletteRecs[15].width, paletteRecs[15].height}, NULL, 50, 0, 100, false);
-                GuiProgressBar((Rectangle){palettePanel.x + paletteRecs[16].x ,palettePanel.y + paletteRecs[16].y, paletteRecs[16].width, paletteRecs[16].height}, NULL, 60, 0, 100, false);
-                GuiStatusBar((Rectangle){palettePanel.x + paletteRecs[17].x ,palettePanel.y + paletteRecs[17].y, paletteRecs[17].width, paletteRecs[17].height}, "StatusBar", 10);
-                GuiListView((Rectangle){palettePanel.x + paletteRecs[18].x ,palettePanel.y + paletteRecs[18].y, paletteRecs[18].width, paletteRecs[18].height}, "ONE;TWO;THREE;FOUR", &listViewActive, &listViewScrollIndex, false);
-                GuiColorPicker((Rectangle){palettePanel.x + paletteRecs[19].x ,palettePanel.y + paletteRecs[19].y, paletteRecs[19].width, paletteRecs[19].height}, RED);
-                GuiDummyRec((Rectangle){palettePanel.x + paletteRecs[20].x ,palettePanel.y + paletteRecs[20].y, paletteRecs[20].width, paletteRecs[20].height}, "DummyRec");
-                GuiUnlock();*/
+               
+                GuiControlsPalette(&paletteState);
 
-                DrawRectangleRec((Rectangle){ palettePanel.x + paletteRecs[selectedType].x,
-                                              palettePanel.y + paletteRecs[selectedType].y,
-                                              paletteRecs[selectedType].width,
-                                              paletteRecs[selectedType].height }, Fade(RED, 0.5f));
+                BeginScissorMode(paletteState.containerAnchor.x + 1, paletteState.containerAnchor.y + 1, 150 - 2, 950 - paletteState.containerBoundsOffset.y - 2);     
 
-                if (paletteSelect > -1)
-                {
-                    if (selectedType != paletteSelect)
+                    DrawRectangleRec(paletteState.layoutRecs[selectedType+1], Fade(RED, 0.5f));
+
+                    if (paletteSelect > -1)
                     {
-                        DrawRectangleRec((Rectangle){ palettePanel.x + paletteRecs[paletteSelect].x,
-                                                      palettePanel.y + paletteRecs[paletteSelect].y,
-                                                      paletteRecs[paletteSelect].width,
-                                                      paletteRecs[paletteSelect].height}, Fade(RED, 0.1f));
+                        if (selectedType != paletteSelect)
+                        {
+                            DrawRectangleRec(paletteState.layoutRecs[paletteSelect+1], Fade(RED, 0.1f));
+                        }
+                        DrawRectangleLinesEx(paletteState.layoutRecs[paletteSelect+1], 1, MAROON);
                     }
-                    DrawRectangleLinesEx((Rectangle){ palettePanel.x + paletteRecs[paletteSelect].x,
-                                                      palettePanel.y + paletteRecs[paletteSelect].y,
-                                                      paletteRecs[paletteSelect].width,
-                                                      paletteRecs[paletteSelect].height }, 1, MAROON);
-                }
+                
+                EndScissorMode();
             }
             else    // (closingWindowActive || windowCodegenState.codeGenWindowActive || resetWindowActive)
             {

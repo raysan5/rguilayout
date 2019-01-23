@@ -690,7 +690,7 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
                 ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
                 if (define) TextAppend(toolstr, "Vector2 ", pos);
                 else TextAppend(toolstr, FormatText("%s", preText), pos);
-                TextAppend(toolstr, FormatText("%sContainerOffset", control.name), pos);
+                TextAppend(toolstr, FormatText("%sBoundsOffset", control.name), pos);
                 if (initialize)
                 {
                     TextAppend(toolstr, " = ", pos);
@@ -935,19 +935,19 @@ static char *GetScrollPanelContainerRecText(int index, GuiControl control, bool 
     
     if(defineRecs)
     {
-        strcpy(text, FormatText("(Rectangle){%slayoutRecs[%i].x, %slayoutRecs[%i].y, %slayoutRecs[%i].width - %s%sContainerOffset.x, %slayoutRecs[%i].height - %s%sContainerOffset.y }", preText, index, preText, index, preText, index, preText, control.name, preText, index, preText, control.name));
+        strcpy(text, FormatText("(Rectangle){%slayoutRecs[%i].x, %slayoutRecs[%i].y, %slayoutRecs[%i].width - %s%sBoundsOffset.x, %slayoutRecs[%i].height - %s%sBoundsOffset.y }", preText, index, preText, index, preText, index, preText, control.name, preText, index, preText, control.name));
     }
     else
     {
         if (exportAnchors && control.ap->id > 0)
         {
-            strcpy(text, FormatText("(Rectangle){ %s%s.x + %i, %s%s.y + %i, %i - %s%sContainerOffset.x, %i - %s%sContainerOffset.y }", preText, control.ap->name, (int)control.rec.x, preText, control.ap->name, (int)control.rec.y, (int)control.rec.width, preText, control.name, (int)control.rec.height, preText, control.name));
+            strcpy(text, FormatText("(Rectangle){ %s%s.x + %i, %s%s.y + %i, %i - %s%sBoundsOffset.x, %i - %s%sBoundsOffset.y }", preText, control.ap->name, (int)control.rec.x, preText, control.ap->name, (int)control.rec.y, (int)control.rec.width, preText, control.name, (int)control.rec.height, preText, control.name));
         }
         else
         {
             // DOING
-            if (control.ap->id > 0) strcpy(text, FormatText("(Rectangle){ %i, %i, %i - %s%sContainerOffset.x, %i - %s%sContainerOffset.y }", (int)control.rec.x + control.ap->x, (int)control.rec.y + control.ap->y, (int)control.rec.width, (int)control.rec.height));
-            else strcpy(text, FormatText("(Rectangle){ %i, %i, %i - %s%sContainerOffset.x, %i - %s%sContainerOffset.y}", (int)control.rec.x - control.ap->x, (int)control.rec.y - control.ap->y, (int)control.rec.width, preText, control.name, (int)control.rec.height, preText, control.name));
+            if (control.ap->id > 0) strcpy(text, FormatText("(Rectangle){ %i, %i, %i - %s%sBoundsOffset.x, %i - %s%sBoundsOffset.y }", (int)control.rec.x + control.ap->x, (int)control.rec.y + control.ap->y, (int)control.rec.width, preText, control.name, (int)control.rec.height, preText, control.name));
+            else strcpy(text, FormatText("(Rectangle){ %i, %i, %i - %s%sBoundsOffset.x, %i - %s%sBoundsOffset.y}", (int)control.rec.x - control.ap->x, (int)control.rec.y - control.ap->y, (int)control.rec.width, preText, control.name, (int)control.rec.height, preText, control.name));
 
         }
     }
