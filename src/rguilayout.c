@@ -70,8 +70,7 @@
 
 
 #define ANCHOR_RADIUS               20      // Default anchor radius
-#define MIN_CONTROL_SIZE            10      // Minimum control size
-#define GRID_LINE_SPACING            5      // Grid line spacing in pixels
+#define MIN_CONTROL_SIZE            10      // Minimum control size  
 #define MOUSE_SCALE_MARK_SIZE       12      // Mouse scale mark size (bottom-right corner)
 
 #define MOVEMENT_FRAME_SPEED        10      // Controls movement speed in pixels per frame
@@ -152,6 +151,7 @@ int main(int argc, char *argv[])
     Vector2 mouse = { -1, -1 };             // Mouse position
     bool exitWindow = false;                // Exit window flag
     bool showGrid = true;                   // Show grid flag (KEY_G)
+	int gridLineSpacing = 5;				// Grid line spacing in pixels
 
     // Modes
     bool dragMode = false;                  // Control drag mode
@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
                     snapMode = !snapMode;
                     if (snapMode)
                     {
-                        movePixel = GRID_LINE_SPACING;
+                        movePixel = gridLineSpacing;
                         movePerFrame = MOVEMENT_FRAME_SPEED;
                     }
                     else
@@ -535,7 +535,7 @@ int main(int argc, char *argv[])
                 if (tracemap.id > 0 && IsKeyPressed(KEY_SPACE))
                 {
                     if (tracemapSelected) tracemapBlocked = true;
-                    else if (tracemapBlocked && tracemapFocused) tracemapBlocked = false;
+                    else if (tracemapBlocked) tracemapBlocked = false;
                 }
 
                 if (IsKeyDown(KEY_LEFT_CONTROL))
@@ -566,6 +566,14 @@ int main(int argc, char *argv[])
                         free(template);
                     }
                 }
+
+				// Change grid spacing
+				if (IsKeyDown(KEY_RIGHT_ALT))
+				{
+					if (IsKeyPressed(KEY_UP)) gridLineSpacing++;
+					else if(IsKeyPressed(KEY_DOWN)) gridLineSpacing--;
+					movePixel = gridLineSpacing;
+				}
             }
             
             if (windowCodegenState.codeGenWindowActive)
@@ -674,13 +682,13 @@ int main(int argc, char *argv[])
                     //----------------------------------------------------------------------------------------------
                     if (snapMode && !anchorLinkMode)
                     {
-                        int offsetX = (int)mouse.x%GRID_LINE_SPACING;
-                        int offsetY = (int)mouse.y%GRID_LINE_SPACING;
+                        int offsetX = (int)mouse.x%gridLineSpacing;
+                        int offsetY = (int)mouse.y%gridLineSpacing;
 
-                        if (offsetX >= GRID_LINE_SPACING/2) mouse.x += (GRID_LINE_SPACING - offsetX);
+                        if (offsetX >= gridLineSpacing/2) mouse.x += (gridLineSpacing - offsetX);
                         else mouse.x -= offsetX;
 
-                        if (offsetY >= GRID_LINE_SPACING/2) mouse.y += (GRID_LINE_SPACING - offsetY);
+                        if (offsetY >= gridLineSpacing/2) mouse.y += (gridLineSpacing - offsetY);
                         else mouse.y -= offsetY;
                     }
                     //----------------------------------------------------------------------------------------------
@@ -710,10 +718,10 @@ int main(int argc, char *argv[])
                         int offsetX = (int)defaultRec[selectedType].x%movePixel;
                         int offsetY = (int)defaultRec[selectedType].y%movePixel;
 
-                        if (offsetX >= GRID_LINE_SPACING/2) defaultRec[selectedType].x += (GRID_LINE_SPACING - offsetX);
+                        if (offsetX >= gridLineSpacing/2) defaultRec[selectedType].x += (gridLineSpacing - offsetX);
                         else defaultRec[selectedType].x -= offsetX;
 
-                        if (offsetY >= GRID_LINE_SPACING/2) defaultRec[selectedType].y += (GRID_LINE_SPACING - offsetY);
+                        if (offsetY >= gridLineSpacing/2) defaultRec[selectedType].y += (gridLineSpacing - offsetY);
                         else defaultRec[selectedType].y -= offsetY;
                     }
                     //----------------------------------------------------------------------------------------------
@@ -834,13 +842,13 @@ int main(int argc, char *argv[])
 
                                                     if (snapMode)
                                                     {
-                                                        int offsetX = layout.anchors[i].x%GRID_LINE_SPACING;
-                                                        int offsetY = layout.anchors[i].y%GRID_LINE_SPACING;
+                                                        int offsetX = layout.anchors[i].x%gridLineSpacing;
+                                                        int offsetY = layout.anchors[i].y%gridLineSpacing;
 
-                                                        if (offsetX >= GRID_LINE_SPACING/2) layout.anchors[i].x += (GRID_LINE_SPACING - offsetX);
+                                                        if (offsetX >= gridLineSpacing/2) layout.anchors[i].x += (gridLineSpacing - offsetX);
                                                         else layout.anchors[i].x -= offsetX;
 
-                                                        if (offsetY >= GRID_LINE_SPACING/2) layout.anchors[i].y += (GRID_LINE_SPACING - offsetY);
+                                                        if (offsetY >= gridLineSpacing/2) layout.anchors[i].y += (gridLineSpacing - offsetY);
                                                         else layout.anchors[i].y -= offsetY;
                                                     }
 
@@ -1155,6 +1163,8 @@ int main(int argc, char *argv[])
                                         // Delete selected control
                                         if (IsKeyPressed(KEY_DELETE))
                                         {
+											mouseScaleReady = false;
+
                                             for (int i = selectedControl; i < layout.controlsCount; i++)
                                             {
                                                 layout.controls[i].type = layout.controls[i + 1].type;
@@ -1557,6 +1567,7 @@ int main(int argc, char *argv[])
                                         else if (IsKeyPressed(KEY_H)) layout.anchors[selectedAnchor].hidding = !layout.anchors[selectedAnchor].hidding;
 
                                          // Unlinks controls from selected anchor
+
                                         else if (IsKeyPressed(KEY_U) && selectedAnchor > 0)
                                         {
                                             for (int i = 0; i < layout.controlsCount; i++)
@@ -1657,27 +1668,27 @@ int main(int argc, char *argv[])
                         {
                             if (dragMode)
                             {
-                                int offsetX = (int)mouse.x%GRID_LINE_SPACING;
-                                int offsetY = (int)mouse.y%GRID_LINE_SPACING;
+                                int offsetX = (int)mouse.x%gridLineSpacing;
+                                int offsetY = (int)mouse.y%gridLineSpacing;
 
                                 tracemapRec.x = prevPosition.x + (mouse.x - panOffset.x);
                                 tracemapRec.y = prevPosition.y + (mouse.y - panOffset.y);
 
                                 if (snapMode)
                                 {
-                                    if (offsetX >= GRID_LINE_SPACING/2) mouse.x += (GRID_LINE_SPACING - offsetX);
+                                    if (offsetX >= gridLineSpacing/2) mouse.x += (gridLineSpacing - offsetX);
                                     else mouse.x -= offsetX;
 
-                                    if (offsetY >= GRID_LINE_SPACING/2) mouse.y += (GRID_LINE_SPACING - offsetY);
+                                    if (offsetY >= gridLineSpacing/2) mouse.y += (gridLineSpacing - offsetY);
                                     else mouse.y -= offsetY;
 
-                                    offsetX = (int)tracemapRec.x%GRID_LINE_SPACING;
-                                    offsetY = (int)tracemapRec.y%GRID_LINE_SPACING;
+                                    offsetX = (int)tracemapRec.x%gridLineSpacing;
+                                    offsetY = (int)tracemapRec.y%gridLineSpacing;
 
-                                    if (offsetX >= GRID_LINE_SPACING/2) tracemapRec.x += (GRID_LINE_SPACING - offsetX);
+                                    if (offsetX >= gridLineSpacing/2) tracemapRec.x += (gridLineSpacing - offsetX);
                                     else tracemapRec.x -= offsetX;
 
-                                    if (offsetY >= GRID_LINE_SPACING/2) tracemapRec.y += (GRID_LINE_SPACING - offsetY);
+                                    if (offsetY >= gridLineSpacing/2) tracemapRec.y += (gridLineSpacing - offsetY);
                                     else tracemapRec.y -= offsetY;
                                 }
 
@@ -1821,7 +1832,7 @@ int main(int argc, char *argv[])
                         tracemapFocused = false;
                         tracemapSelected = false;
 
-                        if (CheckCollisionPointRec(mouse, tracemapRec) && focusedControl == -1 && focusedAnchor == -1) tracemapFocused = true;
+                        //if (CheckCollisionPointRec(mouse, tracemapRec) && focusedControl == -1 && focusedAnchor == -1) tracemapFocused = true;
                     }
                     //----------------------------------------------------------------------------------------------
                 }
@@ -1921,7 +1932,7 @@ int main(int argc, char *argv[])
 
             ClearBackground(RAYWHITE);
 
-            if (showGrid) GuiGrid((Rectangle){ 0, 0, GetScreenWidth(), GetScreenHeight() }, GRID_LINE_SPACING, 5);
+            if (showGrid) GuiGrid((Rectangle){ 0, 0, GetScreenWidth(), GetScreenHeight() }, gridLineSpacing, 5);
 
             // Draw the tracemap texture if loaded
             if (tracemap.id > 0)
@@ -2607,6 +2618,8 @@ int main(int argc, char *argv[])
             GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, FormatText("MOUSE: (%i, %i)", (int)mouse.x, (int)mouse.y), 15);
             GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (snapMode ? "SNAP: ON" : "SNAP: OFF"), 10);
             GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, FormatText("CONTROLS COUNT: %i", layout.controlsCount), 20);
+            GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, 100, 24}, FormatText("GRID SIZE: %i", gridLineSpacing), 20);
+
             if (selectedControl != -1)
             {
                 GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24},
@@ -2616,7 +2629,7 @@ int main(int argc, char *argv[])
                                         (int)layout.controls[selectedControl].rec.width, (int)layout.controls[selectedControl].rec.height,
                                         layout.controls[selectedControl].name), 15);
             }
-            else GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, "", 15);
+            else GuiStatusBar((Rectangle){ 447, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, "", 15);
 
             /*
             // Draw UNDO system info

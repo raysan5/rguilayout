@@ -92,7 +92,7 @@ unsigned char *GenerateLayoutCode(unsigned char *buffer, GuiLayout layout, GuiLa
 
     int bufferPos = 0;
     int codePos = 0;
-
+	// TODO: if template is null, then crash...
     int bufferLen = strlen(buffer);
 
     for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
@@ -735,7 +735,7 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout lay
         ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
     }
 
-    bool draw[layout.controlsCount];
+    bool *draw = (bool *)malloc(layout.controlsCount*sizeof(bool));
     for (int i = 0; i < layout.controlsCount; i++) draw[i] = false;
 
     // If dropdown control exist, draw GuiLock condition
@@ -858,6 +858,8 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout lay
     }
 
     *pos -= (tabs)*4 + 1; // Delete last tabs and \n
+
+	free(draw);
 }
 
 // Write control drawing code (individual controls) (.c/.h)
