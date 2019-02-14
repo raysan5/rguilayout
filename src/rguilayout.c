@@ -742,7 +742,7 @@ int main(int argc, char *argv[])
                                     if (!layout.controls[i].ap->hidding)
                                     {
                                         Rectangle layoutRec = layout.controls[i].rec;
-                                        if (layout.controls[i].type == GUI_WINDOWBOX) layoutRec.height = WINDOW_SATUSBAR_HEIGHT;  // Defined inside raygui.h
+                                        if (layout.controls[i].type == GUI_WINDOWBOX) layoutRec.height = WINDOW_STATUSBAR_HEIGHT;  // Defined inside raygui.h
                                         else if (layout.controls[i].type == GUI_GROUPBOX)
                                         {
                                             layoutRec.y -= 10;
@@ -2005,7 +2005,7 @@ int main(int argc, char *argv[])
                             GuiFade(1.0f);
                         }break;
                         case GUI_GROUPBOX: GuiGroupBox(rec, layout.controls[i].text); break;
-                        case GUI_LINE: GuiLine(rec, 1); break;
+                        case GUI_LINE: GuiLine(rec, NULL); break;
                         case GUI_PANEL:
                         {
                             GuiFade(0.8f);
@@ -2024,12 +2024,12 @@ int main(int argc, char *argv[])
                         case GUI_TEXTBOX: GuiTextBox(rec, layout.controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
                         case GUI_TEXTBOXMULTI: GuiTextBoxMulti(rec, layout.controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
                         case GUI_VALUEBOX: GuiValueBox(rec, &valueBoxValue, 42, 100, false); break;
-                        case GUI_SPINNER: GuiSpinner(rec, &spinnerValue, 42, 3, 25, false); break;
+                        case GUI_SPINNER: GuiSpinner(rec, &spinnerValue, 42, 3, false); break;
                         case GUI_SLIDER: GuiSlider(rec, layout.controls[i].text, 42, 0, 100, true); break;
                         case GUI_SLIDERBAR: GuiSliderBar(rec, layout.controls[i].text, 40, 0, 100, true); break;
                         case GUI_PROGRESSBAR: GuiProgressBar(rec, layout.controls[i].text, 40, 0, 100, true); break;
-                        case GUI_STATUSBAR: GuiStatusBar(rec, layout.controls[i].text, 15); break;
-                        case GUI_SCROLLPANEL: GuiScrollPanel(rec, rec, (Vector2){ 0, 0 }); break;
+                        case GUI_STATUSBAR: GuiStatusBar(rec, layout.controls[i].text); break;
+                        case GUI_SCROLLPANEL: GuiScrollPanel(rec, rec, NULL); break;
                         case GUI_LISTVIEW: GuiListView(rec, layout.controls[i].text, &listViewActive, &listViewScrollIndex, false); break;
                         case GUI_COLORPICKER: GuiColorPicker(rec, RED); break;
                         case GUI_DUMMYREC: GuiDummyRec(rec, layout.controls[i].text); break;
@@ -2108,7 +2108,7 @@ int main(int argc, char *argv[])
                                 {
                                     case GUI_WINDOWBOX: GuiWindowBox(defaultRec[selectedTypeDraw], "WINDOW BOX"); break;
                                     case GUI_GROUPBOX: GuiGroupBox(defaultRec[selectedTypeDraw], "GROUP BOX"); break;
-                                    case GUI_LINE: GuiLine(defaultRec[selectedTypeDraw], 1); break;
+                                    case GUI_LINE: GuiLine(defaultRec[selectedTypeDraw], NULL); break;
                                     case GUI_PANEL: GuiPanel(defaultRec[selectedTypeDraw]); break;
                                     case GUI_LABEL: GuiLabel(defaultRec[selectedTypeDraw], "LABEL TEXT"); break;
                                     case GUI_BUTTON: GuiButton(defaultRec[selectedTypeDraw], "BUTTON"); break;
@@ -2122,12 +2122,12 @@ int main(int argc, char *argv[])
                                     case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedTypeDraw], "TEXT BOX", 7, false); break;
                                     case GUI_TEXTBOXMULTI: GuiTextBoxMulti(defaultRec[selectedTypeDraw], "MULTI TEX BOX", 7, false);break;
                                     case GUI_VALUEBOX: GuiValueBox(defaultRec[selectedTypeDraw], &valueBoxValue, 42, 100, false); break;
-                                    case GUI_SPINNER: GuiSpinner(defaultRec[selectedTypeDraw], &spinnerValue, 42, 3, 25, false); break;
+                                    case GUI_SPINNER: GuiSpinner(defaultRec[selectedTypeDraw], &spinnerValue, 42, 3, false); break;
                                     case GUI_SLIDER: GuiSlider(defaultRec[selectedTypeDraw], "SLIDER", 42, 0, 100, true); break;
                                     case GUI_SLIDERBAR: GuiSliderBar(defaultRec[selectedTypeDraw], "SLIDER BAR", 40, 0, 100, true); break;
                                     case GUI_PROGRESSBAR: GuiProgressBar(defaultRec[selectedTypeDraw], "PROGRESS BAR", 40, 0, 100, true); break;
-                                    case GUI_STATUSBAR: GuiStatusBar(defaultRec[selectedTypeDraw], "STATUS BAR", 15); break;
-                                    case GUI_SCROLLPANEL: GuiScrollPanel(defaultRec[selectedTypeDraw], defaultRec[selectedTypeDraw], (Vector2){0,0}); break;
+                                    case GUI_STATUSBAR: GuiStatusBar(defaultRec[selectedTypeDraw], "STATUS BAR"); break;
+                                    case GUI_SCROLLPANEL: GuiScrollPanel(defaultRec[selectedTypeDraw], defaultRec[selectedTypeDraw], NULL); break;
                                     case GUI_LISTVIEW: GuiListView(defaultRec[selectedTypeDraw], "ONE;TWO;THREE;FOUR", &listViewActive, &listViewScrollIndex, false); break;
                                     case GUI_COLORPICKER: GuiColorPicker(defaultRec[selectedTypeDraw], RED); break;
                                     case GUI_DUMMYREC: GuiDummyRec(defaultRec[selectedTypeDraw], "DUMMY REC"); break;
@@ -2162,7 +2162,7 @@ int main(int argc, char *argv[])
                                             if (textboxRec.height < fontSize) textboxRec.height += fontSize;
                                         }
 
-                                        if (type == GUI_WINDOWBOX) textboxRec.height = WINDOW_SATUSBAR_HEIGHT;  // Defined inside raygui.h
+                                        if (type == GUI_WINDOWBOX) textboxRec.height = WINDOW_STATUSBAR_HEIGHT;  // Defined inside raygui.h
                                         else if (type == GUI_GROUPBOX)
                                         {
                                             textboxRec.y -= 10;
@@ -2384,7 +2384,7 @@ int main(int argc, char *argv[])
                             if (textboxRec.height < fontSize) textboxRec.height += fontSize;
                         }
 
-                        if (type == GUI_WINDOWBOX) textboxRec.height = WINDOW_SATUSBAR_HEIGHT;  // Defined inside raygui.h
+                        if (type == GUI_WINDOWBOX) textboxRec.height = WINDOW_STATUSBAR_HEIGHT;  // Defined inside raygui.h
                         else if (type == GUI_GROUPBOX)
                         {
                             textboxRec.y -= 10;
@@ -2420,7 +2420,7 @@ int main(int argc, char *argv[])
                             if (textboxRec.height < fontSize) textboxRec.height += fontSize;
                         }
 
-                        if (type == GUI_WINDOWBOX) textboxRec.height = WINDOW_SATUSBAR_HEIGHT;  // Defined inside raygui.h
+                        if (type == GUI_WINDOWBOX) textboxRec.height = WINDOW_STATUSBAR_HEIGHT;  // Defined inside raygui.h
                         else if (type == GUI_GROUPBOX)
                         {
                             textboxRec.y -= 10;
@@ -2462,7 +2462,7 @@ int main(int argc, char *argv[])
                     // Focused rectangle
                     Rectangle focusRec = layout.controls[focusedControl].rec;
 
-                    if (layout.controls[focusedControl].type == GUI_WINDOWBOX) focusRec.height = WINDOW_SATUSBAR_HEIGHT;
+                    if (layout.controls[focusedControl].type == GUI_WINDOWBOX) focusRec.height = WINDOW_STATUSBAR_HEIGHT;
                     else if (layout.controls[focusedControl].type == GUI_GROUPBOX)
                     {
                         focusRec.y -= 10;
@@ -2510,7 +2510,7 @@ int main(int argc, char *argv[])
                     GuiLabel((Rectangle){ helpPositionX + 30, 30, 0, 0 }, "G - Toggle grid mode");
                     GuiLabel((Rectangle){ helpPositionX + 30, 50, 0, 0 }, "S - Toggle snap to grid mode");
                     GuiLabel((Rectangle){ helpPositionX + 30, 70, 0, 0 }, "F - Toggle control position (global/anchor)");
-                    GuiLine((Rectangle){ helpPositionX + 30, 85, 260, 10 }, 1);
+                    GuiLine((Rectangle){ helpPositionX + 30, 85, 260, 10 }, NULL);
                     GuiLabel((Rectangle){ helpPositionX + 30, 100, 0, 0 }, "SPACE - Lock/unlock control for editing");
                     GuiLabel((Rectangle){ helpPositionX + 30, 120, 0, 0 }, "ARROWS - Edit control position");
                     GuiLabel((Rectangle){ helpPositionX + 30, 140, 0, 0 }, "LSHIFT + ARROWS - Smooth edit position");
@@ -2520,19 +2520,19 @@ int main(int argc, char *argv[])
                     GuiLabel((Rectangle){ helpPositionX + 30, 220, 0, 0 }, "LCTRL + D - Duplicate selected control");
                     GuiLabel((Rectangle){ helpPositionX + 30, 240, 0, 0 }, "LCTRL + N - Resets layout");
                     GuiLabel((Rectangle){ helpPositionX + 30, 260, 0, 0 }, "DEL - Delete selected control");
-                    GuiLine((Rectangle){ helpPositionX + 30, 275, 260, 10 }, 1);
+                    GuiLine((Rectangle){ helpPositionX + 30, 275, 260, 10 }, NULL);
                     GuiLabel((Rectangle){ helpPositionX + 30, 290, 0, 0 }, "T - Control text editing (if possible)");
                     GuiLabel((Rectangle){ helpPositionX + 30, 310, 0, 0 }, "N - Control name editing ");
                     GuiLabel((Rectangle){ helpPositionX + 30, 330, 0, 0 }, "ESC - Exit text/name editing mode");
                     GuiLabel((Rectangle){ helpPositionX + 30, 350, 0, 0 }, "ENTER - Validate text/name edition");
-                    GuiLine((Rectangle){ helpPositionX + 30, 365, 260, 10 }, 1);
+                    GuiLine((Rectangle){ helpPositionX + 30, 365, 260, 10 }, NULL);
                     GuiLabel((Rectangle){ helpPositionX + 30, 380, 0, 0 }, "LALT + UP/DOWN - Control layer order");
-                    GuiLine((Rectangle){ helpPositionX + 30, 395, 260, 10 }, 1);
+                    GuiLine((Rectangle){ helpPositionX + 30, 395, 260, 10 }, NULL);
                     GuiLabel((Rectangle){ helpPositionX + 30, 410, 0, 0 }, "A - Anchor editing mode");
                     GuiLabel((Rectangle){ helpPositionX + 30, 430, 0, 0 }, "RMB - Link anchor to control");
                     GuiLabel((Rectangle){ helpPositionX + 30, 450, 0, 0 }, "U - Unlink control from anchor");
                     GuiLabel((Rectangle){ helpPositionX + 30, 470, 0, 0 }, "H - Hide/Unhide controls for selected anchor");
-                    GuiLine((Rectangle){ helpPositionX + 30, 485, 260, 10 }, 1);
+                    GuiLine((Rectangle){ helpPositionX + 30, 485, 260, 10 }, NULL);
                     GuiLabel((Rectangle){ helpPositionX + 30, 500, 0, 0 }, "LCTRL + S - Save layout file (.rgl)");
                     GuiLabel((Rectangle){ helpPositionX + 30, 520, 0, 0 }, "LCTRL + O - Open layout file (.rgl)");
                     GuiLabel((Rectangle){ helpPositionX + 30, 540, 0, 0 }, "LCTRL + ENTER - Export layout to code");
@@ -2615,10 +2615,10 @@ int main(int argc, char *argv[])
             }
 
             // Draw status bar bottom with debug information
-            GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, FormatText("MOUSE: (%i, %i)", (int)mouse.x, (int)mouse.y), 15);
-            GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (snapMode ? "SNAP: ON" : "SNAP: OFF"), 10);
-            GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, FormatText("CONTROLS COUNT: %i", layout.controlsCount), 20);
-            GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, 100, 24}, FormatText("GRID SIZE: %i", gridLineSpacing), 20);
+            GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, FormatText("MOUSE: (%i, %i)", (int)mouse.x, (int)mouse.y));
+            GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (snapMode ? "SNAP: ON" : "SNAP: OFF"));
+            GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, FormatText("CONTROLS COUNT: %i", layout.controlsCount));
+            GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, 100, 24}, FormatText("GRID SIZE: %i", gridLineSpacing));
 
             if (selectedControl != -1)
             {
@@ -2627,9 +2627,9 @@ int main(int argc, char *argv[])
                                         selectedControl, TextToUpper(controlTypeName[layout.controls[selectedControl].type]),
                                         (int)layout.controls[selectedControl].rec.x, (int)layout.controls[selectedControl].rec.y,
                                         (int)layout.controls[selectedControl].rec.width, (int)layout.controls[selectedControl].rec.height,
-                                        layout.controls[selectedControl].name), 15);
+                                        layout.controls[selectedControl].name));
             }
-            else GuiStatusBar((Rectangle){ 447, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, "", 15);
+            else GuiStatusBar((Rectangle){ 447, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, NULL);
 
             /*
             // Draw UNDO system info

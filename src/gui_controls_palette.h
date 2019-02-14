@@ -186,15 +186,15 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
 
 void GuiControlsPalette(GuiControlsPaletteState *state)
 {
-    state->containerScrollOffset = GuiScrollPanel((Rectangle){state->layoutRecs[0].x, state->layoutRecs[0].y, state->layoutRecs[0].width - state->containerBoundsOffset.x, state->layoutRecs[0].height - state->containerBoundsOffset.y }, state->layoutRecs[0], state->containerScrollOffset);
+    Rectangle view = GuiScrollPanel((Rectangle){state->layoutRecs[0].x, state->layoutRecs[0].y, state->layoutRecs[0].width - state->containerBoundsOffset.x, state->layoutRecs[0].height - state->containerBoundsOffset.y }, state->layoutRecs[0], &state->containerScrollOffset);
 
-    BeginScissorMode(state->containerAnchor.x + 1, state->containerAnchor.y + 1, 150 - 2, 950 - state->containerBoundsOffset.y - 2);     
+    BeginScissorMode(view.x + 1, view.y + 1, view.width - 2, view.height - 2);     
 
         GuiLock();
         
         state->windowBoxActive = !GuiWindowBox(state->layoutRecs[1], "WindowBox");
         GuiGroupBox(state->layoutRecs[2], "GroupBox");
-        GuiLine(state->layoutRecs[3], 1);
+        GuiLine(state->layoutRecs[3], NULL);
         GuiPanel(state->layoutRecs[4]);
         GuiLabel(state->layoutRecs[5], "Label SAMPLE TEXT");
         state->buttonPressed = GuiButton(state->layoutRecs[6], "Button"); 
@@ -207,12 +207,12 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
         if (GuiTextBox(state->layoutRecs[14], state->textBoxText, 64, state->textBoxEditMode)) state->textBoxEditMode = !state->textBoxEditMode;
         if (GuiTextBoxMulti(state->layoutRecs[15], state->multitextBoxText, 64, state->multitextBoxEditMode)) state->multitextBoxEditMode = !state->multitextBoxEditMode;
         if (GuiValueBox(state->layoutRecs[16], &state->valueBoxValue, 0, 100, state->valueBoxEditMode)) state->valueBoxEditMode = !state->valueBoxEditMode;
-        if (GuiSpinner(state->layoutRecs[17], &state->spinnerValue, 0, 100, 25, state->spinnerEditMode)) state->spinnerEditMode = !state->spinnerEditMode;
+        if (GuiSpinner(state->layoutRecs[17], &state->spinnerValue, 0, 100, state->spinnerEditMode)) state->spinnerEditMode = !state->spinnerEditMode;
         state->sliderExValue = GuiSlider(state->layoutRecs[18], "", state->sliderExValue, 0, 100, true);
         state->sliderBarExValue = GuiSliderBar(state->layoutRecs[19], "", state->sliderBarExValue, 0, 100, true);
         state->progressBarExValue = GuiProgressBar(state->layoutRecs[20], "", state->progressBarExValue, 0, 100, true);
-        GuiStatusBar(state->layoutRecs[21], "StatusBar", 15);
-        state->scrollPanelScrollOffset = GuiScrollPanel((Rectangle){state->layoutRecs[22].x, state->layoutRecs[22].y, state->layoutRecs[22].width - state->scrollPanelBoundsOffset.x, state->layoutRecs[22].height - state->scrollPanelBoundsOffset.y }, state->layoutRecs[22], state->scrollPanelScrollOffset);
+        GuiStatusBar(state->layoutRecs[21], "StatusBar");
+        GuiScrollPanel((Rectangle){state->layoutRecs[22].x, state->layoutRecs[22].y, state->layoutRecs[22].width - state->scrollPanelBoundsOffset.x, state->layoutRecs[22].height - state->scrollPanelBoundsOffset.y }, state->layoutRecs[22], &state->scrollPanelScrollOffset);
         if (GuiListView(state->layoutRecs[23], "ONE;TWO", &state->listViewActive, &state->listViewScrollIndex, state->listViewEditMode)) state->listViewEditMode = !state->listViewEditMode;
         state->colorPickerValue = GuiColorPicker(state->layoutRecs[24], state->colorPickerValue);
         GuiDummyRec(state->layoutRecs[25], "DummyRec");

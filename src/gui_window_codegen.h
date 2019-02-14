@@ -153,9 +153,9 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         {
             Rectangle codePanel = { 60, 85, 640, 590 };
             
-            state->codeOffset = GuiScrollPanel(codePanel, (Rectangle){ codePanel.x, codePanel.y, codePanel.width, state->codeHeight }, state->codeOffset);
+            Rectangle view = GuiScrollPanel(codePanel, (Rectangle){ codePanel.x, codePanel.y, codePanel.width, state->codeHeight }, &state->codeOffset);
             
-            BeginScissorMode(codePanel.x, codePanel.y, codePanel.width, codePanel.height);
+            BeginScissorMode(view.x, view.y, view.width, view.height);
                 unsigned int linesCounter = 0;
                 unsigned char *currentLine = state->codeText;
                 
