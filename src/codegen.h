@@ -24,7 +24,7 @@ extern "C" {            // Prevents name mangling of functions
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
-unsigned char *GenerateLayoutCode(unsigned char *buffer, GuiLayout layout, GuiLayoutConfig config);
+unsigned char *GenerateLayoutCode(const unsigned char *buffer, GuiLayout layout, GuiLayoutConfig config);
 
 #ifdef __cplusplus
 }
@@ -82,7 +82,7 @@ static char *GetControlNameParam(char *controlName, const char *preText);
 //----------------------------------------------------------------------------------
 
 // Generate layout code string
-unsigned char *GenerateLayoutCode(unsigned char *buffer, GuiLayout layout, GuiLayoutConfig config)
+unsigned char *GenerateLayoutCode(const unsigned char *buffer, GuiLayout layout, GuiLayoutConfig config)
 {
     #define MAX_CODE_SIZE            1024*512
     #define MAX_VARIABLE_NAME_SIZE   64

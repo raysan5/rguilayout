@@ -43,14 +43,17 @@
 #include "raygui.h"                         // Required for: IMGUI controls
 
 #define CODEGEN_IMPLEMENTATION
-#include "codegen.h"
+#include "codegen.h"                        // Code generation functions
+
+#include "templates.h"                      // Code template files (char buffers)
 
 #undef RAYGUI_IMPLEMENTATION
 #define GUI_WINDOW_CODEGEN_IMPLEMENTATION
-#include "gui_window_codegen.h"
+#include "gui_window_codegen.h"             // GUI: Code generation window
 
 #define GUI_CONTROLS_PALETTE_IMPLEMENTATION
-#include "gui_controls_palette.h"
+#include "gui_controls_palette.h"           // GUI: Controls palette
+
 
 #include "external/easings.h"               // Required for: Easing animations math
 #include "external/tinyfiledialogs.h"       // Required for: Open/Save file dialogs
@@ -557,13 +560,9 @@ int main(int argc, char *argv[])
                         
                         memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
-                        unsigned char *template = LoadText("gui_code_template.c");
-
                         if (windowCodegenState.codeText != NULL) free(windowCodegenState.codeText);
-                        windowCodegenState.codeText = GenerateLayoutCode(template, layout, config);
+                        windowCodegenState.codeText = GenerateLayoutCode(guiTemplateStandardCode, layout, config);
                         windowCodegenState.codeGenWindowActive = true;
-
-                        free(template);
                     }
                 }
 
@@ -590,9 +589,9 @@ int main(int argc, char *argv[])
                 if ((currentCodeTemplate != windowCodegenState.codeTemplateActive) ||
                     (memcmp(&config, &prevConfig, sizeof(GuiLayoutConfig)) != 0))
                 {
-                    unsigned char *template = NULL;
-                    if (windowCodegenState.codeTemplateActive == 0) template = LoadText("gui_code_template.c");
-                    else if (windowCodegenState.codeTemplateActive >= 1) template = LoadText("gui_window_template.h");
+                    const unsigned char *template = NULL;
+                    if (windowCodegenState.codeTemplateActive == 0) template = guiTemplateStandardCode;
+                    else if (windowCodegenState.codeTemplateActive >= 1) template = guiTemplateHeaderOnly;
                     //else if (windowCodegenState.codeTemplateActive == 2) template = LoadText(/*custom_template*/);
                     currentCodeTemplate = windowCodegenState.codeTemplateActive;
                     
@@ -601,8 +600,6 @@ int main(int argc, char *argv[])
                     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
                     
                     windowCodegenState.codeOffset = (Vector2){ 0, 0 };
-                    
-                    free(template);
                 }
             }
         }
