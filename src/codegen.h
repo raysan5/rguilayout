@@ -952,6 +952,8 @@ static char *GetScrollPanelContainerRecText(int index, GuiControl control, bool 
 
         }
     }
+
+	return text;
 }
 
 // Get controls parameters text

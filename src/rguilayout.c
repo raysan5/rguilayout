@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
         (Rectangle){ 0, 0, 32, 32 },            // GUI_IMAGEBUTTONEX
         (Rectangle){ 0, 0, 15, 15},             // GUI_CHECKBOX
         (Rectangle){ 0, 0, 90, 25 },            // GUI_TOGGLE
-        (Rectangle){ 0, 0, 125/3, 25 },           // GUI_TOGGLEGROUP
+        (Rectangle){ 0, 0, 125/3, 25 },         // GUI_TOGGLEGROUP
         (Rectangle){ 0, 0, 125, 25 },           // GUI_COMBOBOX
         (Rectangle){ 0, 0, 125, 25 },           // GUI_DROPDOWNBOX
         (Rectangle){ 0, 0, 125, 25 },           // GUI_TEXTBOX
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
         (Rectangle){ 0, 0, 125, 75 },           // GUI_SCROLLPANEL
         (Rectangle){ 0, 0, 125, 75 },           // GUI_LISTVIEW
         (Rectangle){ 0, 0, 95, 95 },            // GUI_COLORPICKER
-        (Rectangle){ 0, 0, 125, 30 },            // GUI_DUMMYREC
+        (Rectangle){ 0, 0, 125, 30 },           // GUI_DUMMYREC
     };
 
     // Initialize anchor points to default values
@@ -2536,12 +2536,11 @@ int main(int argc, char *argv[])
                 }
 
                 // Draw right panel controls palette
-               
                 GuiControlsPalette(&paletteState);
 
                 BeginScissorMode(paletteState.containerAnchor.x + 1, paletteState.containerAnchor.y + 1, 150 - 2, 950 - paletteState.containerBoundsOffset.y - 2);     
 
-                    DrawRectangleRec(paletteState.layoutRecs[selectedType+1], Fade(RED, 0.5f));
+                    DrawRectangleRec(paletteState.layoutRecs[selectedType + 1], Fade(RED, 0.5f));
 
                     if (paletteSelect > -1)
                     {
@@ -3086,12 +3085,8 @@ static void DialogExportLayout(unsigned char *toolstr, const char *name)
 
     if (fileName != NULL)
     {
-        char outFileName[256] = { 0 };
-        strcpy(outFileName, fileName);
-        if (GetExtension(fileName) == NULL) strcat(outFileName, ".c\0");     // No extension provided
-
         // Write code string to file
-        FILE *ftool = fopen(outFileName, "wt");
+        FILE *ftool = fopen(fileName, "wt");
         fprintf(ftool, toolstr);
         fclose(ftool);
     }

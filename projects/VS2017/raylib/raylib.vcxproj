@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\raylib\src\core.c" />
-    <ClCompile Include="..\..\..\..\raylib\src\external\mini_al.c" />
     <ClCompile Include="..\..\..\..\raylib\src\models.c" />
     <ClCompile Include="..\..\..\..\raylib\src\raudio.c" />
     <ClCompile Include="..\..\..\..\raylib\src\rglfw.c" />
