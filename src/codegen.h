@@ -92,7 +92,6 @@ unsigned char *GenerateLayoutCode(const unsigned char *buffer, GuiLayout layout,
 
     int bufferPos = 0;
     int codePos = 0;
-	// TODO: if template is null, then crash...
     int bufferLen = strlen(buffer);
 
     for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
@@ -874,7 +873,7 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiCon
     {
         case GUI_WINDOWBOX: TextAppend(toolstr, FormatText("%sActive = !GuiWindowBox(%s, %s);", name, rec, text), pos); break;
         case GUI_GROUPBOX: TextAppend(toolstr, FormatText("GuiGroupBox(%s, %s);", rec, text), pos); break;
-        case GUI_LINE: TextAppend(toolstr, FormatText("GuiLine(%s, 1);", rec), pos); break;
+        case GUI_LINE: TextAppend(toolstr, FormatText("GuiLine(%s, NULL);", rec), pos); break;
         case GUI_PANEL: TextAppend(toolstr, FormatText("GuiPanel(%s);", rec), pos); break;
         case GUI_LABEL: TextAppend(toolstr, FormatText("GuiLabel(%s, %s);", rec, text), pos); break;
         case GUI_BUTTON: TextAppend(toolstr, FormatText("%sPressed = GuiButton(%s, %s); ", name, rec, text), pos); break;
@@ -892,7 +891,7 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiCon
         case GUI_SLIDER: TextAppend(toolstr, FormatText("%sValue = GuiSlider(%s, %s, %sValue, 0, 100, true);", name, rec, text, name), pos); break;
         case GUI_SLIDERBAR: TextAppend(toolstr, FormatText("%sValue = GuiSliderBar(%s, %s, %sValue, 0, 100, true);", name, rec, text, name), pos); break;
         case GUI_PROGRESSBAR: TextAppend(toolstr, FormatText("%sValue = GuiProgressBar(%s, %s, %sValue, 0, 1, true);", name, rec, text, name), pos); break;
-        case GUI_STATUSBAR: TextAppend(toolstr, FormatText("GuiStatusBar(%s, %s, 15);", rec, text), pos); break;
+        case GUI_STATUSBAR: TextAppend(toolstr, FormatText("GuiStatusBar(%s, %s);", rec, text), pos); break;
         case GUI_SCROLLPANEL: 
         {
             char *containerRec = GetScrollPanelContainerRecText(index, control, config.defineRecs, config.exportAnchors, preText);

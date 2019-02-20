@@ -634,14 +634,13 @@ int main(int argc, char *argv[])
 
             paletteActive = !paletteActive;
         }
+
         if (paletteCounter <= PANELS_EASING_FRAMES)
         {
             paletteCounter++;
             paletteOffset = (int)EaseCubicInOut(paletteCounter, paletteStartPositionX, paletteDeltaPositionX, PANELS_EASING_FRAMES);
         }
-
-        // Controls palette selector logic
-        else if (paletteActive)
+        else if (paletteActive)     // Controls palette selector logic
         {
             for (int i = 0; i < CONTROLS_TYPE_NUM; i++)
             {
@@ -1557,6 +1556,7 @@ int main(int argc, char *argv[])
                                             if (selectedAnchor == 0 && anchorEditMode) refWindowEditMode = true;
                                             else dragMode = true;
                                         }
+                                        
                                         // Activate anchor link mode
                                         else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) anchorLinkMode = true;
 
