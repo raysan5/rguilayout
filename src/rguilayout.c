@@ -2830,7 +2830,7 @@ static void ProcessCommandLine(int argc, char *argv[])
         config.fullComments = true;
 
         // Generate C code for gui layout.controls
-        unsigned char *toolstr = GenerateLayoutCode(LoadText("gui_code_template.c"), layout, config);
+        unsigned char *toolstr = GenerateLayoutCode(guiTemplateStandardCode, layout, config);
         FILE *ftool = fopen(outFileName, "wt");
         fprintf(ftool, toolstr);    // Write code string to file
         fclose(ftool);
