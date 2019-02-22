@@ -2612,7 +2612,7 @@ int main(int argc, char *argv[])
 
             // Draw status bar bottom with debug information
             GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, FormatText("MOUSE: (%i, %i)", (int)mouse.x, (int)mouse.y));
-            GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (snapMode ? "SNAP: ON" : "SNAP: OFF"));
+            GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (snapMode? "SNAP: ON" : "SNAP: OFF"));
             GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, FormatText("CONTROLS COUNT: %i", layout.controlsCount));
             GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, 100, 24}, FormatText("GRID SIZE: %i", gridLineSpacing));
 
@@ -2808,7 +2808,7 @@ static void ProcessCommandLine(int argc, char *argv[])
 
         printf("\nInput file:       %s", inFileName);
         printf("\nOutput file:      %s", outFileName);
-        //printf("\nOutput params:    %i Hz, %i bits, %s\n\n", sampleRate, sampleSize, (channels == 1) ? "Mono" : "Stereo");
+        //printf("\nOutput params:    %i Hz, %i bits, %s\n\n", sampleRate, sampleSize, (channels == 1)? "Mono" : "Stereo");
 
         // Support .rlg layout processing to generate .c
         LoadLayout(argv[1]);    // Updates global: layout.controls
