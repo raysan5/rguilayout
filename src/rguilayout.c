@@ -73,7 +73,7 @@
 
 
 #define ANCHOR_RADIUS               20      // Default anchor radius
-#define MIN_CONTROL_SIZE            10      // Minimum control size  
+#define MIN_CONTROL_SIZE            10      // Minimum control size
 #define MOUSE_SCALE_MARK_SIZE       12      // Mouse scale mark size (bottom-right corner)
 
 #define MOVEMENT_FRAME_SPEED        10      // Controls movement speed in pixels per frame
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
     Vector2 mouse = { -1, -1 };             // Mouse position
     bool exitWindow = false;                // Exit window flag
     bool showGrid = true;                   // Show grid flag (KEY_G)
-	int gridLineSpacing = 5;				// Grid line spacing in pixels
+    int gridLineSpacing = 5;                // Grid line spacing in pixels
 
     // Modes
     bool dragMode = false;                  // Control drag mode
@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
     // Export Window Layout: controls initialization
     //----------------------------------------------------------------------------------------
     GuiWindowCodegenState windowCodegenState = InitGuiWindowCodegen();
-    GuiControlsPaletteState paletteState = InitGuiControlsPalette();    
+    GuiControlsPaletteState paletteState = InitGuiControlsPalette();
     //----------------------------------------------------------------------------------------
 
     // Generate code configuration
@@ -312,7 +312,7 @@ int main(int argc, char *argv[])
     config.defineTexts = false;
     config.fullComments = false;
     int currentCodeTemplate = 0;
-    
+
     GuiLayoutConfig prevConfig = { 0 };
     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
@@ -557,7 +557,7 @@ int main(int argc, char *argv[])
                         config.defineRecs = windowCodegenState.defineRecsChecked;
                         config.defineTexts = windowCodegenState.defineTextsChecked;
                         config.fullComments = windowCodegenState.fullCommentsChecked;
-                        
+
                         memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
                         if (windowCodegenState.codeText != NULL) free(windowCodegenState.codeText);
@@ -566,15 +566,15 @@ int main(int argc, char *argv[])
                     }
                 }
 
-				// Change grid spacing
-				if (IsKeyDown(KEY_RIGHT_ALT))
-				{
-					if (IsKeyPressed(KEY_UP)) gridLineSpacing++;
-					else if(IsKeyPressed(KEY_DOWN)) gridLineSpacing--;
-					movePixel = gridLineSpacing;
-				}
+                // Change grid spacing
+                if (IsKeyDown(KEY_RIGHT_ALT))
+                {
+                    if (IsKeyPressed(KEY_UP)) gridLineSpacing++;
+                    else if(IsKeyPressed(KEY_DOWN)) gridLineSpacing--;
+                    movePixel = gridLineSpacing;
+                }
             }
-            
+
             if (windowCodegenState.codeGenWindowActive)
             {
                 strcpy(config.name, windowCodegenState.toolNameText);
@@ -594,11 +594,11 @@ int main(int argc, char *argv[])
                     else if (windowCodegenState.codeTemplateActive >= 1) template = guiTemplateHeaderOnly;
                     //else if (windowCodegenState.codeTemplateActive == 2) template = LoadText(/*custom_template*/);
                     currentCodeTemplate = windowCodegenState.codeTemplateActive;
-                    
+
                     if (windowCodegenState.codeText != NULL) free(windowCodegenState.codeText);
                     windowCodegenState.codeText = GenerateLayoutCode(template, layout, config);
                     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
-                    
+
                     windowCodegenState.codeOffset = (Vector2){ 0, 0 };
                 }
             }
@@ -622,7 +622,7 @@ int main(int argc, char *argv[])
             helpPositionX = (int)EaseCubicInOut(helpCounter, helpStartPositionX, helpDeltaPositionX, PANELS_EASING_FRAMES);
         }
 
-        // Toggle palette selector        
+        // Toggle palette selector
         palettePanel.x = GetScreenWidth() + paletteOffset;
         if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && (focusedAnchor == -1) && (focusedControl == -1))
         {
@@ -654,15 +654,15 @@ int main(int argc, char *argv[])
                 else paletteSelect = -1;
             }
         }
-        
+
         paletteState.containerAnchor.x = palettePanel.x;
         paletteState.containerAnchor.y = palettePanel.y;
         paletteState.containerBoundsOffset.y = 950 - GetScreenHeight() + 50;
         if (paletteState.containerBoundsOffset.y < 0) paletteState.containerBoundsOffset.y = 0;
-        
+
         paletteState.controlsAnchor = paletteState.containerAnchor;
         paletteState.controlsAnchor.y += paletteState.containerScrollOffset.y;
-        
+
         UpdateControlsPaletteRecs(&paletteState);
         //----------------------------------------------------------------------------------------------
 
@@ -694,7 +694,7 @@ int main(int argc, char *argv[])
                     if (!CheckCollisionPointRec(mouse, paletteState.layoutRecs[0]))
                     {
                         if (focusedControl == -1) selectedType -= GetMouseWheelMove();  // Select type with mouse wheel
-                    }                    
+                    }
 
                     if (selectedType < GUI_WINDOWBOX) selectedType = GUI_WINDOWBOX;
                     else if (selectedType > GUI_DUMMYREC) selectedType = GUI_DUMMYREC;
@@ -799,7 +799,7 @@ int main(int argc, char *argv[])
                                         {
                                             strcpy(layout.controls[layout.controlsCount].text, "ONE;TWO;THREE");
                                         }
-                                        
+
                                         if ((layout.controls[layout.controlsCount].type == GUI_IMAGEBUTTONEX))
                                         {
                                             strcpy(layout.controls[layout.controlsCount].text, "IM");
@@ -1159,7 +1159,7 @@ int main(int argc, char *argv[])
                                         // Delete selected control
                                         if (IsKeyPressed(KEY_DELETE))
                                         {
-											mouseScaleReady = false;
+                                            mouseScaleReady = false;
 
                                             for (int i = selectedControl; i < layout.controlsCount; i++)
                                             {
@@ -1556,7 +1556,7 @@ int main(int argc, char *argv[])
                                             if (selectedAnchor == 0 && anchorEditMode) refWindowEditMode = true;
                                             else dragMode = true;
                                         }
-                                        
+
                                         // Activate anchor link mode
                                         else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) anchorLinkMode = true;
 
@@ -2538,7 +2538,7 @@ int main(int argc, char *argv[])
                 // Draw right panel controls palette
                 GuiControlsPalette(&paletteState);
 
-                BeginScissorMode(paletteState.containerAnchor.x + 1, paletteState.containerAnchor.y + 1, 150 - 2, 950 - paletteState.containerBoundsOffset.y - 2);     
+                BeginScissorMode(paletteState.containerAnchor.x + 1, paletteState.containerAnchor.y + 1, 150 - 2, 950 - paletteState.containerBoundsOffset.y - 2);
 
                     DrawRectangleRec(paletteState.layoutRecs[selectedType + 1], Fade(RED, 0.5f));
 
@@ -2550,7 +2550,7 @@ int main(int argc, char *argv[])
                         }
                         DrawRectangleLinesEx(paletteState.layoutRecs[paletteSelect+1], 1, MAROON);
                     }
-                
+
                 EndScissorMode();
             }
             else    // (closingWindowActive || windowCodegenState.codeGenWindowActive || resetWindowActive)
