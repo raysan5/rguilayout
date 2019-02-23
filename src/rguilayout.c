@@ -67,10 +67,7 @@
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
-#define VERSION_ONE                         // Enable PRO version features
-
 #define TOOL_VERSION_TEXT     "2.0-dev"     // Tool version string
-
 
 #define ANCHOR_RADIUS               20      // Default anchor radius
 #define MIN_CONTROL_SIZE            10      // Minimum control size
@@ -212,7 +209,7 @@ int main(int argc, char *argv[])
     bool helpActive = false;
 
     // Rectangles used on controls preview drawing
-    Rectangle defaultRec[CONTROLS_TYPE_NUM] = {
+    Rectangle defaultRec[26] = {
         (Rectangle){ 0, 0, 125, 50},            // GUI_WINDOWBOX
         (Rectangle){ 0, 0, 125, 30},            // GUI_GROUPBOX
         (Rectangle){ 0, 0, 125, 25 },           // GUI_LINE
@@ -238,6 +235,7 @@ int main(int argc, char *argv[])
         (Rectangle){ 0, 0, 125, 75 },           // GUI_LISTVIEW
         (Rectangle){ 0, 0, 95, 95 },            // GUI_COLORPICKER
         (Rectangle){ 0, 0, 125, 30 },           // GUI_DUMMYREC
+        (Rectangle){ 0, 0, 0, 0 },              // ???
     };
 
     // Initialize anchor points to default values
@@ -271,13 +269,13 @@ int main(int argc, char *argv[])
     layout.refWindow = (Rectangle){ 0, 0, -1, -1};
 
     // Define palette variables
-    Rectangle palettePanel = { 0, 15, 135, 835 };
+    Rectangle palettePanel = { 800, 15, 135, 835 };
     int paletteOffset = 0;
     int paletteSelect = -1;
     int paletteCounter = PANELS_EASING_FRAMES;
     int paletteStartPositionX = GetScreenWidth() + 130;
     int paletteDeltaPositionX = 0;
-    bool paletteActive = false;
+    bool paletteActive = true;
 
     // Tracemap (background image for reference) variables
     Texture2D tracemap = { 0 };
@@ -622,29 +620,39 @@ int main(int argc, char *argv[])
             helpPositionX = (int)EaseCubicInOut(helpCounter, helpStartPositionX, helpDeltaPositionX, PANELS_EASING_FRAMES);
         }
 
+        // Palette panel logic
+        // TODO: WARNING: This code on -O2, crashes the program!
+        // TODO: Redesign controls palette logic...
+        //----------------------------------------------------------------------------------------------
         // Toggle palette selector
+        /*
         palettePanel.x = GetScreenWidth() + paletteOffset;
         if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && (focusedAnchor == -1) && (focusedControl == -1))
         {
             paletteCounter = 0;
             paletteStartPositionX = paletteOffset;
 
-            if (paletteActive) paletteDeltaPositionX = 0 - paletteStartPositionX;
+            if (paletteActive) paletteDeltaPositionX = -paletteStartPositionX;
             else paletteDeltaPositionX = -(palettePanel.width + 15) - paletteStartPositionX;
 
             paletteActive = !paletteActive;
         }
-
+        */
+        /*
         if (paletteCounter <= PANELS_EASING_FRAMES)
         {
             paletteCounter++;
             paletteOffset = (int)EaseCubicInOut(paletteCounter, paletteStartPositionX, paletteDeltaPositionX, PANELS_EASING_FRAMES);
         }
-        else if (paletteActive)     // Controls palette selector logic
+        else 
+        */
+        if (paletteActive)     // Controls palette selector logic
         {
-            for (int i = 0; i < CONTROLS_TYPE_NUM; i++)
+            // WARNING: CONTROLS_TYPE_NUM = 32, max layoutRecs = 26!!!
+            for (int i = 0; i < 26; i++)
             {
-                if (CheckCollisionPointRec(mouse, paletteState.layoutRecs[i+1]))
+                /*
+                if (CheckCollisionPointRec(mouse, paletteState.layoutRecs[i + 1]))      // CRASH!!!
                 {
                     paletteSelect = i;
                     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) selectedType = i;
@@ -652,6 +660,7 @@ int main(int argc, char *argv[])
                     break;
                 }
                 else paletteSelect = -1;
+                */
             }
         }
 
@@ -1191,12 +1200,11 @@ int main(int argc, char *argv[])
 
                                             dragMode = true;
                                         }
-
-                                        // Enable anchor link mode
-                                        else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) anchorLinkMode = true;
-
-                                        // Enable text edit mode
-                                        else if (IsKeyReleased(KEY_T))
+                                        else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) 
+                                        {
+                                            anchorLinkMode = true;      // Enable anchor link mode
+                                        }
+                                        else if (IsKeyReleased(KEY_T))  // Enable text edit mode
                                         {
                                             if (layout.controls[selectedControl].type != GUI_LINE &&
                                                 layout.controls[selectedControl].type != GUI_PANEL &&
@@ -2558,12 +2566,11 @@ int main(int argc, char *argv[])
                 // Draw reset message window (save)
                 if (resetWindowActive)
                 {
-                    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(WHITE, 0.7f));
-                    resetWindowActive = !GuiWindowBox((Rectangle){ GetScreenWidth()/2 - 125, GetScreenHeight()/2 - 50, 250, 100 }, "Creating new layout");
-
-                    GuiLabel((Rectangle){ GetScreenWidth()/2 - 95, GetScreenHeight()/2 - 60, 200, 100 }, "Do you want to save the current layout?");
-
-                    if (GuiButton((Rectangle){ GetScreenWidth()/2 - 94, GetScreenHeight()/2 + 10, 85, 25 }, "Yes"))
+                    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.8f));
+                    int message = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 125, GetScreenHeight()/2 - 50, 250, 100 }, "Creating new layout", "Do you want to save the current layout?", "Yes;No"); 
+                
+                    if (message == 0) resetWindowActive = false;
+                    else if (message == 1)  // Yes
                     {
                         if (DialogSaveLayout())
                         {
@@ -2571,7 +2578,7 @@ int main(int argc, char *argv[])
                             resetWindowActive = false;
                         }
                     }
-                    else if (GuiButton((Rectangle){ GetScreenWidth()/2 + 10, GetScreenHeight()/2 + 10, 85, 25 }, "No"))
+                    else if (message == 2)  // No
                     {
                         resetLayout = true;
                         resetWindowActive = false;
@@ -2590,15 +2597,15 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                // Draw ending message window (save)
+                // Draw ending message window: save
+                //----------------------------------------------------------------------------------------
                 if (closingWindowActive)
                 {
-                    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(WHITE, 0.7f));
-                    closingWindowActive = !GuiWindowBox((Rectangle){ GetScreenWidth()/2 - 125, GetScreenHeight()/2 - 50, 250, 100 }, "Closing rGuiLayout");
-
-                    GuiLabel((Rectangle){ GetScreenWidth()/2 - 95, GetScreenHeight()/2 - 60, 200, 100 }, "Do you want to save before quitting?");
-
-                    if (GuiButton((Rectangle){ GetScreenWidth()/2 - 94, GetScreenHeight()/2 + 10, 85, 25 }, "Yes"))
+                    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.8f));
+                    int message = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 125, GetScreenHeight()/2 - 50, 250, 100 }, "#159#Closing rGuiLayout", "Do you want to save before quitting?", "Yes;No"); 
+            
+                    if (message == 0) closingWindowActive = false;
+                    else if (message == 1)  // Yes
                     {
                         if (DialogSaveLayout())
                         {
@@ -2606,8 +2613,9 @@ int main(int argc, char *argv[])
                             exitWindow = true;
                         }
                     }
-                    else if (GuiButton((Rectangle){ GetScreenWidth()/2 + 10, GetScreenHeight()/2 + 10, 85, 25 }, "No")) { exitWindow = true; }
+                    else if (message == 2) exitWindow = true;
                 }
+                //----------------------------------------------------------------------------------------
             }
 
             // Draw status bar bottom with debug information

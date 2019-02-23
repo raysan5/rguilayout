@@ -147,8 +147,8 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
     state.listViewEditMode = false;
     state.listViewActive = 0;
     state.colorPickerValue;
-    state.ToggleGroup026Active= -1;
-    state.ComboBox026Active= 0;
+    state.ToggleGroup026Active = -1;
+    state.ComboBox026Active = 0;
     state.DropdownBox026EditMode = false;
     state.DropdownBox026Active = 0;
 
@@ -186,7 +186,7 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
 
 void GuiControlsPalette(GuiControlsPaletteState *state)
 {
-    Rectangle view = GuiScrollPanel((Rectangle){state->layoutRecs[0].x, state->layoutRecs[0].y, state->layoutRecs[0].width - state->containerBoundsOffset.x, state->layoutRecs[0].height - state->containerBoundsOffset.y }, state->layoutRecs[0], &state->containerScrollOffset);
+    Rectangle view = GuiScrollPanel((Rectangle){ state->layoutRecs[0].x + 10, state->layoutRecs[0].y, state->layoutRecs[0].width - state->containerBoundsOffset.x, state->layoutRecs[0].height - state->containerBoundsOffset.y }, state->layoutRecs[0], &state->containerScrollOffset);
 
     BeginScissorMode(view.x + 1, view.y + 1, view.width - 2, view.height - 2);     
 
