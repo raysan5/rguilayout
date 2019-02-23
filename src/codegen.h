@@ -437,10 +437,10 @@ static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiControl
         if (control.ap->id > 0) TextAppend(toolstr, FormatText("(Rectangle){ %i, %i, %i, %i }", (int)control.rec.x + control.ap->x, (int)control.rec.y + control.ap->y, (int)control.rec.width, (int)control.rec.height), pos);
         else TextAppend(toolstr, FormatText("(Rectangle){ %i, %i, %i, %i }", (int)control.rec.x - control.ap->x, (int)control.rec.y - control.ap->y, (int)control.rec.width, (int)control.rec.height), pos);
     }
-    
+
     if (exportH) TextAppend(toolstr, ";", pos);
     else  TextAppend(toolstr, ",", pos);
-    
+
     if (fullComments)
     {
         TABAPPEND(toolstr, pos, tabs);
@@ -468,7 +468,7 @@ static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout layout, Gui
             if (define) TextAppend(toolstr, "Vector2 ", pos);
             else TextAppend(toolstr, FormatText("%s", preText), pos);
             TextAppend(toolstr, FormatText("%s", anchor.name), pos);
-            if (initialize) 
+            if (initialize)
             {
                 TextAppend(toolstr, " = ", pos);
                 if(!define) TextAppend(toolstr, "(Vector2)", pos);
@@ -522,6 +522,7 @@ static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout layout, G
             case GUI_LISTVIEW:
             case GUI_DUMMYREC:
             case GUI_STATUSBAR:
+            {
                 TextAppend(toolstr, FormatText("const char *%sText = \"%s\";", layout.controls[i].name, layout.controls[i].text), pos);
                 if (config.fullComments)
                 {
@@ -531,7 +532,8 @@ static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout layout, G
                 ENDLINEAPPEND(toolstr, pos);
                 TABAPPEND(toolstr, pos, tabs);
                 drawConstText = true;
-            break;
+                
+            } break;
             default: break;
         }
     }
@@ -595,7 +597,7 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
                 if (define) TextAppend(toolstr, "int ", pos);
                 else TextAppend(toolstr, FormatText("%s", preText), pos);
                 TextAppend(toolstr, FormatText("%sActive", control.name), pos);
-                if (initialize) TextAppend(toolstr, "= 0", pos);
+                if (initialize) TextAppend(toolstr, " = 0", pos);
                 TextAppend(toolstr, ";", pos);
             } break;
             case GUI_LISTVIEW:
@@ -704,7 +706,7 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
             case GUI_PANEL:
             case GUI_LABEL:
             case GUI_DUMMYREC:
-            case GUI_STATUSBAR:            
+            case GUI_STATUSBAR:
             default:
             {
                 drawVariables = false;
@@ -892,7 +894,7 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiCon
         case GUI_SLIDERBAR: TextAppend(toolstr, FormatText("%sValue = GuiSliderBar(%s, %s, %sValue, 0, 100, true);", name, rec, text, name), pos); break;
         case GUI_PROGRESSBAR: TextAppend(toolstr, FormatText("%sValue = GuiProgressBar(%s, %s, %sValue, 0, 1, true);", name, rec, text, name), pos); break;
         case GUI_STATUSBAR: TextAppend(toolstr, FormatText("GuiStatusBar(%s, %s);", rec, text), pos); break;
-        case GUI_SCROLLPANEL: 
+        case GUI_SCROLLPANEL:
         {
             char *containerRec = GetScrollPanelContainerRecText(index, control, config.defineRecs, config.exportAnchors, preText);
             TextAppend(toolstr, FormatText("%sScrollOffset = GuiScrollPanel(%s, %s, %sScrollOffset);", name, containerRec, rec, name), pos); break;
@@ -910,7 +912,7 @@ static char *GetControlRectangleText(int index, GuiControl control, bool defineR
     static char text[512];
     memset(text, 0, 512);
 
-    if (defineRecs) 
+    if (defineRecs)
     {
         strcpy(text, FormatText("%slayoutRecs[%i]", preText, index));
     }
@@ -933,7 +935,7 @@ static char *GetScrollPanelContainerRecText(int index, GuiControl control, bool 
 {
     static char text[512];
     memset(text, 0, 512);
-    
+
     if(defineRecs)
     {
         strcpy(text, FormatText("(Rectangle){%slayoutRecs[%i].x, %slayoutRecs[%i].y, %slayoutRecs[%i].width - %s%sBoundsOffset.x, %slayoutRecs[%i].height - %s%sBoundsOffset.y }", preText, index, preText, index, preText, index, preText, control.name, preText, index, preText, control.name));
@@ -961,9 +963,14 @@ static char *GetControlTextParam(GuiControl control, bool defineText)
 {
     static char text[512];
     memset(text, 0, 512);
-    
+
     if (defineText) strcpy(text, FormatText("%sText", control.name));
-    else strcpy(text, FormatText("\"%s\"", control.text));    
+    else 
+    {
+        // In case (text == "") we use NULL value directly
+        if ((control.text == NULL) || (control.text[0] == '\0')) strcpy(text, "NULL");
+        else strcpy(text, FormatText("\"%s\"", control.text));
+    }
 
     return text;
 }
