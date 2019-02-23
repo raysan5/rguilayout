@@ -8,7 +8,7 @@
 *       Enable PRO features for the tool. Usually command-line and export options related.
 *
 *   DEPENDENCIES:
-*       raylib 2.3              - Windowing/input management and drawing.
+*       raylib 2.5              - Windowing/input management and drawing.
 *       raygui 2.0              - IMGUI controls (based on raylib).
 *       tinyfiledialogs 3.3.7   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs.
 *
@@ -664,6 +664,7 @@ int main(int argc, char *argv[])
             }
         }
 
+        palettePanel.x = GetScreenWidth() - 180;
         paletteState.containerAnchor.x = palettePanel.x;
         paletteState.containerAnchor.y = palettePanel.y;
         paletteState.containerBoundsOffset.y = 950 - GetScreenHeight() + 50;
@@ -1935,11 +1936,13 @@ int main(int argc, char *argv[])
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
-            ClearBackground(RAYWHITE);
+            ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
+            // Draw background grid
             if (showGrid) GuiGrid((Rectangle){ 0, 0, GetScreenWidth(), GetScreenHeight() }, gridLineSpacing, 5);
 
             // Draw the tracemap texture if loaded
+            //---------------------------------------------------------------------------------
             if (tracemap.id > 0)
             {
                 DrawTexturePro(tracemap, (Rectangle){ 0, 0, tracemap.width, tracemap.height }, tracemapRec, (Vector2){ 0, 0 }, 0.0f, Fade(WHITE, tracemapFade));
@@ -1974,9 +1977,10 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+            //---------------------------------------------------------------------------------
 
             // Draw reference window edit mode
-            if (layout.refWindow.width > 0 && layout.refWindow.height > 0)
+            if ((layout.refWindow.width > 0) && (layout.refWindow.height > 0))
             {
                 if (refWindowEditMode)
                 {
@@ -1992,6 +1996,7 @@ int main(int argc, char *argv[])
             }
 
             // Draws the controls placed on the grid
+            // TODO: Support controls editMode vs playMode, just unlock controls and lock edit!
             GuiLock();
             for (int i = 0; i < layout.controlsCount; i++)
             {
@@ -2508,6 +2513,7 @@ int main(int argc, char *argv[])
                 if ((layout.refWindow.width > 0) && (layout.refWindow.height > 0)) DrawRectangleLinesEx(layout.refWindow, 1, Fade(BLACK, 0.7f));
 
                 // Draw the help panel (by default is out of screen)
+                //----------------------------------------------------------------------------------------
                 if (helpPositionX > -280)
                 {
                     DrawRectangleRec((Rectangle){ helpPositionX + 20, 15, 280, 550 }, GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
@@ -2542,28 +2548,45 @@ int main(int argc, char *argv[])
                     GuiLabel((Rectangle){ helpPositionX + 30, 520, 0, 0 }, "LCTRL + O - Open layout file (.rgl)");
                     GuiLabel((Rectangle){ helpPositionX + 30, 540, 0, 0 }, "LCTRL + ENTER - Export layout to code");
                 }
+                //----------------------------------------------------------------------------------------
 
                 // Draw right panel controls palette
+                //----------------------------------------------------------------------------------------
                 GuiControlsPalette(&paletteState);
 
+                // Draw selected control rectangle
                 BeginScissorMode(paletteState.containerAnchor.x + 1, paletteState.containerAnchor.y + 1, 150 - 2, 950 - paletteState.containerBoundsOffset.y - 2);
 
                     DrawRectangleRec(paletteState.layoutRecs[selectedType + 1], Fade(RED, 0.5f));
 
                     if (paletteSelect > -1)
                     {
-                        if (selectedType != paletteSelect)
-                        {
-                            DrawRectangleRec(paletteState.layoutRecs[paletteSelect+1], Fade(RED, 0.1f));
-                        }
-                        DrawRectangleLinesEx(paletteState.layoutRecs[paletteSelect+1], 1, MAROON);
+                        if (selectedType != paletteSelect) DrawRectangleRec(paletteState.layoutRecs[paletteSelect + 1], Fade(RED, 0.1f));
+
+                        DrawRectangleLinesEx(paletteState.layoutRecs[paletteSelect + 1], 1, MAROON);
                     }
 
                 EndScissorMode();
+                //----------------------------------------------------------------------------------------
             }
             else    // (closingWindowActive || windowCodegenState.codeGenWindowActive || resetWindowActive)
             {
+                // Draw code export window
+                //----------------------------------------------------------------------------------------
+                if (windowCodegenState.codeGenWindowActive)
+                {
+                    GuiWindowCodegen(&windowCodegenState);
+
+                    if (windowCodegenState.exportCodeButtonPressed)
+                    {
+                        DialogExportLayout(windowCodegenState.codeText, FormatText("%s.h", config.name));
+                        windowCodegenState.codeGenWindowActive = false;
+                    }
+                }
+                //----------------------------------------------------------------------------------------
+                
                 // Draw reset message window (save)
+                //----------------------------------------------------------------------------------------
                 if (resetWindowActive)
                 {
                     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.8f));
@@ -2584,18 +2607,7 @@ int main(int argc, char *argv[])
                         resetWindowActive = false;
                     }
                 }
-
-                // Draw export options window
-                if (windowCodegenState.codeGenWindowActive)
-                {
-                    GuiWindowCodegen(&windowCodegenState);
-
-                    if (windowCodegenState.exportCodeButtonPressed)
-                    {
-                        DialogExportLayout(windowCodegenState.codeText, FormatText("%s.h", config.name));
-                        windowCodegenState.codeGenWindowActive = false;
-                    }
-                }
+                //----------------------------------------------------------------------------------------
 
                 // Draw ending message window: save
                 //----------------------------------------------------------------------------------------
@@ -2619,6 +2631,7 @@ int main(int argc, char *argv[])
             }
 
             // Draw status bar bottom with debug information
+            //--------------------------------------------------------------------------------------------
             GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, FormatText("MOUSE: (%i, %i)", (int)mouse.x, (int)mouse.y));
             GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (snapMode? "SNAP: ON" : "SNAP: OFF"));
             GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, FormatText("CONTROLS COUNT: %i", layout.controlsCount));
@@ -2634,6 +2647,7 @@ int main(int argc, char *argv[])
                                         layout.controls[selectedControl].name));
             }
             else GuiStatusBar((Rectangle){ 447, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, NULL);
+            //--------------------------------------------------------------------------------------------
 
             /*
             // Draw UNDO system info
@@ -2717,7 +2731,7 @@ int main(int argc, char *argv[])
     if (windowCodegenState.codeText != NULL) free(windowCodegenState.codeText);
     free(undoLayouts);
 
-    CloseWindow();        // Close window and OpenGL context
+    CloseWindow();              // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
 
     return 0;

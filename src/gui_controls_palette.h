@@ -152,7 +152,7 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
     state.DropdownBox026EditMode = false;
     state.DropdownBox026Active = 0;
 
-    state.layoutRecs[0] = (Rectangle){ state.containerAnchor.x + 0, state.containerAnchor.y + 0, 150, 950 };
+    state.layoutRecs[0] = (Rectangle){ state.containerAnchor.x + 0, state.containerAnchor.y + 0, 140, 950 };
     state.layoutRecs[1] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 5, 125, 50 };
     state.layoutRecs[2] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 70, 125, 30 };
     state.layoutRecs[3] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 105, 125, 25 };
@@ -186,7 +186,7 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
 
 void GuiControlsPalette(GuiControlsPaletteState *state)
 {
-    Rectangle view = GuiScrollPanel((Rectangle){ state->layoutRecs[0].x + 10, state->layoutRecs[0].y, state->layoutRecs[0].width - state->containerBoundsOffset.x, state->layoutRecs[0].height - state->containerBoundsOffset.y }, state->layoutRecs[0], &state->containerScrollOffset);
+    Rectangle view = GuiScrollPanel((Rectangle){ state->layoutRecs[0].x + 6, state->layoutRecs[0].y, state->layoutRecs[0].width + 12 - state->containerBoundsOffset.x, state->layoutRecs[0].height - state->containerBoundsOffset.y }, state->layoutRecs[0], &state->containerScrollOffset);
 
     BeginScissorMode(view.x + 1, view.y + 1, view.width - 2, view.height - 2);     
 
@@ -208,9 +208,9 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
         if (GuiTextBoxMulti(state->layoutRecs[15], state->multitextBoxText, 64, state->multitextBoxEditMode)) state->multitextBoxEditMode = !state->multitextBoxEditMode;
         if (GuiValueBox(state->layoutRecs[16], &state->valueBoxValue, 0, 100, state->valueBoxEditMode)) state->valueBoxEditMode = !state->valueBoxEditMode;
         if (GuiSpinner(state->layoutRecs[17], &state->spinnerValue, 0, 100, state->spinnerEditMode)) state->spinnerEditMode = !state->spinnerEditMode;
-        state->sliderExValue = GuiSlider(state->layoutRecs[18], "", state->sliderExValue, 0, 100, true);
-        state->sliderBarExValue = GuiSliderBar(state->layoutRecs[19], "", state->sliderBarExValue, 0, 100, true);
-        state->progressBarExValue = GuiProgressBar(state->layoutRecs[20], "", state->progressBarExValue, 0, 100, true);
+        state->sliderExValue = GuiSlider(state->layoutRecs[18], "", state->sliderExValue, 0, 100, false);
+        state->sliderBarExValue = GuiSliderBar(state->layoutRecs[19], "", state->sliderBarExValue, 0, 100, false);
+        state->progressBarExValue = GuiProgressBar(state->layoutRecs[20], "", state->progressBarExValue, 0, 100, false);
         GuiStatusBar(state->layoutRecs[21], "StatusBar");
         GuiScrollPanel((Rectangle){state->layoutRecs[22].x, state->layoutRecs[22].y, state->layoutRecs[22].width - state->scrollPanelBoundsOffset.x, state->layoutRecs[22].height - state->scrollPanelBoundsOffset.y }, state->layoutRecs[22], &state->scrollPanelScrollOffset);
         if (GuiListView(state->layoutRecs[23], "ONE;TWO", &state->listViewActive, &state->listViewScrollIndex, state->listViewEditMode)) state->listViewEditMode = !state->listViewEditMode;
