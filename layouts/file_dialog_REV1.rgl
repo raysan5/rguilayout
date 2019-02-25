@@ -1,7 +1,7 @@
 #
 # rgl text file (v1.0) - raygui layout text file generated using rGuiLayout
 #
-# Total number of controls:     12
+# Total number of controls:     11
 # Anchor info:   a <id> <name> <posx> <posy> <enabled>
 # Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
@@ -21,8 +21,7 @@ c 003 22 navView 60 70 410 155 1
 c 004 4 lblFileName 5 235 53 25 1 File name:
 c 005 13 fileName 60 235 195 25 1 file_dialog.rlg
 c 006 5 OpenFile 380 235 90 25 1 Select
-c 007 5 CancelFile 380 275 90 25 1 Cancel
-c 008 9 folder01 10 70 40 25 1 C:\
-c 009 9 folder02 10 100 40 25 1 D:\
-c 010 9 folder03 10 130 40 25 1 E:\
-c 011 11 fileType 260 235 115 25 1 IMAGE (.png);STYLE (.rgs);CODE (.h)
+c 007 9 folder01 10 70 40 25 1 C:\
+c 008 9 folder02 10 100 40 25 1 D:\
+c 009 9 folder03 10 130 40 25 1 E:\
+c 010 11 fileType 260 235 115 25 1 IMAGE (.png);STYLE (.rgs);CODE (.h)

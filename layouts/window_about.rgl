@@ -7,7 +7,7 @@
 #
 r 0 0 -1 -1
 a 000 anchor00 0 0 1
-a 001 anchor01 50 50 1
+a 001 anchor01 60 40 1
 a 002 anchor02 0 0 0
 a 003 anchor03 0 0 0
 a 004 anchor04 0 0 0

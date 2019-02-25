@@ -1,5 +1,5 @@
 #
-# rgl text file (v2.0) - raygui layout text file generated using rGuiLayout
+# rgl text file (v1.0) - raygui layout text file generated using rGuiLayout
 #
 # Total number of controls:     8
 # Anchor info:   a <id> <name> <posx> <posy> <enabled>
@@ -7,14 +7,14 @@
 #
 r 0 0 -1 -1
 a 000 anchor00 0 0 1
-a 001 anchor00 50 50 1
-a 002 anchor00 0 0 0
-a 003 anchor00 0 0 0
-a 004 anchor00 0 0 0
-a 005 anchor00 0 0 0
-a 006 anchor00 0 0 0
-a 007 anchor00 0 0 0
-c 000 0 exportWindow 0 0 220 190 1 Image Export Options
+a 001 anchor01 50 50 1
+a 002 anchor02 0 0 0
+a 003 anchor03 0 0 0
+a 004 anchor04 0 0 0
+a 005 anchor05 0 0 0
+a 006 anchor06 0 0 0
+a 007 anchor07 0 0 0
+c 000 0 exportWindow 0 0 220 190 1 #7#Image Export Options
 c 001 4 lblFileFormat 10 35 60 25 1 File format:
 c 002 11 fileFormat 80 35 130 25 1 IMAGE (.png);DATA (.raw);CODE (.h)
 c 003 4 lblPixelFormat 10 70 63 25 1 Pixel format:
