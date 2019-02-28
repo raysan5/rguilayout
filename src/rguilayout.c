@@ -561,7 +561,7 @@ int main(int argc, char *argv[])
 
                         memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
-                        if (windowCodegenState.codeText != NULL) free(windowCodegenState.codeText);
+                        free(windowCodegenState.codeText);
                         windowCodegenState.codeText = GenerateLayoutCode(guiTemplateStandardCode, layout, config);
                         windowCodegenState.codeGenWindowActive = true;
                     }
@@ -596,7 +596,7 @@ int main(int argc, char *argv[])
                     //else if (windowCodegenState.codeTemplateActive == 2) template = LoadText(/*custom_template*/);
                     currentCodeTemplate = windowCodegenState.codeTemplateActive;
 
-                    if (windowCodegenState.codeText != NULL) free(windowCodegenState.codeText);
+                    free(windowCodegenState.codeText);
                     windowCodegenState.codeText = GenerateLayoutCode(template, layout, config);
                     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
@@ -2733,7 +2733,7 @@ int main(int argc, char *argv[])
     //--------------------------------------------------------------------------------------
     UnloadTexture(tracemap);
 
-    if (windowCodegenState.codeText != NULL) free(windowCodegenState.codeText);
+    free(windowCodegenState.codeText);
     free(undoLayouts);
 
     CloseWindow();              // Close window and OpenGL context
