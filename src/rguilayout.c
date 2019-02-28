@@ -141,8 +141,8 @@ int main(int argc, char *argv[])
     const int screenWidth = 1000;
     const int screenHeight = 800;
 
-    SetTraceLogLevel(LOG_NONE);                             // Disable trace log messsages
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);      // Window configuration flags
+    SetTraceLogLevel(LOG_NONE);             // Disable trace log messsages
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // Window configuration flags
     InitWindow(screenWidth, screenHeight, FormatText("rGuiLayout v%s - A simple and easy-to-use raygui layouts editor", TOOL_VERSION_TEXT));
     SetWindowMinSize(800, 800);
     SetExitKey(0);
@@ -152,8 +152,14 @@ int main(int argc, char *argv[])
     bool exitWindow = false;                // Exit window flag
     bool showGrid = true;                   // Show grid flag (KEY_G)
     int gridLineSpacing = 5;                // Grid line spacing in pixels
+    
+    int framesCounter = 0;
+    int framesCounterMovement = 0;
 
-    // Modes
+    int movePixel = 1;
+    int movePerFrame = 1;
+
+    // Work modes
     bool dragMode = false;                  // Control drag mode
     bool useGlobalPos = false;              // Control global position mode
     bool snapMode = false;                  // Snap mode flag (KEY_S)
@@ -167,30 +173,24 @@ int main(int argc, char *argv[])
     bool mouseScaleReady = false;           // Mouse is on position to start control scaling
     bool mouseScaleMode = false;            // Control is being scaled by mouse
 
+    // Multiselection
     bool multiSelectMode = false;
     Rectangle multiSelectRec = { 0 };
     Vector2 multiSelectStartPos = { 0 };
     int multiSelectControls[20] = { -1 };
     int multiSelectCount = 0;
 
-    int framesCounter = 0;
-    int framesCounterMovement = 0;
-
     // Controls variables
     int selectedControl = -1;
     int storedControl = -1;
     int focusedControl = -1;
-    int selectedType = GUI_WINDOWBOX;
+    int selectedType = GUI_WINDOWBOX;       // TODO: Why selectedType != selectedTypeDraw ???
     int selectedTypeDraw = GUI_LABEL;
     Vector2 panOffset = { 0 };
     Vector2 prevPosition = { 0 };
     Color selectedControlColor = RED;
     Color positionColor = MAROON;
-
-    int movePixel = 1;
-    int movePerFrame = 1;
-    int textArrayPos = 0;
-
+   
     // Anchors control variables
     GuiAnchorPoint auxAnchor = { 9, 0, 0, 0 };
     bool anchorEditMode = false;
@@ -200,43 +200,6 @@ int main(int argc, char *argv[])
     int focusedAnchor = -1;
     Color anchorCircleColor = BLACK;
     Color anchorSelectedColor = RED;
-
-    // Help panel variables
-    int helpPositionX = -300;
-    int helpCounter = 0;
-    int helpStartPositionX = -300;
-    int helpDeltaPositionX = 0;
-    bool helpActive = false;
-
-    // Rectangles used on controls preview drawing
-    Rectangle defaultRec[26] = {
-        (Rectangle){ 0, 0, 125, 50},            // GUI_WINDOWBOX
-        (Rectangle){ 0, 0, 125, 30},            // GUI_GROUPBOX
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_LINE
-        (Rectangle){ 0, 0, 125, 35 },           // GUI_PANEL
-        (Rectangle){ 0, 0, 126, 25 },           // GUI_LABEL
-        (Rectangle){ 0, 0, 125, 30 },           // GUI_BUTTON
-        (Rectangle){ 0, 0, 125, 30 },           // GUI_LABELBUTTON
-        (Rectangle){ 0, 0, 32, 32 },            // GUI_IMAGEBUTTONEX
-        (Rectangle){ 0, 0, 15, 15},             // GUI_CHECKBOX
-        (Rectangle){ 0, 0, 90, 25 },            // GUI_TOGGLE
-        (Rectangle){ 0, 0, 125/3, 25 },         // GUI_TOGGLEGROUP
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_COMBOBOX
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_DROPDOWNBOX
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_TEXTBOX
-        (Rectangle){ 0, 0, 125, 75 },           // GUI_TEXTBOXMULTI
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_VALUEBOX
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_SPINNER
-        (Rectangle){ 0, 0, 125, 15 },           // GUI_SLIDER
-        (Rectangle){ 0, 0, 125, 15 },           // GUI_SLIDERBAR
-        (Rectangle){ 0, 0, 125, 15 },           // GUI_PROGRESSBAR
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_STATUSBAR
-        (Rectangle){ 0, 0, 125, 75 },           // GUI_SCROLLPANEL
-        (Rectangle){ 0, 0, 125, 75 },           // GUI_LISTVIEW
-        (Rectangle){ 0, 0, 95, 95 },            // GUI_COLORPICKER
-        (Rectangle){ 0, 0, 125, 30 },           // GUI_DUMMYREC
-        (Rectangle){ 0, 0, 0, 0 },              // ???
-    };
 
     // Initialize anchor points to default values
     for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
@@ -268,7 +231,7 @@ int main(int argc, char *argv[])
 
     layout.refWindow = (Rectangle){ 0, 0, -1, -1};
 
-    // Define palette variables
+    // GUI: Palette panel variables
     Rectangle palettePanel = { 800, 15, 135, 835 };
     int paletteOffset = 0;
     int paletteSelect = -1;
@@ -276,6 +239,43 @@ int main(int argc, char *argv[])
     int paletteStartPositionX = GetScreenWidth() + 130;
     int paletteDeltaPositionX = 0;
     bool paletteActive = true;
+    
+    // Rectangles used on controls preview drawing
+    Rectangle defaultRec[26] = {
+        (Rectangle){ 0, 0, 125, 50},            // GUI_WINDOWBOX
+        (Rectangle){ 0, 0, 125, 30},            // GUI_GROUPBOX
+        (Rectangle){ 0, 0, 125, 25 },           // GUI_LINE
+        (Rectangle){ 0, 0, 125, 35 },           // GUI_PANEL
+        (Rectangle){ 0, 0, 126, 25 },           // GUI_LABEL
+        (Rectangle){ 0, 0, 125, 30 },           // GUI_BUTTON
+        (Rectangle){ 0, 0, 125, 30 },           // GUI_LABELBUTTON
+        (Rectangle){ 0, 0, 32, 32 },            // GUI_IMAGEBUTTONEX
+        (Rectangle){ 0, 0, 15, 15},             // GUI_CHECKBOX
+        (Rectangle){ 0, 0, 90, 25 },            // GUI_TOGGLE
+        (Rectangle){ 0, 0, 125/3, 25 },         // GUI_TOGGLEGROUP
+        (Rectangle){ 0, 0, 125, 25 },           // GUI_COMBOBOX
+        (Rectangle){ 0, 0, 125, 25 },           // GUI_DROPDOWNBOX
+        (Rectangle){ 0, 0, 125, 25 },           // GUI_TEXTBOX
+        (Rectangle){ 0, 0, 125, 75 },           // GUI_TEXTBOXMULTI
+        (Rectangle){ 0, 0, 125, 25 },           // GUI_VALUEBOX
+        (Rectangle){ 0, 0, 125, 25 },           // GUI_SPINNER
+        (Rectangle){ 0, 0, 125, 15 },           // GUI_SLIDER
+        (Rectangle){ 0, 0, 125, 15 },           // GUI_SLIDERBAR
+        (Rectangle){ 0, 0, 125, 15 },           // GUI_PROGRESSBAR
+        (Rectangle){ 0, 0, 125, 25 },           // GUI_STATUSBAR
+        (Rectangle){ 0, 0, 125, 75 },           // GUI_SCROLLPANEL
+        (Rectangle){ 0, 0, 125, 75 },           // GUI_LISTVIEW
+        (Rectangle){ 0, 0, 95, 95 },            // GUI_COLORPICKER
+        (Rectangle){ 0, 0, 125, 30 },           // GUI_DUMMYREC
+        (Rectangle){ 0, 0, 0, 0 },              // ???
+    };
+    
+    // GUI: Help panel variables
+    int helpPositionX = -300;
+    int helpCounter = 0;
+    int helpStartPositionX = -300;
+    int helpDeltaPositionX = 0;
+    bool helpActive = false;
 
     // Tracemap (background image for reference) variables
     Texture2D tracemap = { 0 };
@@ -290,10 +290,8 @@ int main(int argc, char *argv[])
     char prevText[MAX_CONTROL_TEXT_LENGTH] = { 0 };
     char prevName[MAX_CONTROL_NAME_LENGTH] = { 0 };
 
-    // Close layout window variables
-    bool closingWindowActive = false;
 
-    // Export Window Layout: controls initialization
+    // GUI: Export Window Layout: controls initialization
     //----------------------------------------------------------------------------------------
     GuiWindowCodegenState windowCodegenState = InitGuiWindowCodegen();
     GuiControlsPaletteState paletteState = InitGuiControlsPalette();
@@ -314,6 +312,9 @@ int main(int argc, char *argv[])
     GuiLayoutConfig prevConfig = { 0 };
     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
+    // Close layout window variables
+    bool closingWindowActive = false;
+    
     // Delete current layout and reset variables
     bool resetWindowActive = false;
     bool resetLayout = false;
@@ -326,6 +327,7 @@ int main(int argc, char *argv[])
     int listViewActive = 0;
 
     // Undo system variables
+    //----------------------------------------------------------------------------------------
     GuiLayout *undoLayouts = NULL;
     int currentUndoIndex = 0;
     int firstUndoIndex = 0;
@@ -334,6 +336,7 @@ int main(int argc, char *argv[])
 
     undoLayouts = (GuiLayout *)calloc(MAX_UNDO_LEVELS, sizeof(GuiLayout));
     for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], &layout, sizeof(GuiLayout));
+    //----------------------------------------------------------------------------------------
 
     SetTargetFPS(120);
     //--------------------------------------------------------------------------------------
@@ -2104,7 +2107,7 @@ int main(int argc, char *argv[])
             {
                 if (!(CheckCollisionPointRec(mouse, palettePanel)))
                 {
-                    if (focusedAnchor == -1 && focusedControl == -1 && !tracemapFocused && !refWindowEditMode)
+                    if ((focusedAnchor == -1) && (focusedControl == -1) && !tracemapFocused && !refWindowEditMode)
                     {
                         if (!anchorEditMode)
                         {
@@ -2143,6 +2146,7 @@ int main(int argc, char *argv[])
                                     case GUI_DUMMYREC: GuiDummyRec(defaultRec[selectedTypeDraw], "DUMMY REC"); break;
                                     default: break;
                                 }
+                                
                                 GuiFade(1.0f);
                                 GuiUnlock();
 
@@ -2157,6 +2161,7 @@ int main(int argc, char *argv[])
                                          (int)defaultRec[selectedType].width, (int)defaultRec[selectedType].height),
                                          (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
 
+                                // Draw controls name
                                 if (showNamesMode)
                                 {
                                     GuiLock();
@@ -2164,7 +2169,9 @@ int main(int argc, char *argv[])
                                     {
                                         Rectangle textboxRec = layout.controls[i].rec;
                                         int type = layout.controls[i].type;
-                                        if (type == GUI_CHECKBOX || type == GUI_LABEL || type == GUI_SLIDER || type == GUI_SLIDERBAR)
+                                        
+                                        // NOTE: Depending on control type, name is drawn in different position
+                                        if ((type == GUI_CHECKBOX) || (type == GUI_LABEL) || (type == GUI_SLIDER) || (type == GUI_SLIDERBAR))
                                         {
                                             int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
                                             int textWidth = MeasureText(layout.controls[i].name, fontSize);
@@ -2172,12 +2179,13 @@ int main(int argc, char *argv[])
                                             if (textboxRec.height < fontSize) textboxRec.height += fontSize;
                                         }
 
-                                        if (type == GUI_WINDOWBOX) textboxRec.height = WINDOW_STATUSBAR_HEIGHT;  // Defined inside raygui.h
+                                        if (type == GUI_WINDOWBOX) textboxRec.height = WINDOW_STATUSBAR_HEIGHT;  // Defined inside raygui.h!
                                         else if (type == GUI_GROUPBOX)
                                         {
                                             textboxRec.y -= 10;
                                             textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;
                                         }
+                                        
                                         if (layout.controls[i].ap->id > 0)
                                         {
                                             textboxRec.x += layout.controls[i].ap->x;
@@ -2185,14 +2193,11 @@ int main(int argc, char *argv[])
                                         }
 
                                         DrawRectangleRec(textboxRec, WHITE);
-                                        //DrawRectangleRec(textboxRec, Fade(SKYBLUE, 0.5f));
                                         GuiTextBox(textboxRec, layout.controls[i].name, MAX_CONTROL_NAME_LENGTH, false);
-                                        //DrawRectangleLinesEx(textboxRec,1, BLUE);
                                     }
 
                                     for (int i = 0; i < layout.anchorsCount; i++)
                                     {
-                                        //layout.anchor[selectedAnchor].name
                                         Rectangle textboxRec = (Rectangle) { layout.anchors[i].x, layout.anchors[i].y,
                                                                              MeasureText(layout.anchors[i].name, GuiGetStyle(DEFAULT, TEXT_SIZE)) + 10, GuiGetStyle(DEFAULT, TEXT_SIZE) + 5};
 
