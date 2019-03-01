@@ -571,7 +571,8 @@ int main(int argc, char *argv[])
                 if (IsKeyDown(KEY_RIGHT_ALT))
                 {
                     if (IsKeyPressed(KEY_UP)) gridLineSpacing++;
-                    else if(IsKeyPressed(KEY_DOWN)) gridLineSpacing--;
+                    else if (IsKeyPressed(KEY_DOWN)) gridLineSpacing--;
+                    
                     movePixel = gridLineSpacing;
                 }
             }
