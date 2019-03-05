@@ -57,15 +57,16 @@ typedef struct {
     bool listViewEditMode;
     int listViewActive;
     Color colorPickerValue;
-    int ToggleGroup026Active;
-    int ComboBox026Active;
-    bool DropdownBox026EditMode;
-    int DropdownBox026Active;
+    int toggleGroupActive;
+    int comboBoxActive;
+    bool dropdownBoxEditMode;
+    int dropdownBoxActive;
 
     Rectangle layoutRecs[26];
 
     // Custom state variables (depend on development software)
     // NOTE: This variables should be added manually if required
+    int selectedControl;
 
 } GuiControlsPaletteState;
 
@@ -147,10 +148,10 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
     state.listViewEditMode = false;
     state.listViewActive = 0;
     state.colorPickerValue;
-    state.ToggleGroup026Active = -1;
-    state.ComboBox026Active = 0;
-    state.DropdownBox026EditMode = false;
-    state.DropdownBox026Active = 0;
+    state.toggleGroupActive = -1;
+    state.comboBoxActive = 0;
+    state.dropdownBoxEditMode = false;
+    state.dropdownBoxActive = 0;
 
     state.layoutRecs[0] = (Rectangle){ state.containerAnchor.x + 0, state.containerAnchor.y + 0, 140, 950 };
     state.layoutRecs[1] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 5, 125, 50 };
@@ -180,12 +181,47 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
     state.layoutRecs[25] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 915, 125, 30 };
 
     // Custom variables initialization
+    state.selectedControl = -1;
 
     return state;
 }
 
 void GuiControlsPalette(GuiControlsPaletteState *state)
 {
+    // Palette panel logic
+    // TODO: WARNING: This code on -O2, crashes the program!
+    // TODO: Redesign controls palette logic...
+    //----------------------------------------------------------------------------------------------
+    // WARNING: CONTROLS_TYPE_NUM = 32, max layoutRecs = 26!!!
+    for (int i = 0; i < 26; i++)
+    {
+        /*
+        if (CheckCollisionPointRec(mouse, paletteState.layoutRecs[i + 1]))      // CRASH!!!
+        {
+            state->selectedControl = i;
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) selectedType = i;
+
+            break;
+        }
+        else state->selectedControl = -1;
+        */
+    }
+
+    state->controlsAnchor.x = GetScreenWidth() - 180;
+    state->controlsAnchor.y = GetScreenHeight()/2 - 950/2;
+    /*
+    state->containerAnchor.x = GetScreenWidth() - 180;
+    state->containerAnchor.y = 15;
+    state->containerBoundsOffset.y = 950 - GetScreenHeight() + 50;
+    if (state->containerBoundsOffset.y < 0) state->containerBoundsOffset.y = 0;
+
+    state->controlsAnchor = state->containerAnchor;
+    state->controlsAnchor.y += state->containerScrollOffset.y;
+    */
+    
+    //UpdateControlsPaletteRecs(state);
+    //----------------------------------------------------------------------------------------------
+    
     Rectangle view = GuiScrollPanel((Rectangle){ state->layoutRecs[0].x + 6, state->layoutRecs[0].y, state->layoutRecs[0].width + 12 - state->containerBoundsOffset.x, state->layoutRecs[0].height - state->containerBoundsOffset.y }, state->layoutRecs[0], &state->containerScrollOffset);
 
     BeginScissorMode(view.x + 1, view.y + 1, view.width - 2, view.height - 2);     
@@ -202,8 +238,8 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
         state->imageBtnPressed = GuiImageButtonEx(state->layoutRecs[8], GetTextureDefault(), (Rectangle){ 0, 0, 1, 1 }, "IM");
         state->checkBoxChecked = GuiCheckBox(state->layoutRecs[9], "", state->checkBoxChecked);
         state->toggleActive = GuiToggle(state->layoutRecs[10], "Toggle", state->toggleActive);
-        state->ToggleGroup026Active = GuiToggleGroup(state->layoutRecs[11], "ONE;TWO;THREE", state->ToggleGroup026Active);
-        state->ComboBox026Active = GuiComboBox(state->layoutRecs[12], "ONE;TWO;THREE", state->ComboBox026Active);
+        state->toggleGroupActive = GuiToggleGroup(state->layoutRecs[11], "ONE;TWO;THREE", state->toggleGroupActive);
+        state->comboBoxActive = GuiComboBox(state->layoutRecs[12], "ONE;TWO;THREE", state->comboBoxActive);
         if (GuiTextBox(state->layoutRecs[14], state->textBoxText, 64, state->textBoxEditMode)) state->textBoxEditMode = !state->textBoxEditMode;
         if (GuiTextBoxMulti(state->layoutRecs[15], state->multitextBoxText, 64, state->multitextBoxEditMode)) state->multitextBoxEditMode = !state->multitextBoxEditMode;
         if (GuiValueBox(state->layoutRecs[16], &state->valueBoxValue, 0, 100, state->valueBoxEditMode)) state->valueBoxEditMode = !state->valueBoxEditMode;
@@ -216,11 +252,26 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
         if (GuiListView(state->layoutRecs[23], "ONE;TWO", &state->listViewActive, &state->listViewScrollIndex, state->listViewEditMode)) state->listViewEditMode = !state->listViewEditMode;
         state->colorPickerValue = GuiColorPicker(state->layoutRecs[24], state->colorPickerValue);
         GuiDummyRec(state->layoutRecs[25], "DummyRec");
-        if (GuiDropdownBox(state->layoutRecs[13], "ONE;TWO;THREE", &state->DropdownBox026Active, state->DropdownBox026EditMode)) state->DropdownBox026EditMode = !state->DropdownBox026EditMode;
+        if (GuiDropdownBox(state->layoutRecs[13], "ONE;TWO;THREE", &state->dropdownBoxActive, state->dropdownBoxEditMode)) state->dropdownBoxEditMode = !state->dropdownBoxEditMode;
 
         GuiUnlock();
     
     EndScissorMode();
+    
+    // Draw selected control rectangle
+    /*
+    BeginScissorMode(state->containerAnchor.x + 1, state->containerAnchor.y + 1, 150 - 2, 950 - state->containerBoundsOffset.y - 2);
+
+        DrawRectangleRec(state->layoutRecs[state->selectedControl + 1], Fade(RED, 0.5f));
+
+        if (state->selectedControl > -1)
+        {
+            if (selectedType != state->selectedControl) DrawRectangleRec(state->layoutRecs[state->selectedControl + 1], Fade(RED, 0.1f));
+            DrawRectangleLinesEx(state->layoutRecs[state->selectedControl + 1], 1, MAROON);
+        }
+
+    EndScissorMode();
+    */
 }
 
 void UpdateControlsPaletteRecs(GuiControlsPaletteState *state)
@@ -252,4 +303,5 @@ void UpdateControlsPaletteRecs(GuiControlsPaletteState *state)
     state->layoutRecs[24] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 815, 95, 95 };
     state->layoutRecs[25] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 915, 125, 30 };
 }
+
 #endif // GUI_CONTROLS_PALETTE_IMPLEMENTATION

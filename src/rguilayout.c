@@ -182,10 +182,9 @@ int main(int argc, char *argv[])
 
     // Controls variables
     int selectedControl = -1;
-    int storedControl = -1;
     int focusedControl = -1;
-    int selectedType = GUI_WINDOWBOX;       // TODO: Why selectedType != selectedTypeDraw ???
-    int selectedTypeDraw = GUI_LABEL;
+    int selectedType = GUI_WINDOWBOX;       // Control type selected on panel
+    
     Vector2 panOffset = { 0 };
     Vector2 prevPosition = { 0 };
     Color selectedControlColor = RED;
@@ -230,15 +229,37 @@ int main(int argc, char *argv[])
     }
 
     layout.refWindow = (Rectangle){ 0, 0, -1, -1};
+   
+    // GUI: Help panel variables
+    int helpPositionX = -300;
+    int helpCounter = 0;
+    int helpStartPositionX = -300;
+    int helpDeltaPositionX = 0;
+    bool helpActive = false;
 
-    // GUI: Palette panel variables
-    Rectangle palettePanel = { 800, 15, 135, 835 };
-    int paletteOffset = 0;
-    int paletteSelect = -1;
-    int paletteCounter = PANELS_EASING_FRAMES;
-    int paletteStartPositionX = GetScreenWidth() + 130;
-    int paletteDeltaPositionX = 0;
-    bool paletteActive = true;
+    // Tracemap (background image for reference) variables
+    Texture2D tracemap = { 0 };
+    Rectangle tracemapRec = { 0 };
+    bool tracemapBlocked = false;
+    bool tracemapFocused = false;
+    bool tracemapSelected = false;
+    float tracemapFade = 0.5f;
+    Color tracemapColor = RED;
+
+    // Track previous text/name to cancel editing
+    char prevText[MAX_CONTROL_TEXT_LENGTH] = { 0 };
+    char prevName[MAX_CONTROL_NAME_LENGTH] = { 0 };
+
+
+    // GUI: Layout Code Generation Window
+    //----------------------------------------------------------------------------------------
+    GuiWindowCodegenState windowCodegenState = InitGuiWindowCodegen();
+    //----------------------------------------------------------------------------------------
+    
+    // GUI: Controls Selection Palette
+    //----------------------------------------------------------------------------------------
+    GuiControlsPaletteState paletteState = InitGuiControlsPalette();
+    //----------------------------------------------------------------------------------------
     
     // Rectangles used on controls preview drawing
     Rectangle defaultRec[26] = {
@@ -269,33 +290,6 @@ int main(int argc, char *argv[])
         (Rectangle){ 0, 0, 125, 30 },           // GUI_DUMMYREC
         (Rectangle){ 0, 0, 0, 0 },              // ???
     };
-    
-    // GUI: Help panel variables
-    int helpPositionX = -300;
-    int helpCounter = 0;
-    int helpStartPositionX = -300;
-    int helpDeltaPositionX = 0;
-    bool helpActive = false;
-
-    // Tracemap (background image for reference) variables
-    Texture2D tracemap = { 0 };
-    Rectangle tracemapRec = { 0 };
-    bool tracemapBlocked = false;
-    bool tracemapFocused = false;
-    bool tracemapSelected = false;
-    float tracemapFade = 0.5f;
-    Color tracemapColor = RED;
-
-    // Track previous text/name to cancel editing
-    char prevText[MAX_CONTROL_TEXT_LENGTH] = { 0 };
-    char prevName[MAX_CONTROL_NAME_LENGTH] = { 0 };
-
-
-    // GUI: Export Window Layout: controls initialization
-    //----------------------------------------------------------------------------------------
-    GuiWindowCodegenState windowCodegenState = InitGuiWindowCodegen();
-    GuiControlsPaletteState paletteState = InitGuiControlsPalette();
-    //----------------------------------------------------------------------------------------
 
     // Generate code configuration
     GuiLayoutConfig config = { 0 };
@@ -624,62 +618,6 @@ int main(int argc, char *argv[])
             helpPositionX = (int)EaseCubicInOut(helpCounter, helpStartPositionX, helpDeltaPositionX, PANELS_EASING_FRAMES);
         }
 
-        // Palette panel logic
-        // TODO: WARNING: This code on -O2, crashes the program!
-        // TODO: Redesign controls palette logic...
-        //----------------------------------------------------------------------------------------------
-        // Toggle palette selector
-        /*
-        palettePanel.x = GetScreenWidth() + paletteOffset;
-        if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && (focusedAnchor == -1) && (focusedControl == -1))
-        {
-            paletteCounter = 0;
-            paletteStartPositionX = paletteOffset;
-
-            if (paletteActive) paletteDeltaPositionX = -paletteStartPositionX;
-            else paletteDeltaPositionX = -(palettePanel.width + 15) - paletteStartPositionX;
-
-            paletteActive = !paletteActive;
-        }
-        */
-        /*
-        if (paletteCounter <= PANELS_EASING_FRAMES)
-        {
-            paletteCounter++;
-            paletteOffset = (int)EaseCubicInOut(paletteCounter, paletteStartPositionX, paletteDeltaPositionX, PANELS_EASING_FRAMES);
-        }
-        else 
-        */
-        if (paletteActive)     // Controls palette selector logic
-        {
-            // WARNING: CONTROLS_TYPE_NUM = 32, max layoutRecs = 26!!!
-            for (int i = 0; i < 26; i++)
-            {
-                /*
-                if (CheckCollisionPointRec(mouse, paletteState.layoutRecs[i + 1]))      // CRASH!!!
-                {
-                    paletteSelect = i;
-                    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) selectedType = i;
-
-                    break;
-                }
-                else paletteSelect = -1;
-                */
-            }
-        }
-
-        palettePanel.x = GetScreenWidth() - 180;
-        paletteState.containerAnchor.x = palettePanel.x;
-        paletteState.containerAnchor.y = palettePanel.y;
-        paletteState.containerBoundsOffset.y = 950 - GetScreenHeight() + 50;
-        if (paletteState.containerBoundsOffset.y < 0) paletteState.containerBoundsOffset.y = 0;
-
-        paletteState.controlsAnchor = paletteState.containerAnchor;
-        paletteState.controlsAnchor.y += paletteState.containerScrollOffset.y;
-
-        UpdateControlsPaletteRecs(&paletteState);
-        //----------------------------------------------------------------------------------------------
-
         // Layout edition logic
         //----------------------------------------------------------------------------------------------
         if (!closingWindowActive && !windowCodegenState.codeGenWindowActive && !resetWindowActive)
@@ -713,12 +651,6 @@ int main(int argc, char *argv[])
                     if (selectedType < GUI_WINDOWBOX) selectedType = GUI_WINDOWBOX;
                     else if (selectedType > GUI_DUMMYREC) selectedType = GUI_DUMMYREC;
 
-                    if (selectedType != selectedTypeDraw)
-                    {
-                        selectedControl = -1;
-                        selectedTypeDraw = selectedType;
-                    }
-
                     // Updates the default rectangle position
                     defaultRec[selectedType].x = mouse.x - defaultRec[selectedType].width/2;
                     defaultRec[selectedType].y = mouse.y - defaultRec[selectedType].height/2;
@@ -738,7 +670,7 @@ int main(int argc, char *argv[])
 
                     // Controls selection and edition logic
                     //----------------------------------------------------------------------------------------------
-                    if (!CheckCollisionPointRec(mouse, palettePanel))
+                    if (!CheckCollisionPointRec(mouse, paletteState.layoutRecs[0]))
                     {
                         if (!dragMode)
                         {
@@ -2107,45 +2039,45 @@ int main(int argc, char *argv[])
 
             if (!closingWindowActive && !windowCodegenState.codeGenWindowActive && !resetWindowActive)
             {
-                if (!(CheckCollisionPointRec(mouse, palettePanel)))
+                if (!(CheckCollisionPointRec(mouse, paletteState.layoutRecs[0])))
                 {
                     if ((focusedAnchor == -1) && (focusedControl == -1) && !tracemapFocused && !refWindowEditMode)
                     {
                         if (!anchorEditMode)
                         {
-                            if (!anchorLinkMode && selectedAnchor == -1 && selectedControl == -1 && !tracemapSelected)
+                            if (!anchorLinkMode && (selectedAnchor == -1) && (selectedControl == -1) && !tracemapSelected)
                             {
                                 // Draw the default rectangle of the control selected
                                 GuiLock();
                                 GuiFade(0.5f);
 
-                                switch (selectedTypeDraw)
+                                switch (selectedType)
                                 {
-                                    case GUI_WINDOWBOX: GuiWindowBox(defaultRec[selectedTypeDraw], "WINDOW BOX"); break;
-                                    case GUI_GROUPBOX: GuiGroupBox(defaultRec[selectedTypeDraw], "GROUP BOX"); break;
-                                    case GUI_LINE: GuiLine(defaultRec[selectedTypeDraw], NULL); break;
-                                    case GUI_PANEL: GuiPanel(defaultRec[selectedTypeDraw]); break;
-                                    case GUI_LABEL: GuiLabel(defaultRec[selectedTypeDraw], "LABEL TEXT"); break;
-                                    case GUI_BUTTON: GuiButton(defaultRec[selectedTypeDraw], "BUTTON"); break;
-                                    case GUI_LABELBUTTON: GuiLabelButton(defaultRec[selectedTypeDraw], "LABEL_BUTTON"); break;
-                                    case GUI_IMAGEBUTTONEX: GuiImageButtonEx(defaultRec[selectedTypeDraw], GetTextureDefault(), (Rectangle){0,0,1,1}, "IM"); break;
-                                    case GUI_CHECKBOX: GuiCheckBox(defaultRec[selectedTypeDraw], "CHECK BOX", false); break;
-                                    case GUI_TOGGLE: GuiToggle(defaultRec[selectedTypeDraw], "TOGGLE", false); break;
-                                    case GUI_TOGGLEGROUP: GuiToggleGroup(defaultRec[selectedTypeDraw], "ONE;TWO;THREE", 1); break;
-                                    case GUI_COMBOBOX: GuiComboBox(defaultRec[selectedTypeDraw], "ONE;TWO;THREE", 1); break;
-                                    case GUI_DROPDOWNBOX: GuiDropdownBox(defaultRec[selectedTypeDraw], "ONE;TWO;THREE", &dropdownBoxActive, false); break;
-                                    case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedTypeDraw], "TEXT BOX", 7, false); break;
-                                    case GUI_TEXTBOXMULTI: GuiTextBoxMulti(defaultRec[selectedTypeDraw], "MULTI TEX BOX", 7, false);break;
-                                    case GUI_VALUEBOX: GuiValueBox(defaultRec[selectedTypeDraw], &valueBoxValue, 42, 100, false); break;
-                                    case GUI_SPINNER: GuiSpinner(defaultRec[selectedTypeDraw], &spinnerValue, 42, 3, false); break;
-                                    case GUI_SLIDER: GuiSlider(defaultRec[selectedTypeDraw], "SLIDER", 42, 0, 100, false); break;
-                                    case GUI_SLIDERBAR: GuiSliderBar(defaultRec[selectedTypeDraw], "SLIDER BAR", 40, 0, 100, false); break;
-                                    case GUI_PROGRESSBAR: GuiProgressBar(defaultRec[selectedTypeDraw], "PROGRESS BAR", 40, 0, 100, false); break;
-                                    case GUI_STATUSBAR: GuiStatusBar(defaultRec[selectedTypeDraw], "STATUS BAR"); break;
-                                    case GUI_SCROLLPANEL: GuiScrollPanel(defaultRec[selectedTypeDraw], defaultRec[selectedTypeDraw], NULL); break;
-                                    case GUI_LISTVIEW: GuiListView(defaultRec[selectedTypeDraw], "ONE;TWO;THREE;FOUR", &listViewActive, &listViewScrollIndex, false); break;
-                                    case GUI_COLORPICKER: GuiColorPicker(defaultRec[selectedTypeDraw], RED); break;
-                                    case GUI_DUMMYREC: GuiDummyRec(defaultRec[selectedTypeDraw], "DUMMY REC"); break;
+                                    case GUI_WINDOWBOX: GuiWindowBox(defaultRec[selectedType], "WINDOW BOX"); break;
+                                    case GUI_GROUPBOX: GuiGroupBox(defaultRec[selectedType], "GROUP BOX"); break;
+                                    case GUI_LINE: GuiLine(defaultRec[selectedType], NULL); break;
+                                    case GUI_PANEL: GuiPanel(defaultRec[selectedType]); break;
+                                    case GUI_LABEL: GuiLabel(defaultRec[selectedType], "LABEL TEXT"); break;
+                                    case GUI_BUTTON: GuiButton(defaultRec[selectedType], "BUTTON"); break;
+                                    case GUI_LABELBUTTON: GuiLabelButton(defaultRec[selectedType], "LABEL_BUTTON"); break;
+                                    case GUI_IMAGEBUTTONEX: GuiImageButtonEx(defaultRec[selectedType], GetTextureDefault(), (Rectangle){ 0, 0, 1, 1 }, "IM"); break;
+                                    case GUI_CHECKBOX: GuiCheckBox(defaultRec[selectedType], "CHECK BOX", false); break;
+                                    case GUI_TOGGLE: GuiToggle(defaultRec[selectedType], "TOGGLE", false); break;
+                                    case GUI_TOGGLEGROUP: GuiToggleGroup(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
+                                    case GUI_COMBOBOX: GuiComboBox(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
+                                    case GUI_DROPDOWNBOX: GuiDropdownBox(defaultRec[selectedType], "ONE;TWO;THREE", &dropdownBoxActive, false); break;
+                                    case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedType], "TEXT BOX", 7, false); break;
+                                    case GUI_TEXTBOXMULTI: GuiTextBoxMulti(defaultRec[selectedType], "MULTI TEX BOX", 7, false);break;
+                                    case GUI_VALUEBOX: GuiValueBox(defaultRec[selectedType], &valueBoxValue, 42, 100, false); break;
+                                    case GUI_SPINNER: GuiSpinner(defaultRec[selectedType], &spinnerValue, 42, 3, false); break;
+                                    case GUI_SLIDER: GuiSlider(defaultRec[selectedType], "SLIDER", 42, 0, 100, false); break;
+                                    case GUI_SLIDERBAR: GuiSliderBar(defaultRec[selectedType], "SLIDER BAR", 40, 0, 100, false); break;
+                                    case GUI_PROGRESSBAR: GuiProgressBar(defaultRec[selectedType], "PROGRESS BAR", 40, 0, 100, false); break;
+                                    case GUI_STATUSBAR: GuiStatusBar(defaultRec[selectedType], "STATUS BAR"); break;
+                                    case GUI_SCROLLPANEL: GuiScrollPanel(defaultRec[selectedType], defaultRec[selectedType], NULL); break;
+                                    case GUI_LISTVIEW: GuiListView(defaultRec[selectedType], "ONE;TWO;THREE;FOUR", &listViewActive, &listViewScrollIndex, false); break;
+                                    case GUI_COLORPICKER: GuiColorPicker(defaultRec[selectedType], RED); break;
+                                    case GUI_DUMMYREC: GuiDummyRec(defaultRec[selectedType], "DUMMY REC"); break;
                                     default: break;
                                 }
                                 
@@ -2554,20 +2486,6 @@ int main(int argc, char *argv[])
                 // Draw right panel controls palette
                 //----------------------------------------------------------------------------------------
                 GuiControlsPalette(&paletteState);
-
-                // Draw selected control rectangle
-                BeginScissorMode(paletteState.containerAnchor.x + 1, paletteState.containerAnchor.y + 1, 150 - 2, 950 - paletteState.containerBoundsOffset.y - 2);
-
-                    DrawRectangleRec(paletteState.layoutRecs[selectedType + 1], Fade(RED, 0.5f));
-
-                    if (paletteSelect > -1)
-                    {
-                        if (selectedType != paletteSelect) DrawRectangleRec(paletteState.layoutRecs[paletteSelect + 1], Fade(RED, 0.1f));
-
-                        DrawRectangleLinesEx(paletteState.layoutRecs[paletteSelect + 1], 1, MAROON);
-                    }
-
-                EndScissorMode();
                 //----------------------------------------------------------------------------------------
             }
             else    // (closingWindowActive || windowCodegenState.codeGenWindowActive || resetWindowActive)
@@ -2640,12 +2558,18 @@ int main(int argc, char *argv[])
 
             if (selectedControl != -1)
             {
+                int defaultPadding = GuiGetStyle(DEFAULT, GROUP_PADDING);
+                int defaultTextAlign = GuiGetStyle(DEFAULT, TEXT_ALIGNMENT);
+                GuiSetStyle(DEFAULT, INNER_PADDING, 10);
+                GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
                 GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24},
                              FormatText("SELECTED CONTROL: #%03i  |  %s  |  REC (%i, %i, %i, %i)  |  %s",
                                         selectedControl, TextToUpper(controlTypeName[layout.controls[selectedControl].type]),
                                         (int)layout.controls[selectedControl].rec.x, (int)layout.controls[selectedControl].rec.y,
                                         (int)layout.controls[selectedControl].rec.width, (int)layout.controls[selectedControl].rec.height,
                                         layout.controls[selectedControl].name));
+                GuiSetStyle(DEFAULT, INNER_PADDING, defaultPadding);
+                GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, defaultTextAlign);
             }
             else GuiStatusBar((Rectangle){ 447, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, NULL);
             //--------------------------------------------------------------------------------------------
