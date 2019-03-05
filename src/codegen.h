@@ -890,9 +890,9 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiCon
         case GUI_TEXTBOXMULTI: TextAppend(toolstr, FormatText("if (GuiTextBoxMulti(%s, %sText, %i, %sEditMode)) %sEditMode = !%sEditMode;", rec, name, MAX_CONTROL_TEXT_LENGTH, name, name, name), pos); break;
         case GUI_VALUEBOX: TextAppend(toolstr, FormatText("if (GuiValueBox(%s, &%sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;", rec, name, name, name, name), pos); break;
         case GUI_SPINNER: TextAppend(toolstr, FormatText("if (GuiSpinner(%s, &%sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;", rec, name, name, name, name), pos); break;
-        case GUI_SLIDER: TextAppend(toolstr, FormatText("%sValue = GuiSlider(%s, %s, %sValue, 0, 100, true);", name, rec, text, name), pos); break;
-        case GUI_SLIDERBAR: TextAppend(toolstr, FormatText("%sValue = GuiSliderBar(%s, %s, %sValue, 0, 100, true);", name, rec, text, name), pos); break;
-        case GUI_PROGRESSBAR: TextAppend(toolstr, FormatText("%sValue = GuiProgressBar(%s, %s, %sValue, 0, 1, true);", name, rec, text, name), pos); break;
+        case GUI_SLIDER: TextAppend(toolstr, FormatText("%sValue = GuiSlider(%s, %s, %sValue, 0, 100, false);", name, rec, text, name), pos); break;
+        case GUI_SLIDERBAR: TextAppend(toolstr, FormatText("%sValue = GuiSliderBar(%s, %s, %sValue, 0, 100, false);", name, rec, text, name), pos); break;
+        case GUI_PROGRESSBAR: TextAppend(toolstr, FormatText("%sValue = GuiProgressBar(%s, %s, %sValue, 0, 1, false);", name, rec, text, name), pos); break;
         case GUI_STATUSBAR: TextAppend(toolstr, FormatText("GuiStatusBar(%s, %s);", rec, text), pos); break;
         case GUI_SCROLLPANEL:
         {

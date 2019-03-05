@@ -2040,9 +2040,9 @@ int main(int argc, char *argv[])
                         case GUI_TEXTBOXMULTI: GuiTextBoxMulti(rec, layout.controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
                         case GUI_VALUEBOX: GuiValueBox(rec, &valueBoxValue, 42, 100, false); break;
                         case GUI_SPINNER: GuiSpinner(rec, &spinnerValue, 42, 3, false); break;
-                        case GUI_SLIDER: GuiSlider(rec, layout.controls[i].text, 42, 0, 100, true); break;
-                        case GUI_SLIDERBAR: GuiSliderBar(rec, layout.controls[i].text, 40, 0, 100, true); break;
-                        case GUI_PROGRESSBAR: GuiProgressBar(rec, layout.controls[i].text, 40, 0, 100, true); break;
+                        case GUI_SLIDER: GuiSlider(rec, layout.controls[i].text, 42, 0, 100, false); break;
+                        case GUI_SLIDERBAR: GuiSliderBar(rec, layout.controls[i].text, 40, 0, 100, false); break;
+                        case GUI_PROGRESSBAR: GuiProgressBar(rec, layout.controls[i].text, 40, 0, 100, false); break;
                         case GUI_STATUSBAR: GuiStatusBar(rec, layout.controls[i].text); break;
                         case GUI_SCROLLPANEL: GuiScrollPanel(rec, rec, NULL); break;
                         case GUI_LISTVIEW: GuiListView(rec, layout.controls[i].text, &listViewActive, &listViewScrollIndex, false); break;
@@ -2138,9 +2138,9 @@ int main(int argc, char *argv[])
                                     case GUI_TEXTBOXMULTI: GuiTextBoxMulti(defaultRec[selectedTypeDraw], "MULTI TEX BOX", 7, false);break;
                                     case GUI_VALUEBOX: GuiValueBox(defaultRec[selectedTypeDraw], &valueBoxValue, 42, 100, false); break;
                                     case GUI_SPINNER: GuiSpinner(defaultRec[selectedTypeDraw], &spinnerValue, 42, 3, false); break;
-                                    case GUI_SLIDER: GuiSlider(defaultRec[selectedTypeDraw], "SLIDER", 42, 0, 100, true); break;
-                                    case GUI_SLIDERBAR: GuiSliderBar(defaultRec[selectedTypeDraw], "SLIDER BAR", 40, 0, 100, true); break;
-                                    case GUI_PROGRESSBAR: GuiProgressBar(defaultRec[selectedTypeDraw], "PROGRESS BAR", 40, 0, 100, true); break;
+                                    case GUI_SLIDER: GuiSlider(defaultRec[selectedTypeDraw], "SLIDER", 42, 0, 100, false); break;
+                                    case GUI_SLIDERBAR: GuiSliderBar(defaultRec[selectedTypeDraw], "SLIDER BAR", 40, 0, 100, false); break;
+                                    case GUI_PROGRESSBAR: GuiProgressBar(defaultRec[selectedTypeDraw], "PROGRESS BAR", 40, 0, 100, false); break;
                                     case GUI_STATUSBAR: GuiStatusBar(defaultRec[selectedTypeDraw], "STATUS BAR"); break;
                                     case GUI_SCROLLPANEL: GuiScrollPanel(defaultRec[selectedTypeDraw], defaultRec[selectedTypeDraw], NULL); break;
                                     case GUI_LISTVIEW: GuiListView(defaultRec[selectedTypeDraw], "ONE;TWO;THREE;FOUR", &listViewActive, &listViewScrollIndex, false); break;

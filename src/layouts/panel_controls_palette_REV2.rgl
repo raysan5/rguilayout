@@ -25,16 +25,16 @@ c 007 6 labelBtn 10 250 90 30 1 Label Button
 c 008 7 imageBtn 105 250 30 30 1 IM
 c 009 8 checkBox 20 290 15 15 1 
 c 010 9 toggle 45 285 90 25 1 Toggle
-c 011 10 ToggleGroup026 10 315 40 25 1 ONE;TWO;THREE
-c 012 11 ComboBox026 10 345 125 25 1 ONE;TWO;THREE
-c 013 12 DropdownBox026 10 375 125 25 1 ONE;TWO;THREE
+c 011 10 toggleGroup 10 315 40 25 1 ONE;TWO;THREE
+c 012 11 comboBox 10 345 125 25 1 ONE;TWO;THREE
+c 013 12 dropdownBox 10 375 125 25 1 ONE;TWO;THREE
 c 014 13 textBox 10 405 125 25 1 TextBox
-c 015 14 multitextBox 10 435 125 75 1 MultiTextBox
+c 015 14 textBoxMulti 10 435 125 75 1 TextBoxMulti
 c 016 15 valueBox 10 515 125 25 1 
 c 017 16 spinner 10 545 125 25 1 
-c 018 17 sliderEx 10 575 125 15 1 
-c 019 18 sliderBarEx 10 595 125 15 1 
-c 020 19 progressBarEx 10 615 125 15 1 
+c 018 17 slider 10 575 125 15 1 
+c 019 18 sliderBar 10 595 125 15 1 
+c 020 19 progressBar 10 615 125 15 1 
 c 021 20 statusBar 10 635 125 25 1 StatusBar
 c 022 21 scrollPanel 10 665 125 75 1 
 c 023 22 listView 10 745 125 75 1 ONE;TWO
