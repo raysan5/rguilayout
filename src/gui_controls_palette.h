@@ -1,6 +1,6 @@
 /*******************************************************************************************
 *
-*   ControlsPalette v1.0.0 - 
+*   ControlsPalette v1.0.0 - Controls Palette Panel
 *
 *   MODULE USAGE:
 *       #define GUI_CONTROLS_PALETTE_IMPLEMENTATION
@@ -28,12 +28,12 @@
 #ifndef GUI_CONTROLS_PALETTE_H
 #define GUI_CONTROLS_PALETTE_H
 
+#define CONTROLS_PALETTE_COUNT  26
+
 typedef struct {
     Vector2 controlsAnchor;
-    Vector2 containerAnchor;
-    
     Vector2 containerScrollOffset;
-    Vector2 containerBoundsOffset;
+    
     bool windowBoxActive;
     bool buttonPressed;
     bool labelBtnPressed;
@@ -62,7 +62,7 @@ typedef struct {
     bool dropdownBoxEditMode;
     int dropdownBoxActive;
 
-    Rectangle layoutRecs[26];
+    Rectangle layoutRecs[CONTROLS_PALETTE_COUNT];
 
     // Custom state variables (depend on development software)
     // NOTE: This variables should be added manually if required
@@ -121,10 +121,8 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
     GuiControlsPaletteState state = { 0 };
 
     state.controlsAnchor = (Vector2){ 0, 0 };
-    state.containerAnchor = (Vector2){ 0, 0 };
-    
     state.containerScrollOffset = (Vector2){ 0, 0 };
-    state.containerBoundsOffset = (Vector2){ 0, 0 };
+    
     state.windowBoxActive = true;
     state.buttonPressed = false;
     state.labelBtnPressed = false;
@@ -153,32 +151,7 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
     state.dropdownBoxEditMode = false;
     state.dropdownBoxActive = 0;
 
-    state.layoutRecs[0] = (Rectangle){ state.containerAnchor.x + 0, state.containerAnchor.y + 0, 140, 950 };
-    state.layoutRecs[1] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 5, 125, 50 };
-    state.layoutRecs[2] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 70, 125, 30 };
-    state.layoutRecs[3] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 105, 125, 25 };
-    state.layoutRecs[4] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 135, 125, 35 };
-    state.layoutRecs[5] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 175, 126, 25 };
-    state.layoutRecs[6] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 205, 125, 30 };
-    state.layoutRecs[7] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 240, 90, 30 };
-    state.layoutRecs[8] = (Rectangle){ state.controlsAnchor.x + 115, state.controlsAnchor.y + 240, 30, 30 };
-    state.layoutRecs[9] = (Rectangle){ state.controlsAnchor.x + 30, state.controlsAnchor.y + 280, 15, 15 };
-    state.layoutRecs[10] = (Rectangle){ state.controlsAnchor.x + 55, state.controlsAnchor.y + 275, 90, 25 };
-    state.layoutRecs[11] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 305, 40, 25 };
-    state.layoutRecs[12] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 335, 125, 25 };
-    state.layoutRecs[13] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 365, 125, 25 };
-    state.layoutRecs[14] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 395, 125, 25 };
-    state.layoutRecs[15] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 425, 125, 75 };
-    state.layoutRecs[16] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 505, 125, 25 };
-    state.layoutRecs[17] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 535, 125, 25 };
-    state.layoutRecs[18] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 565, 125, 15 };
-    state.layoutRecs[19] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 585, 125, 15 };
-    state.layoutRecs[20] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 605, 125, 15 };
-    state.layoutRecs[21] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 625, 125, 25 };
-    state.layoutRecs[22] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 655, 125, 75 };
-    state.layoutRecs[23] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 735, 125, 75 };
-    state.layoutRecs[24] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 815, 95, 95 };
-    state.layoutRecs[25] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 915, 125, 30 };
+    UpdateControlsPaletteRecs(&state);
 
     // Custom variables initialization
     state.selectedControl = -1;
@@ -189,42 +162,26 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
 void GuiControlsPalette(GuiControlsPaletteState *state)
 {
     // Palette panel logic
-    // TODO: WARNING: This code on -O2, crashes the program!
-    // TODO: Redesign controls palette logic...
     //----------------------------------------------------------------------------------------------
-    // WARNING: CONTROLS_TYPE_NUM = 32, max layoutRecs = 26!!!
-    for (int i = 0; i < 26; i++)
+    for (int i = 1; i < CONTROLS_PALETTE_COUNT; i++)
     {
-        /*
-        if (CheckCollisionPointRec(mouse, paletteState.layoutRecs[i + 1]))      // CRASH!!!
+        if (CheckCollisionPointRec(GetMousePosition(), state->layoutRecs[i])) 
         {
-            state->selectedControl = i;
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) selectedType = i;
-
+            state->selectedControl = i - 1;
             break;
         }
         else state->selectedControl = -1;
-        */
     }
 
     state->controlsAnchor.x = GetScreenWidth() - 180;
-    state->controlsAnchor.y = GetScreenHeight()/2 - 950/2;
-    /*
-    state->containerAnchor.x = GetScreenWidth() - 180;
-    state->containerAnchor.y = 15;
-    state->containerBoundsOffset.y = 950 - GetScreenHeight() + 50;
-    if (state->containerBoundsOffset.y < 0) state->containerBoundsOffset.y = 0;
-
-    state->controlsAnchor = state->containerAnchor;
-    state->controlsAnchor.y += state->containerScrollOffset.y;
-    */
+    state->controlsAnchor.y = GetScreenHeight()/2 - 1000/2;
     
-    //UpdateControlsPaletteRecs(state);
+    UpdateControlsPaletteRecs(state);
     //----------------------------------------------------------------------------------------------
     
-    Rectangle view = GuiScrollPanel((Rectangle){ state->layoutRecs[0].x + 6, state->layoutRecs[0].y, state->layoutRecs[0].width + 12 - state->containerBoundsOffset.x, state->layoutRecs[0].height - state->containerBoundsOffset.y }, state->layoutRecs[0], &state->containerScrollOffset);
+    Rectangle view = GuiScrollPanel(state->layoutRecs[0], (Rectangle){ state->layoutRecs[0].x, state->layoutRecs[0].y, state->layoutRecs[0].width - 10, state->layoutRecs[0].height + 20 }, &state->containerScrollOffset);
 
-    BeginScissorMode(view.x + 1, view.y + 1, view.width - 2, view.height - 2);     
+    BeginScissorMode(view.x, view.y, view.width, view.height);     
 
         GuiLock();
         
@@ -259,24 +216,16 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
     EndScissorMode();
     
     // Draw selected control rectangle
-    /*
-    BeginScissorMode(state->containerAnchor.x + 1, state->containerAnchor.y + 1, 150 - 2, 950 - state->containerBoundsOffset.y - 2);
-
-        DrawRectangleRec(state->layoutRecs[state->selectedControl + 1], Fade(RED, 0.5f));
-
-        if (state->selectedControl > -1)
-        {
-            if (selectedType != state->selectedControl) DrawRectangleRec(state->layoutRecs[state->selectedControl + 1], Fade(RED, 0.1f));
-            DrawRectangleLinesEx(state->layoutRecs[state->selectedControl + 1], 1, MAROON);
-        }
-
-    EndScissorMode();
-    */
+    if (state->selectedControl > -1)
+    {
+        DrawRectangleRec(state->layoutRecs[state->selectedControl + 1], Fade(RED, 0.2f));
+        DrawRectangleLinesEx(state->layoutRecs[state->selectedControl + 1], 1, MAROON);
+    }
 }
 
 void UpdateControlsPaletteRecs(GuiControlsPaletteState *state)
 {
-    state->layoutRecs[0] = (Rectangle){ state->containerAnchor.x + 0, state->containerAnchor.y + 0, 150, 950 };
+    state->layoutRecs[0] = (Rectangle){ state->controlsAnchor.x + 5, state->controlsAnchor.y - 8, 160, 1000 };
     state->layoutRecs[1] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 5, 125, 50 };
     state->layoutRecs[2] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 70, 125, 30 };
     state->layoutRecs[3] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 105, 125, 25 };
