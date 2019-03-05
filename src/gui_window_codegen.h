@@ -1,10 +1,13 @@
 /*******************************************************************************************
 *
-*   raygui layout - WindowCodegen
+*   WindowCodegen v1.0.0 - Layout Code Generator
 *
 *   MODULE USAGE:
 *       #define GUI_WINDOW_CODEGEN_IMPLEMENTATION
 *       #include "gui_window_codegen.h"
+*
+*       INIT: GuiWindowCodegenState state = InitGuiWindowCodegen();
+*       DRAW: GuiWindowCodegen(&state);
 *
 *   LICENSE: Propietary License
 *
@@ -18,41 +21,67 @@
 
 #include "raylib.h"
 
+// WARNING: raygui implementation is expected to be defined before including this header
+#undef RAYGUI_IMPLEMENTATION
+#include "raygui.h"
+
 #ifndef GUI_WINDOW_CODEGEN_H
 #define GUI_WINDOW_CODEGEN_H
 
 typedef struct {
+    Vector2 codegenAnchor;
+    
     bool codeGenWindowActive;
-    unsigned char toolNameText[64];
     bool toolNameEditMode;
-    unsigned char toolVersionText[64];
+    unsigned char toolNameText[64];
     bool toolVersionEditMode;
-    unsigned char companyText[64];
+    unsigned char toolVersionText[64];
     bool companyEditMode;
-    unsigned char toolDescriptionText[64];
+    unsigned char companyText[64];
     bool toolDescriptionEditMode;
-    int codeTemplateActive;
+    unsigned char toolDescriptionText[64];
     bool codeTemplateEditMode;
+    int codeTemplateActive;
     bool exportAnchorsChecked;
-    bool fullVariablesChecked;
     bool defineRecsChecked;
     bool defineTextsChecked;
     bool fullCommentsChecked;
-    bool CheckBox019Checked;
-    bool CheckBox021Checked;
-    bool exportCodeButtonPressed;
-    
+    bool guiExportStyleChecked;
+    bool guiEmbedFontChecked;
+    bool generateCodePressed;
+    bool executeCodePressed;
+    Vector2 codePanelScrollOffset;
+
     // Custom state variables (depend on development software)
     // NOTE: This variables should be added manually if required
     unsigned char *codeText;        // Generated code string
     unsigned int codeHeight;        // Generated code drawing size
-    Vector2 codeOffset;             // Code drawing scroll panel offset
-    
+
 } GuiWindowCodegenState;
 
 #ifdef __cplusplus
 extern "C" {            // Prevents name mangling of functions
 #endif
+
+//----------------------------------------------------------------------------------
+// Defines and Macros
+//----------------------------------------------------------------------------------
+//...
+
+//----------------------------------------------------------------------------------
+// Types and Structures Definition
+//----------------------------------------------------------------------------------
+// ...
+
+//----------------------------------------------------------------------------------
+// Global Variables Definition
+//----------------------------------------------------------------------------------
+//...
+
+//----------------------------------------------------------------------------------
+// Internal Module Functions Definition
+//----------------------------------------------------------------------------------
+//...
 
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
@@ -79,82 +108,74 @@ GuiWindowCodegenState InitGuiWindowCodegen(void)
 {
     GuiWindowCodegenState state = { 0 };
 
-    state.codeGenWindowActive = false;
+    state.codegenAnchor = (Vector2){ 0, 0 };
     
-    strcpy(state.toolNameText,"window_codegen");
+    state.codeGenWindowActive = false;
     state.toolNameEditMode = false;
-    strcpy(state.toolVersionText,"1.0.0");
+    strcpy(state.toolNameText, "layout_name");
     state.toolVersionEditMode = false;
-    strcpy(state.companyText,"raylibtech");
+    strcpy(state.toolVersionText, "1.0.0");
     state.companyEditMode = false;
-    strcpy(state.toolDescriptionText,"Tool Description");
+    strcpy(state.companyText, "raylib technologies");
     state.toolDescriptionEditMode = false;
-    state.codeTemplateActive = 0;
+    strcpy(state.toolDescriptionText, "Tool Description");
     state.codeTemplateEditMode = false;
+    state.codeTemplateActive = 0;
     state.exportAnchorsChecked = false;
-    state.fullVariablesChecked = false;
     state.defineRecsChecked = false;
     state.defineTextsChecked = false;
     state.fullCommentsChecked = false;
-    state.CheckBox019Checked = false;
-    state.CheckBox021Checked = false;
+    state.guiExportStyleChecked = false;
+    state.guiEmbedFontChecked = false;
+    state.generateCodePressed = false;
+    state.executeCodePressed = false;
+    state.codePanelScrollOffset = (Vector2){ 0, 0 };
 
-    state.exportCodeButtonPressed = false; // TODO GEN
-    
     // Custom variables initialization
     state.codeText = NULL;
     state.codeHeight = 0;
-    state.codeOffset = (Vector2){ 0, 0 };
-    
+
     return state;
 }
 
 void GuiWindowCodegen(GuiWindowCodegenState *state)
 {
-    const char *lblNameText = "Name:";
-    const char *lblVersionText = "Version:";
-    const char *lblCompanyText = "Company:";
-    const char *lblDescriptionText = "Short Description:";
-    const char *codeTemplateText = "STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h);CUSTOM CODE FILE";
-    
-    // TODO: Additional const values (text and values)
-    
+    if (state->codeTemplateEditMode) GuiLock();
+
     if (state->codeGenWindowActive)
     {
-        if (state->codeTemplateEditMode) GuiLock();
-
-        state->codeGenWindowActive = !GuiWindowBox((Rectangle){ 50, 50, 900, 640 }, "Code Generation Window");
-        state->exportCodeButtonPressed = GuiButton((Rectangle){ 715, 605, 220, 30 }, "Export Generated Code");
-        GuiDisable(); if (GuiButton((Rectangle){ 715, 645, 220, 30 }, "Execute Code")) {} GuiEnable();
-        GuiGroupBox((Rectangle){ 715, 85, 220, 230 }, "Layout Info");
-        GuiLabel((Rectangle){ 725, 95, 50, 25 }, lblNameText);
-        if (GuiTextBox((Rectangle){ 775, 95, 150, 25 }, state->toolNameText, 64, state->toolNameEditMode)) state->toolNameEditMode = !state->toolNameEditMode;
-        GuiLabel((Rectangle){ 725, 125, 50, 25 }, lblVersionText);
-        if (GuiTextBox((Rectangle){ 775, 125, 150, 25 }, state->toolVersionText, 64, state->toolVersionEditMode)) state->toolVersionEditMode = !state->toolVersionEditMode;
-        GuiLabel((Rectangle){ 725, 155, 50, 25 }, lblCompanyText);
-        if (GuiTextBox((Rectangle){ 775, 155, 150, 25 }, state->companyText, 64, state->companyEditMode)) state->companyEditMode = !state->companyEditMode;
-        GuiLabel((Rectangle){ 725, 185, 100, 25 }, lblDescriptionText);
-        if (GuiTextBoxMulti((Rectangle){ 725, 205, 200, 100 }, state->toolDescriptionText, 64, state->toolDescriptionEditMode)) state->toolDescriptionEditMode = !state->toolDescriptionEditMode;
-        GuiGroupBox((Rectangle){ 715, 330, 220, 160 }, "Code Generation Options");
-        // TODO: checked state->
-        state->exportAnchorsChecked = GuiCheckBox((Rectangle){ 735, 380, 15, 15 }, "Export anchors", state->exportAnchorsChecked);
-        state->defineRecsChecked = GuiCheckBox((Rectangle){ 735, 420, 15, 15 }, "Define Rectangles", state->defineRecsChecked);
-        state->defineTextsChecked = GuiCheckBox((Rectangle){ 735, 440, 15, 15 }, "Define text as const", state->defineTextsChecked);
-        state->fullCommentsChecked = GuiCheckBox((Rectangle){ 735, 460, 15, 15 }, "Include detailed comments", state->fullCommentsChecked);
-        GuiGroupBox((Rectangle){ 715, 505, 220, 65 }, "Gui Style Options");
-        state->CheckBox019Checked = GuiCheckBox((Rectangle){ 735, 520, 15, 15 }, "Export gui style", state->CheckBox019Checked);
-        state->CheckBox021Checked = GuiCheckBox((Rectangle){ 735, 540, 15, 15 }, "Embbed gui font", state->CheckBox021Checked);
-        if (GuiDropdownBox((Rectangle){ 725, 345, 195, 25 }, codeTemplateText, &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
-
-        GuiUnlock();
-
+        state->codegenAnchor = (Vector2){ GetScreenWidth()/2 - 450, GetScreenHeight()/2 - 320 };
+  
+        state->codeGenWindowActive = !GuiWindowBox((Rectangle){ state->codegenAnchor.x + 0, state->codegenAnchor.y + 0, 900, 640 }, "#7#Code Generation Window");
+        GuiGroupBox((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 35, 220, 235 }, "Layout Info");
+        GuiLabel((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 45, 50, 25 }, "Name:");
+        if (GuiTextBox((Rectangle){ state->codegenAnchor.x + 725, state->codegenAnchor.y + 45, 150, 25 }, state->toolNameText, 64, state->toolNameEditMode)) state->toolNameEditMode = !state->toolNameEditMode;
+        GuiLabel((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 75, 50, 25 }, "Version:");
+        if (GuiTextBox((Rectangle){ state->codegenAnchor.x + 725, state->codegenAnchor.y + 75, 150, 25 }, state->toolVersionText, 64, state->toolVersionEditMode)) state->toolVersionEditMode = !state->toolVersionEditMode;
+        GuiLabel((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 105, 50, 25 }, "Company:");
+        if (GuiTextBox((Rectangle){ state->codegenAnchor.x + 725, state->codegenAnchor.y + 105, 150, 25 }, state->companyText, 64, state->companyEditMode)) state->companyEditMode = !state->companyEditMode;
+        GuiLabel((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 135, 100, 25 }, "Short Description:");
+        if (GuiTextBox((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 160, 200, 100 }, state->toolDescriptionText, 64, state->toolDescriptionEditMode)) state->toolDescriptionEditMode = !state->toolDescriptionEditMode;
+        GuiGroupBox((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 285, 220, 135 }, "Code Generation Options");
+        state->exportAnchorsChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 335, 15, 15 }, "Export anchors", state->exportAnchorsChecked);
+        state->defineRecsChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 355, 15, 15 }, "Define Rectangles", state->defineRecsChecked);
+        state->defineTextsChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 375, 15, 15 }, "Define text as const", state->defineTextsChecked);
+        state->fullCommentsChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 395, 15, 15 }, "Include detailed comments", state->fullCommentsChecked);
+        GuiDisable();
+        GuiGroupBox((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 435, 220, 60 }, "Gui Style Options");
+        state->guiExportStyleChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 450, 15, 15 }, "Export gui style", state->guiExportStyleChecked);
+        state->guiEmbedFontChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 470, 15, 15 }, "Embbed gui font", state->guiEmbedFontChecked);
+        GuiEnable();
+        state->generateCodePressed = GuiButton((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 505, 220, 30 }, "#7#Export Generated Code"); 
+        //state->executeCodePressed = GuiButton((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 545, 220, 30 }, "Execute Code"); 
+        if (GuiDropdownBox((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 300, 200, 25 }, "STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h);CUSTOM CODE FILE", &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
+    
         // Draw generated code
         if (state->codeText != NULL)
         {
-            Rectangle codePanel = { 60, 85, 640, 590 };
-            
-            Rectangle view = GuiScrollPanel(codePanel, (Rectangle){ codePanel.x, codePanel.y, codePanel.width, state->codeHeight }, &state->codeOffset);
-            
+            Rectangle codePanel = { state->codegenAnchor.x + 10, state->codegenAnchor.y + 35, 645, 595 };
+            Rectangle view = GuiScrollPanel(codePanel, (Rectangle){ codePanel.x, codePanel.y, codePanel.width*2, state->codeHeight }, &state->codePanelScrollOffset);
+
             BeginScissorMode(view.x, view.y, view.width, view.height);
                 unsigned int linesCounter = 0;
                 unsigned char *currentLine = state->codeText;
@@ -165,8 +186,11 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
                     if (nextLine) *nextLine = '\0';     // Temporaly terminating the current line
                     
                     // Only draw lines inside text panel
-                    if (((state->codeOffset.y + 20*linesCounter) >= 0) && 
-                        ((state->codeOffset.y + 20*linesCounter) < (codePanel.height - 2))) DrawText(currentLine, codePanel.x + 10, codePanel.y + state->codeOffset.y + 20*linesCounter, 10, DARKBLUE);
+                    if (((state->codePanelScrollOffset.y + 20*linesCounter) >= 0) && 
+                        ((state->codePanelScrollOffset.y + 20*linesCounter) < (codePanel.height - 2)))
+                    {
+                        DrawText(currentLine, codePanel.x + 10, codePanel.y + state->codePanelScrollOffset.y + 20*linesCounter, 10, DARKBLUE);
+                    }
                     
                     if (nextLine) *nextLine = '\n';     // Restore newline-char, just to be tidy
                     currentLine = nextLine ? (nextLine + 1) : NULL;
@@ -178,6 +202,8 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
             state->codeHeight = 20*linesCounter;
         }
     }
+    
+    GuiUnlock();
 }
 
 #endif // GUI_WINDOW_CODEGEN_IMPLEMENTATION

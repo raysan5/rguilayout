@@ -476,7 +476,7 @@ int main(int argc, char *argv[])
 
         if (!textEditMode && !nameEditMode)
         {
-            // TODO: review -- Show save layout message window on ESC
+            // Show save layout message window on ESC
             if (IsKeyPressed(KEY_ESCAPE))
             {
                 // Close windows logic
@@ -601,7 +601,7 @@ int main(int argc, char *argv[])
                     windowCodegenState.codeText = GenerateLayoutCode(template, layout, config);
                     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
-                    windowCodegenState.codeOffset = (Vector2){ 0, 0 };
+                    windowCodegenState.codePanelScrollOffset = (Vector2){ 0, 0 };
                 }
             }
         }
@@ -803,6 +803,7 @@ int main(int argc, char *argv[])
                                             || (layout.controls[layout.controlsCount].type == GUI_STATUSBAR)
                                             || (layout.controls[layout.controlsCount].type == GUI_DUMMYREC))
                                         {
+                                            // TODO: Support differerent default text?
                                             strcpy(layout.controls[layout.controlsCount].text, "SAMPLE TEXT");
                                         }
 
@@ -1015,15 +1016,16 @@ int main(int argc, char *argv[])
                                         if (IsKeyPressed(KEY_R) && layout.controls[selectedControl].type == GUI_WINDOWBOX)
                                         {
                                             Rectangle rec = layout.controls[selectedControl].rec;
+                                            
                                             if (layout.controls[selectedControl].ap->id > 0)
                                             {
                                                 rec.x += layout.controls[selectedControl].ap->x;
                                                 rec.y += layout.controls[selectedControl].ap->y;
                                             }
+                                            
                                             layout.anchors[0].x = rec.x;
                                             layout.anchors[0].y = rec.y;
                                             layout.refWindow = (Rectangle){layout.anchors[0].x, layout.anchors[0].y, rec.width, rec.height};
-
                                         }
 
                                         // Duplicate control
@@ -1035,8 +1037,7 @@ int main(int argc, char *argv[])
                                             layout.controls[layout.controlsCount].rec.x += 10;
                                             layout.controls[layout.controlsCount].rec.y += 10;
                                             strcpy(layout.controls[layout.controlsCount].text, layout.controls[selectedControl].text);
-                                            strcpy(layout.controls[layout.controlsCount].name,
-                                                   FormatText("%s%03i", controlTypeName[layout.controls[layout.controlsCount].type], layout.controlsCount));
+                                            strcpy(layout.controls[layout.controlsCount].name, FormatText("%s%03i", controlTypeName[layout.controls[layout.controlsCount].type], layout.controlsCount));
                                             layout.controls[layout.controlsCount].ap = layout.controls[selectedControl].ap;            // Default anchor point (0, 0)
 
                                             layout.controlsCount++;
@@ -1192,7 +1193,7 @@ int main(int argc, char *argv[])
                                         }
 
                                         // Enable drag mode (if not on mouse scale mode)
-                                        else if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !mouseScaleMode)
+                                        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !mouseScaleMode)
                                         {
                                             panOffset = mouse;
 
@@ -1223,7 +1224,7 @@ int main(int argc, char *argv[])
                                                 strcpy(prevText, layout.controls[selectedControl].text);
                                                 textEditMode = true;
                                             }
-                                            else printf("Can't edit text to this control\n");
+                                            else printf("WARNING: Can't edit text on this control\n");
                                         }
 
                                         // Enable name edit mode
@@ -1825,8 +1826,8 @@ int main(int argc, char *argv[])
                                         tracemapSelected = false;
                                     }
 
-                                    // Enable dragMode  mode
-                                    else if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                                    // Enable dragMode mode
+                                    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                                     {
                                         panOffset = mouse;
                                         prevPosition = (Vector2){ tracemapRec.x, tracemapRec.y };
@@ -2269,6 +2270,7 @@ int main(int argc, char *argv[])
                         }
                         else DrawText(FormatText("[%i, %i]", (int)(layout.refWindow.x), (int)(layout.refWindow.y)), layout.anchors[selectedAnchor].x + ANCHOR_RADIUS, layout.anchors[selectedAnchor].y - 38, 20, positionColor);
                     }
+                    
                     // Anchor links
                     for (int i = 0; i < layout.controlsCount; i++)
                     {
@@ -2294,15 +2296,16 @@ int main(int argc, char *argv[])
                     // Draw name edit mode
                     if (nameEditMode)
                     {
-                        int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
-                        int textWidth = MeasureText(layout.anchors[selectedAnchor].name, fontSize);
-                        Rectangle textboxRec = (Rectangle) {layout.anchors[selectedAnchor].x, layout.anchors[selectedAnchor].y, textWidth + 15, fontSize + 5};
-
-                        if (textboxRec.width < textWidth + 15) textboxRec.width = textWidth + 15;
-                        if (textboxRec.height < fontSize) textboxRec.height += fontSize;
-
                         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(ORANGE, 0.2f));
                         DrawText("Anchor name edit mode", 20, 20, 20, DARKGRAY);
+                        
+                        int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
+                        int textWidth = MeasureText(layout.anchors[selectedAnchor].name, fontSize);
+                        Rectangle textboxRec = (Rectangle){ layout.anchors[selectedAnchor].x, layout.anchors[selectedAnchor].y, textWidth + 40, fontSize + 5 };
+
+                        if (textboxRec.width < (textWidth + 40)) textboxRec.width = textWidth + 40;
+                        if (textboxRec.height < fontSize) textboxRec.height += fontSize;
+
                         if (GuiTextBox(textboxRec, layout.anchors[selectedAnchor].name, MAX_ANCHOR_NAME_LENGTH, nameEditMode)) nameEditMode = !nameEditMode;
                     }
                 }
@@ -2326,7 +2329,7 @@ int main(int argc, char *argv[])
                     if (!dragMode && resizeMode) selectedControlColor = BLUE;
 
                     Rectangle selectedRec = layout.controls[selectedControl].rec;
-                    if (layout.controls[selectedControl].type == GUI_WINDOWBOX) selectedRec.height = 24;
+                    if (layout.controls[selectedControl].type == GUI_WINDOWBOX) selectedRec.height = WINDOW_STATUSBAR_HEIGHT;
                     else if (layout.controls[selectedControl].type == GUI_GROUPBOX)
                     {
                         selectedRec.y -= 10;
@@ -2384,24 +2387,19 @@ int main(int argc, char *argv[])
                     // Text edit
                     if (textEditMode)
                     {
+                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(SKYBLUE, 0.2f));
+                        DrawText("Control text edit mode", 20, 25, 20, DARKGRAY);
+                        
                         Rectangle textboxRec = layout.controls[selectedControl].rec;
-                        int type = layout.controls[selectedControl].type;
-                        if (type == GUI_CHECKBOX ||
-                            type == GUI_LABEL ||
-                            type == GUI_TOGGLEGROUP ||
-                            type == GUI_COMBOBOX ||
-                            type == GUI_DROPDOWNBOX ||
-                            type == GUI_SLIDER ||
-                            type == GUI_SLIDERBAR)
-                        {
-                            int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
-                            int textWidth = MeasureText(layout.controls[selectedControl].text, fontSize);
-                            if (textboxRec.width < textWidth + 20) textboxRec.width = textWidth + 20;
-                            if (textboxRec.height < fontSize) textboxRec.height += fontSize;
-                        }
-
-                        if (type == GUI_WINDOWBOX) textboxRec.height = WINDOW_STATUSBAR_HEIGHT;  // Defined inside raygui.h
-                        else if (type == GUI_GROUPBOX)
+                        
+                        // Make sure text could be written, no matter if overflows control
+                        int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
+                        int textWidth = MeasureText(layout.controls[selectedControl].text, fontSize);
+                        if (textboxRec.width < (textWidth + 40)) textboxRec.width = textWidth + 40;     // TODO: Additional space required to work with GuiTextBox()?
+                        if (textboxRec.height < fontSize) textboxRec.height += fontSize;
+                        
+                        if (layout.controls[selectedControl].type == GUI_WINDOWBOX) textboxRec.height = WINDOW_STATUSBAR_HEIGHT;  // Defined inside raygui.h
+                        else if (layout.controls[selectedControl].type == GUI_GROUPBOX)
                         {
                             textboxRec.y -= 10;
                             textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;
@@ -2413,9 +2411,7 @@ int main(int argc, char *argv[])
                             textboxRec.y += layout.controls[selectedControl].ap->y;
                         }
 
-                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(SKYBLUE, 0.2f));
-                        DrawText("Control text edit mode", 20, 25, 20, DARKGRAY);
-
+                        // Draw GuiTextBox()/GuiTextBoxMulti()
                         if (layout.controls[selectedControl].type == GUI_TEXTBOXMULTI)
                         {
                             if (GuiTextBoxMulti(textboxRec, layout.controls[selectedControl].text, MAX_CONTROL_TEXTMULTI_LENGTH, textEditMode)) textEditMode = !textEditMode;
@@ -2426,18 +2422,18 @@ int main(int argc, char *argv[])
                     // Name edit
                     if (nameEditMode)
                     {
+                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GREEN, 0.2f));
+                        DrawText("Control name edit mode", 20, 20, 20, DARKGRAY);
+                        
                         Rectangle textboxRec = layout.controls[selectedControl].rec;
-                        int type = layout.controls[selectedControl].type;
-                        if (type == GUI_CHECKBOX || type == GUI_LABEL || type == GUI_SLIDER || type == GUI_SLIDERBAR)
-                        {
-                            int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
-                            int textWidth = MeasureText(layout.controls[selectedControl].name, fontSize);
-                            if (textboxRec.width < textWidth + 20) textboxRec.width = textWidth + 20;
-                            if (textboxRec.height < fontSize) textboxRec.height += fontSize;
-                        }
 
-                        if (type == GUI_WINDOWBOX) textboxRec.height = WINDOW_STATUSBAR_HEIGHT;  // Defined inside raygui.h
-                        else if (type == GUI_GROUPBOX)
+                        int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
+                        int textWidth = MeasureText(layout.controls[selectedControl].name, fontSize);
+                        if (textboxRec.width < textWidth + 40) textboxRec.width = textWidth + 40;
+                        if (textboxRec.height < fontSize) textboxRec.height += fontSize;
+
+                        if (layout.controls[selectedControl].type == GUI_WINDOWBOX) textboxRec.height = WINDOW_STATUSBAR_HEIGHT;  // Defined inside raygui.h
+                        else if (layout.controls[selectedControl].type == GUI_GROUPBOX)
                         {
                             textboxRec.y -= 10;
                             textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;
@@ -2449,8 +2445,6 @@ int main(int argc, char *argv[])
                             textboxRec.y += layout.controls[selectedControl].ap->y;
                         }
 
-                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GREEN, 0.2f));
-                        DrawText("Control name edit mode", 20, 20, 20, DARKGRAY);
                         if (GuiTextBox(textboxRec, layout.controls[selectedControl].name, MAX_CONTROL_NAME_LENGTH, nameEditMode)) nameEditMode = !nameEditMode;
                     }
                 }
@@ -2518,6 +2512,7 @@ int main(int argc, char *argv[])
                 // Draw reference window lines
                 if ((layout.refWindow.width > 0) && (layout.refWindow.height > 0)) DrawRectangleLinesEx(layout.refWindow, 1, Fade(BLACK, 0.7f));
 
+                
                 // Draw the help panel (by default is out of screen)
                 //----------------------------------------------------------------------------------------
                 if (helpPositionX > -280)
@@ -2583,7 +2578,7 @@ int main(int argc, char *argv[])
                 {
                     GuiWindowCodegen(&windowCodegenState);
 
-                    if (windowCodegenState.exportCodeButtonPressed)
+                    if (windowCodegenState.generateCodePressed)
                     {
                         DialogExportLayout(windowCodegenState.codeText, FormatText("%s.h", config.name));
                         windowCodegenState.codeGenWindowActive = false;

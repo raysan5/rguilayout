@@ -1,0 +1,38 @@
+#
+# rgl text file (v1.0) - raygui layout text file generated using rGuiLayout
+#
+# Total number of controls:     22
+# Anchor info:   a <id> <name> <posx> <posy> <enabled>
+# Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
+#
+r 50 50 900 640
+a 000 anchor00 50 50 1
+a 001 anchor01 0 0 1
+a 002 anchor02 -50 -50 0
+a 003 anchor03 -50 -50 0
+a 004 anchor04 -50 -50 0
+a 005 anchor05 300 150 0
+a 006 anchor06 300 150 0
+a 007 anchor07 300 150 0
+c 000 0 codeGenWindow 0 0 900 640 1 Code Generation Window
+c 001 1 layoutInfoGroup 665 35 220 235 1 Layout Info
+c 002 4 lblName 675 45 50 25 1 Name:
+c 003 13 toolName 725 45 150 25 1 layout_name
+c 004 4 lblVersion 675 75 50 25 1 Version:
+c 005 13 toolVersion 725 75 150 25 1 1.0.0
+c 006 4 lblCompany 675 105 50 25 1 Company:
+c 007 13 company 725 105 150 25 1 raylib technologies
+c 008 4 lblDescription 675 135 100 25 1 Short Description:
+c 009 13 toolDescription 675 160 200 100 1 Tool Description
+c 010 1 codeGenGroup 665 285 220 135 1 Code Generation Options
+c 011 12 codeTemplate 675 300 200 25 1 STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h);CUSTOM CODE FILE¼)N
+c 012 8 exportAnchors 685 335 15 15 1 Export anchors
+c 013 8 defineRecs 685 355 15 15 1 Define Rectangles
+c 014 8 defineTexts 685 375 15 15 1 Define text as const
+c 015 8 fullComments 685 395 15 15 1 Include detailed comments
+c 016 1 guiStyleGroup 665 435 220 60 1 Gui Style Options
+c 017 8 guiExportStyle 685 450 15 15 1 Export gui Style
+c 018 8 guiIncludeFont 685 470 15 15 1 Include gui Font
+c 019 5 GenerateCode 665 505 220 30 1 Export Generated Code
+c 020 5 ExecuteCode 665 545 220 30 1 Execute Code
+c 021 21 codePanel 10 35 645 595 1 

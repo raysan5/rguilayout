@@ -1,0 +1,42 @@
+#
+# rgl text file (v1.0) - raygui layout text file generated using rGuiLayout
+#
+# Total number of controls:     26
+# Anchor info:   a <id> <name> <posx> <posy> <enabled>
+# Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
+#
+r 50 50 -1 -1
+a 000 anchor00 50 50 1
+a 001 anchor01 0 0 1
+a 002 anchor02 -50 -50 0
+a 003 anchor03 -50 -50 0
+a 004 anchor04 -50 -50 0
+a 005 anchor05 -50 -50 0
+a 006 anchor06 -50 -50 0
+a 007 anchor07 -50 -50 0
+c 000 21 container 0 0 155 950 1 
+c 001 0 windowBox 10 15 125 50 1 WindowBox
+c 002 1 groupBox 10 80 125 30 1 GroupBox
+c 003 2 line 10 115 125 25 1 
+c 004 3 panel 10 145 125 35 1 
+c 005 4 label 10 185 126 25 1 Label SAMPLE TEXT
+c 006 5 button 10 215 125 30 1 Button
+c 007 6 labelBtn 10 250 90 30 1 Label Button
+c 008 7 imageBtn 105 250 30 30 1 IM
+c 009 8 checkBox 20 290 15 15 1 
+c 010 9 toggle 45 285 90 25 1 Toggle
+c 011 10 ToggleGroup026 10 315 40 25 1 ONE;TWO;THREE
+c 012 11 ComboBox026 10 345 125 25 1 ONE;TWO;THREE
+c 013 12 DropdownBox026 10 375 125 25 1 ONE;TWO;THREE
+c 014 13 textBox 10 405 125 25 1 TextBox
+c 015 14 multitextBox 10 435 125 75 1 MultiTextBox
+c 016 15 valueBox 10 515 125 25 1 
+c 017 16 spinner 10 545 125 25 1 
+c 018 17 sliderEx 10 575 125 15 1 
+c 019 18 sliderBarEx 10 595 125 15 1 
+c 020 19 progressBarEx 10 615 125 15 1 
+c 021 20 statusBar 10 635 125 25 1 StatusBar
+c 022 21 scrollPanel 10 665 125 75 1 
+c 023 22 listView 10 745 125 75 1 ONE;TWO
+c 024 23 colorPicker 10 825 95 95 1 
+c 025 24 dummyRec 10 925 125 30 1 DummyRec
