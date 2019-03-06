@@ -154,7 +154,7 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
     UpdateControlsPaletteRecs(&state);
 
     // Custom variables initialization
-    state.selectedControl = -1;
+    state.selectedControl = 0;
 
     return state;
 }
@@ -170,7 +170,6 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
             state->selectedControl = i - 1;
             break;
         }
-        else state->selectedControl = -1;
     }
 
     state->controlsAnchor.x = GetScreenWidth() - 180;
@@ -216,11 +215,8 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
     EndScissorMode();
     
     // Draw selected control rectangle
-    if (state->selectedControl > -1)
-    {
-        DrawRectangleRec(state->layoutRecs[state->selectedControl + 1], Fade(RED, 0.2f));
-        DrawRectangleLinesEx(state->layoutRecs[state->selectedControl + 1], 1, MAROON);
-    }
+    DrawRectangleRec(state->layoutRecs[state->selectedControl + 1], Fade(RED, 0.2f));
+    DrawRectangleLinesEx(state->layoutRecs[state->selectedControl + 1], 1, MAROON);
 }
 
 void UpdateControlsPaletteRecs(GuiControlsPaletteState *state)

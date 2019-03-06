@@ -181,8 +181,8 @@ int main(int argc, char *argv[])
     int multiSelectCount = 0;
 
     // Controls variables
-    int selectedControl = -1;
-    int focusedControl = -1;
+    int selectedControl = -1;               // Control selected on layout
+    int focusedControl = -1;                // Control focused on layout
     int selectedType = GUI_WINDOWBOX;       // Control type selected on panel
     
     Vector2 panOffset = { 0 };
@@ -643,14 +643,19 @@ int main(int argc, char *argv[])
 
                     // Palette selected control
                     //----------------------------------------------------------------------------------------------
-                    if (!CheckCollisionPointRec(mouse, paletteState.layoutRecs[0]))
-                    {
-                        if (focusedControl == -1) selectedType -= GetMouseWheelMove();  // Select type with mouse wheel
-                    }
+                    
+                    // Select control type with mouse wheel
+                    if (focusedControl == -1) paletteState.selectedControl -= GetMouseWheelMove();
 
-                    if (selectedType < GUI_WINDOWBOX) selectedType = GUI_WINDOWBOX;
-                    else if (selectedType > GUI_DUMMYREC) selectedType = GUI_DUMMYREC;
+                    if (paletteState.selectedControl < GUI_WINDOWBOX) paletteState.selectedControl = GUI_WINDOWBOX;
+                    else if (paletteState.selectedControl > GUI_DUMMYREC) paletteState.selectedControl = GUI_DUMMYREC;
+                    
+                    selectedType = paletteState.selectedControl;
+                    //----------------------------------------------------------------------------------------------
 
+                    // Controls selection and edition logic
+                    //----------------------------------------------------------------------------------------------
+                    
                     // Updates the default rectangle position
                     defaultRec[selectedType].x = mouse.x - defaultRec[selectedType].width/2;
                     defaultRec[selectedType].y = mouse.y - defaultRec[selectedType].height/2;
@@ -666,10 +671,7 @@ int main(int argc, char *argv[])
                         if (offsetY >= gridLineSpacing/2) defaultRec[selectedType].y += (gridLineSpacing - offsetY);
                         else defaultRec[selectedType].y -= offsetY;
                     }
-                    //----------------------------------------------------------------------------------------------
 
-                    // Controls selection and edition logic
-                    //----------------------------------------------------------------------------------------------
                     if (!CheckCollisionPointRec(mouse, paletteState.layoutRecs[0]))
                     {
                         if (!dragMode)
