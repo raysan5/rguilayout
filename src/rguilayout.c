@@ -184,11 +184,11 @@ int main(int argc, char *argv[])
     int selectedControl = -1;               // Control selected on layout
     int focusedControl = -1;                // Control focused on layout
     int selectedType = GUI_WINDOWBOX;       // Control type selected on panel
+    Color selectedControlColor = RED;       // Control selected color
+    Color positionColor = MAROON;           // Control position text color
     
     Vector2 panOffset = { 0 };
     Vector2 prevPosition = { 0 };
-    Color selectedControlColor = RED;
-    Color positionColor = MAROON;
    
     // Anchors control variables
     GuiAnchorPoint auxAnchor = { 9, 0, 0, 0 };
@@ -2069,7 +2069,7 @@ int main(int argc, char *argv[])
                                     case GUI_COMBOBOX: GuiComboBox(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
                                     case GUI_DROPDOWNBOX: GuiDropdownBox(defaultRec[selectedType], "ONE;TWO;THREE", &dropdownBoxActive, false); break;
                                     case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedType], "TEXT BOX", 7, false); break;
-                                    case GUI_TEXTBOXMULTI: GuiTextBoxMulti(defaultRec[selectedType], "MULTI TEX BOX", 7, false);break;
+                                    case GUI_TEXTBOXMULTI: GuiTextBoxMulti(defaultRec[selectedType], "TEXT BOX MULTI", 7, false);break;
                                     case GUI_VALUEBOX: GuiValueBox(defaultRec[selectedType], &valueBoxValue, 42, 100, false); break;
                                     case GUI_SPINNER: GuiSpinner(defaultRec[selectedType], &spinnerValue, 42, 3, false); break;
                                     case GUI_SLIDER: GuiSlider(defaultRec[selectedType], "SLIDER", 42, 0, 100, false); break;
