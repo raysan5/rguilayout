@@ -2435,7 +2435,7 @@ int main(int argc, char *argv[])
                 }
 
                 // Draw mouse scale mode selector
-                if (mouseScaleReady)
+                if (mouseScaleReady && (selectedControl >= 0))
                 {
                     Rectangle selectedRec = layout.controls[selectedControl].rec;
 
