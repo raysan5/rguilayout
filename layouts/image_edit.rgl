@@ -14,7 +14,7 @@ a 004 anchor04 0 0 0
 a 005 anchor05 0 0 0
 a 006 anchor06 0 0 0
 a 007 anchor07 0 0 0
-c 000 0 editWindow 0 0 164 444 1 Image Edit Tools
+c 000 0 editWindow 0 0 164 444 1 Image Edit Options
 c 001 4 Label012 12 32 126 20 1 Pixel Format:
 c 002 12 DropdownBox011 12 52 140 24 1 ONE;TWO;THREE
 c 003 2 line01 0 76 164 20 1 

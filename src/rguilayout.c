@@ -82,7 +82,7 @@
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
 typedef enum { 
-    CONTROL_MOVE = 0, 
+    CONTROL_MOVE = 0,
     CONTROL_RESIZE,
     CONTROL_TEXT_EDIT,
     CONTROL_NAME_EDIT,
