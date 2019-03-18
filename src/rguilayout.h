@@ -22,7 +22,7 @@
 
 #define MAX_CONTROL_TEXT_LENGTH         128      // Maximum length of control text
 #define MAX_CONTROL_TEXTMULTI_LENGTH    512      // Maximum length of control text
-#define MAX_CONTROL_NAME_LENGTH          64      // Maximum length of control name (used on code generation)
+#define MAX_CONTROL_NAME_LENGTH          64      // Maximum length of control name
 #define MAX_ANCHOR_NAME_LENGTH           64      // Maximum length of anchor name
 
 //----------------------------------------------------------------------------------

@@ -217,6 +217,7 @@ int main(int argc, char *argv[])
         layout.anchors[i].enabled = false;
         layout.anchors[i].hidding = false;
         memset(layout.anchors[i].name, 0, MAX_ANCHOR_NAME_LENGTH);
+        
         if (i == 0) strcpy(layout.anchors[i].name, "anchorMain");
         else strcpy(layout.anchors[i].name, FormatText("anchor%02i", i));
     }
@@ -2149,6 +2150,7 @@ int main(int argc, char *argv[])
                                         DrawRectangleRec(textboxRec, Fade(ORANGE, 0.1f));
                                         GuiTextBox(textboxRec, layout.anchors[i].name, MAX_ANCHOR_NAME_LENGTH, false);
                                     }
+
                                     GuiUnlock();
                                 }
                             }
@@ -2810,10 +2812,9 @@ static void LoadLayout(const char *fileName)
     char buffer[256];
     bool tryBinary = false;
 
-    int anchorId = 0;       // TODO: Review!!!
-    int anchorX = 0;
-    int anchorY = 0;
+    int anchorId = 0;
     int anchorCounter = 0;
+    char anchorName[MAX_ANCHOR_NAME_LENGTH] = { 0 };
 
     // Reset all the controls
     layout.controlsCount = 0;
@@ -2860,13 +2861,17 @@ static void LoadLayout(const char *fileName)
                     } break;
                     case 'a':
                     {
-                        sscanf(buffer, "a %03i %s %d %d %d",
+                        
+                        
+                        sscanf(buffer, "a %d %s %d %d %d",
                                        &layout.anchors[anchorCounter].id,
-                                       layout.anchors[anchorCounter].name,
+                                       anchorName,
                                        &layout.anchors[anchorCounter].x,
                                        &layout.anchors[anchorCounter].y,
                                        &layout.anchors[anchorCounter].enabled);
-                        if (TextIsEqual("", layout.anchors[anchorCounter].name)) strcpy(layout.anchors[anchorCounter].name, FormatText("anchor%02i", anchorCounter));
+
+                        strcpy(layout.anchors[anchorCounter].name, anchorName);
+
                         if (layout.anchors[anchorCounter].enabled) layout.anchorsCount++;
                         anchorCounter++;
                     } break;
@@ -2882,6 +2887,7 @@ static void LoadLayout(const char *fileName)
                                        &layout.controls[layout.controlsCount].rec.height,
                                        &anchorId,
                                        layout.controls[layout.controlsCount].text);
+                                       
                         layout.controls[layout.controlsCount].ap = &layout.anchors[anchorId];
                         layout.controlsCount++;
                     } break;
