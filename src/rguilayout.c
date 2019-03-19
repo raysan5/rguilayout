@@ -868,7 +868,7 @@ int main(int argc, char *argv[])
                         }
 
                         // Unselect control
-                        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+                        if (!mouseScaleReady && (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)))
                         {
                             selectedControl = focusedControl;
                             if (focusedAnchor != -1 || anchorLinkMode || anchorEditMode) selectedControl = -1;
