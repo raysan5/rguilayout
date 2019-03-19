@@ -103,6 +103,7 @@ typedef struct {
     bool defineRecs;
     bool defineTexts;
     bool fullComments;
+    bool exportButtonFunctions;
 } GuiLayoutConfig;
 
 //----------------------------------------------------------------------------------

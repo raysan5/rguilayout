@@ -46,6 +46,7 @@ typedef struct {
     bool defineRecsChecked;
     bool defineTextsChecked;
     bool fullCommentsChecked;
+    bool generateButtonFunctionsChecked;
     bool guiExportStyleChecked;
     bool guiEmbedFontChecked;
     bool generateCodePressed;
@@ -125,6 +126,7 @@ GuiWindowCodegenState InitGuiWindowCodegen(void)
     state.defineRecsChecked = false;
     state.defineTextsChecked = false;
     state.fullCommentsChecked = false;
+    state.generateButtonFunctionsChecked = false;
     state.guiExportStyleChecked = false;
     state.guiEmbedFontChecked = false;
     state.generateCodePressed = false;
@@ -156,17 +158,18 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         if (GuiTextBox((Rectangle){ state->codegenAnchor.x + 725, state->codegenAnchor.y + 105, 150, 25 }, state->companyText, 64, state->companyEditMode)) state->companyEditMode = !state->companyEditMode;
         GuiLabel((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 135, 100, 25 }, "Short Description:");
         if (GuiTextBox((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 160, 200, 100 }, state->toolDescriptionText, 64, state->toolDescriptionEditMode)) state->toolDescriptionEditMode = !state->toolDescriptionEditMode;
-        GuiGroupBox((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 285, 220, 135 }, "Code Generation Options");
+        GuiGroupBox((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 285, 220, 153 }, "Code Generation Options");
         state->exportAnchorsChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 335, 15, 15 }, "Export anchors", state->exportAnchorsChecked);
         state->defineRecsChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 355, 15, 15 }, "Define Rectangles", state->defineRecsChecked);
         state->defineTextsChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 375, 15, 15 }, "Define text as const", state->defineTextsChecked);
         state->fullCommentsChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 395, 15, 15 }, "Include detailed comments", state->fullCommentsChecked);
+        state->generateButtonFunctionsChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 415, 15, 15 }, "Generate button functions", state->generateButtonFunctionsChecked);
         GuiDisable();
-        GuiGroupBox((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 435, 220, 60 }, "Gui Style Options");
-        state->guiExportStyleChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 450, 15, 15 }, "Export gui style", state->guiExportStyleChecked);
-        state->guiEmbedFontChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 470, 15, 15 }, "Embbed gui font", state->guiEmbedFontChecked);
+        GuiGroupBox((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 453, 220, 60 }, "Gui Style Options");
+        state->guiExportStyleChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 467, 15, 15 }, "Export gui style", state->guiExportStyleChecked);
+        state->guiEmbedFontChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 487, 15, 15 }, "Embbed gui font", state->guiEmbedFontChecked);
         GuiEnable();
-        state->generateCodePressed = GuiButton((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 505, 220, 30 }, "#7#Export Generated Code"); 
+        state->generateCodePressed = GuiButton((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 525, 220, 30 }, "#7#Export Generated Code"); 
         //state->executeCodePressed = GuiButton((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 545, 220, 30 }, "Execute Code"); 
         if (GuiDropdownBox((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 300, 200, 25 }, "STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h);CUSTOM CODE FILE", &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
     

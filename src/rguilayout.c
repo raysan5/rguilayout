@@ -310,6 +310,7 @@ int main(int argc, char *argv[])
     config.defineRecs = false;
     config.defineTexts = false;
     config.fullComments = false;
+    config.exportButtonFunctions = false;
     int currentCodeTemplate = 0;
 
     GuiLayoutConfig prevConfig = { 0 };
@@ -561,6 +562,7 @@ int main(int argc, char *argv[])
                         config.defineRecs = windowCodegenState.defineRecsChecked;
                         config.defineTexts = windowCodegenState.defineTextsChecked;
                         config.fullComments = windowCodegenState.fullCommentsChecked;
+                        config.exportButtonFunctions = windowCodegenState.generateButtonFunctionsChecked;
 
                         memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
@@ -590,6 +592,7 @@ int main(int argc, char *argv[])
                 config.defineRecs = windowCodegenState.defineRecsChecked;
                 config.defineTexts = windowCodegenState.defineTextsChecked;
                 config.fullComments = windowCodegenState.fullCommentsChecked;
+                config.exportButtonFunctions = windowCodegenState.generateButtonFunctionsChecked;
 
                 if ((currentCodeTemplate != windowCodegenState.codeTemplateActive) ||
                     (memcmp(&config, &prevConfig, sizeof(GuiLayoutConfig)) != 0))

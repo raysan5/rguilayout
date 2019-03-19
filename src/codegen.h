@@ -59,7 +59,7 @@ static void WriteFunctionsDefinitionC(unsigned char *toolstr, int *pos, GuiLayou
 
 // .H Writting code functions (.h)
 static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
-static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, int tabs);
+static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
 static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
 static void WriteFunctionDrawingH(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
 
@@ -160,7 +160,7 @@ unsigned char *GenerateLayoutCode(const unsigned char *buffer, GuiLayout layout,
 
                     // H IMPLEMENTATION
                     else if (TextIsEqual(substr, "GUILAYOUT_STRUCT_TYPE")) WriteStruct(toolstr, &codePos, layout, config, tabs);
-                    else if (TextIsEqual(substr, "GUILAYOUT_FUNCTIONS_DECLARATION_H")) WriteFunctionsDeclarationH(toolstr, &codePos, config, tabs);
+                    else if (TextIsEqual(substr, "GUILAYOUT_FUNCTIONS_DECLARATION_H")) WriteFunctionsDeclarationH(toolstr, &codePos, layout, config, tabs);
                     else if (TextIsEqual(substr, "GUILAYOUT_FUNCTION_INITIALIZE_H")) WriteFunctionInitializeH(toolstr, &codePos, layout, config, tabs);
                     else if (TextIsEqual(substr, "GUILAYOUT_FUNCTION_DRAWING_H") && layout.controlsCount > 0) WriteFunctionDrawingH(toolstr, &codePos, layout, config, tabs);
 
@@ -194,25 +194,28 @@ unsigned char *GenerateLayoutCode(const unsigned char *buffer, GuiLayout layout,
 // Write functions declaration code (.c)
 static void WriteFunctionsDeclarationC(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs)
 {
-    // Define required functions for calling
-    int buttonsCount = 0;
-    for (int i = 0; i < layout.controlsCount; i++)
+    if(config.exportButtonFunctions)
     {
-        int type = layout.controls[i].type;
-        if (type == GUI_BUTTON || type == GUI_LABELBUTTON || type == GUI_IMAGEBUTTONEX)
+        // Define required functions for calling
+        int buttonsCount = 0;
+        for (int i = 0; i < layout.controlsCount; i++)
         {
-            buttonsCount++;
-            TextAppend(toolstr, FormatText("static void %s();", layout.controls[i].name), pos);
-            if (config.fullComments)
+            int type = layout.controls[i].type;
+            if (type == GUI_BUTTON || type == GUI_LABELBUTTON || type == GUI_IMAGEBUTTONEX)
             {
-                TABAPPEND(toolstr, pos, 4);
-                TextAppend(toolstr, FormatText("// %s: %s logic", controlTypeName[layout.controls[i].type], layout.controls[i].name), pos);
+                buttonsCount++;
+                TextAppend(toolstr, FormatText("static void %s();", layout.controls[i].name), pos);
+                if (config.fullComments)
+                {
+                    TABAPPEND(toolstr, pos, 4);
+                    TextAppend(toolstr, FormatText("// %s: %s logic", controlTypeName[layout.controls[i].type], layout.controls[i].name), pos);
+                }
+                ENDLINEAPPEND(toolstr, pos);
+                TABAPPEND(toolstr, pos, tabs);
             }
-            ENDLINEAPPEND(toolstr, pos);
-            TABAPPEND(toolstr, pos, tabs);
         }
-    }
-    if (buttonsCount > 0) *pos -= 2;
+        if (buttonsCount > 0) *pos -= 1;
+    }   
 }
 
 // Write variables initialization code (.c)
@@ -263,26 +266,29 @@ static void WriteDrawingC(unsigned char *toolstr, int *pos, GuiLayout layout, Gu
 // Write functions definition code (.c)
 static void WriteFunctionsDefinitionC(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs)
 {
-    for (int i = 0; i < layout.controlsCount; i++)
+    if(config.exportButtonFunctions)
     {
-        int type = layout.controls[i].type;
-        if (type == GUI_BUTTON || type == GUI_LABELBUTTON || type == GUI_IMAGEBUTTONEX)
+        for (int i = 0; i < layout.controlsCount; i++)
         {
-            if (config.fullComments)
+            int type = layout.controls[i].type;
+            if (type == GUI_BUTTON || type == GUI_LABELBUTTON || type == GUI_IMAGEBUTTONEX)
             {
-                TextAppend(toolstr, FormatText("// %s: %s logic", controlTypeName[layout.controls[i].type], layout.controls[i].name), pos);
-                ENDLINEAPPEND(toolstr, pos);
-                TABAPPEND(toolstr, pos, tabs);
-            }
+                if (config.fullComments)
+                {
+                    TextAppend(toolstr, FormatText("// %s: %s logic", controlTypeName[layout.controls[i].type], layout.controls[i].name), pos);
+                    ENDLINEAPPEND(toolstr, pos);
+                    TABAPPEND(toolstr, pos, tabs);
+                }
 
-            TextAppend(toolstr, FormatText("static void %s()", layout.controls[i].name), pos);
-            ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-            TextAppend(toolstr, "{", pos);
-            ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs + 1);
-            TextAppend(toolstr, "// TODO: Implement control logic", pos);
-            ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-            TextAppend(toolstr, "}", pos);
-            ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+                TextAppend(toolstr, FormatText("static void %s()", layout.controls[i].name), pos);
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+                TextAppend(toolstr, "{", pos);
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs + 1);
+                TextAppend(toolstr, "// TODO: Implement control logic", pos);
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+                TextAppend(toolstr, "}", pos);
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+            }
         }
     }
 }
@@ -329,11 +335,18 @@ static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayout layout, GuiL
 }
 
 // Write variables declaration code (.h)
-static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayoutConfig config, int tabs)
+static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs)
 {
     TextAppend(toolstr, FormatText("Gui%sState InitGui%s(void);", TextToPascal(config.name), TextToPascal(config.name)), pos);
     ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-    TextAppend(toolstr, FormatText("void Gui%s(Gui%sState *state);", TextToPascal(config.name), TextToPascal(config.name)), pos);
+    TextAppend(toolstr, FormatText("void Gui%s(Gui%sState *state);", TextToPascal(config.name), TextToPascal(config.name)), pos);    
+
+    // Generate buttons functions declaration
+    if(config.exportButtonFunctions)
+    {
+        ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+        WriteFunctionsDeclarationC(toolstr, pos, layout, config, tabs);
+    }   
 }
 
 // Write initialization function code (.h)
@@ -398,7 +411,13 @@ static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayout
 
     ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
     TextAppend(toolstr, "}", pos);
-
+    
+    // Generate buttons functions implementation
+    if(config.exportButtonFunctions)
+    {
+        ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+        WriteFunctionsDefinitionC(toolstr, pos, layout, config, tabs);
+    }  
 }
 
 // Write functions drawing code (.h)
@@ -569,11 +588,15 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
             case GUI_LABELBUTTON:
             case GUI_IMAGEBUTTONEX:
             {
-                if (define) TextAppend(toolstr, "bool ", pos);
-                else TextAppend(toolstr, FormatText("%s", preText), pos);
-                TextAppend(toolstr, FormatText("%sPressed", control.name), pos);
-                if (initialize) TextAppend(toolstr, " = false", pos);
-                TextAppend(toolstr, ";", pos);
+                if(!config.exportButtonFunctions)
+                {
+                    if (define) TextAppend(toolstr, "bool ", pos);
+                    else TextAppend(toolstr, FormatText("%s", preText), pos);
+                    TextAppend(toolstr, FormatText("%sPressed", control.name), pos);
+                    if (initialize) TextAppend(toolstr, " = false", pos);
+                    TextAppend(toolstr, ";", pos);
+                }
+                else drawVariables = false;
             } break;
             case GUI_CHECKBOX:
             {
@@ -878,9 +901,18 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiCon
         case GUI_LINE: TextAppend(toolstr, FormatText("GuiLine(%s, NULL);", rec), pos); break;
         case GUI_PANEL: TextAppend(toolstr, FormatText("GuiPanel(%s);", rec), pos); break;
         case GUI_LABEL: TextAppend(toolstr, FormatText("GuiLabel(%s, %s);", rec, text), pos); break;
-        case GUI_BUTTON: TextAppend(toolstr, FormatText("%sPressed = GuiButton(%s, %s); ", name, rec, text), pos); break;
-        case GUI_LABELBUTTON: TextAppend(toolstr, FormatText("%sPressed = GuiLabelButton(%s, %s);", name, rec, text), pos); break;
-        case GUI_IMAGEBUTTONEX: TextAppend(toolstr, FormatText("%sPressed = GuiImageButtonEx(%s, GetTextureDefault(), (Rectangle){ 0, 0, 1, 1 }, %s);", name, rec, text), pos); break;
+        case GUI_BUTTON: 
+            if(!config.exportButtonFunctions) TextAppend(toolstr, FormatText("%sPressed = GuiButton(%s, %s); ", name, rec, text), pos); 
+            else TextAppend(toolstr, FormatText("if (GuiButton(%s, %s)) %s(); ", rec, text, TextToPascal(control.name)), pos); 
+            break;
+        case GUI_LABELBUTTON: 
+            if(!config.exportButtonFunctions) TextAppend(toolstr, FormatText("%sPressed = GuiLabelButton(%s, %s);", name, rec, text), pos);
+            else TextAppend(toolstr, FormatText("if (GuiLabelButton(%s, %s)) %s(); ", rec, text, TextToPascal(control.name)), pos); 
+            break;
+        case GUI_IMAGEBUTTONEX: 
+            if(!config.exportButtonFunctions) TextAppend(toolstr, FormatText("%sPressed = GuiImageButtonEx(%s, GetTextureDefault(), (Rectangle){ 0, 0, 1, 1 }, %s);", name, rec, text), pos);
+            else TextAppend(toolstr, FormatText("if (GuiImageButtonEx(%s, GetTextureDefault(), (Rectangle){ 0, 0, 1, 1 }, %s)) %s();", rec, text, TextToPascal(control.name)), pos);
+            break; 
         case GUI_CHECKBOX: TextAppend(toolstr, FormatText("%sChecked = GuiCheckBox(%s, %s, %sChecked);", name, rec, text, name), pos); break;
         case GUI_TOGGLE: TextAppend(toolstr, FormatText("%sActive = GuiToggle(%s, %s, %sActive);", name, rec, text, name), pos); break;
         case GUI_TOGGLEGROUP:TextAppend(toolstr, FormatText("%sActive = GuiToggleGroup(%s, %s, %sActive);", name, rec, text, name), pos); break;
