@@ -192,7 +192,7 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
                     if (((state->codePanelScrollOffset.y + 20*linesCounter) >= 0) && 
                         ((state->codePanelScrollOffset.y + 20*linesCounter) < (codePanel.height - 2)))
                     {
-                        DrawText(currentLine, codePanel.x + 10, codePanel.y + state->codePanelScrollOffset.y + 20*linesCounter, 10, DARKBLUE);
+                        DrawText(currentLine, codePanel.x + state->codePanelScrollOffset.x + 10, codePanel.y + state->codePanelScrollOffset.y + 20*linesCounter, 10, DARKBLUE);
                     }
                     
                     if (nextLine) *nextLine = '\n';     // Restore newline-char, just to be tidy
