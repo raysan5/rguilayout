@@ -160,6 +160,7 @@ void GuiWindowAbout(GuiWindowAboutState *state)
     const char *linkraylibtechText = "@raylibtech";
     const char *lblMoreInfoText = "More info:";
     const char *linkToolWebText = "www.raylibtech.com/riconpacker";
+    const char *linkToolDownloadText = "https://raylibtech.itch.io/rguilayout";
     const char *linkMailText = "ray@raylibtech.com";
     const char *lblSupportText = "Support:";
     const char *chkLicenseText = "License Agreement (EULA)";
@@ -186,7 +187,7 @@ void GuiWindowAbout(GuiWindowAboutState *state)
         int labelTextAlign = GuiGetStyle(LABEL, TEXT_ALIGNMENT);
         GuiSetStyle(LABEL, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
 
-        DrawTechIcon(state->position.x + 10, state->position.y + 35, 64, "rGS", 20, true, GetColor(toolColor));
+        DrawTechIcon(state->position.x + 10, state->position.y + 35, 64, "rGL", 20, true, GetColor(toolColor));
         GuiLabel((Rectangle){ state->position.x + 85, state->position.y + 50, 200, 30 }, FormatText("%s %s %s", lblNameVersionText, mode, lblDateText));
         GuiLabel((Rectangle){ state->position.x + 85, state->position.y + 74, 245, 20 }, lblDescriptionText);
 
@@ -225,7 +226,7 @@ void GuiWindowAbout(GuiWindowAboutState *state)
         //state->chkLicenseChecked = GuiCheckBox((Rectangle){ state->position.x + 10, state->position.y + 310, 16, 16 }, chkLicenseText, state->chkLicenseChecked);
 #else
         //GuiDisable();state->chkLicenseChecked = GuiCheckBox((Rectangle){ state->position.x + 10, state->position.y + 310, 16, 16 }, chkLicenseText, state->chkLicenseChecked); GuiEnable();
-        if (GuiButton((Rectangle){ state->position.x + 175, state->position.y + 305, 75, 25 }, BtnBeONEText)) { OpenURL("https://raylibtech.itch.io/rguilayout"); }
+        if (GuiButton((Rectangle){ state->position.x + 175, state->position.y + 305, 75, 25 }, BtnBeONEText)) { OpenURL(linkToolDownloadText); }
 #endif
         if (GuiButton((Rectangle){ state->position.x + 255, state->position.y + 305, 70, 25 }, BtnCloseText)) state->windowAboutActive = false;
         GuiSetStyle(BUTTON, TEXT_ALIGNMENT, buttonTextAlign);
