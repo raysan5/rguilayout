@@ -8,7 +8,7 @@
 *       Enable PRO features for the tool. Usually command-line and export options related.
 *
 *   DEPENDENCIES:
-*       raylib 2.5              - Windowing/input management and drawing.
+*       raylib 2.4-dev          - Windowing/input management and drawing.
 *       raygui 2.0              - IMGUI controls (based on raylib).
 *       tinyfiledialogs 3.3.7   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs.
 *
@@ -44,18 +44,19 @@
 
 #define CODEGEN_IMPLEMENTATION
 #include "codegen.h"                        // Code generation functions
-
 #include "templates.h"                      // Code template files (char buffers)
 
-#undef RAYGUI_IMPLEMENTATION
+#undef RAYGUI_IMPLEMENTATION                // Avoid including raygui implementation again
+
 #define GUI_WINDOW_CODEGEN_IMPLEMENTATION
-#include "gui_window_codegen.h"             // GUI: Code generation window
+#include "gui_window_codegen.h"             // GUI: Code Generation Window
 
 #define GUI_CONTROLS_PALETTE_IMPLEMENTATION
-#include "gui_controls_palette.h"           // GUI: Controls palette
+#include "gui_controls_palette.h"           // GUI: Controls Palette
 
+#define GUI_WINDOW_ABOUT_IMPLEMENTATION
+#include "gui_window_about.h"               // GUI: About Window
 
-#include "external/easings.h"               // Required for: Easing animations math
 #include "external/tinyfiledialogs.h"       // Required for: Open/Save file dialogs
 
 #include <stdlib.h>                         // Required for: calloc(), free()
@@ -67,7 +68,10 @@
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
-#define TOOL_VERSION_TEXT     "2.0-dev"     // Tool version string
+// Basic information
+#define TOOL_NAME           "rGuiLayout"
+#define TOOL_VERSION        "2.0-dev"
+#define TOOL_DESCRIPTION    "A simple and easy-to-use raygui layouts editor"
 
 #define ANCHOR_RADIUS               20      // Default anchor radius
 #define MIN_CONTROL_SIZE            10      // Minimum control size
@@ -77,6 +81,10 @@
 #define PANELS_EASING_FRAMES        60      // Controls the easing time in frames
 
 #define MAX_UNDO_LEVELS             10       // Undo levels supported for the ring buffer
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib)
+#endif
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -151,13 +159,12 @@ int main(int argc, char *argv[])
 
     SetTraceLogLevel(LOG_NONE);             // Disable trace log messsages
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // Window configuration flags
-    InitWindow(screenWidth, screenHeight, FormatText("rGuiLayout v%s - A simple and easy-to-use raygui layouts editor", TOOL_VERSION_TEXT));
+    InitWindow(screenWidth, screenHeight, FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, TOOL_DESCRIPTION));
     SetWindowMinSize(800, 800);
     SetExitKey(0);
 
     // General app variables
     Vector2 mouse = { -1, -1 };             // Mouse position
-    bool exitWindow = false;                // Exit window flag
     bool showGrid = true;                   // Show grid flag (KEY_G)
     int gridLineSpacing = 5;                // Grid line spacing in pixels
     
@@ -238,14 +245,7 @@ int main(int argc, char *argv[])
     }
 
     layout.refWindow = (Rectangle){ 0, 0, -1, -1};
-   
-    // GUI: Help panel variables
-    int helpPositionX = -300;
-    int helpCounter = 0;
-    int helpStartPositionX = -300;
-    int helpDeltaPositionX = 0;
-    bool helpActive = false;
-
+    
     // Tracemap (background image for reference) variables
     Texture2D tracemap = { 0 };
     Rectangle tracemapRec = { 0 };
@@ -258,17 +258,38 @@ int main(int argc, char *argv[])
     // Track previous text/name to cancel editing
     char prevText[MAX_CONTROL_TEXT_LENGTH] = { 0 };
     char prevName[MAX_CONTROL_NAME_LENGTH] = { 0 };
-
-
-    // GUI: Layout Code Generation Window
-    //----------------------------------------------------------------------------------------
-    GuiWindowCodegenState windowCodegenState = InitGuiWindowCodegen();
-    //----------------------------------------------------------------------------------------
+   
+    // GUI: Help panel
+    //-----------------------------------------------------------------------------------
+    bool helpActive = false;
+    //-----------------------------------------------------------------------------------
     
     // GUI: Controls Selection Palette
-    //----------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------
     GuiControlsPaletteState paletteState = InitGuiControlsPalette();
-    //----------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------
+    
+    // GUI: Layout Code Generation Window
+    //-----------------------------------------------------------------------------------
+    GuiWindowCodegenState windowCodegenState = InitGuiWindowCodegen();
+    //-----------------------------------------------------------------------------------
+       
+    // GUI: About Window
+    //-----------------------------------------------------------------------------------
+    GuiWindowAboutState windowAboutState = InitGuiWindowAbout();
+    //-----------------------------------------------------------------------------------
+    
+    // GUI: Exit Window
+    //-----------------------------------------------------------------------------------
+    bool exitWindow = false;
+    bool windowExitActive = false;
+    //-----------------------------------------------------------------------------------
+    
+    // GUI: Reset Layout Window
+    //-----------------------------------------------------------------------------------
+    bool resetWindowActive = false;
+    bool resetLayout = false;
+    //-----------------------------------------------------------------------------------
     
     // Rectangles used on controls preview drawing
     Rectangle defaultRec[26] = {
@@ -303,7 +324,7 @@ int main(int argc, char *argv[])
     // Generate code configuration
     GuiLayoutConfig config = { 0 };
     strcpy(config.name, "window_codegen");
-    strcpy(config.version, TOOL_VERSION_TEXT);
+    strcpy(config.version, TOOL_VERSION);
     strcpy(config.company, "raylib technologies");
     strcpy(config.description, "tool description");
     config.exportAnchors = false;
@@ -315,14 +336,7 @@ int main(int argc, char *argv[])
 
     GuiLayoutConfig prevConfig = { 0 };
     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
-
-    // Close layout window variables
-    bool closingWindowActive = false;
     
-    // Delete current layout and reset variables
-    bool resetWindowActive = false;
-    bool resetLayout = false;
-
     // Controls temp variables
     int dropdownBoxActive = 0;
     int spinnerValue = 0;
@@ -378,7 +392,7 @@ int main(int argc, char *argv[])
                     if ((loadedFileName[0] != '\0') && !saveChangesRequired)
                     {
                         saveChangesRequired = true;
-                        SetWindowTitle(FormatText("rGuiLayout v%s - %s*", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
+                        SetWindowTitle(FormatText("%s v%s - %s*", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
                     }
                 }
 
@@ -432,7 +446,7 @@ int main(int argc, char *argv[])
                 selectedControl = -1;
                 LoadLayout(droppedFileName);
                 strcpy(loadedFileName, droppedFileName);
-                SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
+                SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
 
                 for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], &layout, sizeof(GuiLayout));
                 currentUndoIndex = 0;
@@ -452,7 +466,8 @@ int main(int argc, char *argv[])
 
         // Keyboard shortcuts
         //----------------------------------------------------------------------------------
-        // Open layout file dialog logic
+        
+        // Show window: load layout
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O))
         {
             // Open file dialog
@@ -462,7 +477,7 @@ int main(int argc, char *argv[])
             if (fileName != NULL) LoadLayout(fileName);
         }
 
-        // Save layout file dialog logic
+        // Show dialog: save layout
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_S)) DialogSaveLayout();
         else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S))
         {
@@ -471,12 +486,15 @@ int main(int argc, char *argv[])
             {
                 SaveLayout(loadedFileName, false);
                 saveChangesRequired = false;
-                SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
+                SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
             }
         }
-
-        // Show code generation window
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) { }
+       
+        // Show window: help
+        if (IsKeyPressed(KEY_F1)) helpActive = !helpActive;
+        
+        // Show window: about
+        if (IsKeyPressed(KEY_F2)) windowAboutState.windowAboutActive = true;
 
         if (!textEditMode && !nameEditMode)
         {
@@ -484,18 +502,19 @@ int main(int argc, char *argv[])
             if (IsKeyPressed(KEY_ESCAPE))
             {
                 // Close windows logic
-                if (windowCodegenState.codeGenWindowActive) windowCodegenState.codeGenWindowActive = false;
+                if (windowCodegenState.windowCodegenActive) windowCodegenState.windowCodegenActive = false;
+                if (windowAboutState.windowAboutActive) windowAboutState.windowAboutActive = false;
                 else if (resetWindowActive) resetWindowActive = false;
                 else if ((layout.controlsCount <= 0) && (layout.anchorsCount <= 1)) exitWindow = true;  // Quit application
                 else
                 {
-                    closingWindowActive = !closingWindowActive;
+                    windowExitActive = !windowExitActive;
                     selectedControl = -1;
                     selectedAnchor = -1;
                 }
             }
 
-            if (!windowCodegenState.codeGenWindowActive && !closingWindowActive && !resetWindowActive)
+            if (!windowCodegenState.windowCodegenActive && !windowAboutState.windowAboutActive && !resetWindowActive && !windowExitActive)
             {
                 // Enables or disables snapMode if not in textEditMode
                 if (IsKeyPressed(KEY_S))
@@ -568,7 +587,7 @@ int main(int argc, char *argv[])
 
                         free(windowCodegenState.codeText);
                         windowCodegenState.codeText = GenerateLayoutCode(guiTemplateStandardCode, layout, config);
-                        windowCodegenState.codeGenWindowActive = true;
+                        windowCodegenState.windowCodegenActive = true;
                     }
                 }
 
@@ -582,7 +601,7 @@ int main(int argc, char *argv[])
                 }
             }
 
-            if (windowCodegenState.codeGenWindowActive)
+            if (windowCodegenState.windowCodegenActive)
             {
                 strcpy(config.name, windowCodegenState.toolNameText);
                 strcpy(config.version, windowCodegenState.toolVersionText);
@@ -612,27 +631,9 @@ int main(int argc, char *argv[])
             }
         }
 
-        // Toggle help info
-        if (IsKeyPressed(KEY_TAB))
-        {
-            helpCounter = 0;
-            helpStartPositionX = helpPositionX;
-
-            if (helpActive) helpDeltaPositionX = -300 - helpStartPositionX;
-            else helpDeltaPositionX = 0 - helpStartPositionX;
-
-            helpActive = !helpActive;
-        }
-
-        if (helpCounter <= PANELS_EASING_FRAMES)
-        {
-            helpCounter++;
-            helpPositionX = (int)EaseCubicInOut(helpCounter, helpStartPositionX, helpDeltaPositionX, PANELS_EASING_FRAMES);
-        }
-
         // Layout edition logic
         //----------------------------------------------------------------------------------------------
-        if (!closingWindowActive && !windowCodegenState.codeGenWindowActive && !resetWindowActive)
+        if (!windowCodegenState.windowCodegenActive && !windowAboutState.windowAboutActive && !resetWindowActive && !windowExitActive)
         {
             if (!nameEditMode)
             {
@@ -653,10 +654,8 @@ int main(int argc, char *argv[])
                     }
                     //----------------------------------------------------------------------------------------------
 
-                    // Palette selected control
+                    // Palette selected control logic
                     //----------------------------------------------------------------------------------------------
-                    
-                    // Select control type with mouse wheel
                     if (focusedControl == -1) paletteState.selectedControl -= GetMouseWheelMove();
 
                     if (paletteState.selectedControl < GUI_WINDOWBOX) paletteState.selectedControl = GUI_WINDOWBOX;
@@ -1826,7 +1825,7 @@ int main(int argc, char *argv[])
                 }
             }
         }
-        else    // (closingWindowActive || windowCodegenState.codeGenWindowActive || resetWindowActive)
+        else    // (windowCodegenState.windowCodegenActive || windowAboutState.windowAboutActive || resetWindowActive || windowExitActive)
         {
             nameEditMode = false;
             textEditMode = false;
@@ -1876,7 +1875,7 @@ int main(int argc, char *argv[])
             layout.anchors[0].enabled = true;
             layout.anchorsCount = 1;
 
-            SetWindowTitle(FormatText("rGuiLayout v%s", TOOL_VERSION_TEXT));
+            SetWindowTitle(FormatText("%s v%s", TOOL_NAME, TOOL_VERSION));
             strcpy(loadedFileName, "\0");
 
             resetLayout = false;
@@ -2051,7 +2050,7 @@ int main(int argc, char *argv[])
                 }
             }
 
-            if (!closingWindowActive && !windowCodegenState.codeGenWindowActive && !resetWindowActive)
+            if (!windowCodegenState.windowCodegenActive && !windowAboutState.windowAboutActive && !resetWindowActive && !windowExitActive)
             {
                 if (!(CheckCollisionPointRec(mouse, paletteState.layoutRecs[0])))
                 {
@@ -2460,10 +2459,12 @@ int main(int argc, char *argv[])
                 if ((layout.refWindow.width > 0) && (layout.refWindow.height > 0)) DrawRectangleLinesEx(layout.refWindow, 1, Fade(BLACK, 0.7f));
 
                 
-                // Draw the help panel (by default is out of screen)
+                // GUI: Help panel
                 //----------------------------------------------------------------------------------------
-                if (helpPositionX > -280)
+                if (helpActive)
                 {
+                    int helpPositionX = 20;
+                    
                     DrawRectangleRec((Rectangle){ helpPositionX + 20, 15, 280, 550 }, GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
                     GuiGroupBox((Rectangle){ helpPositionX + 20, 15, 280, 550 }, "TAB - Shortcuts");
                     GuiLabel((Rectangle){ helpPositionX + 30, 30, 0, 0 }, "G - Toggle grid mode");
@@ -2498,28 +2499,30 @@ int main(int argc, char *argv[])
                 }
                 //----------------------------------------------------------------------------------------
 
-                // Draw right panel controls palette
+                // GUI: Controls Selection Palette
                 //----------------------------------------------------------------------------------------
                 GuiControlsPalette(&paletteState);
                 //----------------------------------------------------------------------------------------
             }
-            else    // (closingWindowActive || windowCodegenState.codeGenWindowActive || resetWindowActive)
+            else    // (windowCodegenState.windowCodegenActive || windowAboutState.windowAboutActive || resetWindowActive || windowExitActive)
             {
-                // Draw code export window
+                // GUI: Layout Code Generation Window
                 //----------------------------------------------------------------------------------------
-                if (windowCodegenState.codeGenWindowActive)
-                {
-                    GuiWindowCodegen(&windowCodegenState);
+                GuiWindowCodegen(&windowCodegenState);
 
-                    if (windowCodegenState.generateCodePressed)
-                    {
-                        DialogExportLayout(windowCodegenState.codeText, FormatText("%s.h", config.name));
-                        windowCodegenState.codeGenWindowActive = false;
-                    }
+                if (windowCodegenState.generateCodePressed)
+                {
+                    DialogExportLayout(windowCodegenState.codeText, FormatText("%s.h", config.name));
+                    windowCodegenState.windowCodegenActive = false;
                 }
                 //----------------------------------------------------------------------------------------
                 
-                // Draw reset message window (save)
+                // GUI: About Window
+                //----------------------------------------------------------------------------------------
+                GuiWindowAbout(&windowAboutState);
+                //----------------------------------------------------------------------------------------
+                
+                // GUI: New Layout Window (save)
                 //----------------------------------------------------------------------------------------
                 if (resetWindowActive)
                 {
@@ -2542,20 +2545,20 @@ int main(int argc, char *argv[])
                     }
                 }
                 //----------------------------------------------------------------------------------------
-
-                // Draw ending message window: save
+                
+                // GUI: Exit Window
                 //----------------------------------------------------------------------------------------
-                if (closingWindowActive)
+                if (windowExitActive)
                 {
                     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.8f));
                     int message = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 125, GetScreenHeight()/2 - 50, 250, 100 }, "#159#Closing rGuiLayout", "Do you want to save before quitting?", "Yes;No"); 
             
-                    if (message == 0) closingWindowActive = false;
+                    if (message == 0) windowExitActive = false;
                     else if (message == 1)  // Yes
                     {
                         if (DialogSaveLayout())
                         {
-                            closingWindowActive = false;
+                            windowExitActive = false;
                             exitWindow = true;
                         }
                     }
@@ -2687,11 +2690,11 @@ static void ShowCommandLineInfo(void)
 {
     printf("\n//////////////////////////////////////////////////////////////////////////////////\n");
     printf("//                                                                              //\n");
-    printf("// rGuiLayout v%s - A simple and easy-to-use raygui layout editor              //\n", TOOL_VERSION_TEXT);
-    printf("// powered by raylib v2.0 (www.raylib.com) and raygui v2.0                      //\n");
+    printf("// %s v%s ONE - %s             //\n", TOOL_NAME, TOOL_VERSION, TOOL_DESCRIPTION);
+    printf("// powered by raylib v2.4 (www.raylib.com) and raygui v2.0                      //\n");
     printf("// more info and bugs-report: github.com/raysan5/rguilayout                     //\n");
     printf("//                                                                              //\n");
-    printf("// Copyright (c) 2018 raylib technologies (@raylibtech)                         //\n");
+    printf("// Copyright (c) 2017-2019 raylib technologies (@raylibtech)                    //\n");
     printf("//                                                                              //\n");
     printf("//////////////////////////////////////////////////////////////////////////////////\n\n");
 
@@ -2784,7 +2787,7 @@ static void ProcessCommandLine(int argc, char *argv[])
         GuiLayoutConfig config;
         memset(&config, 0, sizeof(GuiLayoutConfig));
         strcpy(config.name, "window_codegen");
-        strcpy(config.version, TOOL_VERSION_TEXT);
+        strcpy(config.version, TOOL_VERSION);
         strcpy(config.company, "raylib technologies");
         strcpy(config.description, "tool description");
         config.exportAnchors = true;
@@ -3034,7 +3037,7 @@ static bool DialogSaveLayout(void)
         if (GetExtension(fileName) == NULL) strcat(outFileName, ".rgl\0");     // No extension provided
         SaveLayout(outFileName, false);
         strcpy(loadedFileName, outFileName);
-        SetWindowTitle(FormatText("rGuiLayout v%s - %s", TOOL_VERSION_TEXT, GetFileName(loadedFileName)));
+        SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
         success = true;
 
         saveChangesRequired = false;

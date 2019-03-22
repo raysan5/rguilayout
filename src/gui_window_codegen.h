@@ -31,7 +31,7 @@
 typedef struct {
     Vector2 codegenAnchor;
     
-    bool codeGenWindowActive;
+    bool windowCodegenActive;
     bool toolNameEditMode;
     unsigned char toolNameText[64];
     bool toolVersionEditMode;
@@ -111,7 +111,7 @@ GuiWindowCodegenState InitGuiWindowCodegen(void)
 
     state.codegenAnchor = (Vector2){ 0, 0 };
     
-    state.codeGenWindowActive = false;
+    state.windowCodegenActive = false;
     state.toolNameEditMode = false;
     strcpy(state.toolNameText, "layout_name");
     state.toolVersionEditMode = false;
@@ -144,11 +144,11 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
 {
     if (state->codeTemplateEditMode) GuiLock();
 
-    if (state->codeGenWindowActive)
+    if (state->windowCodegenActive)
     {
         state->codegenAnchor = (Vector2){ GetScreenWidth()/2 - 450, GetScreenHeight()/2 - 320 };
   
-        state->codeGenWindowActive = !GuiWindowBox((Rectangle){ state->codegenAnchor.x + 0, state->codegenAnchor.y + 0, 900, 640 }, "#7#Code Generation Window");
+        state->windowCodegenActive = !GuiWindowBox((Rectangle){ state->codegenAnchor.x + 0, state->codegenAnchor.y + 0, 900, 640 }, "#7#Code Generation Window");
         GuiGroupBox((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 35, 220, 235 }, "Layout Info");
         GuiLabel((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 45, 50, 25 }, "Name:");
         if (GuiTextBox((Rectangle){ state->codegenAnchor.x + 725, state->codegenAnchor.y + 45, 150, 25 }, state->toolNameText, 64, state->toolNameEditMode)) state->toolNameEditMode = !state->toolNameEditMode;
