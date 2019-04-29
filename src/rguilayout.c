@@ -1,4 +1,4 @@
-/*******************************************************************************************
+ /*******************************************************************************************
 *
 *   rGuiLayout v2.0-dev - A simple and easy-to-use raygui layouts editor
 *
@@ -8,9 +8,9 @@
 *       Enable PRO features for the tool. Usually command-line and export options related.
 *
 *   DEPENDENCIES:
-*       raylib 2.4-dev          - Windowing/input management and drawing.
+*       raylib 2.5              - Windowing/input management and drawing.
 *       raygui 2.0              - IMGUI controls (based on raylib).
-*       tinyfiledialogs 3.3.7   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs.
+*       tinyfiledialogs 3.3.9   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs.
 *
 *   COMPILATION (Windows - MinGW):
 *       gcc -o rguilayout.exe rguilayout.c external/tinyfiledialogs.c -s -Iexternal /
@@ -90,21 +90,32 @@ bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
 typedef enum { 
-    CONTROL_MOVE = 0,
-    CONTROL_RESIZE,
-    CONTROL_TEXT_EDIT,
-    CONTROL_NAME_EDIT,
-    CONTROL_MULTISELECTION,
-    ANCHOR_EDIT,
+    NONE = 0,
+    
+    CONTROL_TESTING,
+    CONTROL_EDIT_MOVE,
+    CONTROL_EDIT_RESIZE,
+    CONTROL_EDIT_RESIZE_MOUSE,
+    CONTROL_EDIT_TEXT,
+    CONTROL_EDIT_NAME,
+    //CONTROL_MULTISELECTION,
+    
+    ANCHOR_MODE,
+    ANCHOR_EDIT_MOVE,
+    ANCHOR_EDIT_LINK,
+    
     TRACEMAP_EDIT,
 } LayoutEditMode;
+
+// TODO: Check which edit modes are unique and the ones that can be combined, i.e. snapMode, precisionMode?
 
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-static GuiLayout layout = { 0 };            // Full gui layout
 static char loadedFileName[256] = { 0 };    // Loaded layout file name
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
+
+static int layoutEditMode = NONE;
 
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
@@ -114,12 +125,13 @@ static void ShowCommandLineInfo(void);                      // Show command line
 static void ProcessCommandLine(int argc, char *argv[]);     // Process command line input
 #endif
 
-// Load/Save/Export data functions
-static void LoadLayout(const char *fileName);                   // Load raygui layout (.rgl), text or binary
-static void SaveLayout(const char *fileName, bool binary);      // Save raygui layout (.rgl), text or binary
+// Init/Load/Save/Export data functions
+static GuiLayout InitLayout(void);                          // Initialize default clean layout
+static GuiLayout LoadLayout(const char *fileName);          // Load raygui layout (.rgl), text or binary
+static void SaveLayout(GuiLayout layout, const char *fileName, bool binary);      // Save raygui layout (.rgl), text or binary
 
-static void DialogLoadLayout(void);                             // Show dialog: load layout file (.rgl)
-static bool DialogSaveLayout(void);                             // Show dialog: save layout file (.rgl)
+static GuiLayout DialogLoadLayout(void);                    // Show dialog: load layout file (.rgl)
+static bool DialogSaveLayout(GuiLayout layout);             // Show dialog: save layout file (.rgl)
 static void DialogExportLayout(unsigned char *toolstr, const char *name);         // Show dialog: export layout file (.c)
 
 //----------------------------------------------------------------------------------
@@ -165,30 +177,30 @@ int main(int argc, char *argv[])
 
     // General app variables
     Vector2 mouse = { -1, -1 };             // Mouse position
+    int framesCounter = 0;                  // General frames counter
+    
     bool showGrid = true;                   // Show grid flag (KEY_G)
     int gridLineSpacing = 5;                // Grid line spacing in pixels
+    int moveFramesCounter = 0;              // Movement frames counter
+    int movePerFrame = 1;                   // Movement speed per frame
+    int movePixel = 1;                      // Movement pixels (depends on grid spacing)
     
-    int framesCounter = 0;
-    int framesCounterMovement = 0;
-
-    int movePixel = 1;
-    int movePerFrame = 1;
-
     // Work modes
-    bool dragMode = false;                  // Control drag mode
-    bool useGlobalPos = false;              // Control global position mode
     bool snapMode = false;                  // Snap mode flag (KEY_S)
+    bool useGlobalPos = false;              // Control global position mode
+    bool precisionMode = false;             // Control precision mode (KEY_LEFT_SHIFT)
+    
+    bool dragMode = false;                  // Control drag mode
     bool textEditMode = false;              // Control text edit mode (KEY_T)
     bool nameEditMode = false;              // Control name edit mode (KEY_N)
     bool orderEditMode = false;             // Control order edit mode (focusedControl != -1 + KEY_LEFT_ALT)
     bool resizeMode = false;                // Control size mode (controlSelected != -1 + KEY_LEFT_ALT)
-    bool precisionMode = false;             // Control precision mode (KEY_LEFT_SHIFT)
+    bool mouseScaleMode = false;            // Control is being scaled by mouse
+    bool mouseScaleReady = false;           // Mouse is on position to start control scaling
     bool showNamesMode = false;             // Show names of all controls
     bool refWindowEditMode = false;         // Refence window edit mode
-    bool mouseScaleReady = false;           // Mouse is on position to start control scaling
-    bool mouseScaleMode = false;            // Control is being scaled by mouse
 
-    // Multiselection
+    // Multiselection variables
     bool multiSelectMode = false;
     Rectangle multiSelectRec = { 0 };
     Vector2 multiSelectStartPos = { 0 };
@@ -204,7 +216,7 @@ int main(int argc, char *argv[])
     
     Vector2 panOffset = { 0 };
     Vector2 prevPosition = { 0 };
-   
+    
     // Anchors control variables
     GuiAnchorPoint auxAnchor = { 9, 0, 0, 0 };
     bool anchorEditMode = false;
@@ -214,37 +226,8 @@ int main(int argc, char *argv[])
     int focusedAnchor = -1;
     Color anchorCircleColor = BLACK;
     Color anchorSelectedColor = RED;
-
-    // Initialize anchor points to default values
-    for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
-    {
-        layout.anchors[i].id = i;
-        layout.anchors[i].x = 0;
-        layout.anchors[i].y = 0;
-        layout.anchors[i].enabled = false;
-        layout.anchors[i].hidding = false;
-        memset(layout.anchors[i].name, 0, MAX_ANCHOR_NAME_LENGTH);
-        
-        if (i == 0) strcpy(layout.anchors[i].name, "anchorMain");
-        else strcpy(layout.anchors[i].name, FormatText("anchor%02i", i));
-    }
-
-    layout.anchors[0].enabled = true;      // Enable layout parent anchor (0, 0)
-    layout.anchorsCount = 1;
-    layout.controlsCount = 0;
-
-    // Initialize layout controls data
-    for (int i = 0; i < MAX_GUI_CONTROLS; i++)
-    {
-        layout.controls[i].id = 0;
-        layout.controls[i].type = 0;
-        layout.controls[i].rec = (Rectangle){ 0, 0, 0, 0 };
-        memset(layout.controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
-        memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
-        layout.controls[i].ap = &layout.anchors[0];  // By default, set parent anchor
-    }
-
-    layout.refWindow = (Rectangle){ 0, 0, -1, -1};
+    
+    GuiLayout layout = InitLayout();        // New empty layout
     
     // Tracemap (background image for reference) variables
     Texture2D tracemap = { 0 };
@@ -288,7 +271,7 @@ int main(int argc, char *argv[])
     // GUI: Reset Layout Window
     //-----------------------------------------------------------------------------------
     bool resetWindowActive = false;
-    bool resetLayout = false;
+    bool resetProgram = false;
     //-----------------------------------------------------------------------------------
     
     // Rectangles used on controls preview drawing
@@ -444,7 +427,7 @@ int main(int argc, char *argv[])
             if (IsFileExtension(droppedFileName, ".rgl"))
             {
                 selectedControl = -1;
-                LoadLayout(droppedFileName);
+                layout = LoadLayout(droppedFileName);
                 strcpy(loadedFileName, droppedFileName);
                 SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
 
@@ -470,21 +453,18 @@ int main(int argc, char *argv[])
         // Show window: load layout
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O))
         {
-            // Open file dialog
-            const char *filters[] = { "*.rgl" };
-            const char *fileName = tinyfd_openFileDialog("Load raygui layout file", "", 1, filters, "raygui Layout Files (*.rgl)", 0);
-
-            if (fileName != NULL) LoadLayout(fileName);
+            // TODO: Verify layout has been loaded correctly
+            layout = DialogLoadLayout();
         }
 
         // Show dialog: save layout
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_S)) DialogSaveLayout();
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_S)) DialogSaveLayout(layout);
         else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S))
         {
-            if (loadedFileName[0] == '\0') DialogSaveLayout();
+            if (loadedFileName[0] == '\0') DialogSaveLayout(layout);
             else
             {
-                SaveLayout(loadedFileName, false);
+                SaveLayout(layout, loadedFileName, false);
                 saveChangesRequired = false;
                 SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
             }
@@ -532,31 +512,16 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                // Enables or disables position reference information(anchor reference or global reference)
-                if (IsKeyPressed(KEY_F)) useGlobalPos = !useGlobalPos;
+                // Work modes
+                if (IsKeyPressed(KEY_F)) useGlobalPos = !useGlobalPos;      // Toggle global position info (anchor reference or global reference)
+                if (IsKeyPressed(KEY_G)) showGrid = !showGrid;              // Toggle Grid mode
 
-                // Enable anchor mode editing
-                if (IsKeyPressed(KEY_A)) anchorEditMode = true;
-                if (IsKeyReleased(KEY_A)) anchorEditMode = false;
-
-                // Enable show names mode
-                if (IsKeyPressed(KEY_N)) showNamesMode = true;
-                if (IsKeyReleased(KEY_N)) showNamesMode = false;
-
-                // Enable/disable order edit mode
-                if (IsKeyPressed(KEY_LEFT_ALT)) orderEditMode = true;
-                if (IsKeyReleased(KEY_LEFT_ALT))  orderEditMode = false;
-
-                // Enable/diable precision mode
-                if (IsKeyDown(KEY_LEFT_SHIFT)) precisionMode = true;
-                if (IsKeyReleased(KEY_LEFT_SHIFT)) precisionMode = false;
-
-                // Enable/disable size modifier mode
-                if (IsKeyDown(KEY_LEFT_CONTROL)) resizeMode = true;
-                if (IsKeyReleased(KEY_LEFT_CONTROL)) resizeMode = false;
-
-                // Enable/disable grid
-                if (IsKeyPressed(KEY_G)) showGrid = !showGrid;
+                anchorEditMode = IsKeyDown(KEY_A);              // Toggle anchor mode editing (on key down)
+                showNamesMode = IsKeyDown(KEY_N);               // Toggle show names mode
+                orderEditMode = IsKeyDown(KEY_LEFT_ALT);        // Toggle controls drawing order
+                
+                precisionMode = IsKeyDown(KEY_LEFT_SHIFT);      // Toggle precision move/scale mode
+                resizeMode = IsKeyDown(KEY_LEFT_CONTROL);       // Toggle control resize mode
 
                 // Enable/disable texture editing mode
                 if (tracemap.id > 0 && IsKeyPressed(KEY_SPACE))
@@ -601,6 +566,8 @@ int main(int argc, char *argv[])
                 }
             }
 
+            // Code generation window logic
+            //----------------------------------------------------------------------------------
             if (windowCodegenState.windowCodegenActive)
             {
                 strcpy(config.name, windowCodegenState.toolNameText);
@@ -629,6 +596,7 @@ int main(int argc, char *argv[])
                     windowCodegenState.codePanelScrollOffset = (Vector2){ 0, 0 };
                 }
             }
+            //----------------------------------------------------------------------------------
         }
 
         // Layout edition logic
@@ -1010,13 +978,13 @@ int main(int argc, char *argv[])
                                                 layout.controls[selectedControl].rec.height -= offsetY;
                                             }
 
-                                            framesCounterMovement = 0;
+                                            moveFramesCounter = 0;
                                         }
                                         else
                                         {
-                                            framesCounterMovement++;
+                                            moveFramesCounter++;
 
-                                            if ((framesCounterMovement%movePerFrame) == 0)
+                                            if ((moveFramesCounter%movePerFrame) == 0)
                                             {
                                                 if (IsKeyDown(KEY_RIGHT)) layout.controls[selectedControl].rec.width += (movePixel - offsetX);
                                                 else if (IsKeyDown(KEY_LEFT))
@@ -1032,7 +1000,7 @@ int main(int argc, char *argv[])
                                                     layout.controls[selectedControl].rec.height -= offsetY;
                                                 }
 
-                                                framesCounterMovement = 0;
+                                                moveFramesCounter = 0;
                                             }
                                         }
 
@@ -1071,13 +1039,13 @@ int main(int argc, char *argv[])
                                                 controlPosY -= offsetY;
                                             }
 
-                                            framesCounterMovement = 0;
+                                            moveFramesCounter = 0;
                                         }
                                         else
                                         {
-                                            framesCounterMovement++;
+                                            moveFramesCounter++;
 
-                                            if ((framesCounterMovement%movePerFrame) == 0)
+                                            if ((moveFramesCounter%movePerFrame) == 0)
                                             {
                                                 if (IsKeyDown(KEY_RIGHT)) controlPosX += (movePixel - offsetX);
                                                 else if (IsKeyDown(KEY_LEFT))
@@ -1093,7 +1061,7 @@ int main(int argc, char *argv[])
                                                     controlPosY -= offsetY;
                                                 }
 
-                                                framesCounterMovement = 0;
+                                                moveFramesCounter = 0;
                                             }
                                         }
 
@@ -1479,14 +1447,14 @@ int main(int argc, char *argv[])
                                                 layout.anchors[selectedAnchor].y-= offsetY;
                                             }
 
-                                            framesCounterMovement = 0;
+                                            moveFramesCounter = 0;
                                         }
                                         // Move anchor with arrows
                                         else
                                         {
-                                            framesCounterMovement++;
+                                            moveFramesCounter++;
 
-                                            if ((framesCounterMovement%movePerFrame) == 0)
+                                            if ((moveFramesCounter%movePerFrame) == 0)
                                             {
                                                 if (IsKeyDown(KEY_RIGHT)) layout.anchors[selectedAnchor].x += (movePixel - offsetX);
                                                 else if (IsKeyDown(KEY_LEFT))
@@ -1503,7 +1471,7 @@ int main(int argc, char *argv[])
                                                     layout.anchors[selectedAnchor].y -= offsetY;
                                                 }
 
-                                                framesCounterMovement = 0;
+                                                moveFramesCounter = 0;
                                             }
                                         }
                                         if (selectedAnchor == 0) layout.refWindow = (Rectangle){layout.anchors[0].x, layout.anchors[0].y,
@@ -1606,7 +1574,7 @@ int main(int argc, char *argv[])
                     }
                     else
                     {
-                        // TODO: this is for anchors and controls...move this condition
+                        // TODO: This is for anchors and controls...move this condition
                         if (anchorLinkMode && IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) anchorLinkMode = false;
                     }
                     //----------------------------------------------------------------------------------------------
@@ -1668,13 +1636,13 @@ int main(int argc, char *argv[])
                                             tracemapRec.width -= movePixel;
                                         }
 
-                                        framesCounterMovement = 0;
+                                        moveFramesCounter = 0;
                                     }
                                     else
                                     {
-                                        framesCounterMovement++;
+                                        moveFramesCounter++;
 
-                                        if ((framesCounterMovement%movePerFrame) == 0)
+                                        if ((moveFramesCounter%movePerFrame) == 0)
                                         {
                                             if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_DOWN))
                                             {
@@ -1687,7 +1655,7 @@ int main(int argc, char *argv[])
                                                 tracemapRec.width -= movePixel;
                                             }
 
-                                            framesCounterMovement = 0;
+                                            moveFramesCounter = 0;
                                         }
                                     }
 
@@ -1716,13 +1684,13 @@ int main(int argc, char *argv[])
                                             tracemapRec.y -= offsetY;
                                         }
 
-                                        framesCounterMovement = 0;
+                                        moveFramesCounter = 0;
                                     }
                                     else
                                     {
-                                        framesCounterMovement++;
+                                        moveFramesCounter++;
 
-                                        if ((framesCounterMovement%movePerFrame) == 0)
+                                        if ((moveFramesCounter%movePerFrame) == 0)
                                         {
                                             if (IsKeyDown(KEY_RIGHT)) tracemapRec.x += (movePixel - offsetX);
                                             else if (IsKeyDown(KEY_LEFT))
@@ -1738,7 +1706,7 @@ int main(int argc, char *argv[])
                                                 tracemapRec.y -= offsetY;
                                             }
 
-                                            framesCounterMovement = 0;
+                                            moveFramesCounter = 0;
                                         }
                                     }
                                     //------------------------------------------------------------------
@@ -1835,9 +1803,9 @@ int main(int argc, char *argv[])
         }
         //----------------------------------------------------------------------------------------------
 
-        // Reset layout logic
+        // Reset program logic
         //----------------------------------------------------------------------------------------------
-        if (resetLayout)
+        if (resetProgram)
         {
             focusedAnchor = -1;
             selectedAnchor = -1;
@@ -1850,35 +1818,11 @@ int main(int argc, char *argv[])
             nameEditMode = false;
             textEditMode = false;
 
-            // Resets all controls to default values
-            for (int i = 0; i < layout.controlsCount; i++)
-            {
-                layout.controls[i].id = 0;
-                layout.controls[i].type = 0;
-                layout.controls[i].rec = (Rectangle){ 0, 0, 0, 0 };
-                memset(layout.controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
-                memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
-                layout.controls[i].ap = &layout.anchors[0];  // By default, set parent anchor
-            }
-
-            layout.controlsCount = 0;
-
-            // Resets anchor points to default values
-            for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
-            {
-                layout.anchors[i].x = 0;
-                layout.anchors[i].y = 0;
-                layout.anchors[i].enabled = false;
-                layout.anchors[i].hidding = false;
-            }
-
-            layout.anchors[0].enabled = true;
-            layout.anchorsCount = 1;
-
+            layout = InitLayout(); 
             SetWindowTitle(FormatText("%s v%s", TOOL_NAME, TOOL_VERSION));
             strcpy(loadedFileName, "\0");
 
-            resetLayout = false;
+            resetProgram = false;
         }
         //----------------------------------------------------------------------------------
 
@@ -1947,6 +1891,7 @@ int main(int argc, char *argv[])
 
             // Draws the controls placed on the grid
             // TODO: Support controls editMode vs playMode, just unlock controls and lock edit!
+            //----------------------------------------------------------------------------------------
             GuiLock();
             for (int i = 0; i < layout.controlsCount; i++)
             {
@@ -1998,8 +1943,10 @@ int main(int argc, char *argv[])
                 }
             }
             GuiUnlock();
+            //----------------------------------------------------------------------------------------
 
             // Draw reference window
+            //----------------------------------------------------------------------------------------
             anchorSelectedColor = DARKGRAY;
             anchorCircleColor = DARKGRAY;
             if (selectedAnchor == 0)
@@ -2016,8 +1963,10 @@ int main(int argc, char *argv[])
             DrawRectangleLines(layout.anchors[0].x - ANCHOR_RADIUS, layout.anchors[0].y - ANCHOR_RADIUS, ANCHOR_RADIUS*2, ANCHOR_RADIUS*2, Fade(anchorCircleColor, 0.5f));
             DrawRectangle(layout.anchors[0].x - ANCHOR_RADIUS - 5, layout.anchors[0].y, ANCHOR_RADIUS*2 + 10, 1, Fade(anchorCircleColor, 0.8f));
             DrawRectangle(layout.anchors[0].x, layout.anchors[0].y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, Fade(anchorCircleColor, 0.8f));
+            //----------------------------------------------------------------------------------------
 
             // Draw the anchor points
+            //----------------------------------------------------------------------------------------
             for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
             {
                 if (layout.anchors[i].enabled)
@@ -2044,11 +1993,13 @@ int main(int argc, char *argv[])
                         if (anchorEditMode) anchorCircleColor = ORANGE;
                         else anchorCircleColor = RED;
                     }
+                    
                     DrawCircleLines(layout.anchors[i].x, layout.anchors[i].y, ANCHOR_RADIUS, Fade(anchorCircleColor, 0.5f));
                     DrawRectangle(layout.anchors[i].x - ANCHOR_RADIUS - 5, layout.anchors[i].y, ANCHOR_RADIUS*2 + 10, 1, anchorCircleColor);
                     DrawRectangle(layout.anchors[i].x, layout.anchors[i].y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, anchorCircleColor);
                 }
             }
+            //----------------------------------------------------------------------------------------
 
             if (!windowCodegenState.windowCodegenActive && !windowAboutState.windowAboutActive && !resetWindowActive && !windowExitActive)
             {
@@ -2532,15 +2483,15 @@ int main(int argc, char *argv[])
                     if (message == 0) resetWindowActive = false;
                     else if (message == 1)  // Yes
                     {
-                        if (DialogSaveLayout())
+                        if (DialogSaveLayout(layout))
                         {
-                            resetLayout = true;
+                            resetProgram = true;
                             resetWindowActive = false;
                         }
                     }
                     else if (message == 2)  // No
                     {
-                        resetLayout = true;
+                        resetProgram = true;
                         resetWindowActive = false;
                     }
                 }
@@ -2556,7 +2507,7 @@ int main(int argc, char *argv[])
                     if (message == 0) windowExitActive = false;
                     else if (message == 1)  // Yes
                     {
-                        if (DialogSaveLayout())
+                        if (DialogSaveLayout(layout))
                         {
                             windowExitActive = false;
                             exitWindow = true;
@@ -2669,10 +2620,10 @@ int main(int argc, char *argv[])
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
-    UnloadTexture(tracemap);
+    UnloadTexture(tracemap);    // Unload tracemap texture (if loaded)
 
-    free(windowCodegenState.codeText);
-    free(undoLayouts);
+    free(windowCodegenState.codeText);  // Free loaded codeText memory
+    free(undoLayouts);                  // Free undo layouts array
 
     CloseWindow();              // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
@@ -2773,10 +2724,9 @@ static void ProcessCommandLine(int argc, char *argv[])
 
         printf("\nInput file:       %s", inFileName);
         printf("\nOutput file:      %s", outFileName);
-        //printf("\nOutput params:    %i Hz, %i bits, %s\n\n", sampleRate, sampleSize, (channels == 1)? "Mono" : "Stereo");
 
         // Support .rlg layout processing to generate .c
-        LoadLayout(argv[1]);    // Updates global: layout.controls
+        GuiLayout layout = LoadLayout(argv[1]);
 
         int len = strlen(argv[1]);
         char outName[256] = { 0 };
@@ -2811,10 +2761,50 @@ static void ProcessCommandLine(int argc, char *argv[])
 // Load/Save/Export data functions
 //--------------------------------------------------------------------------------------------
 
+// Initialize default clean layout
+static GuiLayout InitLayout(void)
+{
+    GuiLayout layout = { 0 };
+    
+    // Initialize anchor points to default values
+    for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
+    {
+        layout.anchors[i].id = i;
+        layout.anchors[i].x = 0;
+        layout.anchors[i].y = 0;
+        layout.anchors[i].enabled = false;
+        layout.anchors[i].hidding = false;
+        memset(layout.anchors[i].name, 0, MAX_ANCHOR_NAME_LENGTH);
+        
+        if (i == 0) strcpy(layout.anchors[i].name, "anchorMain");
+        else strcpy(layout.anchors[i].name, FormatText("anchor%02i", i));
+    }
+ 
+    // Initialize layout controls data
+    for (int i = 0; i < MAX_GUI_CONTROLS; i++)
+    {
+        layout.controls[i].id = 0;
+        layout.controls[i].type = 0;
+        layout.controls[i].rec = (Rectangle){ 0, 0, 0, 0 };
+        memset(layout.controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
+        memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
+        layout.controls[i].ap = &layout.anchors[0];  // By default, set parent anchor
+    }
+
+    layout.anchors[0].enabled = true;      // Enable layout parent anchor (0, 0)
+    layout.anchorsCount = 1;
+    layout.controlsCount = 0;
+    layout.refWindow = (Rectangle){ 0, 0, -1, -1};
+    
+    return layout;
+}
+
 // Import gui layout information
 // NOTE: Updates global variable: layout
-static void LoadLayout(const char *fileName)
+static GuiLayout LoadLayout(const char *fileName)
 {
+    GuiLayout layout = { 0 };
+    
     char buffer[256];
     bool tryBinary = false;
 
@@ -2938,10 +2928,11 @@ static void LoadLayout(const char *fileName)
         }
     }
 */
+    return layout;
 }
 
 // Save gui layout information
-static void SaveLayout(const char *fileName, bool binary)
+static void SaveLayout(GuiLayout layout, const char *fileName, bool binary)
 {
     if (binary)
     {
@@ -3017,15 +3008,32 @@ static void SaveLayout(const char *fileName, bool binary)
 }
 
 // Show dialog: load layout file (.rgl)
-static void DialogLoadLayout(void)
+static GuiLayout DialogLoadLayout(void)
 {
+    GuiLayout layout = { 0 };
 
+#if !defined(PLATFORM_WEB) && !defined(PLATFORM_ANDROID)
+    // Open file dialog
+    const char *filters[] = { "*.rgl" };
+    const char *fileName = tinyfd_openFileDialog("Load raygui layout file", "", 1, filters, "Gui Layour Files (*.rgl)", 0);
+
+    if (fileName != NULL)
+    {
+        layout = LoadLayout(fileName);
+        strcpy(loadedFileName, fileName);
+        SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(fileName)));
+    }
+#endif
+
+    return layout;
 }
 
 // Show save layout dialog
-static bool DialogSaveLayout(void)
+static bool DialogSaveLayout(GuiLayout layout)
 {
     bool success = false;
+    
+#if !defined(PLATFORM_WEB) && !defined(PLATFORM_ANDROID)
     const char *filters[] = { "*.rgl" };
     const char *fileName = tinyfd_saveFileDialog("Save raygui layout text file", "", 1, filters, "raygui Layout Files (*.rgl)");
 
@@ -3035,13 +3043,14 @@ static bool DialogSaveLayout(void)
         char outFileName[256] = { 0 };
         strcpy(outFileName, fileName);
         if (GetExtension(fileName) == NULL) strcat(outFileName, ".rgl\0");     // No extension provided
-        SaveLayout(outFileName, false);
+        SaveLayout(layout, outFileName, false);
         strcpy(loadedFileName, outFileName);
         SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
         success = true;
 
         saveChangesRequired = false;
     }
+#endif
 
     return success;
 }
