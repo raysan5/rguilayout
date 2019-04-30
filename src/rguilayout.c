@@ -3006,11 +3006,13 @@ static void SaveLayout(GuiLayout layout, const char *fileName, bool binary)
 static GuiLayout DialogLoadLayout(void)
 {
     GuiLayout layout = { 0 };
-
+    const char *fileName = NULL;
+    
 #if !defined(PLATFORM_WEB) && !defined(PLATFORM_ANDROID)
     // Open file dialog
     const char *filters[] = { "*.rgl" };
-    const char *fileName = tinyfd_openFileDialog("Load raygui layout file", "", 1, filters, "Gui Layour Files (*.rgl)", 0);
+    fileName = tinyfd_openFileDialog("Load raygui layout file", "", 1, filters, "Gui Layour Files (*.rgl)", 0);
+#endif
 
     if (fileName != NULL)
     {
@@ -3018,7 +3020,6 @@ static GuiLayout DialogLoadLayout(void)
         strcpy(loadedFileName, fileName);
         SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(fileName)));
     }
-#endif
 
     return layout;
 }
@@ -3027,10 +3028,12 @@ static GuiLayout DialogLoadLayout(void)
 static bool DialogSaveLayout(GuiLayout layout)
 {
     bool success = false;
+    const char *fileName = NULL;
     
 #if !defined(PLATFORM_WEB) && !defined(PLATFORM_ANDROID)
     const char *filters[] = { "*.rgl" };
-    const char *fileName = tinyfd_saveFileDialog("Save raygui layout text file", "", 1, filters, "raygui Layout Files (*.rgl)");
+    fileName = tinyfd_saveFileDialog("Save raygui layout text file", "", 1, filters, "raygui Layout Files (*.rgl)");
+#endif
 
     // Save layout.controls file (text or binary)
     if (fileName != NULL)
@@ -3045,7 +3048,7 @@ static bool DialogSaveLayout(GuiLayout layout)
 
         saveChangesRequired = false;
     }
-#endif
+
 
     return success;
 }
@@ -3053,8 +3056,12 @@ static bool DialogSaveLayout(GuiLayout layout)
 // Show save layout dialog
 static void DialogExportLayout(unsigned char *toolstr, const char *name)
 {
+    const char *fileName = NULL;
+    
+#if !defined(PLATFORM_WEB) && !defined(PLATFORM_ANDROID)
     const char *filters[] = { "*.c", "*.h", "*.go", "*.lua" };
-    const char *fileName = tinyfd_saveFileDialog("Export code file", name, 3, filters, "Code file");
+    fileName = tinyfd_saveFileDialog("Export code file", name, 3, filters, "Code file");
+#endif
 
     if (fileName != NULL)
     {
