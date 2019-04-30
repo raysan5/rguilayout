@@ -145,7 +145,7 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
     state.listViewScrollIndex = 0;
     state.listViewEditMode = false;
     state.listViewActive = 0;
-    state.colorPickerValue;
+    state.colorPickerValue = RED;
     state.toggleGroupActive = -1;
     state.comboBoxActive = 0;
     state.dropdownBoxEditMode = false;

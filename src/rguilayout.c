@@ -195,22 +195,27 @@ int main(int argc, char *argv[])
     bool useGlobalPos = false;              // Control global position mode
     bool precisionMode = false;             // Control precision mode (KEY_LEFT_SHIFT)
     
-    bool dragMode = false;                  // Control drag mode
-    bool textEditMode = false;              // Control text edit mode (KEY_T)
-    bool nameEditMode = false;              // Control name edit mode (KEY_N)
+    // NOTE: [E] - Exclusive mode operation, all other modes blocked
+    bool dragMode = false;                  // [E] Control drag mode
+    bool textEditMode = false;              // [E] Control text edit mode (KEY_T)
+    bool nameEditMode = false;              // [E] Control name edit mode (KEY_N)
     bool orderEditMode = false;             // Control order edit mode (focusedControl != -1 + KEY_LEFT_ALT)
-    bool resizeMode = false;                // Control size mode (controlSelected != -1 + KEY_LEFT_ALT)
-    bool mouseScaleMode = false;            // Control is being scaled by mouse
+    bool resizeMode = false;                // [E] Control size mode (controlSelected != -1 + KEY_LEFT_ALT)
+    bool mouseScaleMode = false;            // [E] Control is being scaled by mouse
     bool mouseScaleReady = false;           // Mouse is on position to start control scaling
-    bool showNamesMode = false;             // Show names of all controls
-    bool refWindowEditMode = false;         // Refence window edit mode
+    bool refWindowEditMode = false;         // [E] Refence window edit mode
     
+    bool anchorEditMode = false;            // [E] Anchor edition mode
+    bool anchorLinkMode = false;            // [E] Anchor linkage mode
+    bool anchorMoveMode = false;            // [E] Anchor move mode
     
+    // TODO: Check exclusive modes (work on its own) and combinable modes (can work in combination with other)
+    // Replace all bool values by enumerator value, it should simplify code...
     int layoutEditMode = NONE;              // Layout edition mode
     bool anyWindowActive = false;           // Check for any blocking window active
 
     // Multiselection variables
-    bool multiSelectMode = false;
+    bool multiSelectMode = false;           // [E] Multiselection mode
     Rectangle multiSelectRec = { 0 };
     Vector2 multiSelectStartPos = { 0 };
     int multiSelectControls[20] = { -1 };
@@ -228,9 +233,6 @@ int main(int argc, char *argv[])
     
     // Anchors control variables
     GuiAnchorPoint auxAnchor = { 9, 0, 0, 0 };
-    bool anchorEditMode = false;
-    bool anchorLinkMode = false;
-    bool anchorMoveMode = false;
     int selectedAnchor = -1;
     int focusedAnchor = -1;
     Color anchorCircleColor = BLACK;
@@ -550,7 +552,6 @@ int main(int argc, char *argv[])
             if (IsKeyPressed(KEY_G)) showGrid = !showGrid;              // Toggle Grid mode
 
             anchorEditMode = IsKeyDown(KEY_A);              // Toggle anchor mode editing (on key down)
-            showNamesMode = IsKeyDown(KEY_N);               // Toggle show names mode
             orderEditMode = IsKeyDown(KEY_LEFT_ALT);        // Toggle controls drawing order
             
             precisionMode = IsKeyDown(KEY_LEFT_SHIFT);      // Toggle precision move/scale mode
@@ -1985,10 +1986,10 @@ int main(int argc, char *argv[])
                         }
                         else
                         {
-                            anchorCircleColor = (Color){ 253, 86, 95, 255 }; //LIGHTRED
+                            anchorCircleColor = (Color){ 253, 86, 95, 255 }; // LIGHTRED
                             anchorSelectedColor = RED;
                         }
-                        if (anchorMoveMode || anchorEditMode && (focusedAnchor > 0 && layout.anchors[i].id == focusedAnchor)) anchorSelectedColor = ORANGE;
+                        if (anchorMoveMode || (anchorEditMode && (focusedAnchor > 0) && (layout.anchors[i].id == focusedAnchor))) anchorSelectedColor = ORANGE;
                         DrawCircle(layout.anchors[i].x, layout.anchors[i].y, ANCHOR_RADIUS, Fade(anchorSelectedColor, 0.2f));
                     }
                     else if (layout.anchors[i].hidding) anchorCircleColor = GRAY;
@@ -2065,7 +2066,7 @@ int main(int argc, char *argv[])
                                          (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
 
                                 // Draw controls name
-                                if (showNamesMode)
+                                if (IsKeyDown(KEY_N))
                                 {
                                     GuiLock();
                                     for (int i = 0; i < layout.controlsCount; i++)
@@ -2211,17 +2212,6 @@ int main(int argc, char *argv[])
                         if (GuiTextBox(textboxRec, layout.anchors[selectedAnchor].name, MAX_ANCHOR_NAME_LENGTH, nameEditMode)) nameEditMode = !nameEditMode;
                     }
                 }
-
-                // Draw multi selected controls
-                //if (multiSelectMode) DrawRectangleLinesEx(multiSelectRec, 1, BLACK);
-
-                /*if (multiSelectCount > 0)
-                {
-                    for (int i = 0; i < multiSelectCount; i++)
-                    {
-                        DrawRectangleRec(layout.controls[multiSelectControls[i]].rec, Fade(GOLD, 0.4f));
-                    }
-                }*/
 
                 // Draw selected control
                 if (selectedControl != -1)
@@ -2862,15 +2852,15 @@ static GuiLayout LoadLayout(const char *fileName)
                     } break;
                     case 'a':
                     {
-                        
-                        
+                        int enabled = 0;
                         sscanf(buffer, "a %d %s %d %d %d",
                                        &layout.anchors[anchorCounter].id,
                                        anchorName,
                                        &layout.anchors[anchorCounter].x,
                                        &layout.anchors[anchorCounter].y,
-                                       &layout.anchors[anchorCounter].enabled);
+                                       &enabled);
 
+                        layout.anchors[anchorCounter].enabled = (enabled? true : false);
                         strcpy(layout.anchors[anchorCounter].name, anchorName);
 
                         if (layout.anchors[anchorCounter].enabled) layout.anchorsCount++;

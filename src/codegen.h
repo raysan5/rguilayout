@@ -796,7 +796,7 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout lay
             {
                 draw[i] = true;
 
-                char *rec = GetControlRectangleText(i, layout.controls[i], config.defineRecs, config.exportAnchors, preText);
+                //char *rec = GetControlRectangleText(i, layout.controls[i], config.defineRecs, config.exportAnchors, preText);
 
                 TextAppend(toolstr, FormatText("if (%sActive)", GetControlNameParam(layout.controls[i].name, preText)), pos);
                 ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
