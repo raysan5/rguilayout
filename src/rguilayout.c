@@ -57,7 +57,9 @@
 #define GUI_WINDOW_ABOUT_IMPLEMENTATION
 #include "gui_window_about.h"               // GUI: About Window
 
-#include "external/tinyfiledialogs.h"       // Required for: Open/Save file dialogs
+#if !defined(PLATFORM_WEB) && !defined(PLATFORM_ANDROID)
+    #include "external/tinyfiledialogs.h"   // Required for: Open/Save file dialogs
+#endif
 
 #include <stdlib.h>                         // Required for: calloc(), free()
 #include <stdarg.h>                         // Required for: va_list, va_start(), vfprintf(), va_end()
@@ -80,10 +82,10 @@
 #define MOVEMENT_FRAME_SPEED        10      // Controls movement speed in pixels per frame
 #define PANELS_EASING_FRAMES        60      // Controls the easing time in frames
 
-#define MAX_UNDO_LEVELS             10       // Undo levels supported for the ring buffer
+#define MAX_UNDO_LEVELS             10      // Undo levels supported for the ring buffer
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
-bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib)
+bool __stdcall FreeConsole(void);           // Close console from code (kernel32.lib)
 #endif
 
 //----------------------------------------------------------------------------------
