@@ -42,14 +42,18 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"                         // Required for: IMGUI controls
 
-#define CODEGEN_IMPLEMENTATION
-#include "codegen.h"                        // Code generation functions
-#include "templates.h"                      // Code template files (char buffers)
+#if defined(VERSION_ONE)
+    #define CODEGEN_IMPLEMENTATION
+    #include "codegen.h"                    // Code generation functions
+    #include "templates.h"                  // Code template files (char buffers)
+
+    #undef RAYGUI_IMPLEMENTATION            // Avoid including raygui implementation again
+
+    #define GUI_WINDOW_CODEGEN_IMPLEMENTATION
+    #include "gui_window_codegen.h"         // GUI: Code Generation Window
+#endif
 
 #undef RAYGUI_IMPLEMENTATION                // Avoid including raygui implementation again
-
-#define GUI_WINDOW_CODEGEN_IMPLEMENTATION
-#include "gui_window_codegen.h"             // GUI: Code Generation Window
 
 #define GUI_CONTROLS_PALETTE_IMPLEMENTATION
 #include "gui_controls_palette.h"           // GUI: Controls Palette
@@ -184,8 +188,7 @@ int main(int argc, char *argv[])
 
     // General app variables
     Vector2 mouse = { -1, -1 };             // Mouse position
-    int framesCounter = 0;                  // General frames counter
-    
+
     bool showGrid = true;                   // Show grid flag (KEY_G)
     int gridLineSpacing = 5;                // Grid line spacing in pixels
     int moveFramesCounter = 0;              // Movement frames counter
@@ -217,11 +220,13 @@ int main(int argc, char *argv[])
     bool anyWindowActive = false;           // Check for any blocking window active
 
     // Multiselection variables
+    /*
     bool multiSelectMode = false;           // [E] Multiselection mode
     Rectangle multiSelectRec = { 0 };
     Vector2 multiSelectStartPos = { 0 };
     int multiSelectControls[20] = { -1 };
     int multiSelectCount = 0;
+    */
 
     // Controls variables
     int selectedControl = -1;               // Control selected on layout
@@ -265,11 +270,13 @@ int main(int argc, char *argv[])
     GuiControlsPaletteState paletteState = InitGuiControlsPalette();
     //-----------------------------------------------------------------------------------
     
+#if defined(VERSION_ONE)
     // GUI: Layout Code Generation Window
     //-----------------------------------------------------------------------------------
     GuiWindowCodegenState windowCodegenState = InitGuiWindowCodegen();
     //-----------------------------------------------------------------------------------
-       
+#endif
+
     // GUI: About Window
     //-----------------------------------------------------------------------------------
     GuiWindowAboutState windowAboutState = InitGuiWindowAbout();
@@ -317,6 +324,7 @@ int main(int argc, char *argv[])
         (Rectangle){ 0, 0, 0, 0 },              // ???
     };
 
+#if defined(VERSION_ONE)
     // Generate code configuration
     GuiLayoutConfig config = { 0 };
     strcpy(config.name, "window_codegen");
@@ -332,6 +340,7 @@ int main(int argc, char *argv[])
 
     GuiLayoutConfig prevConfig = { 0 };
     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
+#endif
     
     // Controls temp variables
     int dropdownBoxActive = 0;
@@ -448,7 +457,9 @@ int main(int argc, char *argv[])
                 currentUndoIndex = 0;
                 firstUndoIndex = 0;
             }
+#if defined(VERSION_ONE)
             else if (IsFileExtension(droppedFileName, ".rgs")) GuiLoadStyle(droppedFileName);
+#endif
             else if (IsFileExtension(droppedFileName, ".png")) // Tracemap image
             {
                 if (tracemap.id > 0) UnloadTexture(tracemap);
@@ -519,8 +530,10 @@ int main(int argc, char *argv[])
             else
             {
                 // Close windows logic
-                if (windowCodegenState.windowCodegenActive) windowCodegenState.windowCodegenActive = false;
-                else if (windowAboutState.windowAboutActive) windowAboutState.windowAboutActive = false;
+                if (windowAboutState.windowAboutActive) windowAboutState.windowAboutActive = false;
+#if defined(VERSION_ONE)
+                else if (windowCodegenState.windowCodegenActive) windowCodegenState.windowCodegenActive = false;
+#endif
                 else if (resetWindowActive) resetWindowActive = false;
                 else if ((layout.controlsCount <= 0) && (layout.anchorsCount <= 1)) exitWindow = true;  // Quit application
                 else
@@ -573,7 +586,7 @@ int main(int argc, char *argv[])
             {
                 // Open reset window
                 if (IsKeyPressed(KEY_N)) resetWindowActive = true;
-
+#if defined(VERSION_ONE)
                 // Activate code generation export window
                 if (IsKeyPressed(KEY_ENTER))
                 {
@@ -593,6 +606,7 @@ int main(int argc, char *argv[])
                     windowCodegenState.codeText = GenerateLayoutCode(guiTemplateStandardCode, layout, config);
                     windowCodegenState.windowCodegenActive = true;
                 }
+#endif
             }
 
             // Change grid spacing
@@ -604,7 +618,7 @@ int main(int argc, char *argv[])
                 movePixel = gridLineSpacing;
             }
         }
-
+#if defined(VERSION_ONE)
         // Code generation window logic
         //----------------------------------------------------------------------------------
         if (windowCodegenState.windowCodegenActive)
@@ -636,7 +650,7 @@ int main(int argc, char *argv[])
             }
         }
         //----------------------------------------------------------------------------------
-
+#endif
         // Layout edition logic
         //----------------------------------------------------------------------------------------------
         // Check for any blocking mode (window or text/name edition)
@@ -1794,8 +1808,10 @@ int main(int argc, char *argv[])
         }
         
         // If any window is shown, cancel any edition mode
-        if (windowCodegenState.windowCodegenActive || 
-            windowAboutState.windowAboutActive || 
+        if (windowAboutState.windowAboutActive ||
+#if defined(VERSION_ONE)
+            windowCodegenState.windowCodegenActive || 
+#endif
             resetWindowActive || 
             windowExitActive)
         {
@@ -2008,7 +2024,11 @@ int main(int argc, char *argv[])
             }
             //----------------------------------------------------------------------------------------
 
-            if (!windowCodegenState.windowCodegenActive && !windowAboutState.windowAboutActive && !resetWindowActive && !windowExitActive)
+            if (!windowAboutState.windowAboutActive && 
+#if defined(VERSION_ONE)
+                !windowCodegenState.windowCodegenActive && 
+#endif
+                !resetWindowActive && !windowExitActive)
             {
                 if (!(CheckCollisionPointRec(mouse, paletteState.layoutRecs[0])))
                 {
@@ -2413,36 +2433,36 @@ int main(int argc, char *argv[])
                     int helpPositionX = 20;
                     
                     DrawRectangleRec((Rectangle){ helpPositionX + 20, 15, 280, 550 }, GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
-                    GuiGroupBox((Rectangle){ helpPositionX + 20, 15, 280, 550 }, "TAB - Shortcuts");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 30, 0, 0 }, "G - Toggle grid mode");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 50, 0, 0 }, "S - Toggle snap to grid mode");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 70, 0, 0 }, "F - Toggle control position (global/anchor)");
+                    GuiGroupBox((Rectangle){ helpPositionX + 20, 15, 280, 550 }, "[F1] Tool Shortcuts");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 35, 0, 0 }, "G - Toggle grid mode");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 55, 0, 0 }, "S - Toggle snap to grid mode");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 75, 0, 0 }, "F - Toggle control position (global/anchor)");
                     GuiLine((Rectangle){ helpPositionX + 30, 85, 260, 10 }, NULL);
-                    GuiLabel((Rectangle){ helpPositionX + 30, 100, 0, 0 }, "SPACE - Lock/unlock control for editing");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 120, 0, 0 }, "ARROWS - Edit control position");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 140, 0, 0 }, "LSHIFT + ARROWS - Smooth edit position");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 160, 0, 0 }, "LCTRL + ARROWS - Edit control scale");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 180, 0, 0 }, "LCTRL + LSHIFT + ARROWS - Smooth edit scale");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 200, 0, 0 }, "LCTRL + R - Resize control to closest snap");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 220, 0, 0 }, "LCTRL + D - Duplicate selected control");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 240, 0, 0 }, "LCTRL + N - Resets layout");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 260, 0, 0 }, "DEL - Delete selected control");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 105, 0, 0 }, "SPACE - Lock/unlock control for editing");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 125, 0, 0 }, "ARROWS - Edit control position");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 145, 0, 0 }, "LSHIFT + ARROWS - Smooth edit position");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 165, 0, 0 }, "LCTRL + ARROWS - Edit control scale");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 185, 0, 0 }, "LCTRL + LSHIFT + ARROWS - Smooth edit scale");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 205, 0, 0 }, "LCTRL + R - Resize control to closest snap");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 225, 0, 0 }, "LCTRL + D - Duplicate selected control");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 245, 0, 0 }, "LCTRL + N - Resets layout");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 265, 0, 0 }, "DEL - Delete selected control");
                     GuiLine((Rectangle){ helpPositionX + 30, 275, 260, 10 }, NULL);
-                    GuiLabel((Rectangle){ helpPositionX + 30, 290, 0, 0 }, "T - Control text editing (if possible)");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 310, 0, 0 }, "N - Control name editing ");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 330, 0, 0 }, "ESC - Exit text/name editing mode");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 350, 0, 0 }, "ENTER - Validate text/name edition");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 295, 0, 0 }, "T - Control text editing (if possible)");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 315, 0, 0 }, "N - Control name editing ");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 335, 0, 0 }, "ESC - Exit text/name editing mode");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 355, 0, 0 }, "ENTER - Validate text/name edition");
                     GuiLine((Rectangle){ helpPositionX + 30, 365, 260, 10 }, NULL);
-                    GuiLabel((Rectangle){ helpPositionX + 30, 380, 0, 0 }, "LALT + UP/DOWN - Control layer order");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 385, 0, 0 }, "LALT + UP/DOWN - Control layer order");
                     GuiLine((Rectangle){ helpPositionX + 30, 395, 260, 10 }, NULL);
-                    GuiLabel((Rectangle){ helpPositionX + 30, 410, 0, 0 }, "A - Anchor editing mode");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 430, 0, 0 }, "RMB - Link anchor to control");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 450, 0, 0 }, "U - Unlink control from anchor");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 470, 0, 0 }, "H - Hide/Unhide controls for selected anchor");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 415, 0, 0 }, "A - Anchor editing mode");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 435, 0, 0 }, "RMB - Link anchor to control");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 455, 0, 0 }, "U - Unlink control from anchor");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 475, 0, 0 }, "H - Hide/Unhide controls for selected anchor");
                     GuiLine((Rectangle){ helpPositionX + 30, 485, 260, 10 }, NULL);
-                    GuiLabel((Rectangle){ helpPositionX + 30, 500, 0, 0 }, "LCTRL + S - Save layout file (.rgl)");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 520, 0, 0 }, "LCTRL + O - Open layout file (.rgl)");
-                    GuiLabel((Rectangle){ helpPositionX + 30, 540, 0, 0 }, "LCTRL + ENTER - Export layout to code");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 505, 0, 0 }, "LCTRL + S - Save layout file (.rgl)");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 525, 0, 0 }, "LCTRL + O - Open layout file (.rgl)");
+                    GuiLabel((Rectangle){ helpPositionX + 30, 545, 0, 0 }, "LCTRL + ENTER - Export layout to code");
                 }
                 //----------------------------------------------------------------------------------------
 
@@ -2453,6 +2473,7 @@ int main(int argc, char *argv[])
             }
             else    // (windowCodegenState.windowCodegenActive || windowAboutState.windowAboutActive || resetWindowActive || windowExitActive)
             {
+#if defined(VERSION_ONE)
                 // GUI: Layout Code Generation Window
                 //----------------------------------------------------------------------------------------
                 GuiWindowCodegen(&windowCodegenState);
@@ -2463,7 +2484,7 @@ int main(int argc, char *argv[])
                     windowCodegenState.windowCodegenActive = false;
                 }
                 //----------------------------------------------------------------------------------------
-                
+#endif
                 // GUI: About Window
                 //----------------------------------------------------------------------------------------
                 GuiWindowAbout(&windowAboutState);
@@ -2618,7 +2639,9 @@ int main(int argc, char *argv[])
     //--------------------------------------------------------------------------------------
     UnloadTexture(tracemap);    // Unload tracemap texture (if loaded)
 
+#if defined(VERSION_ONE)
     free(windowCodegenState.codeText);  // Free loaded codeText memory
+#endif
     free(undoLayouts);                  // Free undo layouts array
 
     CloseWindow();              // Close window and OpenGL context
