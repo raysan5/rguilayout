@@ -132,7 +132,7 @@ static void SaveLayout(GuiLayout layout, const char *fileName, bool binary);    
 
 static GuiLayout DialogLoadLayout(void);                    // Show dialog: load layout file (.rgl)
 static bool DialogSaveLayout(GuiLayout layout);             // Show dialog: save layout file (.rgl)
-static void DialogExportLayout(unsigned char *toolstr, const char *name);         // Show dialog: export layout file (.c)
+static bool DialogExportLayout(unsigned char *toolstr, const char *name);         // Show dialog: export layout file (.c)
 
 //----------------------------------------------------------------------------------
 // Program main entry point
@@ -465,8 +465,10 @@ int main(int argc, char *argv[])
         // Show window: load layout
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O))
         {
-            // TODO: Verify layout has been loaded correctly
-            layout = DialogLoadLayout();
+            GuiLayout tempLayout = DialogLoadLayout();
+            
+            // Verify layout has been loaded correctly           
+            if ((tempLayout.controlsCount > 0) && (tempLayout.anchorsCount)) layout = tempLayout;
         }
 
         // Show dialog: save layout
@@ -518,7 +520,7 @@ int main(int argc, char *argv[])
             {
                 // Close windows logic
                 if (windowCodegenState.windowCodegenActive) windowCodegenState.windowCodegenActive = false;
-                if (windowAboutState.windowAboutActive) windowAboutState.windowAboutActive = false;
+                else if (windowAboutState.windowAboutActive) windowAboutState.windowAboutActive = false;
                 else if (resetWindowActive) resetWindowActive = false;
                 else if ((layout.controlsCount <= 0) && (layout.anchorsCount <= 1)) exitWindow = true;  // Quit application
                 else
@@ -1605,11 +1607,8 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-            else
-            {
-                // TODO: This is for anchors and controls...move this condition
-                if (anchorLinkMode && IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) anchorLinkMode = false;
-            }
+
+            if (anchorLinkMode && (selectedAnchor == -1) && IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) anchorLinkMode = false;
             //----------------------------------------------------------------------------------------------
 
             // Tracemap edition logic
@@ -2289,7 +2288,7 @@ int main(int argc, char *argv[])
                         // Make sure text could be written, no matter if overflows control
                         int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
                         int textWidth = MeasureText(layout.controls[selectedControl].text, fontSize);
-                        if (textboxRec.width < (textWidth + 40)) textboxRec.width = textWidth + 40;     // TODO: Additional space required to work with GuiTextBox()?
+                        if (textboxRec.width < (textWidth + 40)) textboxRec.width = textWidth + 40;     // TODO: Why additional space required to work with GuiTextBox()?
                         if (textboxRec.height < fontSize) textboxRec.height += fontSize;
                         
                         if (layout.controls[selectedControl].type == GUI_WINDOWBOX) textboxRec.height = WINDOW_STATUSBAR_HEIGHT;  // Defined inside raygui.h
@@ -2639,7 +2638,7 @@ static void ShowCommandLineInfo(void)
     printf("\n//////////////////////////////////////////////////////////////////////////////////\n");
     printf("//                                                                              //\n");
     printf("// %s v%s ONE - %s             //\n", TOOL_NAME, TOOL_VERSION, TOOL_DESCRIPTION);
-    printf("// powered by raylib v2.4 (www.raylib.com) and raygui v2.0                      //\n");
+    printf("// powered by raylib v2.5 (www.raylib.com) and raygui v2.0                      //\n");
     printf("// more info and bugs-report: github.com/raysan5/rguilayout                     //\n");
     printf("//                                                                              //\n");
     printf("// Copyright (c) 2017-2019 raylib technologies (@raylibtech)                    //\n");
@@ -2653,22 +2652,13 @@ static void ShowCommandLineInfo(void)
     printf("\nOPTIONS:\n\n");
     printf("    -h, --help                      : Show tool version and command line usage help\n");
     printf("    -i, --input <filename.ext>      : Define input file.\n");
-    printf("                                      Supported extensions: .rgs, .png\n");
+    printf("                                      Supported extensions: .rgl\n");
     printf("    -o, --output <filename.ext>     : Define output file.\n");
-    printf("                                      Supported extensions: .rgs, .png, .h\n");
+    printf("                                      Supported extensions: .c, .h\n");
     printf("                                      NOTE: Extension could be modified depending on format\n\n");
-    printf("    -f, --format <type_value>       : Define output file format to export style data.\n");
-    printf("                                      Supported values:\n");
-    printf("                                          0 - Style text format (.rgs)  \n");
-    printf("                                          1 - Style binary format (.rgs)\n");
-    printf("                                          2 - Palette image (.png)\n");
-    printf("                                          3 - Palette as int array (.h)\n");
-    printf("                                          4 - Controls table image (.png)\n\n");
-    printf("    -e, --edit-prop <property> <value>\n");
-    printf("                                    : Edit specific property from input to output.\n");
 
     printf("\nEXAMPLES:\n\n");
-    printf("    > rguilayout --input tools.rgl --output tools.png\n");
+    printf("    > rguilayout --input mytool.rgl --output mytools.h\n");
 }
 
 // Process command line input
@@ -2690,28 +2680,40 @@ static void ProcessCommandLine(int argc, char *argv[])
         }
         else if ((strcmp(argv[i], "-i") == 0) || (strcmp(argv[i], "--input") == 0))
         {
-            // Verify an image is provided with a supported extension
-            // Check that no "--" is comming after --input
-            if (((i + 1) < argc) && (argv[i + 1][0] != '-') && (IsFileExtension(argv[i + 1], ".rgl")))
+            // Check for valid argument and valid file extension
+            if (((i + 1) < argc) && (argv[i + 1][0] != '-'))
             {
-                strcpy(inFileName, argv[i + 1]);    // Read input filename
+                if (IsFileExtension(argv[i + 1], ".rgl"))
+                {
+                    strcpy(inFileName, argv[i + 1]);    // Read input filename
+                }
+                else printf("WARNING: Input file extension not recognized\n");
+
                 i++;
             }
-            else printf("WARNING: Input file extension not recognized\n");
+            else printf("WARNING: No input file provided\n");
         }
         else if ((strcmp(argv[i], "-o") == 0) || (strcmp(argv[i], "--output") == 0))
         {
-            if (((i + 1) < argc) && (argv[i + 1][0] != '-') && (IsFileExtension(argv[i + 1], ".c")))
+            if (((i + 1) < argc) && (argv[i + 1][0] != '-'))
             {
-                strcpy(outFileName, argv[i + 1]);   // Read output filename
+                if (IsFileExtension(argv[i + 1], ".c") ||
+                    IsFileExtension(argv[i + 1], ".h"))
+                {
+                    strcpy(outFileName, argv[i + 1]);   // Read output filename
+                }
+                else printf("WARNING: Input file extension not recognized\n");
+                
                 i++;
             }
-            else printf("WARNING: Output file extension not recognized\n");
+            else printf("WARNING: No output file provided\n");
         }
-        else if ((strcmp(argv[i], "-f") == 0) || (strcmp(argv[i], "--format") == 0))
+        else if ((strcmp(argv[i], "-t") == 0) || (strcmp(argv[i], "--template") == 0))
         {
-
+            // TODO: Support a custom code template
         }
+        
+        // TODO: Support codegen options: exportAnchors, defineRecs, fullComments...
     }
 
     // Process input file
@@ -2723,15 +2725,9 @@ static void ProcessCommandLine(int argc, char *argv[])
         printf("\nOutput file:      %s", outFileName);
 
         // Support .rlg layout processing to generate .c
-        GuiLayout layout = LoadLayout(argv[1]);
+        GuiLayout layout = LoadLayout(inFileName);
 
-        int len = strlen(argv[1]);
-        char outName[256] = { 0 };
-        strcpy(outName, argv[1]);
-        outName[len - 3] = 'c';
-        outName[len - 2] = '\0';
-
-        GuiLayoutConfig config;
+        GuiLayoutConfig config = { 0 };
         memset(&config, 0, sizeof(GuiLayoutConfig));
         strcpy(config.name, "window_codegen");
         strcpy(config.version, TOOL_VERSION);
@@ -2933,18 +2929,23 @@ static void SaveLayout(GuiLayout layout, const char *fileName, bool binary)
 {
     if (binary)
     {
-        #define RGL_FILE_VERSION_BINARY 100
+        #define RGL_FILE_VERSION_BINARY 200
 
         FILE *rglFile = fopen(fileName, "wb");
 
         if (rglFile != NULL)
         {
-            // Write some header info (12 bytes)
-            // id: "RGL "       - 4 bytes
-            // version: 100     - 2 bytes
-            // reserved         - 2 bytes
+            // Layout File Structure (.rgl)
+            // ------------------------------------------------------
+            // Offset  | Size    | Type       | Description
+            // ------------------------------------------------------
+            // 0       | 4       | char       | Signature: "rGL "
+            // 4       | 2       | short      | Version: 200
+            // 6       | 2       | short      | reserved
+            //
+            // 8       | x       | GuiLayout  | GuiLayout data
 
-            char signature[5] = "RGL ";
+            char signature[5] = "rGL ";
             short version = RGL_FILE_VERSION_BINARY;
             short reserved = 0;
 
@@ -2959,7 +2960,7 @@ static void SaveLayout(GuiLayout layout, const char *fileName, bool binary)
     }
     else
     {
-        #define RGL_FILE_VERSION_TEXT "1.0"
+        #define RGL_FILE_VERSION_TEXT "2.0"
 
         FILE *rglFile = fopen(fileName, "wt");
 
@@ -2968,8 +2969,9 @@ static void SaveLayout(GuiLayout layout, const char *fileName, bool binary)
              // Write some description comments
             fprintf(rglFile, "#\n# rgl text file (v%s) - raygui layout text file generated using rGuiLayout\n#\n", RGL_FILE_VERSION_TEXT);
             fprintf(rglFile, "# Total number of controls:     %i\n", layout.controlsCount);
-            fprintf(rglFile, "# Anchor info:   a <id> <name> <posx> <posy> <enabled>\n");
-            fprintf(rglFile, "# Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>\n#\n");
+            fprintf(rglFile, "# Ref. window:    r <x> <y> <width> <height>\n");
+            fprintf(rglFile, "# Anchor info:    a <id> <name> <posx> <posy> <enabled>\n");
+            fprintf(rglFile, "# Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>\n#\n");
 
             printf("r %i %i %i %i\n", (int)layout.refWindow.x, (int)layout.refWindow.y, (int)layout.refWindow.width, (int)layout.refWindow.height);
             fprintf(rglFile, "r %i %i %i %i\n", (int)layout.refWindow.x, (int)layout.refWindow.y, (int)layout.refWindow.width, (int)layout.refWindow.height);
@@ -3051,13 +3053,13 @@ static bool DialogSaveLayout(GuiLayout layout)
         saveChangesRequired = false;
     }
 
-
     return success;
 }
 
 // Show save layout dialog
-static void DialogExportLayout(unsigned char *toolstr, const char *name)
+static bool DialogExportLayout(unsigned char *toolstr, const char *name)
 {
+    bool success = false;
     const char *fileName = NULL;
     
 #if !defined(PLATFORM_WEB) && !defined(PLATFORM_ANDROID)
@@ -3071,5 +3073,9 @@ static void DialogExportLayout(unsigned char *toolstr, const char *name)
         FILE *ftool = fopen(fileName, "wt");
         fprintf(ftool, toolstr);
         fclose(ftool);
+        
+        success = true;
     }
+    
+    return success;
 }
