@@ -25,7 +25,6 @@ Useful for fast tools development. The perfect companion for [rGuiStyler](https:
  - Controls text edition and name edition (for exported variables)
  - **+10 predefined layout available for reference**
  - **Completely portable (single file)**
- - Free and open source
  
 ## Usage
 The tool is pretty intuitive to use, it mostly works with mouse and several key shortcuts that can be seen just pressing TAB key once program is open. Use mouse wheel to select desired control or RightMouseButton to open controls panel.
