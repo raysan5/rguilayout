@@ -7,13 +7,13 @@
 #
 r 0 0 -1 -1
 a 000 anchor00 0 0 1
-a 001 anchor00 0 0 0
-a 002 anchor00 50 50 1
-a 003 anchor00 0 0 0
-a 004 anchor00 0 0 0
-a 005 anchor00 0 0 0
-a 006 anchor00 0 0 0
-a 007 anchor00 0 0 0
+a 001 anchor01 50 50 1
+a 002 anchor02 0 0 0
+a 003 anchor03 0 0 0
+a 004 anchor04 0 0 0
+a 005 anchor05 0 0 0
+a 006 anchor06 0 0 0
+a 007 anchor07 0 0 0
 c 000 0 infoWindow 0 0 180 475 2 Image Info
 c 001 4 lblSize 10 30 80 20 2 Size:
 c 002 4 size 100 30 70 20 2 256 x 256

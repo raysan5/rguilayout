@@ -476,10 +476,10 @@ int main(int argc, char *argv[])
         // Show window: load layout
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O))
         {
-            GuiLayout tempLayout = DialogLoadLayout();
+            //GuiLayout tempLayout = DialogLoadLayout();
             
             // Verify layout has been loaded correctly           
-            if ((tempLayout.controlsCount > 0) && (tempLayout.anchorsCount)) layout = tempLayout;
+            //if ((tempLayout.controlsCount > 0) && (tempLayout.anchorsCount)) layout = tempLayout;
         }
 
         // Show dialog: save layout
@@ -2810,10 +2810,11 @@ static GuiLayout InitLayout(void)
         layout.controls[i].ap = &layout.anchors[0];  // By default, set parent anchor
     }
 
+    layout.refWindow = (Rectangle){ 0, 0, -1, -1};
+    
     layout.anchors[0].enabled = true;      // Enable layout parent anchor (0, 0)
     layout.anchorsCount = 1;
     layout.controlsCount = 0;
-    layout.refWindow = (Rectangle){ 0, 0, -1, -1};
     
     return layout;
 }
@@ -2822,7 +2823,7 @@ static GuiLayout InitLayout(void)
 // NOTE: Updates global variable: layout
 static GuiLayout LoadLayout(const char *fileName)
 {
-    GuiLayout layout = { 0 };
+    GuiLayout layout = InitLayout();
     
     char buffer[256];
     bool tryBinary = false;
@@ -2831,40 +2832,13 @@ static GuiLayout LoadLayout(const char *fileName)
     int anchorCounter = 0;
     char anchorName[MAX_ANCHOR_NAME_LENGTH] = { 0 };
 
-    // Reset all the controls
-    layout.controlsCount = 0;
-    layout.anchorsCount = 0;
-
-    for (int i = 0; i < MAX_GUI_CONTROLS; i++)
-    {
-        layout.controls[i].id = 0;
-        layout.controls[i].type = 0;
-        layout.controls[i].rec = (Rectangle){ 0, 0, 0, 0 };
-        memset(layout.controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
-        memset(layout.controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
-        layout.controls[i].ap = &layout.anchors[0];
-    }
-
-    // Reset all the anchors
-    for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
-    {
-        layout.anchors[i].id = i;
-        layout.anchors[i].x = 0;
-        layout.anchors[i].y = 0;
-        layout.anchors[i].enabled = false;
-        layout.anchors[i].hidding = false;
-        memset(layout.anchors[i].name, 0, MAX_ANCHOR_NAME_LENGTH);
-    }
-
-    layout.refWindow = (Rectangle){ 0, 0, -1, -1 };
-
     FILE *rglFile = fopen(fileName, "rt");
 
     if (rglFile != NULL)
     {
         fgets(buffer, 256, rglFile);
 
-        if (buffer[0] != 'R')   // Text file!
+        if (buffer[0] != 'r')   // Text file!
         {
             while (!feof(rglFile))
             {
