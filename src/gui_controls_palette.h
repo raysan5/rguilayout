@@ -120,7 +120,7 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
 {
     GuiControlsPaletteState state = { 0 };
 
-    state.controlsAnchor = (Vector2){ 0, 0 };
+    state.controlsAnchor = (Vector2){ GetScreenWidth() - 165, 0 };
     state.containerScrollOffset = (Vector2){ 0, 0 };
     
     state.windowBoxActive = true;
@@ -171,14 +171,13 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
             break;
         }
     }
-
-    state->controlsAnchor.x = GetScreenWidth() - 180;
-    state->controlsAnchor.y = GetScreenHeight()/2 - 1000/2;
+    
+    state->controlsAnchor = (Vector2){ GetScreenWidth() - 165, state->containerScrollOffset.y };
     
     UpdateControlsPaletteRecs(state);
     //----------------------------------------------------------------------------------------------
     
-    Rectangle view = GuiScrollPanel(state->layoutRecs[0], (Rectangle){ state->layoutRecs[0].x, state->layoutRecs[0].y, state->layoutRecs[0].width - 10, state->layoutRecs[0].height + 20 }, &state->containerScrollOffset);
+    Rectangle view = GuiScrollPanel(state->layoutRecs[0], (Rectangle){ state->layoutRecs[0].x, state->layoutRecs[0].y, state->layoutRecs[0].width - 10, 965 }, &state->containerScrollOffset);
 
     BeginScissorMode(view.x, view.y, view.width, view.height);     
 
@@ -221,7 +220,8 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
 
 void UpdateControlsPaletteRecs(GuiControlsPaletteState *state)
 {
-    state->layoutRecs[0] = (Rectangle){ state->controlsAnchor.x + 5, state->controlsAnchor.y - 8, 160, 1000 };
+    state->layoutRecs[0] = (Rectangle){ GetScreenWidth() - 160, 0, 160, GetScreenHeight() };
+    
     state->layoutRecs[1] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 5, 125, 50 };
     state->layoutRecs[2] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 70, 125, 30 };
     state->layoutRecs[3] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 105, 125, 25 };

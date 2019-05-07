@@ -673,12 +673,15 @@ int main(int argc, char *argv[])
 
             // Palette selected control logic
             //----------------------------------------------------------------------------------------------
-            if (focusedControl == -1) paletteState.selectedControl -= GetMouseWheelMove();
+            if (!CheckCollisionPointRec(mouse, paletteState.layoutRecs[0]))
+            {
+                if (focusedControl == -1) paletteState.selectedControl -= GetMouseWheelMove();
 
-            if (paletteState.selectedControl < GUI_WINDOWBOX) paletteState.selectedControl = GUI_WINDOWBOX;
-            else if (paletteState.selectedControl > GUI_DUMMYREC) paletteState.selectedControl = GUI_DUMMYREC;
-            
-            selectedType = paletteState.selectedControl;
+                if (paletteState.selectedControl < GUI_WINDOWBOX) paletteState.selectedControl = GUI_WINDOWBOX;
+                else if (paletteState.selectedControl > GUI_DUMMYREC) paletteState.selectedControl = GUI_DUMMYREC;
+                
+                selectedType = paletteState.selectedControl;
+            }
             //----------------------------------------------------------------------------------------------
 
             // Controls selection and edition logic
