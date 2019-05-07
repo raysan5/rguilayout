@@ -179,7 +179,8 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
     
     Rectangle view = GuiScrollPanel(state->layoutRecs[0], (Rectangle){ state->layoutRecs[0].x, state->layoutRecs[0].y, state->layoutRecs[0].width - 10, 965 }, &state->containerScrollOffset);
 
-    BeginScissorMode(view.x, view.y, view.width, view.height);     
+    // NOTE: Not required because panel already fills full screen height
+    //BeginScissorMode(view.x, view.y, view.width, view.height);     
 
         GuiLock();
         
@@ -189,8 +190,8 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
         GuiPanel(state->layoutRecs[4]);
         GuiLabel(state->layoutRecs[5], "Label");
         state->buttonPressed = GuiButton(state->layoutRecs[6], "Button"); 
-        state->labelBtnPressed = GuiLabelButton(state->layoutRecs[7], "Label Button");
-        state->imageBtnPressed = GuiImageButtonEx(state->layoutRecs[8], GetTextureDefault(), (Rectangle){ 0, 0, 1, 1 }, "IM");
+        state->labelBtnPressed = GuiLabelButton(state->layoutRecs[7], "LabelButton");
+        state->imageBtnPressed = GuiImageButtonEx(state->layoutRecs[8], GetFontDefault().texture, (Rectangle){ 0, 0, 1, 1 }, "IM");
         state->checkBoxChecked = GuiCheckBox(state->layoutRecs[9], "", state->checkBoxChecked);
         state->toggleActive = GuiToggle(state->layoutRecs[10], "Toggle", state->toggleActive);
         state->toggleGroupActive = GuiToggleGroup(state->layoutRecs[11], "ONE;TWO;THREE", state->toggleGroupActive);
