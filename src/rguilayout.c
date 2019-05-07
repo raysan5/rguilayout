@@ -2810,10 +2810,9 @@ static GuiLayout InitLayout(void)
         layout.controls[i].ap = &layout.anchors[0];  // By default, set parent anchor
     }
 
-    layout.refWindow = (Rectangle){ 0, 0, -1, -1};
-    
-    layout.anchors[0].enabled = true;      // Enable layout parent anchor (0, 0)
-    layout.anchorsCount = 1;
+    layout.refWindow = (Rectangle){ 0, 0, -1, -1 };
+
+    layout.anchorsCount = 0;
     layout.controlsCount = 0;
     
     return layout;
@@ -2838,61 +2837,57 @@ static GuiLayout LoadLayout(const char *fileName)
     {
         fgets(buffer, 256, rglFile);
 
-        if (buffer[0] != 'r')   // Text file!
+        while (!feof(rglFile))
         {
-            while (!feof(rglFile))
+            switch (buffer[0])
             {
-                switch (buffer[0])
+                case 'r':
                 {
-                    case 'r':
-                    {
-                        sscanf(buffer, "r %f %f %f %f", &layout.refWindow.x, &layout.refWindow.y, &layout.refWindow.width, &layout.refWindow.height);
-                    } break;
-                    case 'a':
-                    {
-                        int enabled = 0;
-                        sscanf(buffer, "a %d %s %d %d %d",
-                                       &layout.anchors[anchorCounter].id,
-                                       anchorName,
-                                       &layout.anchors[anchorCounter].x,
-                                       &layout.anchors[anchorCounter].y,
-                                       &enabled);
+                    sscanf(buffer, "r %f %f %f %f", &layout.refWindow.x, &layout.refWindow.y, &layout.refWindow.width, &layout.refWindow.height);
+                } break;
+                case 'a':
+                {
+                    int enabled = 0;
+                    sscanf(buffer, "a %d %s %d %d %d",
+                                    &layout.anchors[anchorCounter].id,
+                                    anchorName,
+                                    &layout.anchors[anchorCounter].x,
+                                    &layout.anchors[anchorCounter].y,
+                                    &enabled);
 
-                        layout.anchors[anchorCounter].enabled = (enabled? true : false);
-                        strcpy(layout.anchors[anchorCounter].name, anchorName);
+                    layout.anchors[anchorCounter].enabled = (enabled? true : false);
+                    strcpy(layout.anchors[anchorCounter].name, anchorName);
 
-                        if (layout.anchors[anchorCounter].enabled) layout.anchorsCount++;
-                        anchorCounter++;
-                    } break;
-                    case 'c':
-                    {
-                        sscanf(buffer, "c %d %d %s %f %f %f %f %d %[^\n]s",
-                                       &layout.controls[layout.controlsCount].id,
-                                       &layout.controls[layout.controlsCount].type,
-                                       layout.controls[layout.controlsCount].name,
-                                       &layout.controls[layout.controlsCount].rec.x,
-                                       &layout.controls[layout.controlsCount].rec.y,
-                                       &layout.controls[layout.controlsCount].rec.width,
-                                       &layout.controls[layout.controlsCount].rec.height,
-                                       &anchorId,
-                                       layout.controls[layout.controlsCount].text);
+                    if (layout.anchors[anchorCounter].enabled) layout.anchorsCount++;
+                    anchorCounter++;
+                } break;
+                case 'c':
+                {
+                    sscanf(buffer, "c %d %d %s %f %f %f %f %d %[^\n]s",
+                                    &layout.controls[layout.controlsCount].id,
+                                    &layout.controls[layout.controlsCount].type,
+                                    layout.controls[layout.controlsCount].name,
+                                    &layout.controls[layout.controlsCount].rec.x,
+                                    &layout.controls[layout.controlsCount].rec.y,
+                                    &layout.controls[layout.controlsCount].rec.width,
+                                    &layout.controls[layout.controlsCount].rec.height,
+                                    &anchorId,
+                                    layout.controls[layout.controlsCount].text);
                                        
-                        layout.controls[layout.controlsCount].ap = &layout.anchors[anchorId];
-                        layout.controlsCount++;
-                    } break;
-                    default: break;
-                }
-
-                fgets(buffer, 256, rglFile);
+                    layout.controls[layout.controlsCount].ap = &layout.anchors[anchorId];
+                    layout.controlsCount++;
+                } break;
+                default: break;
             }
 
-            for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
-            {
-                layout.anchors[i].x += layout.anchors[0].x;
-                layout.anchors[i].y += layout.anchors[0].y;
-            }
+            fgets(buffer, 256, rglFile);
         }
-        else tryBinary = true;
+
+        for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
+        {
+            layout.anchors[i].x += layout.anchors[0].x;
+            layout.anchors[i].y += layout.anchors[0].y;
+        }
 
         fclose(rglFile);
     }
@@ -2921,6 +2916,7 @@ static GuiLayout LoadLayout(const char *fileName)
         }
     }
 */
+    // TODO: layout.controls[i].ap reference is lost on return!!! --> it refers to a local stack variable position! OUCH!
     return layout;
 }
 
