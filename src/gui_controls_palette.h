@@ -187,7 +187,7 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
         GuiGroupBox(state->layoutRecs[2], "GroupBox");
         GuiLine(state->layoutRecs[3], NULL);
         GuiPanel(state->layoutRecs[4]);
-        GuiLabel(state->layoutRecs[5], "Label SAMPLE TEXT");
+        GuiLabel(state->layoutRecs[5], "Label");
         state->buttonPressed = GuiButton(state->layoutRecs[6], "Button"); 
         state->labelBtnPressed = GuiLabelButton(state->layoutRecs[7], "Label Button");
         state->imageBtnPressed = GuiImageButtonEx(state->layoutRecs[8], GetTextureDefault(), (Rectangle){ 0, 0, 1, 1 }, "IM");
@@ -211,7 +211,7 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
 
         GuiUnlock();
     
-    EndScissorMode();
+    //EndScissorMode();
     
     // Draw selected control rectangle
     DrawRectangleRec(state->layoutRecs[state->selectedControl + 1], Fade(RED, 0.2f));
