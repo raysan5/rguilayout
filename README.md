@@ -8,8 +8,6 @@ Useful for fast tools development. The perfect companion for [rGuiStyler](https:
 rGuiLayout comes in two flavours: **ZERO** (free version) and **ONE** (low-cost version). You can get them [here](https://raylibtech.itch.io/).
 
 <br>
-<br>
-<br>
 
 ## rGuiLayout ZERO features
 
