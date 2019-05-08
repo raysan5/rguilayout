@@ -177,7 +177,7 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
     UpdateControlsPaletteRecs(state);
     //----------------------------------------------------------------------------------------------
     
-    Rectangle view = GuiScrollPanel(state->layoutRecs[0], (Rectangle){ state->layoutRecs[0].x, state->layoutRecs[0].y, state->layoutRecs[0].width - 10, 965 }, &state->containerScrollOffset);
+    GuiScrollPanel(state->layoutRecs[0], (Rectangle){ state->layoutRecs[0].x, state->layoutRecs[0].y, state->layoutRecs[0].width - 10, 965 }, &state->containerScrollOffset);
 
     // NOTE: Not required because panel already fills full screen height
     //BeginScissorMode(view.x, view.y, view.width, view.height);     

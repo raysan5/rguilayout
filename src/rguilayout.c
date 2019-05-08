@@ -113,8 +113,6 @@ typedef enum {
     TRACEMAP_EDIT,
 } LayoutEditMode;
 
-// TODO: Check which edit modes are unique and the ones that can be combined, i.e. snapMode, precisionMode?
-
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
@@ -132,11 +130,15 @@ static void ProcessCommandLine(int argc, char *argv[]);     // Process command l
 // Init/Load/Save/Export data functions
 static GuiLayout *LoadLayout(const char *fileName);         // Load raygui layout: empty (NULL) or from file (.rgl)
 static void UnloadLayout(GuiLayout *layout);                // Unload raygui layout
+static void ResetLayout(GuiLayout *layout);                 // Reset layout to default values
 static void SaveLayout(GuiLayout *layout, const char *fileName, bool binary);     // Save raygui layout (.rgl), text or binary
 
 static GuiLayout *DialogLoadLayout(void);                   // Show dialog: load layout file (.rgl)
 static bool DialogSaveLayout(GuiLayout *layout);            // Show dialog: save layout file (.rgl)
+
+#if defined(VERSION_ONE)
 static bool DialogExportLayout(unsigned char *toolstr, const char *name);         // Show dialog: export layout file (.c)
+#endif
 
 //----------------------------------------------------------------------------------
 // Program main entry point
@@ -201,7 +203,7 @@ int main(int argc, char *argv[])
     bool precisionMode = false;             // Control precision mode (KEY_LEFT_SHIFT)
     
     // NOTE: [E] - Exclusive mode operation, all other modes blocked
-    bool dragMode = false;                  // [E] Control drag mode
+    bool dragMoveMode = false;                  // [E] Control drag mode
     bool textEditMode = false;              // [E] Control text edit mode (KEY_T)
     bool nameEditMode = false;              // [E] Control name edit mode (KEY_N)
     bool orderEditMode = false;             // Control order edit mode (focusedControl != -1 + KEY_LEFT_ALT)
@@ -245,7 +247,9 @@ int main(int argc, char *argv[])
     Color anchorCircleColor = BLACK;
     Color anchorSelectedColor = RED;
     
-    GuiLayout *layout = LoadLayout(NULL);   // New empty layout
+    // Create an empty layout
+    GuiLayout *layout = (GuiLayout *)calloc(1, sizeof(GuiLayout));
+    ResetLayout(layout);
     
     // Tracemap (background image for reference) variables
     Texture2D tracemap = { 0 };
@@ -374,7 +378,7 @@ int main(int argc, char *argv[])
         // Undo layout change logic
         //----------------------------------------------------------------------------------
         // Every second check if current layout has changed and record a new undo state
-        if (!dragMode && !orderEditMode && !resizeMode && !refWindowEditMode &&
+        if (!dragMoveMode && !orderEditMode && !resizeMode && !refWindowEditMode &&
             !textEditMode && !nameEditMode && !anchorEditMode && !anchorLinkMode && !anchorMoveMode)
         {
             undoFrameCounter++;
@@ -454,15 +458,21 @@ int main(int argc, char *argv[])
 
             if (IsFileExtension(droppedFileName, ".rgl"))
             {
-                UnloadLayout(layout);
+                GuiLayout *tempLayout = LoadLayout(droppedFileName);
                 
-                layout = LoadLayout(droppedFileName);
-                strcpy(loadedFileName, droppedFileName);
-                SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
-
-                for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
-                currentUndoIndex = 0;
-                firstUndoIndex = 0;
+                if (tempLayout != NULL)
+                {
+                    memcpy(layout, tempLayout, sizeof(GuiLayout));
+                    
+                    strcpy(loadedFileName, droppedFileName);
+                    SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
+                    
+                    for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
+                    currentUndoIndex = 0;
+                    firstUndoIndex = 0;
+                    
+                    UnloadLayout(tempLayout);
+                }
             }
 #if defined(VERSION_ONE)
             else if (IsFileExtension(droppedFileName, ".rgs")) GuiLoadStyle(droppedFileName);
@@ -485,10 +495,16 @@ int main(int argc, char *argv[])
         {
             GuiLayout *tempLayout = DialogLoadLayout();
             
-            // Verify layout has been loaded correctly           
-            if ((tempLayout->controlsCount > 0) && (tempLayout->anchorsCount > 0)) memcpy(layout, tempLayout, sizeof(GuiLayout));
-            
-            UnloadLayout(tempLayout);
+            if (tempLayout != NULL)
+            {
+                memcpy(layout, tempLayout, sizeof(GuiLayout));
+                
+                for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
+                currentUndoIndex = 0;
+                firstUndoIndex = 0;
+                
+                UnloadLayout(tempLayout);
+            }
         }
 
         // Show dialog: save layout
@@ -714,7 +730,7 @@ int main(int argc, char *argv[])
 
             if (!CheckCollisionPointRec(mouse, paletteState.layoutRecs[0]))
             {
-                if (!dragMode)
+                if (!dragMoveMode)
                 {
                     focusedControl = -1;
 
@@ -777,7 +793,6 @@ int main(int argc, char *argv[])
                                     || (layout->controls[layout->controlsCount].type == GUI_STATUSBAR)
                                     || (layout->controls[layout->controlsCount].type == GUI_DUMMYREC))
                                 {
-                                    // TODO: Support differerent default text?
                                     strcpy(layout->controls[layout->controlsCount].text, "SAMPLE TEXT");
                                 }
 
@@ -954,7 +969,7 @@ int main(int argc, char *argv[])
 
                     if (!anchorLinkMode)
                     {
-                        if (dragMode && !mouseScaleMode)
+                        if (dragMoveMode && !mouseScaleMode)
                         {
                             // Drag controls
                             int controlPosX = prevPosition.x + (mouse.x - panOffset.x);
@@ -981,7 +996,7 @@ int main(int argc, char *argv[])
                             layout->controls[selectedControl].rec.x = controlPosX;
                             layout->controls[selectedControl].rec.y = controlPosY;
 
-                            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) dragMode = false;
+                            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) dragMoveMode = false;
                         }
                         else
                         {
@@ -1178,7 +1193,7 @@ int main(int argc, char *argv[])
                                     }
                                     else prevPosition = (Vector2){ layout->controls[selectedControl].rec.x, layout->controls[selectedControl].rec.y };
 
-                                    dragMode = true;
+                                    dragMoveMode = true;
                                 }
                                 else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) 
                                 {
@@ -1322,7 +1337,7 @@ int main(int argc, char *argv[])
 
             // Anchors selection and edition logic
             //----------------------------------------------------------------------------------------------
-            if (!dragMode)
+            if (!dragMoveMode)
             {
                 focusedAnchor = -1;
 
@@ -1394,7 +1409,7 @@ int main(int argc, char *argv[])
                     }
                     else
                     {
-                        if (dragMode)
+                        if (dragMoveMode)
                         {
                             if (selectedAnchor == 0) anchorEditMode = false;
                             // Move anchor without moving controls
@@ -1460,7 +1475,7 @@ int main(int argc, char *argv[])
                                     }
                                     anchorMoveMode = false;
                                 }
-                                dragMode = false;
+                                dragMoveMode = false;
                             }
                         }
                         else
@@ -1542,7 +1557,7 @@ int main(int argc, char *argv[])
                                 if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                                 {
                                     if (selectedAnchor == 0 && anchorEditMode) refWindowEditMode = true;
-                                    else dragMode = true;
+                                    else dragMoveMode = true;
                                 }
 
                                 // Activate anchor link mode
@@ -1648,7 +1663,7 @@ int main(int argc, char *argv[])
 
                 if (tracemapSelected)
                 {
-                    if (dragMode)
+                    if (dragMoveMode)
                     {
                         int offsetX = (int)mouse.x%gridLineSpacing;
                         int offsetY = (int)mouse.y%gridLineSpacing;
@@ -1674,7 +1689,7 @@ int main(int argc, char *argv[])
                             else tracemapRec.y -= offsetY;
                         }
 
-                        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) dragMode = false;
+                        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) dragMoveMode = false;
                     }
                     else
                     {
@@ -1797,13 +1812,13 @@ int main(int argc, char *argv[])
                                 tracemapSelected = false;
                             }
 
-                            // Enable dragMode mode
+                            // Enable dragMoveMode mode
                             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                             {
                                 panOffset = mouse;
                                 prevPosition = (Vector2){ tracemapRec.x, tracemapRec.y };
 
-                                dragMode = true;
+                                dragMoveMode = true;
                             }
                         }
                     }
@@ -1830,7 +1845,7 @@ int main(int argc, char *argv[])
             nameEditMode = false;
             textEditMode = false;
             resizeMode = false;
-            dragMode = false;
+            dragMoveMode = false;
             precisionMode = false;
             
             anyWindowActive = true;
@@ -1848,15 +1863,19 @@ int main(int argc, char *argv[])
             selectedControl = -1;
 
             resizeMode = false;
-            dragMode = false;
+            dragMoveMode = false;
             precisionMode = false;
             nameEditMode = false;
             textEditMode = false;
 
-            UnloadLayout(layout);
-            layout = LoadLayout(NULL);
+            ResetLayout(layout);
+            
             SetWindowTitle(FormatText("%s v%s", TOOL_NAME, TOOL_VERSION));
             strcpy(loadedFileName, "\0");
+ 
+            for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
+            currentUndoIndex = 0;
+            firstUndoIndex = 0;
 
             resetProgram = false;
         }
@@ -1892,13 +1911,13 @@ int main(int argc, char *argv[])
                     if (tracemapSelected)
                     {
                         tracemapColor = RED;
-                        if (!dragMode && resizeMode) tracemapColor = BLUE;
+                        if (!dragMoveMode && resizeMode) tracemapColor = BLUE;
                         DrawRectangleRec(tracemapRec, Fade(tracemapColor, 0.5f));
 
                         positionColor = MAROON;
                         if (useGlobalPos) positionColor = RED;
                         if (snapMode) positionColor = LIME;
-                        if (!dragMode && precisionMode) positionColor = BLUE;
+                        if (!dragMoveMode && precisionMode) positionColor = BLUE;
                         DrawText(FormatText("[%i, %i, %i, %i]",
                                             (int)tracemapRec.x,
                                             (int)tracemapRec.y,
@@ -1956,7 +1975,7 @@ int main(int argc, char *argv[])
                         case GUI_LABEL: GuiLabel(rec, layout->controls[i].text); break;
                         case GUI_BUTTON: GuiButton(rec, layout->controls[i].text); break;
                         case GUI_LABELBUTTON: GuiLabelButton(rec, layout->controls[i].text); break;
-                        case GUI_IMAGEBUTTONEX: GuiImageButtonEx(rec, GetTextureDefault(), (Rectangle){ 0, 0, 1, 1 }, layout->controls[i].text); break;
+                        case GUI_IMAGEBUTTONEX: GuiImageButtonEx(rec, GetFontDefault().texture, (Rectangle){ 0, 0, 1, 1 }, layout->controls[i].text); break;
                         case GUI_CHECKBOX: GuiCheckBox(rec, layout->controls[i].text, false); break;
                         case GUI_TOGGLE: GuiToggle(rec, layout->controls[i].text, false); break;
                         case GUI_TOGGLEGROUP: GuiToggleGroup(rec, layout->controls[i].text, 1); break;
@@ -2064,7 +2083,7 @@ int main(int argc, char *argv[])
                                     case GUI_LABEL: GuiLabel(defaultRec[selectedType], "LABEL TEXT"); break;
                                     case GUI_BUTTON: GuiButton(defaultRec[selectedType], "BUTTON"); break;
                                     case GUI_LABELBUTTON: GuiLabelButton(defaultRec[selectedType], "LABEL_BUTTON"); break;
-                                    case GUI_IMAGEBUTTONEX: GuiImageButtonEx(defaultRec[selectedType], GetTextureDefault(), (Rectangle){ 0, 0, 1, 1 }, "IM"); break;
+                                    case GUI_IMAGEBUTTONEX: GuiImageButtonEx(defaultRec[selectedType], GetFontDefault().texture, (Rectangle){ 0, 0, 1, 1 }, "IM"); break;
                                     case GUI_CHECKBOX: GuiCheckBox(defaultRec[selectedType], "CHECK BOX", false); break;
                                     case GUI_TOGGLE: GuiToggle(defaultRec[selectedType], "TOGGLE", false); break;
                                     case GUI_TOGGLEGROUP: GuiToggleGroup(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
@@ -2183,7 +2202,7 @@ int main(int argc, char *argv[])
                     // Anchor coordinates
                     positionColor = anchorSelectedColor;
                     if (snapMode) positionColor = LIME;
-                    if (!dragMode && precisionMode) positionColor = BLUE;
+                    if (!dragMoveMode && precisionMode) positionColor = BLUE;
 
                     if (selectedAnchor > 0)
                     {
@@ -2252,7 +2271,7 @@ int main(int argc, char *argv[])
                 {
                     // Selection rectangle
                     selectedControlColor = RED;
-                    if (!dragMode && resizeMode) selectedControlColor = BLUE;
+                    if (!dragMoveMode && resizeMode) selectedControlColor = BLUE;
 
                     Rectangle selectedRec = layout->controls[selectedControl].rec;
                     if (layout->controls[selectedControl].type == GUI_WINDOWBOX) selectedRec.height = WINDOW_STATUSBAR_HEIGHT;
@@ -2280,7 +2299,7 @@ int main(int argc, char *argv[])
                     positionColor = MAROON;
                     if (useGlobalPos) positionColor = RED;
                     if (snapMode) positionColor = LIME;
-                    if (!dragMode && precisionMode) positionColor = BLUE;
+                    if (!dragMoveMode && precisionMode) positionColor = BLUE;
 
                     if (!useGlobalPos)
                     {
@@ -2340,7 +2359,7 @@ int main(int argc, char *argv[])
                         // Draw GuiTextBox()/GuiTextBoxMulti()
                         if (layout->controls[selectedControl].type == GUI_TEXTBOXMULTI)
                         {
-                            if (GuiTextBoxMulti(textboxRec, layout->controls[selectedControl].text, MAX_CONTROL_TEXTMULTI_LENGTH, textEditMode)) textEditMode = !textEditMode;
+                            if (GuiTextBoxMulti(textboxRec, layout->controls[selectedControl].text, 256, textEditMode)) textEditMode = !textEditMode;
                         }
                         else if (GuiTextBox(textboxRec, layout->controls[selectedControl].text, MAX_CONTROL_TEXT_LENGTH, textEditMode)) textEditMode = !textEditMode;
                     }
@@ -2475,7 +2494,9 @@ int main(int argc, char *argv[])
                     GuiLine((Rectangle){ helpPositionX + 30, 485, 260, 10 }, NULL);
                     GuiLabel((Rectangle){ helpPositionX + 30, 505, 0, 0 }, "LCTRL + S - Save layout file (.rgl)");
                     GuiLabel((Rectangle){ helpPositionX + 30, 525, 0, 0 }, "LCTRL + O - Open layout file (.rgl)");
+#if defined(VERSION_ONE)
                     GuiLabel((Rectangle){ helpPositionX + 30, 545, 0, 0 }, "LCTRL + ENTER - Export layout to code");
+#endif
                 }
                 //----------------------------------------------------------------------------------------
 
@@ -2797,53 +2818,19 @@ static void ProcessCommandLine(int argc, char *argv[])
 // NOTE: Updates global variable: layout
 static GuiLayout *LoadLayout(const char *fileName)
 {
-    GuiLayout *layout = (GuiLayout *)calloc(1, sizeof(GuiLayout));
-    
-    // Initialize layout to default values
-    //------------------------------------------------------------------------------------
-    // Initialize anchor points to default values
-    for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
-    {
-        layout->anchors[i].id = i;
-        layout->anchors[i].x = 0;
-        layout->anchors[i].y = 0;
-        layout->anchors[i].enabled = false;
-        layout->anchors[i].hidding = false;
-        memset(layout->anchors[i].name, 0, MAX_ANCHOR_NAME_LENGTH);
-        
-        if (i == 0) strcpy(layout->anchors[i].name, "anchorMain");
-        else strcpy(layout->anchors[i].name, FormatText("anchor%02i", i));
-    }
- 
-    // Initialize layout controls data
-    for (int i = 0; i < MAX_GUI_CONTROLS; i++)
-    {
-        layout->controls[i].id = 0;
-        layout->controls[i].type = 0;
-        layout->controls[i].rec = (Rectangle){ 0, 0, 0, 0 };
-        memset(layout->controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
-        memset(layout->controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
-        layout->controls[i].ap = &layout->anchors[0];  // By default, set parent anchor
-    }
-
-    layout->refWindow = (Rectangle){ 0, 0, -1, -1 };
-    layout->anchorsCount = 0;
-    layout->controlsCount = 0;
-    //------------------------------------------------------------------------------------
-
-    if (fileName == NULL) return layout;
-
-    char buffer[256];
-    bool tryBinary = false;
-
-    int anchorId = 0;
-    int anchorCounter = 0;
-    char anchorName[MAX_ANCHOR_NAME_LENGTH] = { 0 };
+    GuiLayout *layout = NULL;
 
     FILE *rglFile = fopen(fileName, "rt");
 
     if (rglFile != NULL)
     {
+        char buffer[256];
+        
+        int anchorCounter = 0;
+        char anchorName[MAX_ANCHOR_NAME_LENGTH] = { 0 };
+
+        layout = (GuiLayout *)calloc(1, sizeof(GuiLayout));
+        
         fgets(buffer, 256, rglFile);
 
         while (!feof(rglFile))
@@ -2872,6 +2859,7 @@ static GuiLayout *LoadLayout(const char *fileName)
                 } break;
                 case 'c':
                 {
+                    int anchorId = 0;
                     sscanf(buffer, "c %d %d %s %f %f %f %f %d %[^\n]s",
                                     &layout->controls[layout->controlsCount].id,
                                     &layout->controls[layout->controlsCount].type,
@@ -2925,7 +2913,6 @@ static GuiLayout *LoadLayout(const char *fileName)
         }
     }
 */
-    // TODO: layout->controls[i].ap reference is lost on return!!! --> it refers to a local stack variable position! OUCH!
     return layout;
 }
 
@@ -2933,6 +2920,39 @@ static GuiLayout *LoadLayout(const char *fileName)
 static void UnloadLayout(GuiLayout *layout)
 {
     free(layout);
+}
+
+// Reset layout to default values
+static void ResetLayout(GuiLayout *layout)
+{
+    // Set anchor points to default values
+    for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
+    {
+        layout->anchors[i].id = i;
+        layout->anchors[i].x = 0;
+        layout->anchors[i].y = 0;
+        layout->anchors[i].enabled = false;
+        layout->anchors[i].hidding = false;
+        memset(layout->anchors[i].name, 0, MAX_ANCHOR_NAME_LENGTH);
+        
+        if (i == 0) strcpy(layout->anchors[i].name, "anchorMain");
+        else strcpy(layout->anchors[i].name, FormatText("anchor%02i", i));
+    }
+ 
+    // Initialize layout controls data
+    for (int i = 0; i < MAX_GUI_CONTROLS; i++)
+    {
+        layout->controls[i].id = 0;
+        layout->controls[i].type = 0;
+        layout->controls[i].rec = (Rectangle){ 0, 0, 0, 0 };
+        memset(layout->controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
+        memset(layout->controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
+        layout->controls[i].ap = &layout->anchors[0];  // By default, set parent anchor
+    }
+
+    layout->refWindow = (Rectangle){ 0, 0, -1, -1 };
+    layout->anchorsCount = 0;
+    layout->controlsCount = 0;
 }
 
 // Save gui layout information
@@ -3032,8 +3052,12 @@ static GuiLayout *DialogLoadLayout(void)
     if (fileName != NULL)
     {
         layout = LoadLayout(fileName);
-        strcpy(loadedFileName, fileName);
-        SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(fileName)));
+        
+        if (layout != NULL)
+        {
+            strcpy(loadedFileName, fileName);
+            SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(fileName)));
+        }
     }
 
     return layout;
@@ -3067,6 +3091,7 @@ static bool DialogSaveLayout(GuiLayout *layout)
     return success;
 }
 
+#if defined(VERSION_ONE)
 // Show save layout dialog
 static bool DialogExportLayout(unsigned char *toolstr, const char *name)
 {
@@ -3090,3 +3115,4 @@ static bool DialogExportLayout(unsigned char *toolstr, const char *name)
     
     return success;
 }
+#endif

@@ -20,10 +20,9 @@
 #define MAX_GUI_CONTROLS                256      // Maximum number of gui controls
 #define MAX_ANCHOR_POINTS                 8      // Maximum number of anchor points
 
-#define MAX_CONTROL_TEXT_LENGTH         128      // Maximum length of control text
-#define MAX_CONTROL_TEXTMULTI_LENGTH    512      // Maximum length of control text
-#define MAX_CONTROL_NAME_LENGTH          64      // Maximum length of control name
 #define MAX_ANCHOR_NAME_LENGTH           64      // Maximum length of anchor name
+#define MAX_CONTROL_NAME_LENGTH          64      // Maximum length of control name
+#define MAX_CONTROL_TEXT_LENGTH         128      // Maximum length of control text
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
