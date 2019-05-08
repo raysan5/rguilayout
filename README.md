@@ -5,39 +5,51 @@ A simple and easy-to-use raygui layouts editor.
 
 Useful for fast tools development. The perfect companion for [rGuiStyler](https://github.com/raysan5/rguistyler) tool.
 
-<br>
+rGuiLayout comes in two flavours: **ZERO** (free version) and **ONE** (low-cost version). You can get them [here](https://raylibtech.itch.io/).
+
 <br>
 <br>
 <br>
 
-## Features
+## rGuiLayout ZERO features
 
  - **+25 controls available to define your imgui layout**
  - Place controls visually and move/scale them freely
  - Snap to grid mode for maximum precission
- - Save/Load your layout as **.rgl (text or binary mode)**
- - Import **.rgs** files ([rGuiStyler](https://github.com/raysan5/rguistyler)) to customize visual style (drag&drop)
- - **Export layout directly as plain C code, ready to edit and compile!**
- - Multiple code generation options to customize exported code
+ - Save/Load your layout as **.rgl files**
  - Supports image loading to be used as tracemap
- - Autovisible right controls panel for quick selection
  - Anchors mode support to link your controls
  - Controls text edition and name edition (for exported variables)
  - **+10 predefined layout available for reference**
  - **Completely portable (single file)**
  
-## Usage
-The tool is pretty intuitive to use, it mostly works with mouse and several key shortcuts that can be seen just pressing TAB key once program is open. Use mouse wheel to select desired control or RightMouseButton to open controls panel.
+## rGuiLayout ONE plus features
 
-You can drag&drop .rgl files for layout loading and also .rgs files (rGuiStyler) for layout style loading. To export created layout as C code, just pres LCTRL+ENTER, you can configure multiple export options to generate the code.
-
-To compile the code, you need raygui library (single-file header-only) and raylib v2.0 library, not yet released on itch.io but already available for early adopters on raylib GitHub, ready to be compiled.
+ - Powerful command line for batch conversion of rgl layouts
+ - Import **.rgs** files to customize visual style (drag&drop)
+ - **Export layout directly as plain C code, ready to edit and compile**
+ - Multiple code generation options to customize exported code
  
-## Screenshots
+## rGuiLayout Usage
+
+The tool is pretty intuitive to use, it mostly works with mouse and several key shortcuts that can be seen just pressing F1 key.
+Use mouse wheel to navigate available controls or select them on right controls panel, place them and scale if required.
+
+rGuiLayout allows loading .rgl layout files with drag&drop.
+
+rGuiLayout ONE also allows loading .rgs style files created with rGuiStyler and export created layouts as C code.
+
+Press LCTRL+ENTER to show code generation window, you can configure multiple export options to generate the code. To compile generated code, you need raygui v2.0 library (single-file header-only) and raylib v2.5 library.
+
+rGuiLayout ONE comes with a powerful command line for layout to code generation. Just type on command line:
+
+ > rguilayout.exe --help
+ 
+## rGuiLayout Screenshot
 
 ![rGuiLayout](screenshots/rguilayout_v100_shot03.png)
 
-## License
+## rGuiLayout License
 
 *Copyright (c) 2016-2019 raylib technologies ([@raylibtech](https://twitter.com/raylibtech)). All Rights Reserved.* Check [LICENSE](LICENSE) for details.
 
