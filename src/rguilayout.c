@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
     bool precisionMode = false;             // Control precision mode (KEY_LEFT_SHIFT)
     
     // NOTE: [E] - Exclusive mode operation, all other modes blocked
-    bool dragMoveMode = false;                  // [E] Control drag mode
+    bool dragMoveMode = false;              // [E] Control drag mode
     bool textEditMode = false;              // [E] Control text edit mode (KEY_T)
     bool nameEditMode = false;              // [E] Control name edit mode (KEY_N)
     bool orderEditMode = false;             // Control order edit mode (focusedControl != -1 + KEY_LEFT_ALT)
@@ -299,6 +299,7 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------------------------------
     
     // Rectangles used on controls preview drawing
+    // NOTE: [x, y] position is set on mouse movement and cosidering snap mode
     Rectangle defaultRec[26] = {
         (Rectangle){ 0, 0, 125, 50},            // GUI_WINDOWBOX
         (Rectangle){ 0, 0, 125, 30},            // GUI_GROUPBOX
@@ -515,6 +516,7 @@ int main(int argc, char *argv[])
             else
             {
                 SaveLayout(layout, loadedFileName, false);
+                
                 saveChangesRequired = false;
                 SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
             }
