@@ -95,9 +95,9 @@ bool __stdcall FreeConsole(void);           // Close console from code (kernel32
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
-typedef enum { 
+typedef enum {
     NONE = 0,
-    
+
     CONTROL_TESTING,
     CONTROL_EDIT_MOVE,
     CONTROL_EDIT_RESIZE,
@@ -105,11 +105,11 @@ typedef enum {
     CONTROL_EDIT_TEXT,
     CONTROL_EDIT_NAME,
     //CONTROL_MULTISELECTION,
-    
+
     ANCHOR_MODE,
     ANCHOR_EDIT_MOVE,
     ANCHOR_EDIT_LINK,
-    
+
     TRACEMAP_EDIT,
 } LayoutEditMode;
 
@@ -196,12 +196,12 @@ int main(int argc, char *argv[])
     int moveFramesCounter = 0;              // Movement frames counter
     int movePerFrame = 1;                   // Movement speed per frame
     int movePixel = 1;                      // Movement pixels (depends on grid spacing)
-    
+
     // Work modes
     bool snapMode = false;                  // Snap mode flag (KEY_S)
     bool useGlobalPos = false;              // Control global position mode
     bool precisionMode = false;             // Control precision mode (KEY_LEFT_SHIFT)
-    
+
     // NOTE: [E] - Exclusive mode operation, all other modes blocked
     bool dragMoveMode = false;              // [E] Control drag mode
     bool textEditMode = false;              // [E] Control text edit mode (KEY_T)
@@ -211,11 +211,11 @@ int main(int argc, char *argv[])
     bool mouseScaleMode = false;            // [E] Control is being scaled by mouse
     bool mouseScaleReady = false;           // Mouse is on position to start control scaling
     bool refWindowEditMode = false;         // [E] Refence window edit mode
-    
+
     bool anchorEditMode = false;            // [E] Anchor edition mode
     bool anchorLinkMode = false;            // [E] Anchor linkage mode
     bool anchorMoveMode = false;            // [E] Anchor move mode
-    
+
     // TODO: Check exclusive modes (work on its own) and combinable modes (can work in combination with other)
     // Replace all bool values by enumerator value, it should simplify code...
     int layoutEditMode = NONE;              // Layout edition mode
@@ -236,21 +236,21 @@ int main(int argc, char *argv[])
     int selectedType = GUI_WINDOWBOX;       // Control type selected on panel
     Color selectedControlColor = RED;       // Control selected color
     Color positionColor = MAROON;           // Control position text color
-    
+
     Vector2 panOffset = { 0 };
     Vector2 prevPosition = { 0 };
-    
+
     // Anchors control variables
     GuiAnchorPoint auxAnchor = { 9, 0, 0, 0 };
     int selectedAnchor = -1;
     int focusedAnchor = -1;
     Color anchorCircleColor = BLACK;
     Color anchorSelectedColor = RED;
-    
+
     // Create an empty layout
     GuiLayout *layout = (GuiLayout *)calloc(1, sizeof(GuiLayout));
     ResetLayout(layout);
-    
+
     // Tracemap (background image for reference) variables
     Texture2D tracemap = { 0 };
     Rectangle tracemapRec = { 0 };
@@ -263,17 +263,17 @@ int main(int argc, char *argv[])
     // Track previous text/name to cancel editing
     char prevText[MAX_CONTROL_TEXT_LENGTH] = { 0 };
     char prevName[MAX_CONTROL_NAME_LENGTH] = { 0 };
-   
+
     // GUI: Help panel
     //-----------------------------------------------------------------------------------
     bool helpActive = false;
     //-----------------------------------------------------------------------------------
-    
+
     // GUI: Controls Selection Palette
     //-----------------------------------------------------------------------------------
     GuiControlsPaletteState paletteState = InitGuiControlsPalette();
     //-----------------------------------------------------------------------------------
-    
+
 #if defined(VERSION_ONE)
     // GUI: Layout Code Generation Window
     //-----------------------------------------------------------------------------------
@@ -285,19 +285,19 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------------------------------
     GuiWindowAboutState windowAboutState = InitGuiWindowAbout();
     //-----------------------------------------------------------------------------------
-    
+
     // GUI: Exit Window
     //-----------------------------------------------------------------------------------
     bool exitWindow = false;
     bool windowExitActive = false;
     //-----------------------------------------------------------------------------------
-    
+
     // GUI: Reset Layout Window
     //-----------------------------------------------------------------------------------
     bool resetWindowActive = false;
     bool resetProgram = false;
     //-----------------------------------------------------------------------------------
-    
+
     // Rectangles used on controls preview drawing
     // NOTE: [x, y] position is set on mouse movement and cosidering snap mode
     Rectangle defaultRec[26] = {
@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
     GuiLayoutConfig prevConfig = { 0 };
     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 #endif
-    
+
     // Controls temp variables
     int dropdownBoxActive = 0;
     int spinnerValue = 0;
@@ -419,7 +419,7 @@ int main(int argc, char *argv[])
                 currentUndoIndex--;
                 if (currentUndoIndex < 0) currentUndoIndex = MAX_UNDO_LEVELS - 1;
 
-                if (memcmp(&undoLayouts[currentUndoIndex], layout, sizeof(GuiLayout)) != 0) 
+                if (memcmp(&undoLayouts[currentUndoIndex], layout, sizeof(GuiLayout)) != 0)
                 {
                     memcpy(layout, &undoLayouts[currentUndoIndex], sizeof(GuiLayout));
                 }
@@ -438,7 +438,7 @@ int main(int argc, char *argv[])
                 {
                     currentUndoIndex = nextUndoIndex;
 
-                    if (memcmp(&undoLayouts[currentUndoIndex], layout, sizeof(GuiLayout)) != 0) 
+                    if (memcmp(&undoLayouts[currentUndoIndex], layout, sizeof(GuiLayout)) != 0)
                     {
                         memcpy(layout, &undoLayouts[currentUndoIndex], sizeof(GuiLayout));
                     }
@@ -460,18 +460,18 @@ int main(int argc, char *argv[])
             if (IsFileExtension(droppedFileName, ".rgl"))
             {
                 GuiLayout *tempLayout = LoadLayout(droppedFileName);
-                
+
                 if (tempLayout != NULL)
                 {
                     memcpy(layout, tempLayout, sizeof(GuiLayout));
-                    
+
                     strcpy(loadedFileName, droppedFileName);
                     SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
-                    
+
                     for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
                     currentUndoIndex = 0;
                     firstUndoIndex = 0;
-                    
+
                     UnloadLayout(tempLayout);
                 }
             }
@@ -495,15 +495,15 @@ int main(int argc, char *argv[])
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O))
         {
             GuiLayout *tempLayout = DialogLoadLayout();
-            
+
             if (tempLayout != NULL)
             {
                 memcpy(layout, tempLayout, sizeof(GuiLayout));
-                
+
                 for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
                 currentUndoIndex = 0;
                 firstUndoIndex = 0;
-                
+
                 UnloadLayout(tempLayout);
             }
         }
@@ -516,18 +516,18 @@ int main(int argc, char *argv[])
             else
             {
                 SaveLayout(layout, loadedFileName, false);
-                
+
                 saveChangesRequired = false;
                 SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
             }
         }
-       
+
         // Show window: help
         if (IsKeyPressed(KEY_F1)) helpActive = !helpActive;
-        
+
         // Show window: about
         if (IsKeyPressed(KEY_F2)) windowAboutState.windowAboutActive = true;
-        
+
         // Show save layout message window on ESC
         if (IsKeyPressed(KEY_ESCAPE))
         {
@@ -597,7 +597,7 @@ int main(int argc, char *argv[])
 
             anchorEditMode = IsKeyDown(KEY_A);              // Toggle anchor mode editing (on key down)
             orderEditMode = IsKeyDown(KEY_LEFT_ALT);        // Toggle controls drawing order
-            
+
             precisionMode = IsKeyDown(KEY_LEFT_SHIFT);      // Toggle precision move/scale mode
             resizeMode = IsKeyDown(KEY_LEFT_CONTROL);       // Toggle control resize mode
 
@@ -641,7 +641,7 @@ int main(int argc, char *argv[])
             {
                 if (IsKeyPressed(KEY_UP)) gridLineSpacing++;
                 else if (IsKeyPressed(KEY_DOWN)) gridLineSpacing--;
-                
+
                 movePixel = gridLineSpacing;
             }
         }
@@ -706,14 +706,14 @@ int main(int argc, char *argv[])
 
                 if (paletteState.selectedControl < GUI_WINDOWBOX) paletteState.selectedControl = GUI_WINDOWBOX;
                 else if (paletteState.selectedControl > GUI_DUMMYREC) paletteState.selectedControl = GUI_DUMMYREC;
-                
+
                 selectedType = paletteState.selectedControl;
             }
             //----------------------------------------------------------------------------------------------
 
             // Controls selection and edition logic
             //----------------------------------------------------------------------------------------------
-            
+
             // Updates the default rectangle position
             defaultRec[selectedType].x = mouse.x - defaultRec[selectedType].width/2;
             defaultRec[selectedType].y = mouse.y - defaultRec[selectedType].height/2;
@@ -1007,13 +1007,13 @@ int main(int argc, char *argv[])
                                 if (IsKeyPressed(KEY_R) && layout->controls[selectedControl].type == GUI_WINDOWBOX)
                                 {
                                     Rectangle rec = layout->controls[selectedControl].rec;
-                                    
+
                                     if (layout->controls[selectedControl].ap->id > 0)
                                     {
                                         rec.x += layout->controls[selectedControl].ap->x;
                                         rec.y += layout->controls[selectedControl].ap->y;
                                     }
-                                    
+
                                     layout->anchors[0].x = rec.x;
                                     layout->anchors[0].y = rec.y;
                                     layout->refWindow = (Rectangle){layout->anchors[0].x, layout->anchors[0].y, rec.width, rec.height};
@@ -1197,7 +1197,7 @@ int main(int argc, char *argv[])
 
                                     dragMoveMode = true;
                                 }
-                                else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) 
+                                else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON))
                                 {
                                     anchorLinkMode = true;      // Enable anchor link mode
                                 }
@@ -1835,13 +1835,13 @@ int main(int argc, char *argv[])
             }
             //----------------------------------------------------------------------------------------------
         }
-        
+
         // If any window is shown, cancel any edition mode
         if (windowAboutState.windowAboutActive ||
 #if defined(VERSION_ONE)
-            windowCodegenState.windowCodegenActive || 
+            windowCodegenState.windowCodegenActive ||
 #endif
-            resetWindowActive || 
+            resetWindowActive ||
             windowExitActive)
         {
             nameEditMode = false;
@@ -1849,7 +1849,7 @@ int main(int argc, char *argv[])
             resizeMode = false;
             dragMoveMode = false;
             precisionMode = false;
-            
+
             anyWindowActive = true;
         }
         else anyWindowActive = false;
@@ -1871,10 +1871,10 @@ int main(int argc, char *argv[])
             textEditMode = false;
 
             ResetLayout(layout);
-            
+
             SetWindowTitle(FormatText("%s v%s", TOOL_NAME, TOOL_VERSION));
             strcpy(loadedFileName, "\0");
- 
+
             for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
             currentUndoIndex = 0;
             firstUndoIndex = 0;
@@ -2050,7 +2050,7 @@ int main(int argc, char *argv[])
                         if (anchorEditMode) anchorCircleColor = ORANGE;
                         else anchorCircleColor = RED;
                     }
-                    
+
                     DrawCircleLines(layout->anchors[i].x, layout->anchors[i].y, ANCHOR_RADIUS, Fade(anchorCircleColor, 0.5f));
                     DrawRectangle(layout->anchors[i].x - ANCHOR_RADIUS - 5, layout->anchors[i].y, ANCHOR_RADIUS*2 + 10, 1, anchorCircleColor);
                     DrawRectangle(layout->anchors[i].x, layout->anchors[i].y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, anchorCircleColor);
@@ -2058,9 +2058,9 @@ int main(int argc, char *argv[])
             }
             //----------------------------------------------------------------------------------------
 
-            if (!windowAboutState.windowAboutActive && 
+            if (!windowAboutState.windowAboutActive &&
 #if defined(VERSION_ONE)
-                !windowCodegenState.windowCodegenActive && 
+                !windowCodegenState.windowCodegenActive &&
 #endif
                 !resetWindowActive && !windowExitActive)
             {
@@ -2105,7 +2105,7 @@ int main(int argc, char *argv[])
                                     case GUI_DUMMYREC: GuiDummyRec(defaultRec[selectedType], "DUMMY REC"); break;
                                     default: break;
                                 }
-                                
+
                                 GuiFade(1.0f);
                                 GuiUnlock();
 
@@ -2128,7 +2128,7 @@ int main(int argc, char *argv[])
                                     {
                                         Rectangle textboxRec = layout->controls[i].rec;
                                         int type = layout->controls[i].type;
-                                        
+
                                         // NOTE: Depending on control type, name is drawn in different position
                                         if ((type == GUI_CHECKBOX) || (type == GUI_LABEL) || (type == GUI_SLIDER) || (type == GUI_SLIDERBAR))
                                         {
@@ -2144,7 +2144,7 @@ int main(int argc, char *argv[])
                                             textboxRec.y -= 10;
                                             textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;
                                         }
-                                        
+
                                         if (layout->controls[i].ap->id > 0)
                                         {
                                             textboxRec.x += layout->controls[i].ap->x;
@@ -2228,7 +2228,7 @@ int main(int argc, char *argv[])
                         }
                         else DrawText(FormatText("[%i, %i]", (int)(layout->refWindow.x), (int)(layout->refWindow.y)), layout->anchors[selectedAnchor].x + ANCHOR_RADIUS, layout->anchors[selectedAnchor].y - 38, 20, positionColor);
                     }
-                    
+
                     // Anchor links
                     for (int i = 0; i < layout->controlsCount; i++)
                     {
@@ -2256,7 +2256,7 @@ int main(int argc, char *argv[])
                     {
                         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(ORANGE, 0.2f));
                         DrawText("Anchor name edit mode", 20, 20, 20, DARKGRAY);
-                        
+
                         int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
                         int textWidth = MeasureText(layout->anchors[selectedAnchor].name, fontSize);
                         Rectangle textboxRec = (Rectangle){ layout->anchors[selectedAnchor].x, layout->anchors[selectedAnchor].y, textWidth + 40, fontSize + 5 };
@@ -2336,15 +2336,15 @@ int main(int argc, char *argv[])
                     {
                         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(SKYBLUE, 0.2f));
                         DrawText("Control text edit mode", 20, 25, 20, DARKGRAY);
-                        
+
                         Rectangle textboxRec = layout->controls[selectedControl].rec;
-                        
+
                         // Make sure text could be written, no matter if overflows control
                         int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
                         int textWidth = MeasureText(layout->controls[selectedControl].text, fontSize);
                         if (textboxRec.width < (textWidth + 40)) textboxRec.width = textWidth + 40;     // TODO: Why additional space required to work with GuiTextBox()?
                         if (textboxRec.height < fontSize) textboxRec.height += fontSize;
-                        
+
                         if (layout->controls[selectedControl].type == GUI_WINDOWBOX) textboxRec.height = WINDOW_STATUSBAR_HEIGHT;  // Defined inside raygui.h
                         else if (layout->controls[selectedControl].type == GUI_GROUPBOX)
                         {
@@ -2371,7 +2371,7 @@ int main(int argc, char *argv[])
                     {
                         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GREEN, 0.2f));
                         DrawText("Control name edit mode", 20, 20, 20, DARKGRAY);
-                        
+
                         Rectangle textboxRec = layout->controls[selectedControl].rec;
 
                         int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
@@ -2459,13 +2459,13 @@ int main(int argc, char *argv[])
                 // Draw reference window lines
                 if ((layout->refWindow.width > 0) && (layout->refWindow.height > 0)) DrawRectangleLinesEx(layout->refWindow, 1, Fade(BLACK, 0.7f));
 
-                
+
                 // GUI: Help panel
                 //----------------------------------------------------------------------------------------
                 if (helpActive)
                 {
                     int helpPositionX = 20;
-                    
+
                     DrawRectangleRec((Rectangle){ helpPositionX + 20, 15, 280, 550 }, GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
                     GuiGroupBox((Rectangle){ helpPositionX + 20, 15, 280, 550 }, "[F1] Tool Shortcuts");
                     GuiLabel((Rectangle){ helpPositionX + 30, 35, 0, 0 }, "G - Toggle grid mode");
@@ -2525,14 +2525,14 @@ int main(int argc, char *argv[])
                 //----------------------------------------------------------------------------------------
                 GuiWindowAbout(&windowAboutState);
                 //----------------------------------------------------------------------------------------
-                
+
                 // GUI: New Layout Window (save)
                 //----------------------------------------------------------------------------------------
                 if (resetWindowActive)
                 {
                     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.8f));
-                    int message = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 125, GetScreenHeight()/2 - 50, 250, 100 }, "Creating new layout", "Do you want to save the current layout?", "Yes;No"); 
-                
+                    int message = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 125, GetScreenHeight()/2 - 50, 250, 100 }, "Creating new layout", "Do you want to save the current layout?", "Yes;No");
+
                     if (message == 0) resetWindowActive = false;
                     else if (message == 1)  // Yes
                     {
@@ -2549,14 +2549,14 @@ int main(int argc, char *argv[])
                     }
                 }
                 //----------------------------------------------------------------------------------------
-                
+
                 // GUI: Exit Window
                 //----------------------------------------------------------------------------------------
                 if (windowExitActive)
                 {
                     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.8f));
-                    int message = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 125, GetScreenHeight()/2 - 50, 250, 100 }, "#159#Closing rGuiLayout", "Do you want to save before quitting?", "Yes;No"); 
-            
+                    int message = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 125, GetScreenHeight()/2 - 50, 250, 100 }, "#159#Closing rGuiLayout", "Do you want to save before quitting?", "Yes;No");
+
                     if (message == 0) windowExitActive = false;
                     else if (message == 1)  // Yes
                     {
@@ -2674,7 +2674,7 @@ int main(int argc, char *argv[])
     // De-Initialization
     //--------------------------------------------------------------------------------------
     UnloadLayout(layout);               // Unload raygui layout
-    
+
     UnloadTexture(tracemap);            // Unload tracemap texture (if loaded)
 
 #if defined(VERSION_ONE)
@@ -2764,7 +2764,7 @@ static void ProcessCommandLine(int argc, char *argv[])
                     strcpy(outFileName, argv[i + 1]);   // Read output filename
                 }
                 else printf("WARNING: Input file extension not recognized\n");
-                
+
                 i++;
             }
             else printf("WARNING: No output file provided\n");
@@ -2773,7 +2773,7 @@ static void ProcessCommandLine(int argc, char *argv[])
         {
             // TODO: Support a custom code template
         }
-        
+
         // TODO: Support codegen options: exportAnchors, defineRecs, fullComments...
     }
 
@@ -2827,12 +2827,12 @@ static GuiLayout *LoadLayout(const char *fileName)
     if (rglFile != NULL)
     {
         char buffer[256];
-        
+
         int anchorCounter = 0;
         char anchorName[MAX_ANCHOR_NAME_LENGTH] = { 0 };
 
         layout = (GuiLayout *)calloc(1, sizeof(GuiLayout));
-        
+
         fgets(buffer, 256, rglFile);
 
         while (!feof(rglFile))
@@ -2872,7 +2872,7 @@ static GuiLayout *LoadLayout(const char *fileName)
                                     &layout->controls[layout->controlsCount].rec.height,
                                     &anchorId,
                                     layout->controls[layout->controlsCount].text);
-                                       
+
                     layout->controls[layout->controlsCount].ap = &layout->anchors[anchorId];
                     layout->controlsCount++;
                 } break;
@@ -2936,11 +2936,11 @@ static void ResetLayout(GuiLayout *layout)
         layout->anchors[i].enabled = false;
         layout->anchors[i].hidding = false;
         memset(layout->anchors[i].name, 0, MAX_ANCHOR_NAME_LENGTH);
-        
+
         if (i == 0) strcpy(layout->anchors[i].name, "anchorMain");
         else strcpy(layout->anchors[i].name, FormatText("anchor%02i", i));
     }
- 
+
     // Initialize layout controls data
     for (int i = 0; i < MAX_GUI_CONTROLS; i++)
     {
@@ -3044,7 +3044,7 @@ static GuiLayout *DialogLoadLayout(void)
 {
     GuiLayout *layout = NULL;
     const char *fileName = NULL;
-    
+
 #if !defined(PLATFORM_WEB) && !defined(PLATFORM_ANDROID)
     // Open file dialog
     const char *filters[] = { "*.rgl" };
@@ -3054,7 +3054,7 @@ static GuiLayout *DialogLoadLayout(void)
     if (fileName != NULL)
     {
         layout = LoadLayout(fileName);
-        
+
         if (layout != NULL)
         {
             strcpy(loadedFileName, fileName);
@@ -3070,7 +3070,7 @@ static bool DialogSaveLayout(GuiLayout *layout)
 {
     bool success = false;
     const char *fileName = NULL;
-    
+
 #if !defined(PLATFORM_WEB) && !defined(PLATFORM_ANDROID)
     const char *filters[] = { "*.rgl" };
     fileName = tinyfd_saveFileDialog("Save raygui layout text file", "", 1, filters, "raygui Layout Files (*.rgl)");
@@ -3099,7 +3099,7 @@ static bool DialogExportLayout(unsigned char *toolstr, const char *name)
 {
     bool success = false;
     const char *fileName = NULL;
-    
+
 #if !defined(PLATFORM_WEB) && !defined(PLATFORM_ANDROID)
     const char *filters[] = { "*.c", "*.h", "*.go", "*.lua" };
     fileName = tinyfd_saveFileDialog("Export code file", name, 3, filters, "Code file");
@@ -3111,10 +3111,10 @@ static bool DialogExportLayout(unsigned char *toolstr, const char *name)
         FILE *ftool = fopen(fileName, "wt");
         fprintf(ftool, toolstr);
         fclose(ftool);
-        
+
         success = true;
     }
-    
+
     return success;
 }
 #endif

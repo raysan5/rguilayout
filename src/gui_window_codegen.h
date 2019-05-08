@@ -30,7 +30,7 @@
 
 typedef struct {
     Vector2 codegenAnchor;
-    
+
     bool windowCodegenActive;
     bool toolNameEditMode;
     unsigned char toolNameText[64];
@@ -110,7 +110,7 @@ GuiWindowCodegenState InitGuiWindowCodegen(void)
     GuiWindowCodegenState state = { 0 };
 
     state.codegenAnchor = (Vector2){ 0, 0 };
-    
+
     state.windowCodegenActive = false;
     state.toolNameEditMode = false;
     strcpy(state.toolNameText, "layout_name");
@@ -147,7 +147,7 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
     if (state->windowCodegenActive)
     {
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.8f));
-        
+
         state->codegenAnchor = (Vector2){ GetScreenWidth()/2 - 450, GetScreenHeight()/2 - 320 };
 
         state->windowCodegenActive = !GuiWindowBox((Rectangle){ state->codegenAnchor.x + 0, state->codegenAnchor.y + 0, 900, 640 }, "#7#Code Generation Window");
@@ -171,10 +171,10 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         state->guiExportStyleChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 467, 15, 15 }, "Export gui style", state->guiExportStyleChecked);
         state->guiEmbedFontChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 487, 15, 15 }, "Embbed gui font", state->guiEmbedFontChecked);
         GuiEnable();
-        state->generateCodePressed = GuiButton((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 525, 220, 30 }, "#7#Export Generated Code"); 
-        //state->executeCodePressed = GuiButton((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 545, 220, 30 }, "Execute Code"); 
+        state->generateCodePressed = GuiButton((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 525, 220, 30 }, "#7#Export Generated Code");
+        //state->executeCodePressed = GuiButton((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 545, 220, 30 }, "Execute Code");
         if (GuiDropdownBox((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 300, 200, 25 }, "STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h);CUSTOM CODE FILE", &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
-    
+
         // Draw generated code
         if (state->codeText != NULL)
         {
@@ -184,30 +184,30 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
             BeginScissorMode(view.x, view.y, view.width, view.height);
                 unsigned int linesCounter = 0;
                 unsigned char *currentLine = state->codeText;
-                
+
                 while (currentLine)
                 {
                     char *nextLine = strchr(currentLine, '\n');
                     if (nextLine) *nextLine = '\0';     // Temporaly terminating the current line
-                    
+
                     // Only draw lines inside text panel
-                    if (((state->codePanelScrollOffset.y + 20*linesCounter) >= 0) && 
+                    if (((state->codePanelScrollOffset.y + 20*linesCounter) >= 0) &&
                         ((state->codePanelScrollOffset.y + 20*linesCounter) < (codePanel.height - 2)))
                     {
                         DrawText(currentLine, codePanel.x + state->codePanelScrollOffset.x + 10, codePanel.y + state->codePanelScrollOffset.y + 20*linesCounter, 10, DARKBLUE);
                     }
-                    
+
                     if (nextLine) *nextLine = '\n';     // Restore newline-char, just to be tidy
                     currentLine = nextLine ? (nextLine + 1) : NULL;
-                    
+
                     linesCounter++;
                 }
             EndScissorMode();
-            
+
             state->codeHeight = 20*linesCounter;
         }
     }
-    
+
     GuiUnlock();
 }
 

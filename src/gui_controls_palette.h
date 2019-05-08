@@ -33,7 +33,7 @@
 typedef struct {
     Vector2 controlsAnchor;
     Vector2 containerScrollOffset;
-    
+
     bool windowBoxActive;
     bool buttonPressed;
     bool labelBtnPressed;
@@ -122,7 +122,7 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
 
     state.controlsAnchor = (Vector2){ GetScreenWidth() - 165, 0 };
     state.containerScrollOffset = (Vector2){ 0, 0 };
-    
+
     state.windowBoxActive = true;
     state.buttonPressed = false;
     state.labelBtnPressed = false;
@@ -165,31 +165,31 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
     //----------------------------------------------------------------------------------------------
     for (int i = 1; i < CONTROLS_PALETTE_COUNT; i++)
     {
-        if (CheckCollisionPointRec(GetMousePosition(), state->layoutRecs[i])) 
+        if (CheckCollisionPointRec(GetMousePosition(), state->layoutRecs[i]))
         {
             state->selectedControl = i - 1;
             break;
         }
     }
-    
+
     state->controlsAnchor = (Vector2){ GetScreenWidth() - 165, state->containerScrollOffset.y };
-    
+
     UpdateControlsPaletteRecs(state);
     //----------------------------------------------------------------------------------------------
-    
+
     GuiScrollPanel(state->layoutRecs[0], (Rectangle){ state->layoutRecs[0].x, state->layoutRecs[0].y, state->layoutRecs[0].width - 10, 965 }, &state->containerScrollOffset);
 
     // NOTE: Not required because panel already fills full screen height
-    //BeginScissorMode(view.x, view.y, view.width, view.height);     
+    //BeginScissorMode(view.x, view.y, view.width, view.height);
 
         GuiLock();
-        
+
         state->windowBoxActive = !GuiWindowBox(state->layoutRecs[1], "WindowBox");
         GuiGroupBox(state->layoutRecs[2], "GroupBox");
         GuiLine(state->layoutRecs[3], NULL);
         GuiPanel(state->layoutRecs[4]);
         GuiLabel(state->layoutRecs[5], "Label");
-        state->buttonPressed = GuiButton(state->layoutRecs[6], "Button"); 
+        state->buttonPressed = GuiButton(state->layoutRecs[6], "Button");
         state->labelBtnPressed = GuiLabelButton(state->layoutRecs[7], "LabelButton");
         state->imageBtnPressed = GuiImageButtonEx(state->layoutRecs[8], GetFontDefault().texture, (Rectangle){ 0, 0, 1, 1 }, "IM");
         state->checkBoxChecked = GuiCheckBox(state->layoutRecs[9], "", state->checkBoxChecked);
@@ -211,9 +211,9 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
         if (GuiDropdownBox(state->layoutRecs[13], "ONE;TWO;THREE", &state->dropdownBoxActive, state->dropdownBoxEditMode)) state->dropdownBoxEditMode = !state->dropdownBoxEditMode;
 
         GuiUnlock();
-    
+
     //EndScissorMode();
-    
+
     // Draw selected control rectangle
     DrawRectangleRec(state->layoutRecs[state->selectedControl + 1], Fade(RED, 0.2f));
     DrawRectangleLinesEx(state->layoutRecs[state->selectedControl + 1], 1, MAROON);
@@ -222,7 +222,7 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
 void UpdateControlsPaletteRecs(GuiControlsPaletteState *state)
 {
     state->layoutRecs[0] = (Rectangle){ GetScreenWidth() - 160, 0, 160, GetScreenHeight() };
-    
+
     state->layoutRecs[1] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 5, 125, 50 };
     state->layoutRecs[2] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 70, 125, 30 };
     state->layoutRecs[3] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 105, 125, 25 };
