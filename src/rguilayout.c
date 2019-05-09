@@ -1,6 +1,6 @@
  /*******************************************************************************************
 *
-*   rGuiLayout v2.0-dev - A simple and easy-to-use raygui layouts editor
+*   rGuiLayout v2.0 - A simple and easy-to-use raygui layouts editor
 *
 *   CONFIGURATION:
 *
@@ -76,7 +76,7 @@
 //----------------------------------------------------------------------------------
 // Basic information
 #define TOOL_NAME           "rGuiLayout"
-#define TOOL_VERSION        "2.0-dev"
+#define TOOL_VERSION        "2.0"
 #define TOOL_DESCRIPTION    "A simple and easy-to-use raygui layouts editor"
 
 #define ANCHOR_RADIUS               20      // Default anchor radius
