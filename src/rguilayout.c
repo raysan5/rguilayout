@@ -145,8 +145,6 @@ static bool DialogExportLayout(unsigned char *toolstr, const char *name);       
 //----------------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
-    char inFileName[256] = { 0 };       // Input file name (required in case of drag & drop over executable)
-
     // Command-line usage mode
     //--------------------------------------------------------------------------------------
     if (argc > 1)
@@ -158,7 +156,7 @@ int main(int argc, char *argv[])
             if (IsFileExtension(argv[1], ".rgl"))
             {
                 // Open file with graphic interface
-                strcpy(inFileName, argv[1]);        // Read input filename
+                strcpy(loadedFileName, argv[1]);        // Read input filename
             }
         }
 #if defined(VERSION_ONE)
@@ -250,6 +248,23 @@ int main(int argc, char *argv[])
     // Create an empty layout
     GuiLayout *layout = (GuiLayout *)calloc(1, sizeof(GuiLayout));
     ResetLayout(layout);
+    
+    // Undo system variables
+    GuiLayout *undoLayouts = (GuiLayout *)calloc(MAX_UNDO_LEVELS, sizeof(GuiLayout));
+    int currentUndoIndex = 0;
+    int firstUndoIndex = 0;
+    int lastUndoIndex = 0;
+    int undoFrameCounter = 0;
+
+    // Load dropped file if provided
+    if (loadedFileName[0] != '\0') 
+    {
+        layout = LoadLayout(loadedFileName);
+        SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
+    }
+    
+    // Init undo system with current layout
+    for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
 
     // Tracemap (background image for reference) variables
     Texture2D tracemap = { 0 };
@@ -354,18 +369,6 @@ int main(int argc, char *argv[])
     int listViewScrollIndex = 0;
     int listViewActive = 0;
 
-    // Undo system variables
-    //----------------------------------------------------------------------------------------
-    GuiLayout *undoLayouts = NULL;
-    int currentUndoIndex = 0;
-    int firstUndoIndex = 0;
-    int lastUndoIndex = 0;
-    int undoFrameCounter = 0;
-
-    undoLayouts = (GuiLayout *)calloc(MAX_UNDO_LEVELS, sizeof(GuiLayout));
-    for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
-    //----------------------------------------------------------------------------------------
-
     SetTargetFPS(120);
     //--------------------------------------------------------------------------------------
 
@@ -401,8 +404,8 @@ int main(int argc, char *argv[])
                     // Set a '*' mark on loaded file name to notice save requirement
                     if ((loadedFileName[0] != '\0') && !saveChangesRequired)
                     {
-                        saveChangesRequired = true;
                         SetWindowTitle(FormatText("%s v%s - %s*", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
+                        saveChangesRequired = true;
                     }
                 }
 
@@ -527,8 +530,8 @@ int main(int argc, char *argv[])
             {
                 SaveLayout(layout, loadedFileName, false);
 
-                saveChangesRequired = false;
                 SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
+                saveChangesRequired = false;
             }
         }
 
@@ -1872,9 +1875,9 @@ int main(int argc, char *argv[])
             textEditMode = false;
 
             ResetLayout(layout);
-
-            SetWindowTitle(FormatText("%s v%s", TOOL_NAME, TOOL_VERSION));
+            
             strcpy(loadedFileName, "\0");
+            SetWindowTitle(FormatText("%s v%s", TOOL_NAME, TOOL_VERSION));
 
             for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
             currentUndoIndex = 0;
@@ -2781,7 +2784,8 @@ static void ProcessCommandLine(int argc, char *argv[])
     // Process input file
     if (inFileName[0] != '\0')
     {
-        if (outFileName[0] == '\0') strcpy(outFileName, "output.c");  // Set a default name for output in case not provided
+        // Set a default name for output in case not provided
+        if (outFileName[0] == '\0') strcpy(outFileName, "output.c");
 
         printf("\nInput file:       %s", inFileName);
         printf("\nOutput file:      %s", outFileName);
@@ -3000,7 +3004,7 @@ static void SaveLayout(GuiLayout *layout, const char *fileName, bool binary)
 
         if (rglFile != NULL)
         {
-             // Write some description comments
+            // Write some description comments
             fprintf(rglFile, "#\n# rgl text file (v%s) - raygui layout text file generated using rGuiLayout\n#\n", RGL_FILE_VERSION_TEXT);
             fprintf(rglFile, "# Total number of controls:     %i\n", layout->controlsCount);
             fprintf(rglFile, "# Ref. window:    r <x> <y> <width> <height>\n");
@@ -3083,12 +3087,14 @@ static bool DialogSaveLayout(GuiLayout *layout)
         char outFileName[256] = { 0 };
         strcpy(outFileName, fileName);
         if (GetExtension(fileName) == NULL) strcat(outFileName, ".rgl\0");     // No extension provided
+        
         SaveLayout(layout, outFileName, false);
+        
         strcpy(loadedFileName, outFileName);
         SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
-        success = true;
-
         saveChangesRequired = false;
+        
+        success = true;
     }
 
     return success;
