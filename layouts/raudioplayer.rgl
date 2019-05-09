@@ -1,0 +1,32 @@
+#
+# rgl text file (v1.0) - raygui layout text file generated using rGuiLayout
+#
+# Total number of controls:     16
+# Anchor info:   a <id> <name> <posx> <posy> <enabled>
+# Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
+#
+r 50 50 0 0
+a 000 anchor00 50 50 1
+a 001 anchor01 0 0 1
+a 002 anchor02 -50 -50 0
+a 003 anchor03 -50 -50 0
+a 004 anchor04 -50 -50 0
+a 005 anchor05 -50 -50 0
+a 006 anchor06 -50 -50 0
+a 007 anchor07 -50 -50 0
+c 000 0 windowBox 0 0 300 385 1 rAudioPlayer
+c 001 3 time 10 35 110 50 1 
+c 002 3 info 130 35 160 35 1 
+c 003 17 volume 130 75 160 10 1 
+c 004 18 progress 10 95 280 15 1 
+c 005 5 btnPrev 10 120 30 30 1 |<
+c 006 5 btnPlay 40 120 30 30 1 >
+c 007 5 btnPause 70 120 30 30 1 ||
+c 008 5 btnStop 100 120 30 30 1 O
+c 009 5 btnNext 130 120 30 30 1 >|
+c 010 5 btnEject 180 120 30 30 1 >|
+c 011 9 shuffle 230 120 30 30 1 SF
+c 012 9 repeat 260 120 30 30 1 SF
+c 013 2 line 10 150 280 25 1 
+c 014 22 songsList 10 175 280 175 1 
+c 015 20 status 0 360 300 25 1 status
