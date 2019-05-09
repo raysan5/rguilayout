@@ -465,6 +465,11 @@ int main(int argc, char *argv[])
                 {
                     memcpy(layout, tempLayout, sizeof(GuiLayout));
 
+                    // HACK: When leaving scope, tempLayout internal pointer references are lost, 
+                    // so we manually reset those references to layout internals
+                    // TODO: Probably this system should be designed in a diferent way...
+                    for (int i = 0; i < layout->controlsCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
+
                     strcpy(loadedFileName, droppedFileName);
                     SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
 
@@ -499,6 +504,11 @@ int main(int argc, char *argv[])
             if (tempLayout != NULL)
             {
                 memcpy(layout, tempLayout, sizeof(GuiLayout));
+
+                // HACK: When leaving scope, tempLayout internal pointer references are lost, 
+                // so we manually reset those references to layout internals
+                // TODO: Probably this system should be designed in a diferent way...
+                for (int i = 0; i < layout->controlsCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
 
                 for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
                 currentUndoIndex = 0;
@@ -739,7 +749,7 @@ int main(int argc, char *argv[])
                     // Focus control logic
                     if (!anchorEditMode && focusedAnchor == -1)
                     {
-                        for (int i = layout->controlsCount; i >= 0; i--)
+                        for (int i = layout->controlsCount - 1; i >= 0; i--)
                         {
                             if (!layout->controls[i].ap->hidding)
                             {
@@ -1457,6 +1467,7 @@ int main(int argc, char *argv[])
                                 anchorEditMode = false;
                                 layout->refWindow = (Rectangle){layout->anchors[0].x, layout->anchors[0].y, layout->refWindow.width, layout->refWindow.height};
                             }
+
                             // Exit anchor position edit mode
                             if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
                             {
@@ -1482,7 +1493,7 @@ int main(int argc, char *argv[])
                         }
                         else
                         {
-                            if (resizeMode) // Anchor cannot resize
+                            if (resizeMode)     // Anchor cannot resize
                             {
                                 if (IsKeyPressed(KEY_D)) // Duplicate anchor
                                 {
@@ -1508,6 +1519,7 @@ int main(int argc, char *argv[])
                             {
                                 int offsetX = (int)layout->anchors[selectedAnchor].x%movePixel;
                                 int offsetY = (int)layout->anchors[selectedAnchor].y%movePixel;
+
                                 // Move anchor with arrows once
                                 if (precisionMode)
                                 {
@@ -1527,8 +1539,7 @@ int main(int argc, char *argv[])
 
                                     moveFramesCounter = 0;
                                 }
-                                // Move anchor with arrows
-                                else
+                                else        // Move anchor with arrows
                                 {
                                     moveFramesCounter++;
 
@@ -1552,8 +1563,8 @@ int main(int argc, char *argv[])
                                         moveFramesCounter = 0;
                                     }
                                 }
-                                if (selectedAnchor == 0) layout->refWindow = (Rectangle){layout->anchors[0].x, layout->anchors[0].y,
-                                                                                        layout->refWindow.width, layout->refWindow.height};
+                                
+                                if (selectedAnchor == 0) layout->refWindow = (Rectangle){layout->anchors[0].x, layout->anchors[0].y, layout->refWindow.width, layout->refWindow.height};
 
                                 // Activate anchor position edit mode
                                 if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
@@ -1561,16 +1572,9 @@ int main(int argc, char *argv[])
                                     if (selectedAnchor == 0 && anchorEditMode) refWindowEditMode = true;
                                     else dragMoveMode = true;
                                 }
-
-                                // Activate anchor link mode
-                                else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) anchorLinkMode = true;
-
-                                // Hide/Unhide anchors
-                                else if (IsKeyPressed(KEY_H)) layout->anchors[selectedAnchor].hidding = !layout->anchors[selectedAnchor].hidding;
-
-                                 // Unlinks controls from selected anchor
-
-                                else if (IsKeyPressed(KEY_U) && selectedAnchor > 0)
+                                else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) anchorLinkMode = true;  // Activate anchor link mode
+                                else if (IsKeyPressed(KEY_H)) layout->anchors[selectedAnchor].hidding = !layout->anchors[selectedAnchor].hidding;   // Hide/Unhide anchors
+                                else if (IsKeyPressed(KEY_U) && selectedAnchor > 0)                     // Unlinks controls from selected anchor
                                 {
                                     for (int i = 0; i < layout->controlsCount; i++)
                                     {
@@ -1582,8 +1586,7 @@ int main(int argc, char *argv[])
                                         }
                                     }
                                 }
-                                // Delete anchor
-                                else if (IsKeyPressed(KEY_DELETE))
+                                else if (IsKeyPressed(KEY_DELETE))      // Delete anchor
                                 {
                                     if (selectedAnchor == 0)
                                     {
@@ -1613,9 +1616,7 @@ int main(int argc, char *argv[])
                                     selectedAnchor = -1;
                                     focusedAnchor = -1;
                                 }
-
-                                // Enable name edit mode
-                                else if (IsKeyReleased(KEY_N))
+                                else if (IsKeyReleased(KEY_N))          // Enable name edit mode
                                 {
                                     nameEditMode = true;
                                     strcpy(prevName, layout->anchors[selectedAnchor].name);
