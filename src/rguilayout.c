@@ -3005,7 +3005,7 @@ static void SaveLayout(GuiLayout *layout, const char *fileName, bool binary)
         if (rglFile != NULL)
         {
             // Write some description comments
-            fprintf(rglFile, "#\n# rgl text file (v%s) - raygui layout text file generated using rGuiLayout\n#\n", RGL_FILE_VERSION_TEXT);
+            fprintf(rglFile, "#\n# rgl layout text file (v%s) - raygui layout file generated using rGuiLayout\n#\n", RGL_FILE_VERSION_TEXT);
             fprintf(rglFile, "# Total number of controls:     %i\n", layout->controlsCount);
             fprintf(rglFile, "# Ref. window:    r <x> <y> <width> <height>\n");
             fprintf(rglFile, "# Anchor info:    a <id> <name> <posx> <posy> <enabled>\n");
