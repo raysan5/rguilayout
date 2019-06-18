@@ -39,7 +39,8 @@ rGuiLayout ONE also allows loading .rgs style files created with rGuiStyler and 
 
 Press LCTRL+ENTER to show code generation window, you can configure multiple export options to generate the code. To compile generated code, you need raygui v2.0 library (single-file header-only) and raylib v2.5 library.
 
-rGuiLayout ONE comes with a powerful command line for layout to code generation. Just type on command line:
+rGuiLayout ONE comes with a powerful command line for layout to code generation.
+To view all available operation just run on command line:
 
  > rguilayout.exe --help
  
