@@ -2720,7 +2720,8 @@ static void ShowCommandLineInfo(void)
     printf("                                      Supported extensions: .rgl\n");
     printf("    -o, --output <filename.ext>     : Define output file.\n");
     printf("                                      Supported extensions: .c, .h\n");
-    printf("                                      NOTE: Extension could be modified depending on format\n\n");
+    printf("    -t, --template <filename.ext>   : Define code template for output.\n");
+    printf("                                      Supported extensions: .c, .h\n\n");
 
     printf("\nEXAMPLES:\n\n");
     printf("    > rguilayout --input mytool.rgl --output mytools.h\n");
@@ -2734,6 +2735,8 @@ static void ProcessCommandLine(int argc, char *argv[])
 
     char inFileName[256] = { 0 };   // Input file name
     char outFileName[256] = { 0 };  // Output file name
+    char templateFile[256] = { 0 }; // Template file name
+
     int outputFormat = 0;           // Supported output formats
 
     // Process command line arguments
@@ -2767,7 +2770,7 @@ static void ProcessCommandLine(int argc, char *argv[])
                 {
                     strcpy(outFileName, argv[i + 1]);   // Read output filename
                 }
-                else printf("WARNING: Input file extension not recognized\n");
+                else printf("WARNING: Output file extension not recognized\n");
 
                 i++;
             }
@@ -2775,7 +2778,18 @@ static void ProcessCommandLine(int argc, char *argv[])
         }
         else if ((strcmp(argv[i], "-t") == 0) || (strcmp(argv[i], "--template") == 0))
         {
-            // TODO: Support a custom code template
+            if (((i + 1) < argc) && (argv[i + 1][0] != '-'))
+            {
+                if (IsFileExtension(argv[i + 1], ".c") ||
+                    IsFileExtension(argv[i + 1], ".h"))
+                {
+                    strcpy(templateFile, argv[i + 1]);   // Read template filename
+                }
+                else printf("WARNING: Template file extension not recognized\n");
+
+                i++;
+            }
+            else printf("WARNING: No template file provided\n");
         }
 
         // TODO: Support codegen options: exportAnchors, defineRecs, fullComments...
@@ -2804,7 +2818,17 @@ static void ProcessCommandLine(int argc, char *argv[])
         config.fullComments = true;
 
         // Generate C code for gui layout->controls
-        unsigned char *toolstr = GenerateLayoutCode(guiTemplateStandardCode, *layout, config);
+        char *guiTemplateCustom = NULL;
+        if (templateFile[0] != '\0') guiTemplateCustom = LoadText(templateFile);
+        
+        unsigned char *toolstr = NULL;
+        if (guiTemplateCustom != NULL) 
+        {
+            toolstr = GenerateLayoutCode(guiTemplateCustom, *layout, config);
+            free(guiTemplateCustom);
+        }
+        else toolstr = GenerateLayoutCode(guiTemplateStandardCode, *layout, config);
+        
         FILE *ftool = fopen(outFileName, "wt");
         fprintf(ftool, toolstr);    // Write code string to file
         fclose(ftool);
