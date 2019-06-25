@@ -73,7 +73,7 @@ struct GuiAnchorPoint {
     GuiAnchorPoint *ap;
 };
 
-// Gui control type
+// Gui layout control type
 typedef struct {
     int id;
     int type;
@@ -81,13 +81,13 @@ typedef struct {
     unsigned char name[MAX_CONTROL_NAME_LENGTH];
     unsigned char text[MAX_CONTROL_TEXT_LENGTH];
     GuiAnchorPoint *ap;
-} GuiControl;
+} GuiLayoutControl;
 
 // Gui layout type
 typedef struct {
     int controlsCount;
     int anchorsCount;
-    GuiControl controls[MAX_GUI_CONTROLS];
+    GuiLayoutControl controls[MAX_GUI_CONTROLS];
     GuiAnchorPoint anchors[MAX_ANCHOR_POINTS];
     Rectangle refWindow;
 } GuiLayout;

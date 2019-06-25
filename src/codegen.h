@@ -64,17 +64,17 @@ static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayout
 static void WriteFunctionDrawingH(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
 
 // Generic writting code functions (.c/.h)
-static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiControl control, bool exportAnchors, bool fullComments, const char *preText, int tabs, bool exportH);
+static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiLayoutControl control, bool exportAnchors, bool fullComments, const char *preText, int tabs, bool exportH);
 static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, bool define, bool initialize, const char* preText, int tabs);
 static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
 static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs);
 static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, const char *preText, int tabs);
-static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiControl control, GuiLayoutConfig config, const char *preText);
+static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLayoutControl control, GuiLayoutConfig config, const char *preText);
 
 // Get controls specific texts functions
-static char *GetControlRectangleText(int index, GuiControl control, bool defineRecs, bool exportAnchors,  const char *preText);
-static char *GetScrollPanelContainerRecText(int index, GuiControl control, bool defineRecs, bool exportAnchors, const char *preText);
-static char *GetControlTextParam(GuiControl control, bool defineText);
+static char *GetControlRectangleText(int index, GuiLayoutControl control, bool defineRecs, bool exportAnchors,  const char *preText);
+static char *GetScrollPanelContainerRecText(int index, GuiLayoutControl control, bool defineRecs, bool exportAnchors, const char *preText);
+static char *GetControlTextParam(GuiLayoutControl control, bool defineText);
 static char *GetControlNameParam(char *controlName, const char *preText);
 
 //----------------------------------------------------------------------------------
@@ -445,7 +445,7 @@ static void WriteFunctionDrawingH(unsigned char *toolstr, int *pos, GuiLayout la
 //----------------------------------------------------------------------------------
 
 // Write rectangle variables code (.c/.h)
-static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiControl control, bool exportAnchors, bool fullComments, const char *preText, int tabs, bool exportH)
+static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiLayoutControl control, bool exportAnchors, bool fullComments, const char *preText, int tabs, bool exportH)
 {
     if (exportAnchors && control.ap->id > 0)
     {
@@ -573,7 +573,7 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
     for (int i = 0; i < layout.controlsCount; i++)
     {
         bool drawVariables = true;
-        GuiControl control = layout.controls[i];
+        GuiLayoutControl control = layout.controls[i];
         switch (control.type)
         {
             case GUI_WINDOWBOX:
@@ -887,7 +887,7 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout lay
 }
 
 // Write control drawing code (individual controls) (.c/.h)
-static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiControl control, GuiLayoutConfig config, const char *preText)
+static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLayoutControl control, GuiLayoutConfig config, const char *preText)
 {
     char *rec = GetControlRectangleText(index, control, config.defineRecs, config.exportAnchors, preText);
     char *text = GetControlTextParam(control, config.defineTexts);
@@ -939,7 +939,7 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiCon
 }
 
 // Get controls rectangle text
-static char *GetControlRectangleText(int index, GuiControl control, bool defineRecs, bool exportAnchors, const char *preText)
+static char *GetControlRectangleText(int index, GuiLayoutControl control, bool defineRecs, bool exportAnchors, const char *preText)
 {
     static char text[512];
     memset(text, 0, 512);
@@ -963,7 +963,7 @@ static char *GetControlRectangleText(int index, GuiControl control, bool defineR
 
     return text;
 }
-static char *GetScrollPanelContainerRecText(int index, GuiControl control, bool defineRecs, bool exportAnchors, const char *preText)
+static char *GetScrollPanelContainerRecText(int index, GuiLayoutControl control, bool defineRecs, bool exportAnchors, const char *preText)
 {
     static char text[512];
     memset(text, 0, 512);
@@ -991,7 +991,7 @@ static char *GetScrollPanelContainerRecText(int index, GuiControl control, bool 
 }
 
 // Get controls parameters text
-static char *GetControlTextParam(GuiControl control, bool defineText)
+static char *GetControlTextParam(GuiLayoutControl control, bool defineText)
 {
     static char text[512];
     memset(text, 0, 512);

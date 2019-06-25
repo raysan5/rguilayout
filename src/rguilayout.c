@@ -907,7 +907,7 @@ int main(int argc, char *argv[])
                             if ((newOrder > 0) && (focusedControl < layout->controlsCount - 1))
                             {
                                 // Move control towards beginning of array
-                                GuiControl auxControl = layout->controls[focusedControl];
+                                GuiLayoutControl auxControl = layout->controls[focusedControl];
                                 layout->controls[focusedControl] = layout->controls[focusedControl + 1];
                                 layout->controls[focusedControl].id -= 1;
                                 layout->controls[focusedControl + 1] = auxControl;
@@ -917,7 +917,7 @@ int main(int argc, char *argv[])
                             else if ((newOrder < 0) && (focusedControl > 0))
                             {
                                 // Move control towards end of array
-                                GuiControl auxControl = layout->controls[focusedControl];
+                                GuiLayoutControl auxControl = layout->controls[focusedControl];
                                 layout->controls[focusedControl] = layout->controls[focusedControl - 1];
                                 layout->controls[focusedControl].id += 1;
                                 layout->controls[focusedControl - 1] = auxControl;
