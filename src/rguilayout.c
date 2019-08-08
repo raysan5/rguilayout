@@ -40,6 +40,7 @@
 #include "rguilayout.h"
 
 #define RAYGUI_IMPLEMENTATION
+#define RAYGUI_SUPPORT_RICONS
 #include "raygui.h"                         // Required for: IMGUI controls
 
 #if defined(VERSION_ONE)
@@ -2520,7 +2521,7 @@ int main(int argc, char *argv[])
 
                 if (windowCodegenState.generateCodePressed)
                 {
-                    DialogExportLayout(windowCodegenState.codeText, FormatText("%s.h", config.name));
+                    DialogExportLayout(windowCodegenState.codeText, TextFormat("gui_%s.h", config.name));
                     windowCodegenState.windowCodegenActive = false;
                 }
                 //----------------------------------------------------------------------------------------
