@@ -1,10 +1,12 @@
 /**********************************************************************************************
 *
-*   rGuiLayout v2.0 - code generator functions
+*   rGuiLayout v2.1 - code generator functions
+*
+*   NOTE: Code generated requires raygui 2.6
 *
 *   LICENSE: Propietary License
 *
-*   Copyright (c) 2018 raylib technologies (@raylibtech). All Rights Reserved.
+*   Copyright (c) 2018-2019 raylib technologies (@raylibtech). All Rights Reserved.
 *
 *   Unauthorized copying of this file, via any medium is strictly prohibited
 *   This project is proprietary and confidential unless the owner allows
@@ -920,18 +922,18 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLay
         case GUI_DROPDOWNBOX: TextAppend(toolstr, FormatText("if (GuiDropdownBox(%s, %s, &%sActive, %sEditMode)) %sEditMode = !%sEditMode;", rec, text, name, name, name, name), pos); break;
         case GUI_TEXTBOX: TextAppend(toolstr, FormatText("if (GuiTextBox(%s, %sText, %i, %sEditMode)) %sEditMode = !%sEditMode;", rec, name, MAX_CONTROL_TEXT_LENGTH, name, name, name), pos); break;
         case GUI_TEXTBOXMULTI: TextAppend(toolstr, FormatText("if (GuiTextBoxMulti(%s, %sText, %i, %sEditMode)) %sEditMode = !%sEditMode;", rec, name, MAX_CONTROL_TEXT_LENGTH, name, name, name), pos); break;
-        case GUI_VALUEBOX: TextAppend(toolstr, FormatText("if (GuiValueBox(%s, &%sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;", rec, name, name, name, name), pos); break;
-        case GUI_SPINNER: TextAppend(toolstr, FormatText("if (GuiSpinner(%s, &%sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;", rec, name, name, name, name), pos); break;
-        case GUI_SLIDER: TextAppend(toolstr, FormatText("%sValue = GuiSlider(%s, %s, %sValue, 0, 100, false);", name, rec, text, name), pos); break;
-        case GUI_SLIDERBAR: TextAppend(toolstr, FormatText("%sValue = GuiSliderBar(%s, %s, %sValue, 0, 100, false);", name, rec, text, name), pos); break;
-        case GUI_PROGRESSBAR: TextAppend(toolstr, FormatText("%sValue = GuiProgressBar(%s, %s, %sValue, 0, 1, false);", name, rec, text, name), pos); break;
+        case GUI_VALUEBOX: TextAppend(toolstr, FormatText("if (GuiValueBox(%s, %s, &%sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;", rec, text, name, name, name, name), pos); break;
+        case GUI_SPINNER: TextAppend(toolstr, FormatText("if (GuiSpinner(%s, %s, &%sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;", rec, text, name, name, name, name), pos); break;
+        case GUI_SLIDER: TextAppend(toolstr, FormatText("%sValue = GuiSlider(%s, %s, NULL, %sValue, 0, 100);", name, rec, text, name), pos); break;
+        case GUI_SLIDERBAR: TextAppend(toolstr, FormatText("%sValue = GuiSliderBar(%s, %s, NULL, %sValue, 0, 100);", name, rec, text, name), pos); break;
+        case GUI_PROGRESSBAR: TextAppend(toolstr, FormatText("%sValue = GuiProgressBar(%s, %s, NULL, %sValue, 0, 1);", name, rec, text, name), pos); break;
         case GUI_STATUSBAR: TextAppend(toolstr, FormatText("GuiStatusBar(%s, %s);", rec, text), pos); break;
         case GUI_SCROLLPANEL:
         {
             char *containerRec = GetScrollPanelContainerRecText(index, control, config.defineRecs, config.exportAnchors, preText);
             TextAppend(toolstr, FormatText("%sScrollOffset = GuiScrollPanel(%s, %s, %sScrollOffset);", name, containerRec, rec, name), pos); break;
         }
-        case GUI_LISTVIEW: TextAppend(toolstr, FormatText("if (GuiListView(%s, %s, &%sActive, &%sScrollIndex, %sEditMode)) %sEditMode = !%sEditMode;", rec, text, name, name, name, name, name), pos); break;
+        case GUI_LISTVIEW: TextAppend(toolstr, FormatText("%sActive = GuiListView(%s, %s, &%sScrollIndex, &%sActive);", name, rec, text, name, name), pos); break;
         case GUI_COLORPICKER: TextAppend(toolstr, FormatText("%sValue = GuiColorPicker(%s, %sValue);", name, rec, name), pos); break;
         case GUI_DUMMYREC: TextAppend(toolstr, FormatText("GuiDummyRec(%s, %s);", rec, text), pos); break;
         default: break;
