@@ -1,15 +1,19 @@
  /*******************************************************************************************
 *
-*   rGuiLayout v2.0 - A simple and easy-to-use raygui layouts editor
+*   rGuiLayout v2.1 - A simple and easy-to-use raygui layouts editor
 *
 *   CONFIGURATION:
 *
 *   #define VERSION_ONE
 *       Enable PRO features for the tool. Usually command-line and export options related.
 *
+*   #define CUSTOM_MODAL_DIALOGS
+*       Use custom raygui generated modal dialogs instead of native OS ones
+*       NOTE: Avoids including tinyfiledialogs depencency library
+*
 *   DEPENDENCIES:
-*       raylib 2.5              - Windowing/input management and drawing.
-*       raygui 2.0              - IMGUI controls (based on raylib).
+*       raylib 2.6-dev              - Windowing/input management and drawing.
+*       raygui 2.6-dev              - IMGUI controls (based on raylib).
 *       tinyfiledialogs 3.3.9   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs.
 *
 *   COMPILATION (Windows - MinGW):
@@ -28,7 +32,7 @@
 *
 *   LICENSE: Propietary License
 *
-*   Copyright (c) 2018 raylib technologies (@raylibtech). All Rights Reserved.
+*   Copyright (c) 2017-2019 raylib technologies (@raylibtech). All Rights Reserved.
 *
 *   Unauthorized copying of this file, via any medium is strictly prohibited
 *   This project is proprietary and confidential unless the owner allows
@@ -75,11 +79,6 @@
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
-// Basic information
-#define TOOL_NAME           "rGuiLayout"
-#define TOOL_VERSION        "2.0"
-#define TOOL_DESCRIPTION    "A simple and easy-to-use raygui layouts editor"
-
 #define ANCHOR_RADIUS               20      // Default anchor radius
 #define MIN_CONTROL_SIZE            10      // Minimum control size
 #define MOUSE_SCALE_MARK_SIZE       12      // Mouse scale mark size (bottom-right corner)
@@ -89,8 +88,8 @@
 
 #define MAX_UNDO_LEVELS             10      // Undo levels supported for the ring buffer
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
-bool __stdcall FreeConsole(void);           // Close console from code (kernel32.lib)
+#if (!defined(DEBUG) && (defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)))
+bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib)
 #endif
 
 //----------------------------------------------------------------------------------
@@ -117,6 +116,10 @@ typedef enum {
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
+const char *toolName = "rGuiLayout";
+const char *toolVersion = "2.1";
+const char *toolDescription = "A simple and easy-to-use raygui layouts editor";
+
 static char loadedFileName[256] = { 0 };    // Loaded layout file name
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
 
@@ -146,6 +149,12 @@ static bool DialogExportLayout(unsigned char *toolstr, const char *name);       
 //----------------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
+#if !defined(DEBUG)
+    SetTraceLogLevel(LOG_NONE);         // Disable raylib trace log messsages
+#endif
+    char inFileName[512] = { 0 };       // Input file name (required in case of drag & drop over executable)
+    char outFileName[512] = { 0 };      // Output file name (required for file save/export)
+
     // Command-line usage mode
     //--------------------------------------------------------------------------------------
     if (argc > 1)
@@ -169,7 +178,7 @@ int main(int argc, char *argv[])
 #endif      // VERSION_ONE
     }
 
-#if (defined(VERSION_ONE) && (defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)))
+#if (!defined(DEBUG) && defined(VERSION_ONE) && (defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)))
     // WARNING (Windows): If program is compiled as Window application (instead of console),
     // no console is available to show output info... solution is compiling a console application
     // and closing console (FreeConsole()) when changing to GUI interface
@@ -183,7 +192,7 @@ int main(int argc, char *argv[])
 
     SetTraceLogLevel(LOG_NONE);             // Disable trace log messsages
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // Window configuration flags
-    InitWindow(screenWidth, screenHeight, FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, TOOL_DESCRIPTION));
+    InitWindow(screenWidth, screenHeight, FormatText("%s v%s - %s", toolName, toolVersion, toolDescription));
     SetWindowMinSize(800, 800);
     SetExitKey(0);
 
@@ -261,7 +270,7 @@ int main(int argc, char *argv[])
     if (loadedFileName[0] != '\0') 
     {
         layout = LoadLayout(loadedFileName);
-        SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
+        SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(loadedFileName)));
     }
     
     // Init undo system with current layout
@@ -349,7 +358,7 @@ int main(int argc, char *argv[])
     // Generate code configuration
     GuiLayoutConfig config = { 0 };
     strcpy(config.name, "window_codegen");
-    strcpy(config.version, TOOL_VERSION);
+    strcpy(config.version, toolVersion);
     strcpy(config.company, "raylib technologies");
     strcpy(config.description, "tool description");
     config.exportAnchors = false;
@@ -405,7 +414,7 @@ int main(int argc, char *argv[])
                     // Set a '*' mark on loaded file name to notice save requirement
                     if ((loadedFileName[0] != '\0') && !saveChangesRequired)
                     {
-                        SetWindowTitle(FormatText("%s v%s - %s*", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
+                        SetWindowTitle(FormatText("%s v%s - %s*", toolName, toolVersion, GetFileName(loadedFileName)));
                         saveChangesRequired = true;
                     }
                 }
@@ -475,7 +484,7 @@ int main(int argc, char *argv[])
                     for (int i = 0; i < layout->controlsCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
 
                     strcpy(loadedFileName, droppedFileName);
-                    SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
+                    SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(loadedFileName)));
 
                     for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
                     currentUndoIndex = 0;
@@ -531,7 +540,7 @@ int main(int argc, char *argv[])
             {
                 SaveLayout(layout, loadedFileName, false);
 
-                SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
+                SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(loadedFileName)));
                 saveChangesRequired = false;
             }
         }
@@ -1878,7 +1887,7 @@ int main(int argc, char *argv[])
             ResetLayout(layout);
             
             strcpy(loadedFileName, "\0");
-            SetWindowTitle(FormatText("%s v%s", TOOL_NAME, TOOL_VERSION));
+            SetWindowTitle(FormatText("%s v%s", toolName, toolVersion));
 
             for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
             currentUndoIndex = 0;
@@ -2703,8 +2712,8 @@ static void ShowCommandLineInfo(void)
 {
     printf("\n//////////////////////////////////////////////////////////////////////////////////\n");
     printf("//                                                                              //\n");
-    printf("// %s v%s ONE - %s             //\n", TOOL_NAME, TOOL_VERSION, TOOL_DESCRIPTION);
-    printf("// powered by raylib v2.5 (www.raylib.com) and raygui v2.0                      //\n");
+    printf("// %s v%s ONE - %s             //\n", toolName, toolVersion, toolDescription);
+    printf("// powered by raylib v2.6 (www.raylib.com) and raygui v2.6                      //\n");
     printf("// more info and bugs-report: github.com/raysan5/rguilayout                     //\n");
     printf("//                                                                              //\n");
     printf("// Copyright (c) 2017-2019 raylib technologies (@raylibtech)                    //\n");
@@ -2811,7 +2820,7 @@ static void ProcessCommandLine(int argc, char *argv[])
         GuiLayoutConfig config = { 0 };
         memset(&config, 0, sizeof(GuiLayoutConfig));
         strcpy(config.name, "window_codegen");
-        strcpy(config.version, TOOL_VERSION);
+        strcpy(config.version, toolVersion);
         strcpy(config.company, "raylib technologies");
         strcpy(config.description, "tool description");
         config.exportAnchors = true;
@@ -3088,7 +3097,7 @@ static GuiLayout *DialogLoadLayout(void)
         if (layout != NULL)
         {
             strcpy(loadedFileName, fileName);
-            SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(fileName)));
+            SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(fileName)));
         }
     }
 
@@ -3116,7 +3125,7 @@ static bool DialogSaveLayout(GuiLayout *layout)
         SaveLayout(layout, outFileName, false);
         
         strcpy(loadedFileName, outFileName);
-        SetWindowTitle(FormatText("%s v%s - %s", TOOL_NAME, TOOL_VERSION, GetFileName(loadedFileName)));
+        SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(loadedFileName)));
         saveChangesRequired = false;
         
         success = true;
