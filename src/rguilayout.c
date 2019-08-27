@@ -14,7 +14,7 @@
 *   DEPENDENCIES:
 *       raylib 2.6-dev              - Windowing/input management and drawing.
 *       raygui 2.6-dev              - IMGUI controls (based on raylib).
-*       tinyfiledialogs 3.3.9   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs.
+*       tinyfiledialogs 3.3.9       - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs.
 *
 *   COMPILATION (Windows - MinGW):
 *       gcc -o rguilayout.exe rguilayout.c external/tinyfiledialogs.c -s -Iexternal /
@@ -66,8 +66,11 @@
 #define GUI_WINDOW_ABOUT_IMPLEMENTATION
 #include "gui_window_about.h"               // GUI: About Window
 
-#if !defined(PLATFORM_WEB) && !defined(PLATFORM_ANDROID)
-    #include "external/tinyfiledialogs.h"   // Required for: Open/Save file dialogs
+#if defined(PLATFORM_DESKTOP) && !defined(CUSTOM_MODAL_DIALOGS)
+    #include "external/tinyfiledialogs.h"   // Required for: Native open/save file dialogs
+#else
+    //#define GUI_FILE_DIALOG_IMPLEMENTATION
+    //#include "gui_file_dialog.h"          // Required for: Custom file dialogs
 #endif
 
 #include <stdlib.h>                         // Required for: calloc(), free()
@@ -1991,7 +1994,7 @@ int main(int argc, char *argv[])
                         case GUI_LABEL: GuiLabel(rec, layout->controls[i].text); break;
                         case GUI_BUTTON: GuiButton(rec, layout->controls[i].text); break;
                         case GUI_LABELBUTTON: GuiLabelButton(rec, layout->controls[i].text); break;
-                        case GUI_IMAGEBUTTONEX: GuiImageButtonEx(rec, GetFontDefault().texture, (Rectangle){ 0, 0, 1, 1 }, layout->controls[i].text); break;
+                        case GUI_IMAGEBUTTONEX: GuiImageButtonEx(rec, layout->controls[i].text, GetFontDefault().texture, (Rectangle){ 0, 0, 1, 1 }); break;
                         case GUI_CHECKBOX: GuiCheckBox(rec, layout->controls[i].text, false); break;
                         case GUI_TOGGLE: GuiToggle(rec, layout->controls[i].text, false); break;
                         case GUI_TOGGLEGROUP: GuiToggleGroup(rec, layout->controls[i].text, 1); break;
@@ -1999,14 +2002,14 @@ int main(int argc, char *argv[])
                         case GUI_DROPDOWNBOX: GuiDropdownBox(rec, layout->controls[i].text, &dropdownBoxActive, false); break;
                         case GUI_TEXTBOX: GuiTextBox(rec, layout->controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
                         case GUI_TEXTBOXMULTI: GuiTextBoxMulti(rec, layout->controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
-                        case GUI_VALUEBOX: GuiValueBox(rec, &valueBoxValue, 42, 100, false); break;
-                        case GUI_SPINNER: GuiSpinner(rec, &spinnerValue, 42, 3, false); break;
-                        case GUI_SLIDER: GuiSlider(rec, layout->controls[i].text, 42, 0, 100, false); break;
-                        case GUI_SLIDERBAR: GuiSliderBar(rec, layout->controls[i].text, 40, 0, 100, false); break;
-                        case GUI_PROGRESSBAR: GuiProgressBar(rec, layout->controls[i].text, 40, 0, 100, false); break;
+                        case GUI_VALUEBOX: GuiValueBox(rec, layout->controls[i].text, &valueBoxValue, 42, 100, false); break;
+                        case GUI_SPINNER: GuiSpinner(rec, layout->controls[i].text, &spinnerValue, 42, 3, false); break;
+                        case GUI_SLIDER: GuiSlider(rec, layout->controls[i].text, NULL, 42, 0, 100); break;
+                        case GUI_SLIDERBAR: GuiSliderBar(rec, layout->controls[i].text, NULL, 40, 0, 100); break;
+                        case GUI_PROGRESSBAR: GuiProgressBar(rec, layout->controls[i].text, NULL, 40, 0, 100); break;
                         case GUI_STATUSBAR: GuiStatusBar(rec, layout->controls[i].text); break;
                         case GUI_SCROLLPANEL: GuiScrollPanel(rec, rec, NULL); break;
-                        case GUI_LISTVIEW: GuiListView(rec, layout->controls[i].text, &listViewActive, &listViewScrollIndex, false); break;
+                        case GUI_LISTVIEW: GuiListView(rec, layout->controls[i].text, &listViewScrollIndex, listViewActive); break;
                         case GUI_COLORPICKER: GuiColorPicker(rec, RED); break;
                         case GUI_DUMMYREC: GuiDummyRec(rec, layout->controls[i].text); break;
                         default: break;
@@ -2099,7 +2102,7 @@ int main(int argc, char *argv[])
                                     case GUI_LABEL: GuiLabel(defaultRec[selectedType], "LABEL TEXT"); break;
                                     case GUI_BUTTON: GuiButton(defaultRec[selectedType], "BUTTON"); break;
                                     case GUI_LABELBUTTON: GuiLabelButton(defaultRec[selectedType], "LABEL_BUTTON"); break;
-                                    case GUI_IMAGEBUTTONEX: GuiImageButtonEx(defaultRec[selectedType], GetFontDefault().texture, (Rectangle){ 0, 0, 1, 1 }, "IM"); break;
+                                    case GUI_IMAGEBUTTONEX: GuiImageButtonEx(defaultRec[selectedType], "IM", GetFontDefault().texture, (Rectangle){ 0, 0, 1, 1 }); break;
                                     case GUI_CHECKBOX: GuiCheckBox(defaultRec[selectedType], "CHECK BOX", false); break;
                                     case GUI_TOGGLE: GuiToggle(defaultRec[selectedType], "TOGGLE", false); break;
                                     case GUI_TOGGLEGROUP: GuiToggleGroup(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
@@ -2107,14 +2110,14 @@ int main(int argc, char *argv[])
                                     case GUI_DROPDOWNBOX: GuiDropdownBox(defaultRec[selectedType], "ONE;TWO;THREE", &dropdownBoxActive, false); break;
                                     case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedType], "TEXT BOX", 7, false); break;
                                     case GUI_TEXTBOXMULTI: GuiTextBoxMulti(defaultRec[selectedType], "TEXT BOX MULTI", 7, false);break;
-                                    case GUI_VALUEBOX: GuiValueBox(defaultRec[selectedType], &valueBoxValue, 42, 100, false); break;
-                                    case GUI_SPINNER: GuiSpinner(defaultRec[selectedType], &spinnerValue, 42, 3, false); break;
-                                    case GUI_SLIDER: GuiSlider(defaultRec[selectedType], "SLIDER", 42, 0, 100, false); break;
-                                    case GUI_SLIDERBAR: GuiSliderBar(defaultRec[selectedType], "SLIDER BAR", 40, 0, 100, false); break;
-                                    case GUI_PROGRESSBAR: GuiProgressBar(defaultRec[selectedType], "PROGRESS BAR", 40, 0, 100, false); break;
+                                    case GUI_VALUEBOX: GuiValueBox(defaultRec[selectedType], "VALUE BOX", &valueBoxValue, 42, 100, false); break;
+                                    case GUI_SPINNER: GuiSpinner(defaultRec[selectedType], "SPINNER", &spinnerValue, 42, 3, false); break;
+                                    case GUI_SLIDER: GuiSlider(defaultRec[selectedType], "SLIDER", NULL, 42, 0, 100); break;
+                                    case GUI_SLIDERBAR: GuiSliderBar(defaultRec[selectedType], "SLIDER BAR", NULL, 40, 0, 100); break;
+                                    case GUI_PROGRESSBAR: GuiProgressBar(defaultRec[selectedType], "PROGRESS BAR", NULL, 40, 0, 100); break;
                                     case GUI_STATUSBAR: GuiStatusBar(defaultRec[selectedType], "STATUS BAR"); break;
                                     case GUI_SCROLLPANEL: GuiScrollPanel(defaultRec[selectedType], defaultRec[selectedType], NULL); break;
-                                    case GUI_LISTVIEW: GuiListView(defaultRec[selectedType], "ONE;TWO;THREE;FOUR", &listViewActive, &listViewScrollIndex, false); break;
+                                    case GUI_LISTVIEW: GuiListView(defaultRec[selectedType], "ONE;TWO;THREE;FOUR", &listViewScrollIndex, listViewActive); break;
                                     case GUI_COLORPICKER: GuiColorPicker(defaultRec[selectedType], RED); break;
                                     case GUI_DUMMYREC: GuiDummyRec(defaultRec[selectedType], "DUMMY REC"); break;
                                     default: break;
