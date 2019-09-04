@@ -101,7 +101,7 @@ void GuiWindowAbout(GuiWindowAboutState *state);
 static void DrawTechIcon(int posX, int posY, int size, const char *text, int textSize, bool corner, Color color)
 {
     int borderSize = (int)ceil((float)size/16.0f);
-    
+
     bool offsetY = true;
     
     // Make sure there is no character with pixels down the text baseline for a perfect y-aligned icon
@@ -117,9 +117,8 @@ static void DrawTechIcon(int posX, int posY, int size, const char *text, int tex
 #if defined(VERSION_ONE)
     if (corner)
     {
-        int triSize = size/4;
-        DrawTriangle((Vector2){ posX + size - 2*borderSize - triSize, posY + 2*borderSize },
-                 (Vector2){ posX + size - 2*borderSize, posY + 2*borderSize + triSize },
+        DrawTriangle((Vector2){ posX + size - 2*borderSize - size/4, posY + 2*borderSize },
+                 (Vector2){ posX + size - 2*borderSize, posY + 2*borderSize + size/4 },
                  (Vector2){ posX + size - 2*borderSize, posY + 2*borderSize }, color);
     }
 #endif
@@ -138,7 +137,7 @@ GuiWindowAboutState InitGuiWindowAbout(void)
     state.chkLicenseChecked = true;
 
     // Custom variables initialization
-    state.windowWidth = 335;
+    state.windowWidth = 340;
     state.windowHeight = 340;
     state.position = (Vector2){ GetScreenWidth()/2 - state.windowWidth/2, GetScreenHeight()/2 - state.windowHeight/2 };
 
@@ -150,16 +149,16 @@ void GuiWindowAbout(GuiWindowAboutState *state)
 {
     const char *windowAboutText = "#191#About rGuiLayout";
     const char *lblDescriptionText = "A simple and easy-to-use raygui layouts editor";
-    const char *lblNameVersionText = "rGuiLayout v2.0";
-    const char *lblDateText = "(Mar. 2019)";
+    const char *lblNameVersionText = "rGuiLayout v2.1";
+    const char *lblDateText = "(Sept. 2019)";
     const char *lblUsedLibsText = "Powered by:";
     const char *linkraylibText = "www.raylib.com";
     const char *linkGitraylibText = "github.com/raysan5/raylib";
     const char *linkGitrayguiText = "github.com/raysan5/raygui";
-    const char *lblCopyrightText = "Copyright (c) 2019 raylib technologies (                 )";
-    const char *linkraylibtechText = "@raylibtech";
+    const char *lblCopyrightText = "Copyright (c) 2019 raylib technologies.";
+    const char *linkraylibtechText = "[@raylibtech]";
     const char *lblMoreInfoText = "More info:";
-    const char *linkToolWebText = "www.raylibtech.com/riconpacker";
+    const char *linkToolWebText = "www.raylibtech.com/rguilayout";
     const char *linkToolDownloadText = "https://raylibtech.itch.io/rguilayout";
     const char *linkMailText = "ray@raylibtech.com";
     const char *lblSupportText = "Support:";
@@ -179,23 +178,22 @@ void GuiWindowAbout(GuiWindowAboutState *state)
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.85f));
         state->position = (Vector2){ GetScreenWidth()/2 - state->windowWidth/2, GetScreenHeight()/2 - state->windowHeight/2 };
         
-        state->windowAboutActive = !GuiWindowBox((Rectangle){ state->position.x + 0, state->position.y + 0, 335, 340 }, FormatText("%s %s", windowAboutText, mode));
+        state->windowAboutActive = !GuiWindowBox((Rectangle){ state->position.x + 0, state->position.y + 0, state->windowWidth, state->windowHeight }, FormatText("%s %s", windowAboutText, mode));
 
         // Draw a background rectangle for convenience
         DrawRectangle(state->position.x + 1, state->position.y + 4 + 20, state->windowWidth - 2, 90 - 4, Fade(GetColor(GuiGetStyle(DEFAULT, BASE_COLOR_NORMAL)), 0.5f));
 
         int labelTextAlign = GuiGetStyle(LABEL, TEXT_ALIGNMENT);
         GuiSetStyle(LABEL, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
-
         DrawTechIcon(state->position.x + 10, state->position.y + 35, 64, "rGL", 20, true, GetColor(toolColor));
-        GuiLabel((Rectangle){ state->position.x + 85, state->position.y + 50, 200, 30 }, FormatText("%s %s %s", lblNameVersionText, mode, lblDateText));
-        GuiLabel((Rectangle){ state->position.x + 85, state->position.y + 74, 245, 20 }, lblDescriptionText);
+        GuiLabel((Rectangle){ state->position.x + 85, state->position.y + 35, 200, 30 }, FormatText("%s %s %s", lblNameVersionText, mode, lblDateText));
+        GuiLabel((Rectangle){ state->position.x + 85, state->position.y + 60, 245, 20 }, lblDescriptionText);
 
         GuiLine((Rectangle){ state->position.x, state->position.y + 100, 335, 20 }, NULL);
         GuiLabel((Rectangle){ state->position.x + 8, state->position.y + 113, 126, 25 }, lblUsedLibsText);
 
         DrawTechIcon(state->position.x + 10, state->position.y + 135, 64, "raylib", 10, false, BLACK);
-        DrawTechIcon(state->position.x + 80, state->position.y + 135, 64, "raygui", 10, false, LIGHTGRAY);
+        DrawTechIcon(state->position.x + 80, state->position.y + 135, 64, "raygui", 10, false, GRAY);
 
         if (GuiLabelButton((Rectangle){ state->position.x + 155, state->position.y + 135, 80, 15 }, linkraylibText)) { OpenURL("https://www.raylib.com/"); }
         if (GuiLabelButton((Rectangle){ state->position.x + 155, state->position.y + 160, 150, 15 }, linkGitraylibText)) { OpenURL("https://github.com/raysan5/raylib"); }
@@ -204,12 +202,11 @@ void GuiWindowAbout(GuiWindowAboutState *state)
         GuiLine((Rectangle){ state->position.x, state->position.y + 200, 335, 20 }, NULL);
 
         GuiLabel((Rectangle){ state->position.x + 10, state->position.y + 220, 289, 20 }, lblCopyrightText);
-        if (GuiLabelButton((Rectangle){ state->position.x + 215, state->position.y + 220, 60, 20 }, linkraylibtechText)) { OpenURL("https://twitter.com/raylibtech"); }
-
         GuiLabel((Rectangle){ state->position.x + 10, state->position.y + 250, 65, 15 }, lblMoreInfoText);
 
         if (GuiLabelButton((Rectangle){ state->position.x + 80, state->position.y + 250, 165, 15 }, linkToolWebText)) { OpenURL("https://www.raylibtech.com/"); }
         if (GuiLabelButton((Rectangle){ state->position.x + 80, state->position.y + 270, 165, 15 }, linkMailText)) { OpenURL("mailto:ray@raylibtech.com"); }
+        if (GuiLabelButton((Rectangle){ state->position.x + 80 + MeasureTextEx(GuiGetFont(), linkMailText, GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING)).x + 4, state->position.y + 270, 165, 15 }, linkraylibtechText)) { OpenURL("https://twitter.com/raylibtech"); }
 
         GuiLabel((Rectangle){ state->position.x + 10, state->position.y + 270, 65, 15 }, lblSupportText);
         GuiLine((Rectangle){ state->position.x, state->position.y + 285, 335, 20 }, NULL);
@@ -219,8 +216,6 @@ void GuiWindowAbout(GuiWindowAboutState *state)
 
         int buttonTextAlign = GuiGetStyle(BUTTON, TEXT_ALIGNMENT);
         GuiSetStyle(BUTTON, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_CENTER);
-        int buttonInnerPadding = GuiGetStyle(BUTTON, INNER_PADDING);
-        GuiSetStyle(BUTTON, INNER_PADDING, 1);
 #if defined(VERSION_ONE)
         // TODO: Define a proper EULA
         //state->chkLicenseChecked = GuiCheckBox((Rectangle){ state->position.x + 10, state->position.y + 310, 16, 16 }, chkLicenseText, state->chkLicenseChecked);
@@ -230,7 +225,6 @@ void GuiWindowAbout(GuiWindowAboutState *state)
 #endif
         if (GuiButton((Rectangle){ state->position.x + 255, state->position.y + 305, 70, 25 }, BtnCloseText)) state->windowAboutActive = false;
         GuiSetStyle(BUTTON, TEXT_ALIGNMENT, buttonTextAlign);
-        GuiSetStyle(BUTTON, INNER_PADDING, buttonInnerPadding);
     }
 }
 
