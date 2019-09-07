@@ -2597,9 +2597,9 @@ int main(int argc, char *argv[])
 
             if (selectedControl != -1)
             {
-                int defaultPadding = GuiGetStyle(DEFAULT, GROUP_PADDING);
+                int defaultPadding = GuiGetStyle(DEFAULT, TEXT_PADDING);
                 int defaultTextAlign = GuiGetStyle(DEFAULT, TEXT_ALIGNMENT);
-                GuiSetStyle(DEFAULT, INNER_PADDING, 10);
+                GuiSetStyle(DEFAULT, TEXT_PADDING, 10);
                 GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
                 GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24},
                              FormatText("SELECTED CONTROL: #%03i  |  %s  |  REC (%i, %i, %i, %i)  |  %s",
@@ -2607,7 +2607,7 @@ int main(int argc, char *argv[])
                                         (int)layout->controls[selectedControl].rec.x, (int)layout->controls[selectedControl].rec.y,
                                         (int)layout->controls[selectedControl].rec.width, (int)layout->controls[selectedControl].rec.height,
                                         layout->controls[selectedControl].name));
-                GuiSetStyle(DEFAULT, INNER_PADDING, defaultPadding);
+                GuiSetStyle(DEFAULT, TEXT_PADDING, defaultPadding);
                 GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, defaultTextAlign);
             }
             else GuiStatusBar((Rectangle){ 447, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, NULL);
