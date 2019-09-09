@@ -1,4 +1,4 @@
-# rGuiLayout v2.0
+# rGuiLayout v2.1
 
 A simple and easy-to-use raygui layouts editor.
 

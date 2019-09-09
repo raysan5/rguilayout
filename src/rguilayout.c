@@ -12,9 +12,9 @@
 *       NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   DEPENDENCIES:
-*       raylib 2.6-dev              - Windowing/input management and drawing.
-*       raygui 2.6-dev              - IMGUI controls (based on raylib).
-*       tinyfiledialogs 3.3.9       - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs.
+*       raylib 2.6-dev          - Windowing/input management and drawing.
+*       raygui 2.6              - Immediate-mode GUI controls.
+*       tinyfiledialogs 3.3.9   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs.
 *
 *   COMPILATION (Windows - MinGW):
 *       gcc -o rguilayout.exe rguilayout.c external/tinyfiledialogs.c -s -Iexternal /
