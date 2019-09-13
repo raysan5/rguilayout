@@ -10,12 +10,12 @@ rGuiLayout comes in two flavours: ZERO (free version) and ONE (low-cost version)
 
  - +25 controls available to define your gui layout
  - Place controls visually and move/scale them freely
- - Snap to grid mode for maximum precission
- - Save/Load your layout as .rgl files
- - Supports image loading to be used as tracemap
- - Anchors mode support to link your controls
  - Controls text edition and name edition (for exported variables)
+ - Snap to grid mode for maximum precission
+ - Anchors mode support to link your controls
+ - Supports image loading to be used as tracemap
  - +10 predefined layout available for reference
+ - Save/Load your layout as .rgl files
  - Completely portable (single file)
 
 ## rGuiLayout ONE plus features
