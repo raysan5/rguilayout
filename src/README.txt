@@ -6,6 +6,8 @@ Useful for fast tools development. The perfect companion for rGuiStyler tool.
 
 rGuiLayout comes in two flavours: ZERO (free version) and ONE (low-cost version).
 
+NOTE: This tool is itended to be used with raygui 2.6
+
 ## rGuiLayout ZERO features
 
  - +25 controls available to define your gui layout
@@ -47,6 +49,10 @@ To view all available operation just run on command line:
 Do you like this tool? Do you need any specific feature to be added? Maybe a custom export format? 
 Maybe a custom gui theme? Or maybe a version for Linux, OSX, Android, Raspberry Pi or HTML5?
 Just get in touch: ray@raylibtech.com
+
+## rGuiStyler Issues & Feedback
+
+You can report tool issues and feedback here: https://github.com/raylibtech/rtools  
 
 ## rGuiLayout License
 
