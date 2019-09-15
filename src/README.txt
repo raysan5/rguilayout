@@ -15,17 +15,18 @@ NOTE: This tool is itended to be used with raygui 2.6
  - Controls text edition and name edition (for exported variables)
  - Snap to grid mode for maximum precission
  - Anchors mode support to link your controls
- - Supports image loading to be used as tracemap
- - +10 predefined layout available for reference
  - Save/Load your layout as .rgl files
+ - Generate ready-to-use C code (limited to 12 controls)
+ - Tracemap image loading (.png) for reference
+ - +10 predefined layout available for reference
  - Completely portable (single file)
 
 ## rGuiLayout ONE plus features
 
  - Powerful command line for batch conversion of rgl layouts
  - Import .rgs files to customize visual style (drag&drop)
- - Export layout directly as plain C code, ready to edit and compile
- - Multiple code generation options to customize exported code
+ - Generate ready-to-use C code (no controls limit)
+ - Choose between different code generation templates
  
 ## rGuiLayout Usage
 
