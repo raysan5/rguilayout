@@ -142,15 +142,17 @@ GuiWindowCodegenState InitGuiWindowCodegen(void)
 
 void GuiWindowCodegen(GuiWindowCodegenState *state)
 {
-    if (state->codeTemplateEditMode) GuiLock();
-
     if (state->windowCodegenActive)
     {
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.8f));
 
         state->codegenAnchor = (Vector2){ GetScreenWidth()/2 - 450, GetScreenHeight()/2 - 320 };
 
-        state->windowCodegenActive = !GuiWindowBox((Rectangle){ state->codegenAnchor.x + 0, state->codegenAnchor.y + 0, 900, 640 }, "#7#Code Generation Window");
+#if defined(VERSION_ONE)
+        state->windowCodegenActive = !GuiWindowBox((Rectangle){ state->codegenAnchor.x + 0, state->codegenAnchor.y + 0, 900, 640 }, "#7#Code Generation Window ONE");
+#else
+        state->windowCodegenActive = !GuiWindowBox((Rectangle){ state->codegenAnchor.x + 0, state->codegenAnchor.y + 0, 900, 640 }, "#7#Code Generation Window ZERO - 12 CONTROLS LIMIT");
+#endif
         GuiGroupBox((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 35, 220, 235 }, "Layout Info");
         GuiLabel((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 45, 50, 25 }, "Name:");
         if (GuiTextBox((Rectangle){ state->codegenAnchor.x + 725, state->codegenAnchor.y + 45, 150, 25 }, state->toolNameText, 64, state->toolNameEditMode)) state->toolNameEditMode = !state->toolNameEditMode;
@@ -159,22 +161,25 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         GuiLabel((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 105, 50, 25 }, "Company:");
         if (GuiTextBox((Rectangle){ state->codegenAnchor.x + 725, state->codegenAnchor.y + 105, 150, 25 }, state->companyText, 64, state->companyEditMode)) state->companyEditMode = !state->companyEditMode;
         GuiLabel((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 135, 100, 25 }, "Short Description:");
-        if (GuiTextBox((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 160, 200, 100 }, state->toolDescriptionText, 64, state->toolDescriptionEditMode)) state->toolDescriptionEditMode = !state->toolDescriptionEditMode;
+        if (GuiTextBoxMulti((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 160, 200, 100 }, state->toolDescriptionText, 64, state->toolDescriptionEditMode)) state->toolDescriptionEditMode = !state->toolDescriptionEditMode;
+        
         GuiGroupBox((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 285, 220, 153 }, "Code Generation Options");
         state->exportAnchorsChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 335, 15, 15 }, "Export anchors", state->exportAnchorsChecked);
         state->defineRecsChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 355, 15, 15 }, "Define Rectangles", state->defineRecsChecked);
         state->defineTextsChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 375, 15, 15 }, "Define text as const", state->defineTextsChecked);
         state->fullCommentsChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 395, 15, 15 }, "Include detailed comments", state->fullCommentsChecked);
         state->generateButtonFunctionsChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 415, 15, 15 }, "Generate button functions", state->generateButtonFunctionsChecked);
-        GuiDisable();
-        GuiGroupBox((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 453, 220, 60 }, "Gui Style Options");
-        state->guiExportStyleChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 467, 15, 15 }, "Export gui style", state->guiExportStyleChecked);
-        state->guiEmbedFontChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 487, 15, 15 }, "Embbed gui font", state->guiEmbedFontChecked);
-        GuiEnable();
-        state->generateCodePressed = GuiButton((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 525, 220, 30 }, "#7#Export Generated Code");
-        //state->executeCodePressed = GuiButton((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 545, 220, 30 }, "Execute Code");
-        if (GuiDropdownBox((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 300, 200, 25 }, "STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h);CUSTOM CODE FILE", &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
 
+        state->generateCodePressed = GuiButton((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 455, 220, 30 }, "#7#Export Generated Code");
+        
+#if !defined(VERSION_ONE)
+        GuiDisable();
+#endif
+        // TODO: Add required fields to support a custom code template --> Requires documentation
+        //if (GuiDropdownBox((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 300, 200, 25 }, "STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h);CUSTOM CODE FILE", &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
+        if (GuiDropdownBox((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 300, 200, 25 }, "STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h)", &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
+        GuiEnable();
+        
         // Draw generated code
         if (state->codeText != NULL)
         {
@@ -194,7 +199,7 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
                     if (((state->codePanelScrollOffset.y + 20*linesCounter) >= 0) &&
                         ((state->codePanelScrollOffset.y + 20*linesCounter) < (codePanel.height - 2)))
                     {
-                        DrawText(currentLine, codePanel.x + state->codePanelScrollOffset.x + 10, codePanel.y + state->codePanelScrollOffset.y + 20*linesCounter, 10, GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL)));
+                        DrawText(currentLine, codePanel.x + state->codePanelScrollOffset.x + 10, codePanel.y + state->codePanelScrollOffset.y + 20*linesCounter + 8, 10, GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL)));
                     }
 
                     if (nextLine) *nextLine = '\n';     // Restore newline-char, just to be tidy
@@ -207,8 +212,6 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
             state->codeHeight = 20*linesCounter;
         }
     }
-
-    GuiUnlock();
 }
 
 #endif // GUI_WINDOW_CODEGEN_IMPLEMENTATION
