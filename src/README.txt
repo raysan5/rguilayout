@@ -6,7 +6,7 @@ Useful for fast tools development. The perfect companion for rGuiStyler tool.
 
 rGuiLayout comes in two flavours: ZERO (free version) and ONE (low-cost version).
 
-NOTE: This tool is itended to be used with raygui 2.6
+NOTE: This tool is itended to be used with raygui 2.6: https://github.com/raysan5/raygui
 
 ## rGuiLayout ZERO features
 
@@ -18,14 +18,14 @@ NOTE: This tool is itended to be used with raygui 2.6
  - Save/Load your layout as .rgl files
  - Generate ready-to-use C code (limited to 12 controls)
  - Tracemap image loading (.png) for reference
- - +10 predefined layout available for reference
+ - 8 sample layout provided for reference
  - Completely portable (single file)
 
 ## rGuiLayout ONE plus features
 
  - Powerful command line for batch conversion of rgl layouts
  - Import .rgs files to customize visual style (drag&drop)
- - Generate ready-to-use C code (no controls limit)
+ - Generate ready-to-use C code for layout (no controls limit)
  - Choose between different code generation templates
  
 ## rGuiLayout Usage
@@ -35,10 +35,10 @@ Use mouse wheel to navigate available controls or select them on right controls 
 
 rGuiLayout allows loading .rgl layout files with drag&drop.
 
-rGuiLayout ONE also allows loading .rgs style files created with rGuiStyler and export created layouts as C code.
+rGuiLayout ONE also allows loading .rgs style files created with rGuiStyler and export created layouts as C code with no controls limit.
 
 Press LCTRL+ENTER to show code generation window, you can configure multiple export options to generate the code. 
-To compile generated code, you need raygui v2.0 library (single-file header-only) and raylib v2.5 library.
+To compile generated code, you need raygui v2.6 library (single-file header-only) and raylib v2.6-dev library.
 
 rGuiLayout ONE comes with a powerful command line for layout to code generation.
 To view all available operation just run on command line:
