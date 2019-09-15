@@ -1,10 +1,10 @@
 /**********************************************************************************************
 *
-*   rGuiLayout v2.0 - common types and global variables
+*   rGuiLayout v2.1 - common types and global variables
 *
 *   LICENSE: Propietary License
 *
-*   Copyright (c) 2018 raylib technologies (@raylibtech). All Rights Reserved.
+*   Copyright (c) 2018-2019 raylib technologies (@raylibtech). All Rights Reserved.
 *
 *   Unauthorized copying of this file, via any medium is strictly prohibited
 *   This project is proprietary and confidential unless the owner allows
@@ -111,8 +111,7 @@ typedef struct {
 
 // Control type names
 // WARNING: Controls names MUST be aligned with GuiControlType enum values
-const char *controlTypeName[] =
-{
+const char *controlTypeName[] = {
     "WindowBox",
     "GroupBox",
     "Line",

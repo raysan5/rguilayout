@@ -47,31 +47,25 @@
 #define RAYGUI_SUPPORT_RICONS
 #include "raygui.h"                         // Required for: IMGUI controls
 
-#if defined(VERSION_ONE)
-    #define CODEGEN_IMPLEMENTATION
-    #include "codegen.h"                    // Code generation functions
-    #include "templates.h"                  // Code template files (char buffers)
-
-    #undef RAYGUI_IMPLEMENTATION            // Avoid including raygui implementation again
-
-    #define GUI_WINDOW_CODEGEN_IMPLEMENTATION
-    #include "gui_window_codegen.h"         // GUI: Code Generation Window
-#endif
-
 #undef RAYGUI_IMPLEMENTATION                // Avoid including raygui implementation again
-
-#define GUI_CONTROLS_PALETTE_IMPLEMENTATION
-#include "gui_controls_palette.h"           // GUI: Controls Palette
 
 #define GUI_WINDOW_ABOUT_IMPLEMENTATION
 #include "gui_window_about.h"               // GUI: About Window
 
-#if defined(PLATFORM_DESKTOP) && !defined(CUSTOM_MODAL_DIALOGS)
-    #include "external/tinyfiledialogs.h"   // Required for: Native open/save file dialogs
-#else
-    //#define GUI_FILE_DIALOG_IMPLEMENTATION
-    //#include "gui_file_dialog.h"          // Required for: Custom file dialogs
-#endif
+#define GUI_CONTROLS_PALETTE_IMPLEMENTATION
+#include "gui_controls_palette.h"           // GUI: Controls Palette
+
+#define GUI_FILE_DIALOGS_IMPLEMENTATION
+#include "gui_file_dialogs.h"               // GUI: File Dialog
+
+#define CODEGEN_IMPLEMENTATION
+#include "codegen.h"                        // Code generation functions
+#include "templates.h"                      // Code template files (char buffers)
+
+#undef RAYGUI_IMPLEMENTATION                // Avoid including raygui implementation again
+
+#define GUI_WINDOW_CODEGEN_IMPLEMENTATION
+#include "gui_window_codegen.h"             // GUI: Code Generation Window
 
 #include <stdlib.h>                         // Required for: calloc(), free()
 #include <stdarg.h>                         // Required for: va_list, va_start(), vfprintf(), va_end()
@@ -123,7 +117,6 @@ const char *toolName = "rGuiLayout";
 const char *toolVersion = "2.1";
 const char *toolDescription = "A simple and easy-to-use raygui layouts editor";
 
-static char loadedFileName[256] = { 0 };    // Loaded layout file name
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
 
 //----------------------------------------------------------------------------------
@@ -139,13 +132,6 @@ static GuiLayout *LoadLayout(const char *fileName);         // Load raygui layou
 static void UnloadLayout(GuiLayout *layout);                // Unload raygui layout
 static void ResetLayout(GuiLayout *layout);                 // Reset layout to default values
 static void SaveLayout(GuiLayout *layout, const char *fileName, bool binary);     // Save raygui layout (.rgl), text or binary
-
-static GuiLayout *DialogLoadLayout(void);                   // Show dialog: load layout file (.rgl)
-static bool DialogSaveLayout(GuiLayout *layout);            // Show dialog: save layout file (.rgl)
-
-#if defined(VERSION_ONE)
-static bool DialogExportLayout(unsigned char *toolstr, const char *name);         // Show dialog: export layout file (.c)
-#endif
 
 //----------------------------------------------------------------------------------
 // Program main entry point
@@ -169,7 +155,7 @@ int main(int argc, char *argv[])
             if (IsFileExtension(argv[1], ".rgl"))
             {
                 // Open file with graphic interface
-                strcpy(loadedFileName, argv[1]);        // Read input filename
+                strcpy(inFileName, argv[1]);        // Read input filename
             }
         }
 #if defined(VERSION_ONE)
@@ -270,10 +256,10 @@ int main(int argc, char *argv[])
     int undoFrameCounter = 0;
 
     // Load dropped file if provided
-    if (loadedFileName[0] != '\0') 
+    if (inFileName[0] != '\0') 
     {
-        layout = LoadLayout(loadedFileName);
-        SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(loadedFileName)));
+        layout = LoadLayout(inFileName);
+        SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
     }
     
     // Init undo system with current layout
@@ -302,12 +288,10 @@ int main(int argc, char *argv[])
     GuiControlsPaletteState paletteState = InitGuiControlsPalette();
     //-----------------------------------------------------------------------------------
 
-#if defined(VERSION_ONE)
     // GUI: Layout Code Generation Window
     //-----------------------------------------------------------------------------------
     GuiWindowCodegenState windowCodegenState = InitGuiWindowCodegen();
     //-----------------------------------------------------------------------------------
-#endif
 
     // GUI: About Window
     //-----------------------------------------------------------------------------------
@@ -324,6 +308,13 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------------------------------
     bool resetWindowActive = false;
     bool resetProgram = false;
+    //-----------------------------------------------------------------------------------
+    
+    // GUI: Custom file dialogs
+    //-----------------------------------------------------------------------------------
+    bool showLoadFileDialog = false;
+    bool showSaveFileDialog = false;
+    bool showExportFileDialog = false;
     //-----------------------------------------------------------------------------------
 
     // Rectangles used on controls preview drawing
@@ -357,7 +348,6 @@ int main(int argc, char *argv[])
         (Rectangle){ 0, 0, 0, 0 },              // ???
     };
 
-#if defined(VERSION_ONE)
     // Generate code configuration
     GuiLayoutConfig config = { 0 };
     strcpy(config.name, "window_codegen");
@@ -373,7 +363,6 @@ int main(int argc, char *argv[])
 
     GuiLayoutConfig prevConfig = { 0 };
     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
-#endif
 
     // Controls temp variables
     int dropdownBoxActive = 0;
@@ -415,9 +404,9 @@ int main(int argc, char *argv[])
                     lastUndoIndex = currentUndoIndex;
 
                     // Set a '*' mark on loaded file name to notice save requirement
-                    if ((loadedFileName[0] != '\0') && !saveChangesRequired)
+                    if ((inFileName[0] != '\0') && !saveChangesRequired)
                     {
-                        SetWindowTitle(FormatText("%s v%s - %s*", toolName, toolVersion, GetFileName(loadedFileName)));
+                        SetWindowTitle(FormatText("%s v%s - %s*", toolName, toolVersion, GetFileName(inFileName)));
                         saveChangesRequired = true;
                     }
                 }
@@ -486,8 +475,8 @@ int main(int argc, char *argv[])
                     // TODO: Probably this system should be designed in a diferent way...
                     for (int i = 0; i < layout->controlsCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
 
-                    strcpy(loadedFileName, droppedFileName);
-                    SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(loadedFileName)));
+                    strcpy(inFileName, droppedFileName);
+                    SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
 
                     for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
                     currentUndoIndex = 0;
@@ -513,37 +502,17 @@ int main(int argc, char *argv[])
         // Keyboard shortcuts
         //----------------------------------------------------------------------------------
         // Show window: load layout
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O))
-        {
-            GuiLayout *tempLayout = DialogLoadLayout();
-
-            if (tempLayout != NULL)
-            {
-                memcpy(layout, tempLayout, sizeof(GuiLayout));
-
-                // HACK: When leaving scope, tempLayout internal pointer references are lost, 
-                // so we manually reset those references to layout internals
-                // TODO: Probably this system should be designed in a diferent way...
-                for (int i = 0; i < layout->controlsCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
-
-                for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
-                currentUndoIndex = 0;
-                firstUndoIndex = 0;
-
-                UnloadLayout(tempLayout);
-            }
-        }
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O)) showLoadFileDialog = true;
 
         // Show dialog: save layout
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_S)) DialogSaveLayout(layout);
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_S)) showSaveFileDialog = true;
         else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S))
         {
-            if (loadedFileName[0] == '\0') DialogSaveLayout(layout);
+            if (inFileName[0] == '\0') showSaveFileDialog = true;
             else
             {
-                SaveLayout(layout, loadedFileName, false);
-
-                SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(loadedFileName)));
+                SaveLayout(layout, inFileName, false);
+                SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
                 saveChangesRequired = false;
             }
         }
@@ -584,9 +553,7 @@ int main(int argc, char *argv[])
             {
                 // Close windows logic
                 if (windowAboutState.windowAboutActive) windowAboutState.windowAboutActive = false;
-#if defined(VERSION_ONE)
                 else if (windowCodegenState.windowCodegenActive) windowCodegenState.windowCodegenActive = false;
-#endif
                 else if (resetWindowActive) resetWindowActive = false;
                 else if ((layout->controlsCount <= 0) && (layout->anchorsCount <= 1)) exitWindow = true;  // Quit application
                 else
@@ -639,7 +606,7 @@ int main(int argc, char *argv[])
             {
                 // Open reset window
                 if (IsKeyPressed(KEY_N)) resetWindowActive = true;
-#if defined(VERSION_ONE)
+
                 // Activate code generation export window
                 if (IsKeyPressed(KEY_ENTER))
                 {
@@ -659,7 +626,6 @@ int main(int argc, char *argv[])
                     windowCodegenState.codeText = GenerateLayoutCode(guiTemplateStandardCode, *layout, config);
                     windowCodegenState.windowCodegenActive = true;
                 }
-#endif
             }
 
             // Change grid spacing
@@ -671,7 +637,7 @@ int main(int argc, char *argv[])
                 movePixel = gridLineSpacing;
             }
         }
-#if defined(VERSION_ONE)
+
         // Code generation window logic
         //----------------------------------------------------------------------------------
         if (windowCodegenState.windowCodegenActive)
@@ -703,7 +669,7 @@ int main(int argc, char *argv[])
             }
         }
         //----------------------------------------------------------------------------------
-#endif
+
         // Layout edition logic
         //----------------------------------------------------------------------------------------------
         // Check for any blocking mode (window or text/name edition)
@@ -1855,9 +1821,7 @@ int main(int argc, char *argv[])
 
         // If any window is shown, cancel any edition mode
         if (windowAboutState.windowAboutActive ||
-#if defined(VERSION_ONE)
             windowCodegenState.windowCodegenActive ||
-#endif
             resetWindowActive ||
             windowExitActive)
         {
@@ -1889,7 +1853,7 @@ int main(int argc, char *argv[])
 
             ResetLayout(layout);
             
-            strcpy(loadedFileName, "\0");
+            strcpy(inFileName, "\0");
             SetWindowTitle(FormatText("%s v%s", toolName, toolVersion));
 
             for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
@@ -2076,9 +2040,7 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
 
             if (!windowAboutState.windowAboutActive &&
-#if defined(VERSION_ONE)
                 !windowCodegenState.windowCodegenActive &&
-#endif
                 !resetWindowActive && !windowExitActive)
             {
                 if (!(CheckCollisionPointRec(mouse, paletteState.layoutRecs[0])))
@@ -2513,9 +2475,7 @@ int main(int argc, char *argv[])
                     GuiLine((Rectangle){ helpPositionX + 30, 485, 260, 10 }, NULL);
                     GuiLabel((Rectangle){ helpPositionX + 30, 505, 0, 0 }, "LCTRL + S - Save layout file (.rgl)");
                     GuiLabel((Rectangle){ helpPositionX + 30, 525, 0, 0 }, "LCTRL + O - Open layout file (.rgl)");
-#if defined(VERSION_ONE)
                     GuiLabel((Rectangle){ helpPositionX + 30, 545, 0, 0 }, "LCTRL + ENTER - Export layout to code");
-#endif
                 }
                 //----------------------------------------------------------------------------------------
 
@@ -2526,18 +2486,17 @@ int main(int argc, char *argv[])
             }
             else    // (windowCodegenState.windowCodegenActive || windowAboutState.windowAboutActive || resetWindowActive || windowExitActive)
             {
-#if defined(VERSION_ONE)
                 // GUI: Layout Code Generation Window
                 //----------------------------------------------------------------------------------------
                 GuiWindowCodegen(&windowCodegenState);
 
                 if (windowCodegenState.generateCodePressed)
                 {
-                    DialogExportLayout(windowCodegenState.codeText, TextFormat("gui_%s.h", config.name));
+                    showExportFileDialog = true;
                     windowCodegenState.windowCodegenActive = false;
                 }
                 //----------------------------------------------------------------------------------------
-#endif
+
                 // GUI: About Window
                 //----------------------------------------------------------------------------------------
                 GuiWindowAbout(&windowAboutState);
@@ -2553,11 +2512,9 @@ int main(int argc, char *argv[])
                     if (message == 0) resetWindowActive = false;
                     else if (message == 1)  // Yes
                     {
-                        if (DialogSaveLayout(layout))
-                        {
-                            resetProgram = true;
-                            resetWindowActive = false;
-                        }
+                        showSaveFileDialog = true;
+                        resetProgram = true;
+                        resetWindowActive = false;
                     }
                     else if (message == 2)  // No
                     {
@@ -2577,11 +2534,9 @@ int main(int argc, char *argv[])
                     if (message == 0) windowExitActive = false;
                     else if (message == 1)  // Yes
                     {
-                        if (DialogSaveLayout(layout))
-                        {
-                            windowExitActive = false;
-                            exitWindow = true;
-                        }
+                        showSaveFileDialog = true;
+                        windowExitActive = false;
+                        exitWindow = true;
                     }
                     else if (message == 2) exitWindow = true;
                 }
@@ -2612,7 +2567,108 @@ int main(int argc, char *argv[])
             }
             else GuiStatusBar((Rectangle){ 447, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, NULL);
             //--------------------------------------------------------------------------------------------
+            
+            // GUI: Load File Dialog (and loading logic)
+            //----------------------------------------------------------------------------------------
+            if (showLoadFileDialog)
+            {             
+#if defined(CUSTOM_MODAL_DIALOGS)
+                int result = GuiFileDialog(DIALOG_MESSAGE, "Load raygui layout file ...", inFileName, "Ok", "Just drag and drop your .rgl layout file!");
+#else
+                int result = GuiFileDialog(DIALOG_OPEN, "Load raygui layout file", inFileName, "*.rgl", "raygui Layout Files (*.rgl)");
+#endif
+                if (result == 1)
+                {
+                    // Load layout file
+                    GuiLayout *tempLayout = LoadLayout(inFileName);
 
+                    if (tempLayout != NULL)
+                    {
+                        memcpy(layout, tempLayout, sizeof(GuiLayout));
+
+                        // HACK: When leaving scope, tempLayout internal pointer references are lost, 
+                        // so we manually reset those references to layout internals
+                        // TODO: Probably this system should be designed in a diferent way...
+                        for (int i = 0; i < layout->controlsCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
+
+                        for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
+                        currentUndoIndex = 0;
+                        firstUndoIndex = 0;
+
+                        UnloadLayout(tempLayout);
+                        
+                        SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
+                        saveChangesRequired = false;
+                    }
+                    else inFileName[0] = '\0';
+                }
+                
+                if (result >= 0) showLoadFileDialog = false;
+            }
+            //----------------------------------------------------------------------------------------
+
+            // GUI: Save File Dialog (and saving logic)
+            //----------------------------------------------------------------------------------------
+            if (showSaveFileDialog)
+            {
+#if defined(CUSTOM_MODAL_DIALOGS)
+                int result = GuiFileDialog(DIALOG_TEXTINPUT, "Save raygui layout file...", outFileName, "Ok;Cancel", NULL);
+#else
+                int result = GuiFileDialog(DIALOG_SAVE, "Save raygui layout file...", outFileName, "*.rgl", "raygui Layout Files (*.rgl)");
+#endif
+                if (result == 1)
+                {
+                    // Save file: outFileName
+                    // Check for valid extension and make sure it is
+                    if ((GetExtension(outFileName) == NULL) || !IsFileExtension(outFileName, ".rgl")) strcat(outFileName, ".rgl\0");
+
+                    // Save layout file (text or binary)
+                    SaveLayout(layout, outFileName, false);
+                    
+                    strcpy(inFileName, outFileName);
+                    SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
+                    saveChangesRequired = false;
+
+                #if defined(PLATFORM_WEB)
+                    // Download file from MEMFS (emscripten memory filesystem)
+                    // NOTE: Second argument must be a simple filename (we can't use directories)
+                    emscripten_run_script(TextFormat("SaveFileFromMEMFSToDisk('%s','%s')", outFileName, GetFileName(outFileName)));
+                #endif
+                }
+                
+                if (result >= 0) showSaveFileDialog = false;
+            }
+            //----------------------------------------------------------------------------------------
+            
+            // GUI: Export File Dialog (and saving logic)
+            //----------------------------------------------------------------------------------------
+            if (showExportFileDialog)
+            {
+                strcpy(outFileName, TextFormat("gui_%s.h", config.name));
+                
+#if defined(CUSTOM_MODAL_DIALOGS)
+                int result = GuiFileDialog(DIALOG_TEXTINPUT, "Export raygui layout file...", outFileName, "Ok;Cancel", NULL);
+#else
+                int result = GuiFileDialog(DIALOG_SAVE, "Export raygui layout file...", outFileName, "*.rgl", "raygui Layout Files (*.rgl)");
+#endif
+                if (result == 1)
+                {
+                    // Write code string to file
+                    FILE *ftool = fopen(outFileName, "wt");
+                    fprintf(ftool, windowCodegenState.codeText);
+                    fclose(ftool);
+     
+                #if defined(PLATFORM_WEB)
+                    // Download file from MEMFS (emscripten memory filesystem)
+                    // NOTE: Second argument must be a simple filename (we can't use directories)
+                    emscripten_run_script(TextFormat("SaveFileFromMEMFSToDisk('%s','%s')", outFileName, GetFileName(outFileName)));
+                #endif
+                }
+                
+                if (result >= 0) showExportFileDialog = false;
+            }
+            //----------------------------------------------------------------------------------------
+            
             /*
             // Draw UNDO system info
             //--------------------------------------------------------------------------------------------
@@ -2690,14 +2746,12 @@ int main(int argc, char *argv[])
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
-    UnloadLayout(layout);               // Unload raygui layout
+    UnloadLayout(layout);       // Unload raygui layout
 
-    UnloadTexture(tracemap);            // Unload tracemap texture (if loaded)
+    UnloadTexture(tracemap);    // Unload tracemap texture (if loaded)
 
-#if defined(VERSION_ONE)
+    free(undoLayouts);          // Free undo layouts array
     free(windowCodegenState.codeText);  // Free loaded codeText memory
-#endif
-    free(undoLayouts);                  // Free undo layouts array
 
     CloseWindow();              // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
@@ -2744,13 +2798,13 @@ static void ShowCommandLineInfo(void)
 static void ProcessCommandLine(int argc, char *argv[])
 {
     // CLI required variables
-    bool showUsageInfo = false;     // Toggle command line usage info
+    bool showUsageInfo = false;         // Toggle command line usage info
 
-    char inFileName[256] = { 0 };   // Input file name
-    char outFileName[256] = { 0 };  // Output file name
-    char templateFile[256] = { 0 }; // Template file name
+    char inFileName[512] = { 0 };       // Input file name
+    char outFileName[512] = { 0 };      // Output file name
+    char templateFile[512] = { 0 };     // Template file name
 
-    int outputFormat = 0;           // Supported output formats
+    int outputFormat = 0;               // Supported output formats
 
     // Process command line arguments
     for (int i = 1; i < argc; i++)
@@ -3035,7 +3089,7 @@ static void SaveLayout(GuiLayout *layout, const char *fileName, bool binary)
     }
     else
     {
-        #define RGL_FILE_VERSION_TEXT "2.0"
+        #define RGL_FILE_VERSION_TEXT "2.1"
 
         FILE *rglFile = fopen(fileName, "wt");
 
@@ -3080,85 +3134,3 @@ static void SaveLayout(GuiLayout *layout, const char *fileName, bool binary)
         }
     }
 }
-
-// Show dialog: load layout file (.rgl)
-static GuiLayout *DialogLoadLayout(void)
-{
-    GuiLayout *layout = NULL;
-    const char *fileName = NULL;
-
-#if !defined(PLATFORM_WEB) && !defined(PLATFORM_ANDROID)
-    // Open file dialog
-    const char *filters[] = { "*.rgl" };
-    fileName = tinyfd_openFileDialog("Load raygui layout file", "", 1, filters, "Gui Layour Files (*.rgl)", 0);
-#endif
-
-    if (fileName != NULL)
-    {
-        layout = LoadLayout(fileName);
-
-        if (layout != NULL)
-        {
-            strcpy(loadedFileName, fileName);
-            SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(fileName)));
-        }
-    }
-
-    return layout;
-}
-
-// Show save layout dialog
-static bool DialogSaveLayout(GuiLayout *layout)
-{
-    bool success = false;
-    const char *fileName = NULL;
-
-#if !defined(PLATFORM_WEB) && !defined(PLATFORM_ANDROID)
-    const char *filters[] = { "*.rgl" };
-    fileName = tinyfd_saveFileDialog("Save raygui layout text file", "", 1, filters, "raygui Layout Files (*.rgl)");
-#endif
-
-    // Save layout->controls file (text or binary)
-    if (fileName != NULL)
-    {
-        char outFileName[256] = { 0 };
-        strcpy(outFileName, fileName);
-        if (GetExtension(fileName) == NULL) strcat(outFileName, ".rgl\0");     // No extension provided
-        
-        SaveLayout(layout, outFileName, false);
-        
-        strcpy(loadedFileName, outFileName);
-        SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(loadedFileName)));
-        saveChangesRequired = false;
-        
-        success = true;
-    }
-
-    return success;
-}
-
-#if defined(VERSION_ONE)
-// Show save layout dialog
-static bool DialogExportLayout(unsigned char *toolstr, const char *name)
-{
-    bool success = false;
-    const char *fileName = NULL;
-
-#if !defined(PLATFORM_WEB) && !defined(PLATFORM_ANDROID)
-    const char *filters[] = { "*.c", "*.h", "*.go", "*.lua" };
-    fileName = tinyfd_saveFileDialog("Export code file", name, 3, filters, "Code file");
-#endif
-
-    if (fileName != NULL)
-    {
-        // Write code string to file
-        FILE *ftool = fopen(fileName, "wt");
-        fprintf(ftool, toolstr);
-        fclose(ftool);
-
-        success = true;
-    }
-
-    return success;
-}
-#endif
