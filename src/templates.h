@@ -6,7 +6,7 @@ static const unsigned char *guiTemplateStandardCode = "\
 *\n\
 *   LICENSE: Propietary License\n\
 *\n\
-*   Copyright (c) 2018 raylib technologies (@raylibtech). All Rights Reserved.\n\
+*   Copyright (c) 2019 $(GUILAYOUT_COMPANY). All Rights Reserved.\n\
 *\n\
 *   Unauthorized copying of this file, via any medium is strictly prohibited\n\
 *   This project is proprietary and confidential unless the owner allows\n\
@@ -95,7 +95,7 @@ static const unsigned char *guiTemplateHeaderOnly = "\
 *\n\
 *   LICENSE: Propietary License\n\
 *\n\
-*   Copyright (c) 2018 raylib technologies (@raylibtech). All Rights Reserved.\n\
+*   Copyright (c) 2019 $(GUILAYOUT_COMPANY). All Rights Reserved.\n\
 *\n\
 *   Unauthorized copying of this file, via any medium is strictly prohibited\n\
 *   This project is proprietary and confidential unless the owner allows\n\
