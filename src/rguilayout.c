@@ -2642,8 +2642,8 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
             if (showExportFileDialog)
             {
-                if (state->codeTemplateActive == 0) strcpy(outFileName, TextFormat("gui_%s.c", config.name));
-                else if (state->codeTemplateActive == 1) strcpy(outFileName, TextFormat("gui_%s.h", config.name));
+                if (windowCodegenState.codeTemplateActive == 0) strcpy(outFileName, TextFormat("gui_%s.c", config.name));
+                else if (windowCodegenState.codeTemplateActive == 1) strcpy(outFileName, TextFormat("gui_%s.h", config.name));
                 
 #if defined(CUSTOM_MODAL_DIALOGS)
                 int result = GuiFileDialog(DIALOG_TEXTINPUT, "Export layout as code file...", outFileName, "Ok;Cancel", NULL);
