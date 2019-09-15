@@ -210,7 +210,7 @@ static void WriteFunctionsDeclarationC(unsigned char *toolstr, int *pos, GuiLayo
             if (type == GUI_BUTTON || type == GUI_LABELBUTTON || type == GUI_IMAGEBUTTONEX)
             {
                 buttonsCount++;
-                TextAppend(toolstr, FormatText("static void %s();", layout.controls[i].name), pos);
+                TextAppend(toolstr, FormatText("static void %s();", TextToPascal(layout.controls[i].name)), pos);
                 if (config.fullComments)
                 {
                     TABAPPEND(toolstr, pos, 4);
@@ -286,7 +286,7 @@ static void WriteFunctionsDefinitionC(unsigned char *toolstr, int *pos, GuiLayou
                     TABAPPEND(toolstr, pos, tabs);
                 }
 
-                TextAppend(toolstr, FormatText("static void %s()", layout.controls[i].name), pos);
+                TextAppend(toolstr, FormatText("static void %s()", TextToPascal(layout.controls[i].name)), pos);
                 ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
                 TextAppend(toolstr, "{", pos);
                 ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs + 1);
@@ -637,7 +637,13 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
                 if (initialize) TextAppend(toolstr, " = 0", pos);
                 TextAppend(toolstr, ";", pos);
                 ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
-            }
+                
+                if (define) TextAppend(toolstr, "int ", pos);
+                else TextAppend(toolstr, FormatText("%s", preText), pos);
+                TextAppend(toolstr, FormatText("%sActive", control.name), pos);
+                if (initialize) TextAppend(toolstr, " = 0", pos);
+                TextAppend(toolstr, ";", pos);
+            } break;
             case GUI_DROPDOWNBOX:
             {
                 if (define) TextAppend(toolstr, "bool ", pos);
@@ -937,7 +943,7 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLay
             char *containerRec = GetScrollPanelContainerRecText(index, control, config.defineRecs, config.exportAnchors, preText);
             TextAppend(toolstr, FormatText("%sScrollOffset = GuiScrollPanel(%s, %s, %sScrollOffset);", name, containerRec, rec, name), pos); break;
         }
-        case GUI_LISTVIEW: TextAppend(toolstr, FormatText("%sActive = GuiListView(%s, %s, &%sScrollIndex, &%sActive);", name, rec, text, name, name), pos); break;
+        case GUI_LISTVIEW: TextAppend(toolstr, FormatText("%sActive = GuiListView(%s, %s, &%sScrollIndex, %sActive);", name, rec, (text == NULL)? "null":text, name, name), pos); break;
         case GUI_COLORPICKER: TextAppend(toolstr, FormatText("%sValue = GuiColorPicker(%s, %sValue);", name, rec, name), pos); break;
         case GUI_DUMMYREC: TextAppend(toolstr, FormatText("GuiDummyRec(%s, %s);", rec, text), pos); break;
         default: break;

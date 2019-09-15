@@ -62,8 +62,6 @@
 #include "codegen.h"                        // Code generation functions
 #include "templates.h"                      // Code template files (char buffers)
 
-#undef RAYGUI_IMPLEMENTATION                // Avoid including raygui implementation again
-
 #define GUI_WINDOW_CODEGEN_IMPLEMENTATION
 #include "gui_window_codegen.h"             // GUI: Code Generation Window
 
@@ -2644,12 +2642,13 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
             if (showExportFileDialog)
             {
-                strcpy(outFileName, TextFormat("gui_%s.h", config.name));
+                if (state->codeTemplateActive == 0) strcpy(outFileName, TextFormat("gui_%s.c", config.name));
+                else if (state->codeTemplateActive == 1) strcpy(outFileName, TextFormat("gui_%s.h", config.name));
                 
 #if defined(CUSTOM_MODAL_DIALOGS)
-                int result = GuiFileDialog(DIALOG_TEXTINPUT, "Export raygui layout file...", outFileName, "Ok;Cancel", NULL);
+                int result = GuiFileDialog(DIALOG_TEXTINPUT, "Export layout as code file...", outFileName, "Ok;Cancel", NULL);
 #else
-                int result = GuiFileDialog(DIALOG_SAVE, "Export raygui layout file...", outFileName, "*.rgl", "raygui Layout Files (*.rgl)");
+                int result = GuiFileDialog(DIALOG_SAVE, "Export layout as code file...", outFileName, "*.c;*.h", "Code Files");
 #endif
                 if (result == 1)
                 {
