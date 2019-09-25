@@ -17,6 +17,7 @@ static const unsigned char *guiTemplateStandardCode = "\
 #include \"raylib.h\"\n\
 \n\
 #define RAYGUI_IMPLEMENTATION\n\
+#define RAYGUI_SUPPORT_RICONS\n\
 #include \"raygui.h\"\n\
 \n\
 //----------------------------------------------------------------------------------\n\

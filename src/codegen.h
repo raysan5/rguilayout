@@ -231,7 +231,7 @@ static void WriteInitializationC(unsigned char *toolstr, int *pos, GuiLayout lay
     if (config.defineTexts) WriteConstText(toolstr, pos, layout, config, tabs);
 
     // Anchors
-    if (config.exportAnchors && layout.anchorsCount > 1) WriteAnchors(toolstr, pos, layout, config, true, true, "", tabs);
+    if (config.exportAnchors && layout.anchorsCount > 0) WriteAnchors(toolstr, pos, layout, config, true, true, "", tabs);
 
     // Control variables
     if (layout.controlsCount > 0) WriteControlsVariables(toolstr, pos, layout, config, true, true, "", tabs);
