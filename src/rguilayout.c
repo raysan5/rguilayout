@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
     // Create an empty layout
     GuiLayout *layout = (GuiLayout *)calloc(1, sizeof(GuiLayout));
     ResetLayout(layout);
-    
+
     // Undo system variables
     GuiLayout *undoLayouts = (GuiLayout *)calloc(MAX_UNDO_LEVELS, sizeof(GuiLayout));
     int currentUndoIndex = 0;
@@ -254,12 +254,12 @@ int main(int argc, char *argv[])
     int undoFrameCounter = 0;
 
     // Load dropped file if provided
-    if (inFileName[0] != '\0') 
+    if (inFileName[0] != '\0')
     {
         layout = LoadLayout(inFileName);
         SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
     }
-    
+
     // Init undo system with current layout
     for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
 
@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
     bool resetWindowActive = false;
     bool resetProgram = false;
     //-----------------------------------------------------------------------------------
-    
+
     // GUI: Custom file dialogs
     //-----------------------------------------------------------------------------------
     bool showLoadFileDialog = false;
@@ -468,7 +468,7 @@ int main(int argc, char *argv[])
                 {
                     memcpy(layout, tempLayout, sizeof(GuiLayout));
 
-                    // HACK: When leaving scope, tempLayout internal pointer references are lost, 
+                    // HACK: When leaving scope, tempLayout internal pointer references are lost,
                     // so we manually reset those references to layout internals
                     // TODO: Probably this system should be designed in a diferent way...
                     for (int i = 0; i < layout->controlsCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
@@ -1543,7 +1543,7 @@ int main(int argc, char *argv[])
                                         moveFramesCounter = 0;
                                     }
                                 }
-                                
+
                                 if (selectedAnchor == 0) layout->refWindow = (Rectangle){layout->anchors[0].x, layout->anchors[0].y, layout->refWindow.width, layout->refWindow.height};
 
                                 // Activate anchor position edit mode
@@ -1850,7 +1850,7 @@ int main(int argc, char *argv[])
             textEditMode = false;
 
             ResetLayout(layout);
-            
+
             strcpy(inFileName, "\0");
             SetWindowTitle(FormatText("%s v%s", toolName, toolVersion));
 
@@ -2565,11 +2565,11 @@ int main(int argc, char *argv[])
             }
             else GuiStatusBar((Rectangle){ 447, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, NULL);
             //--------------------------------------------------------------------------------------------
-            
+
             // GUI: Load File Dialog (and loading logic)
             //----------------------------------------------------------------------------------------
             if (showLoadFileDialog)
-            {             
+            {
 #if defined(CUSTOM_MODAL_DIALOGS)
                 int result = GuiFileDialog(DIALOG_MESSAGE, "Load raygui layout file ...", inFileName, "Ok", "Just drag and drop your .rgl layout file!");
 #else
@@ -2584,7 +2584,7 @@ int main(int argc, char *argv[])
                     {
                         memcpy(layout, tempLayout, sizeof(GuiLayout));
 
-                        // HACK: When leaving scope, tempLayout internal pointer references are lost, 
+                        // HACK: When leaving scope, tempLayout internal pointer references are lost,
                         // so we manually reset those references to layout internals
                         // TODO: Probably this system should be designed in a diferent way...
                         for (int i = 0; i < layout->controlsCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
@@ -2594,13 +2594,13 @@ int main(int argc, char *argv[])
                         firstUndoIndex = 0;
 
                         UnloadLayout(tempLayout);
-                        
+
                         SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
                         saveChangesRequired = false;
                     }
                     else inFileName[0] = '\0';
                 }
-                
+
                 if (result >= 0) showLoadFileDialog = false;
             }
             //----------------------------------------------------------------------------------------
@@ -2622,7 +2622,7 @@ int main(int argc, char *argv[])
 
                     // Save layout file (text or binary)
                     SaveLayout(layout, outFileName, false);
-                    
+
                     strcpy(inFileName, outFileName);
                     SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
                     saveChangesRequired = false;
@@ -2633,18 +2633,18 @@ int main(int argc, char *argv[])
                     emscripten_run_script(TextFormat("SaveFileFromMEMFSToDisk('%s','%s')", outFileName, GetFileName(outFileName)));
                 #endif
                 }
-                
+
                 if (result >= 0) showSaveFileDialog = false;
             }
             //----------------------------------------------------------------------------------------
-            
+
             // GUI: Export File Dialog (and saving logic)
             //----------------------------------------------------------------------------------------
             if (showExportFileDialog)
             {
                 if (windowCodegenState.codeTemplateActive == 0) strcpy(outFileName, TextFormat("gui_%s.c", config.name));
                 else if (windowCodegenState.codeTemplateActive == 1) strcpy(outFileName, TextFormat("gui_%s.h", config.name));
-                
+
 #if defined(CUSTOM_MODAL_DIALOGS)
                 int result = GuiFileDialog(DIALOG_TEXTINPUT, "Export layout as code file...", outFileName, "Ok;Cancel", NULL);
 #else
@@ -2656,18 +2656,18 @@ int main(int argc, char *argv[])
                     FILE *ftool = fopen(outFileName, "wt");
                     fprintf(ftool, windowCodegenState.codeText);
                     fclose(ftool);
-     
+
                 #if defined(PLATFORM_WEB)
                     // Download file from MEMFS (emscripten memory filesystem)
                     // NOTE: Second argument must be a simple filename (we can't use directories)
                     emscripten_run_script(TextFormat("SaveFileFromMEMFSToDisk('%s','%s')", outFileName, GetFileName(outFileName)));
                 #endif
                 }
-                
+
                 if (result >= 0) showExportFileDialog = false;
             }
             //----------------------------------------------------------------------------------------
-            
+
             /*
             // Draw UNDO system info
             //--------------------------------------------------------------------------------------------
@@ -2887,15 +2887,15 @@ static void ProcessCommandLine(int argc, char *argv[])
         // Generate C code for gui layout->controls
         char *guiTemplateCustom = NULL;
         if (templateFile[0] != '\0') guiTemplateCustom = LoadText(templateFile);
-        
+
         unsigned char *toolstr = NULL;
-        if (guiTemplateCustom != NULL) 
+        if (guiTemplateCustom != NULL)
         {
             toolstr = GenerateLayoutCode(guiTemplateCustom, *layout, config);
             free(guiTemplateCustom);
         }
         else toolstr = GenerateLayoutCode(guiTemplateStandardCode, *layout, config);
-        
+
         FILE *ftool = fopen(outFileName, "wt");
         fprintf(ftool, toolstr);    // Write code string to file
         fclose(ftool);
