@@ -519,7 +519,7 @@ int main(int argc, char *argv[])
         if (IsKeyPressed(KEY_F1)) helpActive = !helpActive;
 
         // Show window: about
-        if (IsKeyPressed(KEY_F2)) windowAboutState.windowAboutActive = true;
+        if (IsKeyPressed(KEY_F2)) windowAboutState.windowActive = true;
 
         // Show save layout message window on ESC
         if (IsKeyPressed(KEY_ESCAPE))
@@ -550,7 +550,7 @@ int main(int argc, char *argv[])
             else
             {
                 // Close windows logic
-                if (windowAboutState.windowAboutActive) windowAboutState.windowAboutActive = false;
+                if (windowAboutState.windowActive) windowAboutState.windowActive = false;
                 else if (windowCodegenState.windowCodegenActive) windowCodegenState.windowCodegenActive = false;
                 else if (resetWindowActive) resetWindowActive = false;
                 else if ((layout->controlsCount <= 0) && (layout->anchorsCount <= 1)) exitWindow = true;  // Quit application
@@ -1818,7 +1818,7 @@ int main(int argc, char *argv[])
         }
 
         // If any window is shown, cancel any edition mode
-        if (windowAboutState.windowAboutActive ||
+        if (windowAboutState.windowActive ||
             windowCodegenState.windowCodegenActive ||
             resetWindowActive ||
             windowExitActive)
@@ -2037,7 +2037,7 @@ int main(int argc, char *argv[])
             }
             //----------------------------------------------------------------------------------------
 
-            if (!windowAboutState.windowAboutActive &&
+            if (!windowAboutState.windowActive &&
                 !windowCodegenState.windowCodegenActive &&
                 !resetWindowActive && !windowExitActive)
             {
@@ -2482,7 +2482,7 @@ int main(int argc, char *argv[])
                 GuiControlsPalette(&paletteState);
                 //----------------------------------------------------------------------------------------
             }
-            else    // (windowCodegenState.windowCodegenActive || windowAboutState.windowAboutActive || resetWindowActive || windowExitActive)
+            else    // (windowCodegenState.windowCodegenActive || windowAboutState.windowActive || resetWindowActive || windowExitActive)
             {
                 // GUI: Layout Code Generation Window
                 //----------------------------------------------------------------------------------------
