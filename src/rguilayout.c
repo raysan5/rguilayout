@@ -1,6 +1,6 @@
  /*******************************************************************************************
 *
-*   rGuiLayout v2.1 - A simple and easy-to-use raygui layouts editor
+*   rGuiLayout v2.2 - A simple and easy-to-use raygui layouts editor
 *
 *   CONFIGURATION:
 *
@@ -12,9 +12,9 @@
 *       NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   DEPENDENCIES:
-*       raylib 2.6-dev          - Windowing/input management and drawing.
-*       raygui 2.6              - Immediate-mode GUI controls.
-*       tinyfiledialogs 3.3.9   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs.
+*       raylib 3.0              - Windowing/input management and drawing.
+*       raygui 2.7              - Immediate-mode GUI controls.
+*       tinyfiledialogs 3.4.3   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs.
 *
 *   COMPILATION (Windows - MinGW):
 *       gcc -o rguilayout.exe rguilayout.c external/tinyfiledialogs.c -s -Iexternal /
@@ -43,8 +43,15 @@
 #include "raylib.h"
 #include "rguilayout.h"
 
+#if defined(PLATFORM_WEB)
+    #define CUSTOM_MODAL_DIALOGS        // Force custom modal dialogs usage
+    #include <emscripten/emscripten.h>  // Emscripten library - LLVM to JavaScript compiler
+#endif
+
+#define GRID_COLOR_ALPHA    0.2f            // Grid lines alpha amount
+
 #define RAYGUI_IMPLEMENTATION
-#define RAYGUI_SUPPORT_RICONS
+#define RAYGUI_SUPPORT_ICONS
 #include "raygui.h"                         // Required for: IMGUI controls
 
 #undef RAYGUI_IMPLEMENTATION                // Avoid including raygui implementation again
@@ -112,7 +119,7 @@ typedef enum {
 // Global Variables Definition
 //----------------------------------------------------------------------------------
 const char *toolName = "rGuiLayout";
-const char *toolVersion = "2.1";
+const char *toolVersion = "2.2";
 const char *toolDescription = "A simple and easy-to-use raygui layouts editor";
 
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
@@ -174,13 +181,17 @@ int main(int argc, char *argv[])
 
     // GUI usage mode - Initialization
     //--------------------------------------------------------------------------------------
+#if defined(PLATFORM_WEB)
+    const int screenWidth = 920;
+    const int screenHeight = 540;
+#else
     const int screenWidth = 1000;
     const int screenHeight = 800;
-
+#endif
     SetTraceLogLevel(LOG_NONE);             // Disable trace log messsages
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // Window configuration flags
     InitWindow(screenWidth, screenHeight, FormatText("%s v%s - %s", toolName, toolVersion, toolDescription));
-    SetWindowMinSize(800, 800);
+    SetWindowMinSize(540, 540);
     SetExitKey(0);
 
     // General app variables
@@ -1869,7 +1880,7 @@ int main(int argc, char *argv[])
             ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
             // Draw background grid
-            if (showGrid) GuiGrid((Rectangle){ 0, 0, GetScreenWidth(), GetScreenHeight() }, gridLineSpacing, 5);
+            if (showGrid) GuiGrid((Rectangle){ 0, 0, GetScreenWidth(), GetScreenHeight() }, 20, 2);
 
             // Draw the tracemap texture if loaded
             //---------------------------------------------------------------------------------
@@ -2630,7 +2641,7 @@ int main(int argc, char *argv[])
                 #if defined(PLATFORM_WEB)
                     // Download file from MEMFS (emscripten memory filesystem)
                     // NOTE: Second argument must be a simple filename (we can't use directories)
-                    emscripten_run_script(TextFormat("SaveFileFromMEMFSToDisk('%s','%s')", outFileName, GetFileName(outFileName)));
+                    emscripten_run_script(TextFormat("saveFileFromMEMFSToDisk('%s','%s')", outFileName, GetFileName(outFileName)));
                 #endif
                 }
 
@@ -2652,6 +2663,10 @@ int main(int argc, char *argv[])
 #endif
                 if (result == 1)
                 {
+                    // Check for valid extension and make sure it is
+                    if ((GetExtension(outFileName) == NULL) || 
+                        (!IsFileExtension(outFileName, ".c") && !IsFileExtension(outFileName, ".h"))) strcat(outFileName, ".h\0");
+
                     // Write code string to file
                     FILE *ftool = fopen(outFileName, "wt");
                     fprintf(ftool, windowCodegenState.codeText);
@@ -2660,7 +2675,7 @@ int main(int argc, char *argv[])
                 #if defined(PLATFORM_WEB)
                     // Download file from MEMFS (emscripten memory filesystem)
                     // NOTE: Second argument must be a simple filename (we can't use directories)
-                    emscripten_run_script(TextFormat("SaveFileFromMEMFSToDisk('%s','%s')", outFileName, GetFileName(outFileName)));
+                    emscripten_run_script(TextFormat("saveFileFromMEMFSToDisk('%s','%s')", outFileName, GetFileName(outFileName)));
                 #endif
                 }
 
