@@ -632,7 +632,7 @@ int main(int argc, char *argv[])
                     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
                     free(windowCodegenState.codeText);
-                    windowCodegenState.codeText = GenerateLayoutCode(guiTemplateStandardCode, *layout, config);
+                    windowCodegenState.codeText = GenLayoutCode(guiTemplateStandardCode, *layout, config);
                     windowCodegenState.windowCodegenActive = true;
                 }
             }
@@ -671,7 +671,7 @@ int main(int argc, char *argv[])
                 currentCodeTemplate = windowCodegenState.codeTemplateActive;
 
                 free(windowCodegenState.codeText);
-                windowCodegenState.codeText = GenerateLayoutCode(template, *layout, config);
+                windowCodegenState.codeText = GenLayoutCode(template, *layout, config);
                 memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
                 windowCodegenState.codePanelScrollOffset = (Vector2){ 0, 0 };
@@ -2906,10 +2906,10 @@ static void ProcessCommandLine(int argc, char *argv[])
         unsigned char *toolstr = NULL;
         if (guiTemplateCustom != NULL)
         {
-            toolstr = GenerateLayoutCode(guiTemplateCustom, *layout, config);
+            toolstr = GenLayoutCode(guiTemplateCustom, *layout, config);
             free(guiTemplateCustom);
         }
-        else toolstr = GenerateLayoutCode(guiTemplateStandardCode, *layout, config);
+        else toolstr = GenLayoutCode(guiTemplateStandardCode, *layout, config);
 
         FILE *ftool = fopen(outFileName, "wt");
         fprintf(ftool, toolstr);    // Write code string to file
