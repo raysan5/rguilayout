@@ -2629,7 +2629,7 @@ int main(int argc, char *argv[])
                 {
                     // Save file: outFileName
                     // Check for valid extension and make sure it is
-                    if ((GetExtension(outFileName) == NULL) || !IsFileExtension(outFileName, ".rgl")) strcat(outFileName, ".rgl\0");
+                    if ((GetFileExtension(outFileName) == NULL) || !IsFileExtension(outFileName, ".rgl")) strcat(outFileName, ".rgl\0");
 
                     // Save layout file (text or binary)
                     SaveLayout(layout, outFileName, false);
@@ -2664,7 +2664,7 @@ int main(int argc, char *argv[])
                 if (result == 1)
                 {
                     // Check for valid extension and make sure it is
-                    if ((GetExtension(outFileName) == NULL) || 
+                    if ((GetFileExtension(outFileName) == NULL) || 
                         (!IsFileExtension(outFileName, ".c") && !IsFileExtension(outFileName, ".h"))) strcat(outFileName, ".h\0");
 
                     // Write code string to file
