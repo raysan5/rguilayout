@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 #endif
     SetTraceLogLevel(LOG_NONE);             // Disable trace log messsages
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // Window configuration flags
-    InitWindow(screenWidth, screenHeight, FormatText("%s v%s - %s", toolName, toolVersion, toolDescription));
+    InitWindow(screenWidth, screenHeight, TextFormat("%s v%s - %s", toolName, toolVersion, toolDescription));
     SetWindowMinSize(540, 540);
     SetExitKey(0);
 
@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
     if (inFileName[0] != '\0')
     {
         layout = LoadLayout(inFileName);
-        SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
+        SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
     }
 
     // Init undo system with current layout
@@ -415,7 +415,7 @@ int main(int argc, char *argv[])
                     // Set a '*' mark on loaded file name to notice save requirement
                     if ((inFileName[0] != '\0') && !saveChangesRequired)
                     {
-                        SetWindowTitle(FormatText("%s v%s - %s*", toolName, toolVersion, GetFileName(inFileName)));
+                        SetWindowTitle(TextFormat("%s v%s - %s*", toolName, toolVersion, GetFileName(inFileName)));
                         saveChangesRequired = true;
                     }
                 }
@@ -485,7 +485,7 @@ int main(int argc, char *argv[])
                     for (int i = 0; i < layout->controlsCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
 
                     strcpy(inFileName, droppedFileName);
-                    SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
+                    SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
 
                     for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
                     currentUndoIndex = 0;
@@ -521,7 +521,7 @@ int main(int argc, char *argv[])
             else
             {
                 SaveLayout(layout, inFileName, false);
-                SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
+                SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
                 saveChangesRequired = false;
             }
         }
@@ -667,7 +667,7 @@ int main(int argc, char *argv[])
                 const unsigned char *template = NULL;
                 if (windowCodegenState.codeTemplateActive == 0) template = guiTemplateStandardCode;
                 else if (windowCodegenState.codeTemplateActive >= 1) template = guiTemplateHeaderOnly;
-                //else if (windowCodegenState.codeTemplateActive == 2) template = LoadText(/*custom_template*/);
+                //else if (windowCodegenState.codeTemplateActive == 2) template = LoadFileText(/*custom_template*/);
                 currentCodeTemplate = windowCodegenState.codeTemplateActive;
 
                 free(windowCodegenState.codeText);
@@ -813,7 +813,7 @@ int main(int argc, char *argv[])
                                 }
 
                                 strcpy(layout->controls[layout->controlsCount].name,
-                                       FormatText("%s%03i", controlTypeName[layout->controls[layout->controlsCount].type], layout->controlsCount));
+                                       TextFormat("%s%03i", controlTypeName[layout->controls[layout->controlsCount].type], layout->controlsCount));
 
                                 layout->controls[layout->controlsCount].ap = &layout->anchors[0];        // Default anchor point (0, 0)
 
@@ -1029,7 +1029,7 @@ int main(int argc, char *argv[])
                                     layout->controls[layout->controlsCount].rec.x += 10;
                                     layout->controls[layout->controlsCount].rec.y += 10;
                                     strcpy(layout->controls[layout->controlsCount].text, layout->controls[selectedControl].text);
-                                    strcpy(layout->controls[layout->controlsCount].name, FormatText("%s%03i", controlTypeName[layout->controls[layout->controlsCount].type], layout->controlsCount));
+                                    strcpy(layout->controls[layout->controlsCount].name, TextFormat("%s%03i", controlTypeName[layout->controls[layout->controlsCount].type], layout->controlsCount));
                                     layout->controls[layout->controlsCount].ap = layout->controls[selectedControl].ap;            // Default anchor point (0, 0)
 
                                     layout->controlsCount++;
@@ -1863,7 +1863,7 @@ int main(int argc, char *argv[])
             ResetLayout(layout);
 
             strcpy(inFileName, "\0");
-            SetWindowTitle(FormatText("%s v%s", toolName, toolVersion));
+            SetWindowTitle(TextFormat("%s v%s", toolName, toolVersion));
 
             for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
             currentUndoIndex = 0;
@@ -1910,7 +1910,7 @@ int main(int argc, char *argv[])
                         if (useGlobalPos) positionColor = RED;
                         if (snapMode) positionColor = LIME;
                         if (!dragMoveMode && precisionMode) positionColor = BLUE;
-                        DrawText(FormatText("[%i, %i, %i, %i]",
+                        DrawText(TextFormat("[%i, %i, %i, %i]",
                                             (int)tracemapRec.x,
                                             (int)tracemapRec.y,
                                             (int)tracemapRec.width,
@@ -1927,10 +1927,10 @@ int main(int argc, char *argv[])
                 {
                     DrawRectangleRec(layout->refWindow, Fade(BLACK, 0.1f));
 
-                    DrawText(FormatText("[%i]", (int)layout->refWindow.width),
-                             layout->refWindow.x + layout->refWindow.width - MeasureText(FormatText("[%i]",(int)layout->refWindow.width), 20) - 5,
+                    DrawText(TextFormat("[%i]", (int)layout->refWindow.width),
+                             layout->refWindow.x + layout->refWindow.width - MeasureText(TextFormat("[%i]",(int)layout->refWindow.width), 20) - 5,
                              layout->refWindow.y + layout->refWindow.height + 5, 20, positionColor);
-                    DrawText(FormatText("[%i]", (int)layout->refWindow.height),
+                    DrawText(TextFormat("[%i]", (int)layout->refWindow.height),
                              layout->refWindow.x + layout->refWindow.width + 5,
                              layout->refWindow.y + layout->refWindow.height - 20, 20, positionColor);
                 }
@@ -2104,7 +2104,7 @@ int main(int argc, char *argv[])
                                 // Draw cursor position
                                 positionColor = MAROON;
                                 if (snapMode) positionColor = LIME;
-                                DrawText(FormatText("[%i, %i, %i, %i]", (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y,
+                                DrawText(TextFormat("[%i, %i, %i, %i]", (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y,
                                          (int)defaultRec[selectedType].width, (int)defaultRec[selectedType].height),
                                          (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
 
@@ -2196,7 +2196,7 @@ int main(int argc, char *argv[])
 
                     if (selectedAnchor > 0)
                     {
-                        DrawText(FormatText("[%i, %i]",
+                        DrawText(TextFormat("[%i, %i]",
                                             (int)(layout->anchors[selectedAnchor].x - layout->refWindow.x),
                                             (int)(layout->anchors[selectedAnchor].y - layout->refWindow.y)),
                                             layout->anchors[selectedAnchor].x + ANCHOR_RADIUS,
@@ -2206,7 +2206,7 @@ int main(int argc, char *argv[])
                     {
                         if ((layout->refWindow.width > 0) && (layout->refWindow.height > 0))
                         {
-                            DrawText(FormatText("[%i, %i, %i, %i]",
+                            DrawText(TextFormat("[%i, %i, %i, %i]",
                                                 (int)layout->refWindow.x,
                                                 (int)layout->refWindow.y,
                                                 (int)layout->refWindow.width,
@@ -2214,7 +2214,7 @@ int main(int argc, char *argv[])
                                                 layout->anchors[selectedAnchor].x + ANCHOR_RADIUS,
                                                 layout->anchors[selectedAnchor].y - 38, 20, positionColor);
                         }
-                        else DrawText(FormatText("[%i, %i]", (int)(layout->refWindow.x), (int)(layout->refWindow.y)), layout->anchors[selectedAnchor].x + ANCHOR_RADIUS, layout->anchors[selectedAnchor].y - 38, 20, positionColor);
+                        else DrawText(TextFormat("[%i, %i]", (int)(layout->refWindow.x), (int)(layout->refWindow.y)), layout->anchors[selectedAnchor].x + ANCHOR_RADIUS, layout->anchors[selectedAnchor].y - 38, 20, positionColor);
                     }
 
                     // Anchor links
@@ -2295,14 +2295,14 @@ int main(int argc, char *argv[])
                     {
                         if (layout->controls[selectedControl].ap->id > 0)
                         {
-                            DrawText(FormatText("[%i, %i, %i, %i]",
+                            DrawText(TextFormat("[%i, %i, %i, %i]",
                                                 (int)(layout->controls[selectedControl].rec.x),
                                                 (int)(layout->controls[selectedControl].rec.y),
                                                 (int)layout->controls[selectedControl].rec.width,
                                                 (int)layout->controls[selectedControl].rec.height),
                                                 selectedRec.x, selectedRec.y - 30, 20, positionColor);
                         }
-                        else DrawText(FormatText("[%i, %i, %i, %i]",
+                        else DrawText(TextFormat("[%i, %i, %i, %i]",
                                                 (int)(selectedRec.x - layout->refWindow.x),
                                                 (int)(selectedRec.y - layout->refWindow.y),
                                                 (int)layout->controls[selectedControl].rec.width,
@@ -2311,7 +2311,7 @@ int main(int argc, char *argv[])
                     }
                     else
                     {
-                        DrawText(FormatText("[%i, %i, %i, %i]",
+                        DrawText(TextFormat("[%i, %i, %i, %i]",
                                             (int)(selectedRec.x - layout->refWindow.x),
                                             (int)(selectedRec.y - layout->refWindow.y),
                                             (int)layout->controls[selectedControl].rec.width,
@@ -2392,11 +2392,11 @@ int main(int argc, char *argv[])
                         {
                             if (layout->controls[i].ap->id > 0)
                             {
-                                DrawText(FormatText("[%i]", layout->controls[i].id),
+                                DrawText(TextFormat("[%i]", layout->controls[i].id),
                                          layout->controls[i].rec.x + layout->controls[i].ap->x + layout->controls[i].rec.width,
                                          layout->controls[i].rec.y + layout->controls[i].ap->y - 10, 10, BLUE);
                             }
-                            else DrawText(FormatText("[%i]", layout->controls[i].id), layout->controls[i].rec.x + layout->controls[i].rec.width, layout->controls[i].rec.y - 10, 10, BLUE);
+                            else DrawText(TextFormat("[%i]", layout->controls[i].id), layout->controls[i].rec.x + layout->controls[i].rec.width, layout->controls[i].rec.y - 10, 10, BLUE);
                         }
                     }
                 }
@@ -2554,10 +2554,10 @@ int main(int argc, char *argv[])
 
             // Draw status bar bottom with debug information
             //--------------------------------------------------------------------------------------------
-            GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, FormatText("MOUSE: (%i, %i)", (int)mouse.x, (int)mouse.y));
+            GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, TextFormat("MOUSE: (%i, %i)", (int)mouse.x, (int)mouse.y));
             GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (snapMode? "SNAP: ON" : "SNAP: OFF"));
-            GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, FormatText("CONTROLS COUNT: %i", layout->controlsCount));
-            GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, 100, 24}, FormatText("GRID SIZE: %i", gridLineSpacing));
+            GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, TextFormat("CONTROLS COUNT: %i", layout->controlsCount));
+            GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, 100, 24}, TextFormat("GRID SIZE: %i", gridLineSpacing));
 
             if (selectedControl != -1)
             {
@@ -2566,7 +2566,7 @@ int main(int argc, char *argv[])
                 GuiSetStyle(DEFAULT, TEXT_PADDING, 10);
                 GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
                 GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24},
-                             FormatText("SELECTED CONTROL: #%03i  |  %s  |  REC (%i, %i, %i, %i)  |  %s",
+                             TextFormat("SELECTED CONTROL: #%03i  |  %s  |  REC (%i, %i, %i, %i)  |  %s",
                                         selectedControl, TextToUpper(controlTypeName[layout->controls[selectedControl].type]),
                                         (int)layout->controls[selectedControl].rec.x, (int)layout->controls[selectedControl].rec.y,
                                         (int)layout->controls[selectedControl].rec.width, (int)layout->controls[selectedControl].rec.height,
@@ -2606,7 +2606,7 @@ int main(int argc, char *argv[])
 
                         UnloadLayout(tempLayout);
 
-                        SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
+                        SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
                         saveChangesRequired = false;
                     }
                     else inFileName[0] = '\0';
@@ -2635,7 +2635,7 @@ int main(int argc, char *argv[])
                     SaveLayout(layout, outFileName, false);
 
                     strcpy(inFileName, outFileName);
-                    SetWindowTitle(FormatText("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
+                    SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
                     saveChangesRequired = false;
 
                 #if defined(PLATFORM_WEB)
@@ -2901,7 +2901,7 @@ static void ProcessCommandLine(int argc, char *argv[])
 
         // Generate C code for gui layout->controls
         char *guiTemplateCustom = NULL;
-        if (templateFile[0] != '\0') guiTemplateCustom = LoadText(templateFile);
+        if (templateFile[0] != '\0') guiTemplateCustom = LoadFileText(templateFile);
 
         unsigned char *toolstr = NULL;
         if (guiTemplateCustom != NULL)
@@ -3049,7 +3049,7 @@ static void ResetLayout(GuiLayout *layout)
         memset(layout->anchors[i].name, 0, MAX_ANCHOR_NAME_LENGTH);
 
         if (i == 0) strcpy(layout->anchors[i].name, "anchorMain");
-        else strcpy(layout->anchors[i].name, FormatText("anchor%02i", i));
+        else strcpy(layout->anchors[i].name, TextFormat("anchor%02i", i));
     }
 
     // Initialize layout controls data

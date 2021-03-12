@@ -177,7 +177,7 @@ void GuiWindowAbout(GuiWindowAboutState *state)
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.85f));
         state->position = (Vector2){ GetScreenWidth()/2 - state->windowWidth/2, GetScreenHeight()/2 - state->windowHeight/2 };
         
-        state->windowActive = !GuiWindowBox((Rectangle){ state->position.x + 0, state->position.y + 0, state->windowWidth, state->windowHeight }, FormatText("%s %s", windowAboutText, mode));
+        state->windowActive = !GuiWindowBox((Rectangle){ state->position.x + 0, state->position.y + 0, state->windowWidth, state->windowHeight }, TextFormat("%s %s", windowAboutText, mode));
 
         // Draw a background rectangle for convenience
         DrawRectangle(state->position.x + 1, state->position.y + 4 + 20, state->windowWidth - 2, 90 - 4, Fade(GetColor(GuiGetStyle(DEFAULT, BASE_COLOR_NORMAL)), 0.5f));
@@ -185,7 +185,7 @@ void GuiWindowAbout(GuiWindowAboutState *state)
         int labelTextAlign = GuiGetStyle(LABEL, TEXT_ALIGNMENT);
         GuiSetStyle(LABEL, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
         DrawTechIcon(state->position.x + 10, state->position.y + 35, 64, "rGL", 20, true, GetColor(toolColor));
-        GuiLabel((Rectangle){ state->position.x + 85, state->position.y + 55, 200, 30 }, FormatText("%s %s %s", lblNameVersionText, mode, lblDateText));
+        GuiLabel((Rectangle){ state->position.x + 85, state->position.y + 55, 200, 30 }, TextFormat("%s %s %s", lblNameVersionText, mode, lblDateText));
         GuiLabel((Rectangle){ state->position.x + 85, state->position.y + 78, 245, 20 }, lblDescriptionText);
 
         GuiLine((Rectangle){ state->position.x, state->position.y + 100, state->windowWidth, 20 }, NULL);
