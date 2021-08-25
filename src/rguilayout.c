@@ -1,6 +1,6 @@
  /*******************************************************************************************
 *
-*   rGuiLayout v2.2 - A simple and easy-to-use raygui layouts editor
+*   rGuiLayout v2.5 - A simple and easy-to-use raygui layouts editor
 *
 *   CONFIGURATION:
 *
@@ -12,9 +12,9 @@
 *       NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   DEPENDENCIES:
-*       raylib 3.0              - Windowing/input management and drawing.
-*       raygui 2.7              - Immediate-mode GUI controls.
-*       tinyfiledialogs 3.4.3   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs.
+*       raylib 4.0              - Windowing/input management and drawing.
+*       raygui 3.0              - Immediate-mode GUI controls.
+*       tinyfiledialogs 3.8.8   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs.
 *
 *   COMPILATION (Windows - MinGW):
 *       gcc -o rguilayout.exe rguilayout.c external/tinyfiledialogs.c -s -Iexternal /
@@ -32,7 +32,7 @@
 *
 *   LICENSE: Propietary License
 *
-*   Copyright (c) 2017-2020 raylib technologies (@raylibtech). All Rights Reserved.
+*   Copyright (c) 2017-2021 raylib technologies (@raylibtech). All Rights Reserved.
 *
 *   Unauthorized copying of this file, via any medium is strictly prohibited
 *   This project is proprietary and confidential unless the owner allows
@@ -44,14 +44,14 @@
 #include "rguilayout.h"
 
 #if defined(PLATFORM_WEB)
-    #define CUSTOM_MODAL_DIALOGS        // Force custom modal dialogs usage
-    #include <emscripten/emscripten.h>  // Emscripten library - LLVM to JavaScript compiler
+    #define CUSTOM_MODAL_DIALOGS            // Force custom modal dialogs usage
+    #include <emscripten/emscripten.h>      // Emscripten library - LLVM to JavaScript compiler
 #endif
 
 #define GRID_COLOR_ALPHA    0.2f            // Grid lines alpha amount
 
 #define RAYGUI_IMPLEMENTATION
-#define RAYGUI_SUPPORT_ICONS
+#define RAYGUI_SUPPORT_RICONS
 #include "raygui.h"                         // Required for: IMGUI controls
 
 #undef RAYGUI_IMPLEMENTATION                // Avoid including raygui implementation again
@@ -119,7 +119,7 @@ typedef enum {
 // Global Variables Definition
 //----------------------------------------------------------------------------------
 const char *toolName = "rGuiLayout";
-const char *toolVersion = "2.2";
+const char *toolVersion = "2.5";
 const char *toolDescription = "A simple and easy-to-use raygui layouts editor";
 
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
