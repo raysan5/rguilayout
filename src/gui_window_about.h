@@ -92,7 +92,30 @@ void GuiWindowAbout(GuiWindowAboutState *state);
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-//...
+static const char *windowAboutText = "#191#About rGuiLayout";
+static const char *lblDescriptionText = "A simple and easy-to-use raygui layouts editor";
+static const char *lblNameVersionText = "rGuiLayout v2.5";
+static const char *lblDateText = "(Nov. 2021)";
+static const char *lblUsedLibsText = "Powered by:";
+static const char *linkraylibText = "www.raylib.com";
+static const char *linkGitraylibText = "github.com/raysan5/raylib";
+static const char *linkGitrayguiText = "github.com/raysan5/raygui";
+static const char *lblCopyrightText = "Copyright (c) 2021 raylib technologies.";
+static const char *linkraylibtechText = "[@raylibtech]";
+static const char *lblMoreInfoText = "More info:";
+static const char *linkToolWebText = "www.raylibtech.com/rguilayout";
+static const char *linkToolDownloadText = "https://raylibtech.itch.io/rguilayout";
+static const char *linkMailText = "ray@raylibtech.com";
+static const char *lblSupportText = "Support:";
+static const char *chkLicenseText = "License Agreement (EULA)";
+static const char *BtnBeONEText = "#186#Be ONE";
+static const char *BtnCloseText = "#159#Close";
+#if defined(VERSION_ONE)
+static const char *mode = "ONE";
+#else
+static const char *mode = "ZERO";
+#endif
+static const int toolColor = 0x7da9b9ff;
 
 //----------------------------------------------------------------------------------
 // Internal Module Functions Definition
@@ -146,32 +169,6 @@ GuiWindowAboutState InitGuiWindowAbout(void)
 // Gui about window
 void GuiWindowAbout(GuiWindowAboutState *state)
 {
-    const char *windowAboutText = "#191#About rGuiLayout";
-    const char *lblDescriptionText = "A simple and easy-to-use raygui layouts editor";
-    const char *lblNameVersionText = "rGuiLayout v2.5";
-    const char *lblDateText = "(Nov. 2021)";
-    const char *lblUsedLibsText = "Powered by:";
-    const char *linkraylibText = "www.raylib.com";
-    const char *linkGitraylibText = "github.com/raysan5/raylib";
-    const char *linkGitrayguiText = "github.com/raysan5/raygui";
-    const char *lblCopyrightText = "Copyright (c) 2021 raylib technologies.";
-    const char *linkraylibtechText = "[@raylibtech]";
-    const char *lblMoreInfoText = "More info:";
-    const char *linkToolWebText = "www.raylibtech.com/rguilayout";
-    const char *linkToolDownloadText = "https://raylibtech.itch.io/rguilayout";
-    const char *linkMailText = "ray@raylibtech.com";
-    const char *lblSupportText = "Support:";
-    const char *chkLicenseText = "License Agreement (EULA)";
-    const char *BtnBeONEText = "#186#Be ONE";
-    const char *BtnCloseText = "#159#Close";
-#if defined(VERSION_ONE)
-    const char *mode = "ONE";
-#else
-    const char *mode = "ZERO";
-#endif
-
-    const int toolColor = 0x7da9b9ff;
-
     if (state->windowActive)
     {
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.85f));
