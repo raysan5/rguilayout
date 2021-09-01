@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
 
     bool showGrid = true;                   // Show grid flag (KEY_G)
     int gridLineSpacing = 5;                // Grid line spacing in pixels
-    int moveFramesCounter = 0;              // Movement frames counter
+    int moveFrameCounter = 0;               // Movement frames counter
     int movePerFrame = 1;                   // Movement speed per frame
     int movePixel = 1;                      // Movement pixels (depends on grid spacing)
 
@@ -482,7 +482,7 @@ int main(int argc, char *argv[])
                     // HACK: When leaving scope, tempLayout internal pointer references are lost,
                     // so we manually reset those references to layout internals
                     // TODO: Probably this system should be designed in a diferent way...
-                    for (int i = 0; i < layout->controlsCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
+                    for (int i = 0; i < layout->controlCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
 
                     strcpy(inFileName, droppedFileName);
                     SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
@@ -564,7 +564,7 @@ int main(int argc, char *argv[])
                 if (windowAboutState.windowActive) windowAboutState.windowActive = false;
                 else if (windowCodegenState.windowCodegenActive) windowCodegenState.windowCodegenActive = false;
                 else if (resetWindowActive) resetWindowActive = false;
-                else if ((layout->controlsCount <= 0) && (layout->anchorsCount <= 1)) exitWindow = true;  // Quit application
+                else if ((layout->controlCount <= 0) && (layout->anchorCount <= 1)) exitWindow = true;  // Quit application
                 else
                 {
                     windowExitActive = !windowExitActive;
@@ -740,7 +740,7 @@ int main(int argc, char *argv[])
                     // Focus control logic
                     if (!anchorEditMode && focusedAnchor == -1)
                     {
-                        for (int i = layout->controlsCount - 1; i >= 0; i--)
+                        for (int i = layout->controlCount - 1; i >= 0; i--)
                         {
                             if (!layout->controls[i].ap->hidding)
                             {
@@ -779,46 +779,46 @@ int main(int argc, char *argv[])
                             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                             {
                                 // Config new control
-                                layout->controls[layout->controlsCount].id = layout->controlsCount;
-                                layout->controls[layout->controlsCount].type = selectedType;
-                                layout->controls[layout->controlsCount].rec = (Rectangle){ defaultRec[selectedType].x, defaultRec[selectedType].y,
+                                layout->controls[layout->controlCount].id = layout->controlCount;
+                                layout->controls[layout->controlCount].type = selectedType;
+                                layout->controls[layout->controlCount].rec = (Rectangle){ defaultRec[selectedType].x, defaultRec[selectedType].y,
                                                                             defaultRec[selectedType].width, defaultRec[selectedType].height };
 
-                                if ((layout->controls[layout->controlsCount].type == GUI_LABEL)
-                                    || (layout->controls[layout->controlsCount].type == GUI_TEXTBOX)
-                                    || (layout->controls[layout->controlsCount].type == GUI_TEXTBOXMULTI)
-                                    || (layout->controls[layout->controlsCount].type == GUI_BUTTON)
-                                    || (layout->controls[layout->controlsCount].type == GUI_LABELBUTTON)
-                                    || (layout->controls[layout->controlsCount].type == GUI_CHECKBOX)
-                                    || (layout->controls[layout->controlsCount].type == GUI_TOGGLE)
-                                    || (layout->controls[layout->controlsCount].type == GUI_GROUPBOX)
-                                    || (layout->controls[layout->controlsCount].type == GUI_WINDOWBOX)
-                                    || (layout->controls[layout->controlsCount].type == GUI_STATUSBAR)
-                                    || (layout->controls[layout->controlsCount].type == GUI_DUMMYREC))
+                                if ((layout->controls[layout->controlCount].type == GUI_LABEL)
+                                    || (layout->controls[layout->controlCount].type == GUI_TEXTBOX)
+                                    || (layout->controls[layout->controlCount].type == GUI_TEXTBOXMULTI)
+                                    || (layout->controls[layout->controlCount].type == GUI_BUTTON)
+                                    || (layout->controls[layout->controlCount].type == GUI_LABELBUTTON)
+                                    || (layout->controls[layout->controlCount].type == GUI_CHECKBOX)
+                                    || (layout->controls[layout->controlCount].type == GUI_TOGGLE)
+                                    || (layout->controls[layout->controlCount].type == GUI_GROUPBOX)
+                                    || (layout->controls[layout->controlCount].type == GUI_WINDOWBOX)
+                                    || (layout->controls[layout->controlCount].type == GUI_STATUSBAR)
+                                    || (layout->controls[layout->controlCount].type == GUI_DUMMYREC))
                                 {
-                                    strcpy(layout->controls[layout->controlsCount].text, "SAMPLE TEXT");
+                                    strcpy(layout->controls[layout->controlCount].text, "SAMPLE TEXT");
                                 }
 
-                                if ((layout->controls[layout->controlsCount].type == GUI_TOGGLEGROUP)
-                                    || (layout->controls[layout->controlsCount].type == GUI_COMBOBOX)
-                                    || (layout->controls[layout->controlsCount].type == GUI_DROPDOWNBOX)
-                                    || (layout->controls[layout->controlsCount].type == GUI_LISTVIEW))
+                                if ((layout->controls[layout->controlCount].type == GUI_TOGGLEGROUP)
+                                    || (layout->controls[layout->controlCount].type == GUI_COMBOBOX)
+                                    || (layout->controls[layout->controlCount].type == GUI_DROPDOWNBOX)
+                                    || (layout->controls[layout->controlCount].type == GUI_LISTVIEW))
                                 {
-                                    strcpy(layout->controls[layout->controlsCount].text, "ONE;TWO;THREE");
+                                    strcpy(layout->controls[layout->controlCount].text, "ONE;TWO;THREE");
                                 }
 
-                                if ((layout->controls[layout->controlsCount].type == GUI_IMAGEBUTTONEX))
+                                if ((layout->controls[layout->controlCount].type == GUI_IMAGEBUTTONEX))
                                 {
-                                    strcpy(layout->controls[layout->controlsCount].text, "IM");
+                                    strcpy(layout->controls[layout->controlCount].text, "IM");
                                 }
 
-                                strcpy(layout->controls[layout->controlsCount].name,
-                                       TextFormat("%s%03i", controlTypeName[layout->controls[layout->controlsCount].type], layout->controlsCount));
+                                strcpy(layout->controls[layout->controlCount].name,
+                                       TextFormat("%s%03i", controlTypeName[layout->controls[layout->controlCount].type], layout->controlCount));
 
-                                layout->controls[layout->controlsCount].ap = &layout->anchors[0];        // Default anchor point (0, 0)
+                                layout->controls[layout->controlCount].ap = &layout->anchors[0];        // Default anchor point (0, 0)
 
                                 // If we create new control inside a windowbox, then anchor the new control to the windowbox anchor
-                                for (int i = layout->controlsCount; i >= 0; i--)
+                                for (int i = layout->controlCount; i >= 0; i--)
                                 {
                                     if ((layout->controls[i].type == GUI_WINDOWBOX) || (layout->controls[i].type == GUI_GROUPBOX))
                                     {
@@ -826,22 +826,22 @@ int main(int argc, char *argv[])
                                                                                        layout->controls[i].ap->y + layout->controls[i].rec.y,
                                                                                        layout->controls[i].rec.width, layout->controls[i].rec.height }))
                                         {
-                                            layout->controls[layout->controlsCount].ap = layout->controls[i].ap;
+                                            layout->controls[layout->controlCount].ap = layout->controls[i].ap;
                                             break;
                                         }
                                     }
                                 }
 
                                 // Create anchor for windowbox control if we can
-                                if ((layout->anchorsCount < MAX_ANCHOR_POINTS) &&
-                                    ((layout->controls[layout->controlsCount].type == GUI_WINDOWBOX) || (layout->controls[layout->controlsCount].type == GUI_GROUPBOX)))
+                                if ((layout->anchorCount < MAX_ANCHOR_POINTS) &&
+                                    ((layout->controls[layout->controlCount].type == GUI_WINDOWBOX) || (layout->controls[layout->controlCount].type == GUI_GROUPBOX)))
                                 {
                                     for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
                                     {
                                         if (!layout->anchors[i].enabled)
                                         {
-                                            layout->anchors[i].x = layout->controls[layout->controlsCount].rec.x;
-                                            layout->anchors[i].y = layout->controls[layout->controlsCount].rec.y;
+                                            layout->anchors[i].x = layout->controls[layout->controlCount].rec.x;
+                                            layout->anchors[i].y = layout->controls[layout->controlCount].rec.y;
 
                                             if (snapMode)
                                             {
@@ -855,27 +855,27 @@ int main(int argc, char *argv[])
                                                 else layout->anchors[i].y -= offsetY;
                                             }
 
-                                            layout->controls[layout->controlsCount].rec.x = layout->anchors[i].x;
-                                            layout->controls[layout->controlsCount].rec.y = layout->anchors[i].y;
+                                            layout->controls[layout->controlCount].rec.x = layout->anchors[i].x;
+                                            layout->controls[layout->controlCount].rec.y = layout->anchors[i].y;
 
                                             layout->anchors[i].enabled = true;
-                                            layout->controls[layout->controlsCount].ap = &layout->anchors[i];
+                                            layout->controls[layout->controlCount].ap = &layout->anchors[i];
 
-                                            layout->anchorsCount++;
+                                            layout->anchorCount++;
                                             break;
                                         }
                                     }
                                 }
 
-                                if (layout->controls[layout->controlsCount].ap->id > 0)
+                                if (layout->controls[layout->controlCount].ap->id > 0)
                                 {
-                                    layout->controls[layout->controlsCount].rec.x -= layout->controls[layout->controlsCount].ap->x;
-                                    layout->controls[layout->controlsCount].rec.y -= layout->controls[layout->controlsCount].ap->y;
+                                    layout->controls[layout->controlCount].rec.x -= layout->controls[layout->controlCount].ap->x;
+                                    layout->controls[layout->controlCount].rec.y -= layout->controls[layout->controlCount].ap->y;
                                 }
-                                layout->controlsCount++;
+                                layout->controlCount++;
 
-                                focusedControl = layout->controlsCount - 1;
-                                selectedControl = layout->controlsCount - 1;
+                                focusedControl = layout->controlCount - 1;
+                                selectedControl = layout->controlCount - 1;
                             }
                         }
                     }
@@ -892,7 +892,7 @@ int main(int argc, char *argv[])
                             else if (IsKeyPressed(KEY_DOWN)) newOrder = -1;
                             else newOrder -= GetMouseWheelMove();
 
-                            if ((newOrder > 0) && (focusedControl < layout->controlsCount - 1))
+                            if ((newOrder > 0) && (focusedControl < layout->controlCount - 1))
                             {
                                 // Move control towards beginning of array
                                 GuiLayoutControl auxControl = layout->controls[focusedControl];
@@ -1023,18 +1023,18 @@ int main(int argc, char *argv[])
                                 // Duplicate control
                                 if (IsKeyPressed(KEY_D))
                                 {
-                                    layout->controls[layout->controlsCount].id = layout->controlsCount;
-                                    layout->controls[layout->controlsCount].type = layout->controls[selectedControl].type;
-                                    layout->controls[layout->controlsCount].rec = layout->controls[selectedControl].rec;
-                                    layout->controls[layout->controlsCount].rec.x += 10;
-                                    layout->controls[layout->controlsCount].rec.y += 10;
-                                    strcpy(layout->controls[layout->controlsCount].text, layout->controls[selectedControl].text);
-                                    strcpy(layout->controls[layout->controlsCount].name, TextFormat("%s%03i", controlTypeName[layout->controls[layout->controlsCount].type], layout->controlsCount));
-                                    layout->controls[layout->controlsCount].ap = layout->controls[selectedControl].ap;            // Default anchor point (0, 0)
+                                    layout->controls[layout->controlCount].id = layout->controlCount;
+                                    layout->controls[layout->controlCount].type = layout->controls[selectedControl].type;
+                                    layout->controls[layout->controlCount].rec = layout->controls[selectedControl].rec;
+                                    layout->controls[layout->controlCount].rec.x += 10;
+                                    layout->controls[layout->controlCount].rec.y += 10;
+                                    strcpy(layout->controls[layout->controlCount].text, layout->controls[selectedControl].text);
+                                    strcpy(layout->controls[layout->controlCount].name, TextFormat("%s%03i", controlTypeName[layout->controls[layout->controlCount].type], layout->controlCount));
+                                    layout->controls[layout->controlCount].ap = layout->controls[selectedControl].ap;            // Default anchor point (0, 0)
 
-                                    layout->controlsCount++;
+                                    layout->controlCount++;
 
-                                    selectedControl = layout->controlsCount - 1;
+                                    selectedControl = layout->controlCount - 1;
                                 }
 
                                 // Resize control
@@ -1057,13 +1057,13 @@ int main(int argc, char *argv[])
                                         layout->controls[selectedControl].rec.height -= offsetY;
                                     }
 
-                                    moveFramesCounter = 0;
+                                    moveFrameCounter = 0;
                                 }
                                 else
                                 {
-                                    moveFramesCounter++;
+                                    moveFrameCounter++;
 
-                                    if ((moveFramesCounter%movePerFrame) == 0)
+                                    if ((moveFrameCounter%movePerFrame) == 0)
                                     {
                                         if (IsKeyDown(KEY_RIGHT)) layout->controls[selectedControl].rec.width += (movePixel - offsetX);
                                         else if (IsKeyDown(KEY_LEFT))
@@ -1079,7 +1079,7 @@ int main(int argc, char *argv[])
                                             layout->controls[selectedControl].rec.height -= offsetY;
                                         }
 
-                                        moveFramesCounter = 0;
+                                        moveFrameCounter = 0;
                                     }
                                 }
 
@@ -1118,13 +1118,13 @@ int main(int argc, char *argv[])
                                         controlPosY -= offsetY;
                                     }
 
-                                    moveFramesCounter = 0;
+                                    moveFrameCounter = 0;
                                 }
                                 else
                                 {
-                                    moveFramesCounter++;
+                                    moveFrameCounter++;
 
-                                    if ((moveFramesCounter%movePerFrame) == 0)
+                                    if ((moveFrameCounter%movePerFrame) == 0)
                                     {
                                         if (IsKeyDown(KEY_RIGHT)) controlPosX += (movePixel - offsetX);
                                         else if (IsKeyDown(KEY_LEFT))
@@ -1140,7 +1140,7 @@ int main(int argc, char *argv[])
                                             controlPosY -= offsetY;
                                         }
 
-                                        moveFramesCounter = 0;
+                                        moveFrameCounter = 0;
                                     }
                                 }
 
@@ -1168,7 +1168,7 @@ int main(int argc, char *argv[])
                                 {
                                     mouseScaleReady = false;
 
-                                    for (int i = selectedControl; i < layout->controlsCount; i++)
+                                    for (int i = selectedControl; i < layout->controlCount; i++)
                                     {
                                         layout->controls[i].type = layout->controls[i + 1].type;
                                         layout->controls[i].rec = layout->controls[i + 1].rec;
@@ -1179,7 +1179,7 @@ int main(int argc, char *argv[])
                                         layout->controls[i].ap = layout->controls[i + 1].ap;
                                     }
 
-                                    layout->controlsCount--;
+                                    layout->controlCount--;
                                     focusedControl = -1;
                                     selectedControl = -1;
                                 }
@@ -1283,7 +1283,7 @@ int main(int argc, char *argv[])
                 if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON))
                 {
                     // Check all the controls inside the selection rectangle
-                    for (int i = 0; i < layout->controlsCount; i++)
+                    for (int i = 0; i < layout->controlCount; i++)
                     {
                         if (CheckCollisionRecs(multiSelectRec, layout->controls[i].rec))
                         {
@@ -1310,7 +1310,7 @@ int main(int argc, char *argv[])
             {
                 for (int j = 0; j < multiSelectCount; j++)
                 {
-                    for (int i = multiSelectControls[j]; i < layout->controlsCount; i++)
+                    for (int i = multiSelectControls[j]; i < layout->controlCount; i++)
                     {
                         layout->controls[i].type = layout->controls[i + 1].type;
                         layout->controls[i].rec = layout->controls[i + 1].rec;
@@ -1321,7 +1321,7 @@ int main(int argc, char *argv[])
                         layout->controls[i].ap = layout->controls[i + 1].ap;
                     }
 
-                    layout->controlsCount--;
+                    layout->controlCount--;
 
                     // As we moved all controls one position, we need to update selected
                     // controls position for next control deletion
@@ -1363,11 +1363,11 @@ int main(int argc, char *argv[])
                 if (focusedControl == -1)
                 {
                     // Create new anchor
-                    if (!anchorLinkMode && anchorEditMode && layout->anchorsCount < MAX_ANCHOR_POINTS && !tracemapFocused && !tracemapSelected)
+                    if (!anchorLinkMode && anchorEditMode && layout->anchorCount < MAX_ANCHOR_POINTS && !tracemapFocused && !tracemapSelected)
                     {
                         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                         {
-                            layout->anchorsCount++;
+                            layout->anchorCount++;
                             for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
                             {
                                 if (!layout->anchors[i].enabled)
@@ -1418,7 +1418,7 @@ int main(int argc, char *argv[])
                             // Move anchor without moving controls
                             if (anchorMoveMode && !anchorEditMode)
                             {
-                                for (int i = 0; i < layout->controlsCount; i++)
+                                for (int i = 0; i < layout->controlCount; i++)
                                 {
                                     if (layout->controls[i].ap->id == 9) //auxAnchor ID
                                     {
@@ -1440,7 +1440,7 @@ int main(int argc, char *argv[])
                             {
                                 anchorMoveMode = true;
 
-                                for (int i = 0; i < layout->controlsCount; i++)
+                                for (int i = 0; i < layout->controlCount; i++)
                                 {
                                     if (layout->controls[i].ap->id == selectedAnchor)
                                     {
@@ -1465,7 +1465,7 @@ int main(int argc, char *argv[])
                                 // If moving only the anchor, relink with controls
                                 if (anchorMoveMode)
                                 {
-                                    for (int i = 0; i < layout->controlsCount; i++)
+                                    for (int i = 0; i < layout->controlCount; i++)
                                     {
                                         if (layout->controls[i].ap->id == 9) //auxAnchor ID
                                         {
@@ -1488,9 +1488,9 @@ int main(int argc, char *argv[])
                             {
                                 if (IsKeyPressed(KEY_D)) // Duplicate anchor
                                 {
-                                    if (layout->anchorsCount < MAX_ANCHOR_POINTS)
+                                    if (layout->anchorCount < MAX_ANCHOR_POINTS)
                                     {
-                                        layout->anchorsCount++;
+                                        layout->anchorCount++;
                                         for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
                                         {
                                             if (!layout->anchors[i].enabled && i != selectedAnchor)
@@ -1528,13 +1528,13 @@ int main(int argc, char *argv[])
                                         layout->anchors[selectedAnchor].y-= offsetY;
                                     }
 
-                                    moveFramesCounter = 0;
+                                    moveFrameCounter = 0;
                                 }
                                 else        // Move anchor with arrows
                                 {
-                                    moveFramesCounter++;
+                                    moveFrameCounter++;
 
-                                    if ((moveFramesCounter%movePerFrame) == 0)
+                                    if ((moveFrameCounter%movePerFrame) == 0)
                                     {
                                         if (IsKeyDown(KEY_RIGHT)) layout->anchors[selectedAnchor].x += (movePixel - offsetX);
                                         else if (IsKeyDown(KEY_LEFT))
@@ -1551,7 +1551,7 @@ int main(int argc, char *argv[])
                                             layout->anchors[selectedAnchor].y -= offsetY;
                                         }
 
-                                        moveFramesCounter = 0;
+                                        moveFrameCounter = 0;
                                     }
                                 }
 
@@ -1567,7 +1567,7 @@ int main(int argc, char *argv[])
                                 else if (IsKeyPressed(KEY_H)) layout->anchors[selectedAnchor].hidding = !layout->anchors[selectedAnchor].hidding;   // Hide/Unhide anchors
                                 else if (IsKeyPressed(KEY_U) && selectedAnchor > 0)                     // Unlinks controls from selected anchor
                                 {
-                                    for (int i = 0; i < layout->controlsCount; i++)
+                                    for (int i = 0; i < layout->controlCount; i++)
                                     {
                                         if (layout->controls[i].ap->id == selectedAnchor)
                                         {
@@ -1587,7 +1587,7 @@ int main(int argc, char *argv[])
                                     }
                                     else
                                     {
-                                        for (int i = 0; i < layout->controlsCount; i++)
+                                        for (int i = 0; i < layout->controlCount; i++)
                                         {
                                             if (layout->controls[i].ap->id == selectedAnchor)
                                             {
@@ -1602,7 +1602,7 @@ int main(int argc, char *argv[])
                                         layout->anchors[selectedAnchor].enabled = false;
                                         layout->anchors[selectedAnchor].hidding = false;
 
-                                        layout->anchorsCount--;
+                                        layout->anchorCount--;
                                     }
                                     selectedAnchor = -1;
                                     focusedAnchor = -1;
@@ -1703,13 +1703,13 @@ int main(int argc, char *argv[])
                                     tracemapRec.width -= movePixel;
                                 }
 
-                                moveFramesCounter = 0;
+                                moveFrameCounter = 0;
                             }
                             else
                             {
-                                moveFramesCounter++;
+                                moveFrameCounter++;
 
-                                if ((moveFramesCounter%movePerFrame) == 0)
+                                if ((moveFrameCounter%movePerFrame) == 0)
                                 {
                                     if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_DOWN))
                                     {
@@ -1722,7 +1722,7 @@ int main(int argc, char *argv[])
                                         tracemapRec.width -= movePixel;
                                     }
 
-                                    moveFramesCounter = 0;
+                                    moveFrameCounter = 0;
                                 }
                             }
 
@@ -1751,13 +1751,13 @@ int main(int argc, char *argv[])
                                     tracemapRec.y -= offsetY;
                                 }
 
-                                moveFramesCounter = 0;
+                                moveFrameCounter = 0;
                             }
                             else
                             {
-                                moveFramesCounter++;
+                                moveFrameCounter++;
 
-                                if ((moveFramesCounter%movePerFrame) == 0)
+                                if ((moveFrameCounter%movePerFrame) == 0)
                                 {
                                     if (IsKeyDown(KEY_RIGHT)) tracemapRec.x += (movePixel - offsetX);
                                     else if (IsKeyDown(KEY_LEFT))
@@ -1773,7 +1773,7 @@ int main(int argc, char *argv[])
                                         tracemapRec.y -= offsetY;
                                     }
 
-                                    moveFramesCounter = 0;
+                                    moveFrameCounter = 0;
                                 }
                             }
                             //------------------------------------------------------------------
@@ -1940,7 +1940,7 @@ int main(int argc, char *argv[])
             // TODO: Support controls editMode vs playMode, just unlock controls and lock edit!
             //----------------------------------------------------------------------------------------
             GuiLock();
-            for (int i = 0; i < layout->controlsCount; i++)
+            for (int i = 0; i < layout->controlCount; i++)
             {
                 if (!layout->controls[i].ap->hidding)
                 {
@@ -2112,7 +2112,7 @@ int main(int argc, char *argv[])
                                 if (IsKeyDown(KEY_N))
                                 {
                                     GuiLock();
-                                    for (int i = 0; i < layout->controlsCount; i++)
+                                    for (int i = 0; i < layout->controlCount; i++)
                                     {
                                         Rectangle textboxRec = layout->controls[i].rec;
                                         int type = layout->controls[i].type;
@@ -2143,7 +2143,7 @@ int main(int argc, char *argv[])
                                         GuiTextBox(textboxRec, layout->controls[i].name, MAX_CONTROL_NAME_LENGTH, false);
                                     }
 
-                                    for (int i = 0; i < layout->anchorsCount; i++)
+                                    for (int i = 0; i < layout->anchorCount; i++)
                                     {
                                         Rectangle textboxRec = (Rectangle) { layout->anchors[i].x, layout->anchors[i].y,
                                                                              MeasureText(layout->anchors[i].name, GuiGetStyle(DEFAULT, TEXT_SIZE)) + 10, GuiGetStyle(DEFAULT, TEXT_SIZE) + 5};
@@ -2171,7 +2171,7 @@ int main(int argc, char *argv[])
                 if (focusedAnchor != 1)
                 {
                     // Anchor links
-                    for (int i = 0; i < layout->controlsCount; i++)
+                    for (int i = 0; i < layout->controlCount; i++)
                     {
                         //if (!layout->controls[i].ap->hidding)
                         if (layout->controls[i].ap->id == focusedAnchor)
@@ -2218,7 +2218,7 @@ int main(int argc, char *argv[])
                     }
 
                     // Anchor links
-                    for (int i = 0; i < layout->controlsCount; i++)
+                    for (int i = 0; i < layout->controlCount; i++)
                     {
                         //if (!layout->controls[i].ap->hidding)
                         if (layout->controls[i].ap->id == selectedAnchor)
@@ -2388,7 +2388,7 @@ int main(int argc, char *argv[])
                     // Draw controls IDs for layout order edition
                     if (orderEditMode)
                     {
-                        for (int i = layout->controlsCount - 1; i >= 0; i--)
+                        for (int i = layout->controlCount - 1; i >= 0; i--)
                         {
                             if (layout->controls[i].ap->id > 0)
                             {
@@ -2556,7 +2556,7 @@ int main(int argc, char *argv[])
             //--------------------------------------------------------------------------------------------
             GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, TextFormat("MOUSE: (%i, %i)", (int)mouse.x, (int)mouse.y));
             GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (snapMode? "SNAP: ON" : "SNAP: OFF"));
-            GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, TextFormat("CONTROLS COUNT: %i", layout->controlsCount));
+            GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, TextFormat("CONTROLS COUNT: %i", layout->controlCount));
             GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, 100, 24}, TextFormat("GRID SIZE: %i", gridLineSpacing));
 
             if (selectedControl != -1)
@@ -2598,7 +2598,7 @@ int main(int argc, char *argv[])
                         // HACK: When leaving scope, tempLayout internal pointer references are lost,
                         // so we manually reset those references to layout internals
                         // TODO: Probably this system should be designed in a diferent way...
-                        for (int i = 0; i < layout->controlsCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
+                        for (int i = 0; i < layout->controlCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
 
                         for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
                         currentUndoIndex = 0;
@@ -2967,25 +2967,25 @@ static GuiLayout *LoadLayout(const char *fileName)
                     layout->anchors[anchorCounter].enabled = (enabled? true : false);
                     strcpy(layout->anchors[anchorCounter].name, anchorName);
 
-                    if (layout->anchors[anchorCounter].enabled) layout->anchorsCount++;
+                    if (layout->anchors[anchorCounter].enabled) layout->anchorCount++;
                     anchorCounter++;
                 } break;
                 case 'c':
                 {
                     int anchorId = 0;
                     sscanf(buffer, "c %d %d %s %f %f %f %f %d %[^\n]s",
-                                    &layout->controls[layout->controlsCount].id,
-                                    &layout->controls[layout->controlsCount].type,
-                                    layout->controls[layout->controlsCount].name,
-                                    &layout->controls[layout->controlsCount].rec.x,
-                                    &layout->controls[layout->controlsCount].rec.y,
-                                    &layout->controls[layout->controlsCount].rec.width,
-                                    &layout->controls[layout->controlsCount].rec.height,
+                                    &layout->controls[layout->controlCount].id,
+                                    &layout->controls[layout->controlCount].type,
+                                    layout->controls[layout->controlCount].name,
+                                    &layout->controls[layout->controlCount].rec.x,
+                                    &layout->controls[layout->controlCount].rec.y,
+                                    &layout->controls[layout->controlCount].rec.width,
+                                    &layout->controls[layout->controlCount].rec.height,
                                     &anchorId,
-                                    layout->controls[layout->controlsCount].text);
+                                    layout->controls[layout->controlCount].text);
 
-                    layout->controls[layout->controlsCount].ap = &layout->anchors[anchorId];
-                    layout->controlsCount++;
+                    layout->controls[layout->controlCount].ap = &layout->anchors[anchorId];
+                    layout->controlCount++;
                 } break;
                 default: break;
             }
@@ -3064,8 +3064,8 @@ static void ResetLayout(GuiLayout *layout)
     }
 
     layout->refWindow = (Rectangle){ 0, 0, -1, -1 };
-    layout->anchorsCount = 0;
-    layout->controlsCount = 0;
+    layout->anchorCount = 0;
+    layout->controlCount = 0;
 }
 
 // Save gui layout information
@@ -3112,7 +3112,7 @@ static void SaveLayout(GuiLayout *layout, const char *fileName, bool binary)
         {
             // Write some description comments
             fprintf(rglFile, "#\n# rgl layout text file (v%s) - raygui layout file generated using rGuiLayout\n#\n", RGL_FILE_VERSION_TEXT);
-            fprintf(rglFile, "# Number of controls:     %i\n#\n", layout->controlsCount);
+            fprintf(rglFile, "# Number of controls:     %i\n#\n", layout->controlCount);
             fprintf(rglFile, "# Ref. window:    r <x> <y> <width> <height>\n");
             fprintf(rglFile, "# Anchor info:    a <id> <name> <posx> <posy> <enabled>\n");
             fprintf(rglFile, "# Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>\n#\n");
@@ -3131,7 +3131,7 @@ static void SaveLayout(GuiLayout *layout, const char *fileName, bool binary)
                                  layout->anchors[i].enabled);
             }
 
-            for (int i = 0; i < layout->controlsCount; i++)
+            for (int i = 0; i < layout->controlCount; i++)
             {
                 fprintf(rglFile, "c %03i %i %s %i %i %i %i %i %s\n",
                                  layout->controls[i].id,
