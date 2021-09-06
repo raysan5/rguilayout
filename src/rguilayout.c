@@ -5,11 +5,17 @@
 *   CONFIGURATION:
 *
 *   #define VERSION_ONE
-*       Enable PRO features for the tool. Usually command-line and export options related.
+*       Enable PRO features for the tool:
+*       - Support command line usage
 *
 *   #define CUSTOM_MODAL_DIALOGS
 *       Use custom raygui generated modal dialogs instead of native OS ones
 *       NOTE: Avoids including tinyfiledialogs depencency library
+*
+*   VERSIONS HISTORY:
+*       2.5  (xx-Nov-2021) Updated to raylib 4.0 and raygui 3.0
+*       2.0  (15-Sep-2019) Rewriten from scratch
+*       1.0  (14-May-2018) First release
 *
 *   DEPENDENCIES:
 *       raylib 4.0              - Windowing/input management and drawing.
@@ -29,6 +35,7 @@
 *       Sergio Martinez (@anidealgift): Developer and designer (v2.0 - Jan.2019)
 *       Adria Arranz (@Adri102):        Developer and designer (v1.0 - Jun.2018)
 *       Jordi Jorba (@KoroBli):         Developer and designer (v1.0 - Jun.2018)
+*
 *
 *   LICENSE: Propietary License
 *
@@ -494,15 +501,13 @@ int main(int argc, char *argv[])
                     UnloadLayout(tempLayout);
                 }
             }
-#if defined(VERSION_ONE)
-            else if (IsFileExtension(droppedFileName, ".rgs")) GuiLoadStyle(droppedFileName);
-#endif
             else if (IsFileExtension(droppedFileName, ".png")) // Tracemap image
             {
                 if (tracemap.id > 0) UnloadTexture(tracemap);
                 tracemap = LoadTexture(droppedFileName);
                 tracemapRec = (Rectangle){30, 30, tracemap.width, tracemap.height};
             }
+            else if (IsFileExtension(droppedFileName, ".rgs")) GuiLoadStyle(droppedFileName);
 
             ClearDroppedFiles();
         }
