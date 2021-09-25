@@ -9,9 +9,10 @@
 *   On game init call:  GuiWindowAboutState state = InitGuiWindowAbout();
 *   On game draw call:  GuiWindowAbout(&state);
 *
+*
 *   LICENSE: Propietary License
 *
-*   Copyright (c) 2021 raylib technologies (@raylibtech). All Rights Reserved.
+*   Copyright (c) 2019-2021 raylib technologies (@raylibtech). All Rights Reserved.
 *
 *   Unauthorized copying of this file, via any medium is strictly prohibited
 *   This project is proprietary and confidential unless the owner allows
@@ -20,6 +21,8 @@
 **********************************************************************************************/
 
 #include "raylib.h"
+
+// WARNING: raygui implementation is expected to be defined before including this header
 
 #ifndef GUI_WINDOW_ABOUT_H
 #define GUI_WINDOW_ABOUT_H
