@@ -85,8 +85,8 @@ typedef struct {
 
 // Gui layout type
 typedef struct {
-    int controlsCount;
-    int anchorsCount;
+    int controlCount;
+    int anchorCount;
     GuiLayoutControl controls[MAX_GUI_CONTROLS];
     GuiAnchorPoint anchors[MAX_ANCHOR_POINTS];
     Rectangle refWindow;

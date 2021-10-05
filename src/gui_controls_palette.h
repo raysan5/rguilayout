@@ -129,9 +129,9 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
     state.toggleActive = false;
     state.checkBoxChecked = false;
     state.textBoxEditMode = false;
-    strcpy(state.textBoxText, "TextBox");
+    strcpy((char *)state.textBoxText, "TextBox");
     state.multitextBoxEditMode = false;
-    strcpy(state.multitextBoxText, "MultiTextBox");
+    strcpy((char *)state.multitextBoxText, "MultiTextBox");
     state.valueBoxEditMode = false;
     state.valueBoxValue = 0;
     state.spinnerEditMode = false;
