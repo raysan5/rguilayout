@@ -207,7 +207,7 @@ static void WriteFunctionsDeclarationC(unsigned char *toolstr, int *pos, GuiLayo
         for (int i = 0; i < layout.controlCount; i++)
         {
             int type = layout.controls[i].type;
-            if (type == GUI_BUTTON || type == GUI_LABELBUTTON || type == GUI_IMAGEBUTTONEX)
+            if (type == GUI_BUTTON || type == GUI_LABELBUTTON)
             {
                 buttonsCount++;
                 TextAppend(toolstr, TextFormat("static void %s();", TextToPascal(layout.controls[i].name)), pos);
@@ -277,7 +277,7 @@ static void WriteFunctionsDefinitionC(unsigned char *toolstr, int *pos, GuiLayou
         for (int i = 0; i < layout.controlCount; i++)
         {
             int type = layout.controls[i].type;
-            if (type == GUI_BUTTON || type == GUI_LABELBUTTON || type == GUI_IMAGEBUTTONEX)
+            if (type == GUI_BUTTON || type == GUI_LABELBUTTON)
             {
                 if (config.fullComments)
                 {
@@ -535,7 +535,6 @@ static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout layout, G
             case GUI_LABEL:
             case GUI_BUTTON:
             case GUI_LABELBUTTON:
-            case GUI_IMAGEBUTTONEX:
             case GUI_CHECKBOX:
             case GUI_TOGGLE:
             case GUI_SLIDER:
@@ -592,7 +591,6 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
             } break;
             case GUI_BUTTON:
             case GUI_LABELBUTTON:
-            case GUI_IMAGEBUTTONEX:
             {
                 if(!config.exportButtonFunctions)
                 {
@@ -895,7 +893,7 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout lay
 
     *pos -= (tabs)*4 + 1; // Delete last tabs and \n
 
-	free(draw);
+    free(draw);
 }
 
 // Write control drawing code (individual controls) (.c/.h)
@@ -921,10 +919,6 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLay
             if(!config.exportButtonFunctions) TextAppend(toolstr, TextFormat("%sPressed = GuiLabelButton(%s, %s);", name, rec, text), pos);
             else TextAppend(toolstr, TextFormat("if (GuiLabelButton(%s, %s)) %s(); ", rec, text, TextToPascal(control.name)), pos); 
             break;
-        case GUI_IMAGEBUTTONEX: 
-            if(!config.exportButtonFunctions) TextAppend(toolstr, TextFormat("%sPressed = GuiImageButtonEx(%s, GetTextureDefault(), (Rectangle){ 0, 0, 1, 1 }, %s);", name, rec, text), pos);
-            else TextAppend(toolstr, TextFormat("if (GuiImageButtonEx(%s, GetTextureDefault(), (Rectangle){ 0, 0, 1, 1 }, %s)) %s();", rec, text, TextToPascal(control.name)), pos);
-            break; 
         case GUI_CHECKBOX: TextAppend(toolstr, TextFormat("%sChecked = GuiCheckBox(%s, %s, %sChecked);", name, rec, text, name), pos); break;
         case GUI_TOGGLE: TextAppend(toolstr, TextFormat("%sActive = GuiToggle(%s, %s, %sActive);", name, rec, text, name), pos); break;
         case GUI_TOGGLEGROUP:TextAppend(toolstr, TextFormat("%sActive = GuiToggleGroup(%s, %s, %sActive);", name, rec, text, name), pos); break;
@@ -999,7 +993,7 @@ static char *GetScrollPanelContainerRecText(int index, GuiLayoutControl control,
         }
     }
 
-	return text;
+    return text;
 }
 
 // Get controls parameters text

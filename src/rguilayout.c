@@ -50,15 +50,19 @@
 #include "raylib.h"
 #include "rguilayout.h"
 
+#define TOOL_NAME               "rGuiLayout"
+#define TOOL_SHORT_NAME         "rGL"
+#define TOOL_VERSION            "2.5"
+#define TOOL_DESCRIPTION        "A simple and easy-to-use raygui layouts editor"
+#define TOOL_RELEASE_DATE       "Dec.2021"
+#define TOOL_LOGO_COLOR         0x7da9b9ff
+
 #if defined(PLATFORM_WEB)
     #define CUSTOM_MODAL_DIALOGS            // Force custom modal dialogs usage
     #include <emscripten/emscripten.h>      // Emscripten library - LLVM to JavaScript compiler
 #endif
 
-#define GRID_COLOR_ALPHA    0.2f            // Grid lines alpha amount
-
 #define RAYGUI_IMPLEMENTATION
-#define RAYGUI_SUPPORT_RICONS
 #include "raygui.h"                         // Required for: IMGUI controls
 
 #undef RAYGUI_IMPLEMENTATION                // Avoid including raygui implementation again
@@ -197,7 +201,7 @@ int main(int argc, char *argv[])
 #endif
     SetTraceLogLevel(LOG_NONE);             // Disable trace log messsages
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // Window configuration flags
-    InitWindow(screenWidth, screenHeight, TextFormat("%s v%s - %s", toolName, toolVersion, toolDescription));
+    InitWindow(screenWidth, screenHeight, TextFormat("%s v%s | %s", toolName, toolVersion, toolDescription));
     SetWindowMinSize(540, 540);
     SetExitKey(0);
 
@@ -335,7 +339,7 @@ int main(int argc, char *argv[])
 
     // Rectangles used on controls preview drawing
     // NOTE: [x, y] position is set on mouse movement and cosidering snap mode
-    Rectangle defaultRec[26] = {
+    Rectangle defaultRec[24] = {
         (Rectangle){ 0, 0, 125, 50},            // GUI_WINDOWBOX
         (Rectangle){ 0, 0, 125, 30},            // GUI_GROUPBOX
         (Rectangle){ 0, 0, 125, 25 },           // GUI_LINE
@@ -343,7 +347,6 @@ int main(int argc, char *argv[])
         (Rectangle){ 0, 0, 126, 25 },           // GUI_LABEL
         (Rectangle){ 0, 0, 125, 30 },           // GUI_BUTTON
         (Rectangle){ 0, 0, 125, 30 },           // GUI_LABELBUTTON
-        (Rectangle){ 0, 0, 32, 32 },            // GUI_IMAGEBUTTONEX
         (Rectangle){ 0, 0, 15, 15},             // GUI_CHECKBOX
         (Rectangle){ 0, 0, 90, 25 },            // GUI_TOGGLE
         (Rectangle){ 0, 0, 125/3, 25 },         // GUI_TOGGLEGROUP
@@ -361,7 +364,6 @@ int main(int argc, char *argv[])
         (Rectangle){ 0, 0, 125, 75 },           // GUI_LISTVIEW
         (Rectangle){ 0, 0, 95, 95 },            // GUI_COLORPICKER
         (Rectangle){ 0, 0, 125, 30 },           // GUI_DUMMYREC
-        (Rectangle){ 0, 0, 0, 0 },              // ???
     };
 
     // Generate code configuration
@@ -395,7 +397,6 @@ int main(int argc, char *argv[])
     {
         // Basic program flow logic
         mouse = GetMousePosition();
-        if (WindowShouldClose()) exitWindow = true;
 
         // Undo layout change logic
         //----------------------------------------------------------------------------------
@@ -538,7 +539,7 @@ int main(int argc, char *argv[])
         if (IsKeyPressed(KEY_F2)) windowAboutState.windowActive = true;
 
         // Show save layout message window on ESC
-        if (IsKeyPressed(KEY_ESCAPE))
+        if (IsKeyPressed(KEY_ESCAPE) || WindowShouldClose())
         {
             if (textEditMode)       // Cancel text edit mode
             {
@@ -706,7 +707,7 @@ int main(int argc, char *argv[])
 
             // Palette selected control logic
             //----------------------------------------------------------------------------------------------
-            if (!CheckCollisionPointRec(mouse, paletteState.layoutRecs[0]))
+            if (!CheckCollisionPointRec(mouse, paletteState.scrollPanelBounds))
             {
                 if (focusedControl == -1) paletteState.selectedControl -= GetMouseWheelMove();
 
@@ -736,7 +737,7 @@ int main(int argc, char *argv[])
                 else defaultRec[selectedType].y -= offsetY;
             }
 
-            if (!CheckCollisionPointRec(mouse, paletteState.layoutRecs[0]))
+            if (!CheckCollisionPointRec(mouse, paletteState.scrollPanelBounds))
             {
                 if (!dragMoveMode)
                 {
@@ -810,11 +811,6 @@ int main(int argc, char *argv[])
                                     || (layout->controls[layout->controlCount].type == GUI_LISTVIEW))
                                 {
                                     strcpy(layout->controls[layout->controlCount].text, "ONE;TWO;THREE");
-                                }
-
-                                if ((layout->controls[layout->controlCount].type == GUI_IMAGEBUTTONEX))
-                                {
-                                    strcpy(layout->controls[layout->controlCount].text, "IM");
                                 }
 
                                 strcpy(layout->controls[layout->controlCount].name,
@@ -1972,7 +1968,6 @@ int main(int argc, char *argv[])
                         case GUI_LABEL: GuiLabel(rec, layout->controls[i].text); break;
                         case GUI_BUTTON: GuiButton(rec, layout->controls[i].text); break;
                         case GUI_LABELBUTTON: GuiLabelButton(rec, layout->controls[i].text); break;
-                        case GUI_IMAGEBUTTONEX: GuiImageButtonEx(rec, layout->controls[i].text, GetFontDefault().texture, (Rectangle){ 0, 0, 1, 1 }); break;
                         case GUI_CHECKBOX: GuiCheckBox(rec, layout->controls[i].text, false); break;
                         case GUI_TOGGLE: GuiToggle(rec, layout->controls[i].text, false); break;
                         case GUI_TOGGLEGROUP: GuiToggleGroup(rec, layout->controls[i].text, 1); break;
@@ -2057,7 +2052,7 @@ int main(int argc, char *argv[])
                 !windowCodegenState.windowCodegenActive &&
                 !resetWindowActive && !windowExitActive)
             {
-                if (!(CheckCollisionPointRec(mouse, paletteState.layoutRecs[0])))
+                if (!(CheckCollisionPointRec(mouse, paletteState.scrollPanelBounds)))
                 {
                     if ((focusedAnchor == -1) && (focusedControl == -1) && !tracemapFocused && !refWindowEditMode)
                     {
@@ -2078,7 +2073,6 @@ int main(int argc, char *argv[])
                                     case GUI_LABEL: GuiLabel(defaultRec[selectedType], "LABEL TEXT"); break;
                                     case GUI_BUTTON: GuiButton(defaultRec[selectedType], "BUTTON"); break;
                                     case GUI_LABELBUTTON: GuiLabelButton(defaultRec[selectedType], "LABEL_BUTTON"); break;
-                                    case GUI_IMAGEBUTTONEX: GuiImageButtonEx(defaultRec[selectedType], "IM", GetFontDefault().texture, (Rectangle){ 0, 0, 1, 1 }); break;
                                     case GUI_CHECKBOX: GuiCheckBox(defaultRec[selectedType], "CHECK BOX", false); break;
                                     case GUI_TOGGLE: GuiToggle(defaultRec[selectedType], "TOGGLE", false); break;
                                     case GUI_TOGGLEGROUP: GuiToggleGroup(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
