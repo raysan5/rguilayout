@@ -30,34 +30,34 @@
 
 #define CONTROLS_PALETTE_COUNT  24
 
-typedef struct {
+typedef struct GuiControlsPaletteState {
     Vector2 controlsAnchor;
     Vector2 containerScrollOffset;
 
-    bool windowBoxActive;
-    bool buttonPressed;
-    bool labelBtnPressed;
-    bool toggleActive;
-    bool checkBoxChecked;
-    bool textBoxEditMode;
+    bool windowBoxActive;                   // GuiWindowBox()
+    bool buttonPressed;                     // GuiButton()
+    bool labelBtnPressed;                   // GuiLabelButton()
+    bool toggleActive;                      // GuiToggle()
+    int toggleGroupActive;                  // GuiToggleGroup()
+    bool checkBoxChecked;                   // GuiCheckBox()
+    bool textBoxEditMode;                   // GuiTextBox()
     unsigned char textBoxText[64];
-    bool multitextBoxEditMode;
+    bool multitextBoxEditMode;              // GuiTextBoxMulti()
     unsigned char multitextBoxText[64];
-    bool valueBoxEditMode;
+    bool valueBoxEditMode;                  // GuiValueBox()
     int valueBoxValue;
-    bool spinnerEditMode;
+    bool spinnerEditMode;                   // GuiSpinner()
     int spinnerValue;
-    float sliderExValue;
-    float sliderBarExValue;
-    float progressBarExValue;
-    Vector2 scrollPanelScrollOffset;
+    float sliderValue;                      // GuiSlider()
+    float sliderBarValue;                   // GuiSliderbar()
+    float progressBarValue;                 // GuiProgressBar()
+    Vector2 scrollPanelScrollOffset;        // GuiScrollPanel()
     Vector2 scrollPanelBoundsOffset;
-    int listViewScrollIndex;
+    int listViewScrollIndex;                // GuiListView()
     int listViewActive;
-    Color colorPickerValue;
-    int toggleGroupActive;
-    int comboBoxActive;
-    bool dropdownBoxEditMode;
+    Color colorPickerValue;                 // GuiColorPicker()
+    int comboBoxActive;                     // GuiComboBox()
+    bool dropdownBoxEditMode;               // GuiDropdownBox()
     int dropdownBoxActive;
 
     Rectangle scrollPanelBounds;
@@ -136,9 +136,9 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
     state.valueBoxValue = 0;
     state.spinnerEditMode = false;
     state.spinnerValue = 0;
-    state.sliderExValue = 50.0f;
-    state.sliderBarExValue = 40.0f;
-    state.progressBarExValue = 60.0f;
+    state.sliderValue = 50.0f;
+    state.sliderBarValue = 40.0f;
+    state.progressBarValue = 60.0f;
     state.scrollPanelScrollOffset = (Vector2){ 0, 0 };
     state.scrollPanelBoundsOffset = (Vector2){ 0, 0 };
     state.listViewScrollIndex = 0;
@@ -151,34 +151,8 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
 
     state.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 160, 0, 160, GetScreenHeight() };
 
-    // Update controls palette recs
-    state.controlRecs[GUI_WINDOWBOX] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 5, 125, 50 };
-    state.controlRecs[GUI_GROUPBOX] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 70, 125, 30 };
-    state.controlRecs[GUI_LINE] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 105, 125, 25 };
-    state.controlRecs[GUI_PANEL] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 135, 125, 35 };
-    state.controlRecs[GUI_LABEL] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 175, 126, 25 };
-    state.controlRecs[GUI_BUTTON] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 205, 125, 30 };
-    state.controlRecs[GUI_LABELBUTTON] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 240, 90, 30 };
-    state.controlRecs[GUI_CHECKBOX] = (Rectangle){ state.controlsAnchor.x + 30, state.controlsAnchor.y + 280, 15, 15 };
-    state.controlRecs[GUI_TOGGLE] = (Rectangle){ state.controlsAnchor.x + 55, state.controlsAnchor.y + 275, 90, 25 };
-    state.controlRecs[GUI_TOGGLEGROUP] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 305, 40, 25 };
-    state.controlRecs[GUI_COMBOBOX] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 335, 125, 25 };
-    state.controlRecs[GUI_DROPDOWNBOX] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 365, 125, 25 };
-    state.controlRecs[GUI_TEXTBOX] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 395, 125, 25 };
-    state.controlRecs[GUI_TEXTBOXMULTI] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 425, 125, 75 };
-    state.controlRecs[GUI_VALUEBOX] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 505, 125, 25 };
-    state.controlRecs[GUI_SPINNER] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 535, 125, 25 };
-    state.controlRecs[GUI_SLIDER] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 565, 125, 15 };
-    state.controlRecs[GUI_SLIDERBAR] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 585, 125, 15 };
-    state.controlRecs[GUI_PROGRESSBAR] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 605, 125, 15 };
-    state.controlRecs[GUI_STATUSBAR] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 625, 125, 25 };
-    state.controlRecs[GUI_SCROLLPANEL] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 655, 125, 75 };
-    state.controlRecs[GUI_LISTVIEW] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 735, 125, 75 };
-    state.controlRecs[GUI_COLORPICKER] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 815, 95, 95 };
-    state.controlRecs[GUI_DUMMYREC] = (Rectangle){ state.controlsAnchor.x + 20, state.controlsAnchor.y + 915, 125, 30 };
-
     // Custom variables initialization
-    state.selectedControl = 0;
+    state.selectedControl = GUI_WINDOWBOX;
 
     return state;
 }
@@ -187,11 +161,11 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
 {
     // Palette panel logic
     //----------------------------------------------------------------------------------------------
-    for (int i = 1; i < CONTROLS_PALETTE_COUNT; i++)
+    for (int i = 0; i < CONTROLS_PALETTE_COUNT; i++)
     {
         if (CheckCollisionPointRec(GetMousePosition(), state->controlRecs[i]))
         {
-            state->selectedControl = i - 1;
+            state->selectedControl = i;
             break;
         }
     }
@@ -201,61 +175,56 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
     UpdateControlsPaletteRecs(state);
     //----------------------------------------------------------------------------------------------
 
-    GuiScrollPanel(state->controlRecs[0], (Rectangle){ state->controlRecs[0].x, state->controlRecs[0].y, state->controlRecs[0].width - 10, 965 }, &state->containerScrollOffset);
+    GuiScrollPanel(state->scrollPanelBounds, (Rectangle){ state->scrollPanelBounds.x, state->scrollPanelBounds.y, state->scrollPanelBounds.width - 10, 965 }, &state->containerScrollOffset);
 
-    // NOTE: Not required because panel already fills full screen height
-    //BeginScissorMode(view.x, view.y, view.width, view.height);
+    GuiLock();
 
-        GuiLock();
+    state->windowBoxActive = !GuiWindowBox(state->controlRecs[GUI_WINDOWBOX], "WindowBox");
+    GuiGroupBox(state->controlRecs[GUI_GROUPBOX], "GroupBox");
+    GuiLine(state->controlRecs[GUI_LINE], NULL);
+    GuiPanel(state->controlRecs[GUI_PANEL]);
+    GuiLabel(state->controlRecs[GUI_LABEL], "Label");
+    state->buttonPressed = GuiButton(state->controlRecs[GUI_BUTTON], "Button");
+    state->labelBtnPressed = GuiLabelButton(state->controlRecs[GUI_LABELBUTTON], "LabelButton");
+    state->checkBoxChecked = GuiCheckBox(state->controlRecs[GUI_CHECKBOX], "", state->checkBoxChecked);
+    state->toggleActive = GuiToggle(state->controlRecs[GUI_TOGGLE], "Toggle", state->toggleActive);
+    state->toggleGroupActive = GuiToggleGroup((Rectangle) { state->controlRecs[GUI_TOGGLEGROUP].x, state->controlRecs[GUI_TOGGLEGROUP].y, 40, state->controlRecs[GUI_TOGGLEGROUP].height }, "ONE;TWO;THREE", state->toggleGroupActive);
+    state->comboBoxActive = GuiComboBox(state->controlRecs[GUI_COMBOBOX], "ONE;TWO;THREE", state->comboBoxActive);
+    if (GuiTextBox(state->controlRecs[GUI_TEXTBOX], state->textBoxText, 64, state->textBoxEditMode)) state->textBoxEditMode = !state->textBoxEditMode;
+    if (GuiTextBoxMulti(state->controlRecs[GUI_TEXTBOXMULTI], state->multitextBoxText, 64, state->multitextBoxEditMode)) state->multitextBoxEditMode = !state->multitextBoxEditMode;
+    if (GuiValueBox(state->controlRecs[GUI_VALUEBOX], NULL, &state->valueBoxValue, 0, 100, state->valueBoxEditMode)) state->valueBoxEditMode = !state->valueBoxEditMode;
+    if (GuiSpinner(state->controlRecs[GUI_SPINNER], NULL, &state->spinnerValue, 0, 100, state->spinnerEditMode)) state->spinnerEditMode = !state->spinnerEditMode;
+    state->sliderValue = GuiSlider(state->controlRecs[GUI_SLIDER], NULL, NULL, state->sliderValue, 0, 100);
+    state->sliderBarValue = GuiSliderBar(state->controlRecs[GUI_SLIDERBAR], NULL, NULL, state->sliderBarValue, 0, 100);
+    state->progressBarValue = GuiProgressBar(state->controlRecs[GUI_PROGRESSBAR], NULL, NULL, state->progressBarValue, 0, 100);
+    GuiStatusBar(state->controlRecs[GUI_STATUSBAR], "StatusBar");
+    GuiScrollPanel((Rectangle){state->controlRecs[GUI_SCROLLPANEL].x, state->controlRecs[GUI_SCROLLPANEL].y, state->controlRecs[GUI_SCROLLPANEL].width - state->scrollPanelBoundsOffset.x, state->controlRecs[GUI_SCROLLPANEL].height - state->scrollPanelBoundsOffset.y }, state->controlRecs[GUI_SCROLLPANEL], &state->scrollPanelScrollOffset);
+    state->listViewActive = GuiListView(state->controlRecs[GUI_LISTVIEW], "ONE;TWO", &state->listViewScrollIndex, state->listViewActive );
+    state->colorPickerValue = GuiColorPicker(state->controlRecs[GUI_COLORPICKER], state->colorPickerValue);
+    GuiDummyRec(state->controlRecs[GUI_DUMMYREC], "DummyRec");
+    if (GuiDropdownBox(state->controlRecs[GUI_DROPDOWNBOX], "ONE;TWO;THREE", &state->dropdownBoxActive, state->dropdownBoxEditMode)) state->dropdownBoxEditMode = !state->dropdownBoxEditMode;
 
-        state->windowBoxActive = !GuiWindowBox(state->controlRecs[1], "WindowBox");
-        GuiGroupBox(state->controlRecs[2], "GroupBox");
-        GuiLine(state->controlRecs[3], NULL);
-        GuiPanel(state->controlRecs[4]);
-        GuiLabel(state->controlRecs[5], "Label");
-        state->buttonPressed = GuiButton(state->controlRecs[6], "Button");
-        state->labelBtnPressed = GuiLabelButton(state->controlRecs[7], "LabelButton");
-        state->checkBoxChecked = GuiCheckBox(state->controlRecs[9], "", state->checkBoxChecked);
-        state->toggleActive = GuiToggle(state->controlRecs[10], "Toggle", state->toggleActive);
-        state->toggleGroupActive = GuiToggleGroup(state->controlRecs[11], "ONE;TWO;THREE", state->toggleGroupActive);
-        state->comboBoxActive = GuiComboBox(state->controlRecs[12], "ONE;TWO;THREE", state->comboBoxActive);
-        if (GuiTextBox(state->controlRecs[14], state->textBoxText, 64, state->textBoxEditMode)) state->textBoxEditMode = !state->textBoxEditMode;
-        if (GuiTextBoxMulti(state->controlRecs[15], state->multitextBoxText, 64, state->multitextBoxEditMode)) state->multitextBoxEditMode = !state->multitextBoxEditMode;
-        if (GuiValueBox(state->controlRecs[16], NULL, &state->valueBoxValue, 0, 100, state->valueBoxEditMode)) state->valueBoxEditMode = !state->valueBoxEditMode;
-        if (GuiSpinner(state->controlRecs[17], NULL, &state->spinnerValue, 0, 100, state->spinnerEditMode)) state->spinnerEditMode = !state->spinnerEditMode;
-        state->sliderExValue = GuiSlider(state->controlRecs[18], NULL, NULL, state->sliderExValue, 0, 100);
-        state->sliderBarExValue = GuiSliderBar(state->controlRecs[19], NULL, NULL, state->sliderBarExValue, 0, 100);
-        state->progressBarExValue = GuiProgressBar(state->controlRecs[20], NULL, NULL, state->progressBarExValue, 0, 100);
-        GuiStatusBar(state->controlRecs[21], "StatusBar");
-        GuiScrollPanel((Rectangle){state->controlRecs[22].x, state->controlRecs[22].y, state->controlRecs[22].width - state->scrollPanelBoundsOffset.x, state->controlRecs[22].height - state->scrollPanelBoundsOffset.y }, state->controlRecs[22], &state->scrollPanelScrollOffset);
-        state->listViewActive = GuiListView(state->controlRecs[23], "ONE;TWO", &state->listViewScrollIndex, state->listViewActive );
-        state->colorPickerValue = GuiColorPicker(state->controlRecs[24], state->colorPickerValue);
-        GuiDummyRec(state->controlRecs[25], "DummyRec");
-        if (GuiDropdownBox(state->controlRecs[13], "ONE;TWO;THREE", &state->dropdownBoxActive, state->dropdownBoxEditMode)) state->dropdownBoxEditMode = !state->dropdownBoxEditMode;
-
-        GuiUnlock();
-
-    //EndScissorMode();
+    GuiUnlock();
 
     // Draw selected control rectangle
-    DrawRectangleRec(state->controlRecs[state->selectedControl + 1], Fade(RED, 0.2f));
-    DrawRectangleLinesEx(state->controlRecs[state->selectedControl + 1], 1, MAROON);
+    DrawRectangleRec(state->controlRecs[state->selectedControl], Fade(RED, 0.2f));
+    DrawRectangleLinesEx(state->controlRecs[state->selectedControl], 1, MAROON);
 }
 
 void UpdateControlsPaletteRecs(GuiControlsPaletteState *state)
 {
     state->scrollPanelBounds = (Rectangle){ GetScreenWidth() - 160, 0, 160, GetScreenHeight() };
 
-    state->controlRecs[GUI_WINDOWBOX] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 5, 125, 50 };
-    state->controlRecs[GUI_GROUPBOX] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 70, 125, 30 };
+    state->controlRecs[GUI_WINDOWBOX] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 15, 125, 50 };
+    state->controlRecs[GUI_GROUPBOX] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 75, 125, 30 };
     state->controlRecs[GUI_LINE] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 105, 125, 25 };
     state->controlRecs[GUI_PANEL] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 135, 125, 35 };
     state->controlRecs[GUI_LABEL] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 175, 126, 25 };
     state->controlRecs[GUI_BUTTON] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 205, 125, 30 };
-    state->controlRecs[GUI_LABELBUTTON] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 240, 90, 30 };
+    state->controlRecs[GUI_LABELBUTTON] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 240, 125, 30 };
     state->controlRecs[GUI_CHECKBOX] = (Rectangle){ state->controlsAnchor.x + 30, state->controlsAnchor.y + 280, 15, 15 };
     state->controlRecs[GUI_TOGGLE] = (Rectangle){ state->controlsAnchor.x + 55, state->controlsAnchor.y + 275, 90, 25 };
-    state->controlRecs[GUI_TOGGLEGROUP] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 305, 40, 25 };
+    state->controlRecs[GUI_TOGGLEGROUP] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 305, 125, 25 };
     state->controlRecs[GUI_COMBOBOX] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 335, 125, 25 };
     state->controlRecs[GUI_DROPDOWNBOX] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 365, 125, 25 };
     state->controlRecs[GUI_TEXTBOX] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 395, 125, 25 };

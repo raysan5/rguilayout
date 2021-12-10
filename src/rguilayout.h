@@ -134,9 +134,7 @@ const char *controlTypeName[] = {
     "ScrollPanel",
     "ListView",
     "ColorPicker",
-    "MessageBox",
-    "DummyRec",
-    "Grid"
+    "DummyRec"
 };
 
 #endif // RGUILAYOUT_H

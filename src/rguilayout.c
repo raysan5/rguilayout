@@ -777,7 +777,7 @@ int main(int argc, char *argv[])
                 // On focused control
                 if (focusedControl == -1)
                 {
-                    if (focusedAnchor == -1 && selectedAnchor == -1 && selectedControl == -1 && !tracemapFocused && !tracemapSelected)
+                    if ((focusedAnchor == -1) && (selectedAnchor == -1) && (selectedControl == -1) && !tracemapFocused && !tracemapSelected)
                     {
                         // Create new control
                         if (!anchorEditMode && !anchorLinkMode)
@@ -921,7 +921,7 @@ int main(int argc, char *argv[])
                 if (!mouseScaleReady && (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)))
                 {
                     selectedControl = focusedControl;
-                    if (focusedAnchor != -1 || anchorLinkMode || anchorEditMode) selectedControl = -1;
+                    if ((focusedAnchor != -1) || anchorLinkMode || anchorEditMode) selectedControl = -1;
                 }
 
                 // On selected control
