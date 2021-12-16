@@ -1,12 +1,12 @@
 /**********************************************************************************************
 *
-*   rGuiLayout v2.1 - code generator functions
+*   rGuiLayout v2.5 - code generator functions
 *
-*   NOTE: Code generated requires raygui 2.6
+*   NOTE: Code generated requires raygui 3.0+
 *
 *   LICENSE: Propietary License
 *
-*   Copyright (c) 2018-2019 raylib technologies (@raylibtech). All Rights Reserved.
+*   Copyright (c) 2018-2022 raylib technologies (@raylibtech). All Rights Reserved.
 *
 *   Unauthorized copying of this file, via any medium is strictly prohibited
 *   This project is proprietary and confidential unless the owner allows

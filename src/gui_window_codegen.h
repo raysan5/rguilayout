@@ -1,6 +1,6 @@
 /*******************************************************************************************
 *
-*   WindowCodegen v1.0.0 - Layout Code Generator
+*   WindowCodegen v1.1 - Layout Code Generator
 *
 *   MODULE USAGE:
 *       #define GUI_WINDOW_CODEGEN_IMPLEMENTATION
@@ -11,7 +11,7 @@
 *
 *   LICENSE: Propietary License
 *
-*   Copyright (c) 2018 raylib technologies (@raylibtech). All Rights Reserved.
+*   Copyright (c) 2018-2022 raylib technologies (@raylibtech). All Rights Reserved.
 *
 *   Unauthorized copying of this file, via any medium is strictly prohibited
 *   This project is proprietary and confidential unless the owner allows
@@ -147,12 +147,8 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.8f));
 
         state->codegenAnchor = (Vector2){ GetScreenWidth()/2 - 450, GetScreenHeight()/2 - 320 };
+        state->windowCodegenActive = !GuiWindowBox((Rectangle){ state->codegenAnchor.x + 0, state->codegenAnchor.y + 0, 900, 640 }, "#7#Code Generation Window");
 
-#if defined(VERSION_ONE)
-        state->windowCodegenActive = !GuiWindowBox((Rectangle){ state->codegenAnchor.x + 0, state->codegenAnchor.y + 0, 900, 640 }, "#7#Code Generation Window ONE");
-#else
-        state->windowCodegenActive = !GuiWindowBox((Rectangle){ state->codegenAnchor.x + 0, state->codegenAnchor.y + 0, 900, 640 }, "#7#Code Generation Window ZERO - 12 CONTROLS LIMIT");
-#endif
         GuiGroupBox((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 35, 220, 235 }, "Layout Info");
         GuiLabel((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 45, 50, 25 }, "Name:");
         if (GuiTextBox((Rectangle){ state->codegenAnchor.x + 725, state->codegenAnchor.y + 45, 150, 25 }, state->toolNameText, 64, state->toolNameEditMode)) state->toolNameEditMode = !state->toolNameEditMode;
