@@ -13,14 +13,14 @@
 *       NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   VERSIONS HISTORY:
-*       2.5  (xx-Nov-2021) Updated to raylib 4.0 and raygui 3.0
+*       2.5  (xx-Nov-2021) Updated to raylib 4.0 and raygui 3.1
 *       2.0  (15-Sep-2019) Rewriten from scratch
 *       1.0  (14-May-2018) First release
 *
 *   DEPENDENCIES:
-*       raylib 4.0              - Windowing/input management and drawing.
-*       raygui 3.0              - Immediate-mode GUI controls.
-*       tinyfiledialogs 3.8.8   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs.
+*       raylib 4.0              - Windowing/input management and drawing
+*       raygui 3.1              - Immediate-mode GUI controls with custom styling and icons
+*       tinyfiledialogs 3.8.8   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
 *
 *   COMPILATION (Windows - MinGW):
 *       gcc -o rguilayout.exe rguilayout.c external/tinyfiledialogs.c -s -Iexternal /
@@ -92,6 +92,19 @@
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
+#if (!defined(_DEBUG) && (defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)))
+bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib)
+#endif
+
+// Simple log system to avoid printf() calls if required
+// NOTE: Avoiding those calls, also avoids const strings memory usage
+#define SUPPORT_LOG_INFO
+#if defined(SUPPORT_LOG_INFO)
+  #define LOG(...) printf(__VA_ARGS__)
+#else
+  #define LOG(...)
+#endif
+
 #define ANCHOR_RADIUS               20      // Default anchor radius
 #define MIN_CONTROL_SIZE            10      // Minimum control size
 #define MOUSE_SCALE_MARK_SIZE       12      // Mouse scale mark size (bottom-right corner)
@@ -100,10 +113,6 @@
 #define PANELS_EASING_FRAMES        60      // Controls the easing time in frames
 
 #define MAX_UNDO_LEVELS             10      // Undo levels supported for the ring buffer
-
-#if (!defined(_DEBUG) && (defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)))
-bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib)
-#endif
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -129,9 +138,9 @@ typedef enum {
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-const char *toolName = "rGuiLayout";
-const char *toolVersion = "2.5";
-const char *toolDescription = "A simple and easy-to-use raygui layouts editor";
+static const char *toolName = TOOL_NAME;
+static const char *toolVersion = TOOL_VERSION;
+static const char *toolDescription = TOOL_DESCRIPTION;
 
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
 
@@ -199,7 +208,7 @@ int main(int argc, char *argv[])
     const int screenWidth = 1000;
     const int screenHeight = 800;
 #endif
-    SetTraceLogLevel(LOG_NONE);             // Disable trace log messsages
+    SetTraceLogLevel(LOG_NONE);             // Disable raylib trace log messsages
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // Window configuration flags
     InitWindow(screenWidth, screenHeight, TextFormat("%s v%s | %s", toolName, toolVersion, toolDescription));
     SetWindowMinSize(540, 540);
@@ -570,6 +579,7 @@ int main(int argc, char *argv[])
                 if (windowAboutState.windowActive) windowAboutState.windowActive = false;
                 else if (windowCodegenState.windowCodegenActive) windowCodegenState.windowCodegenActive = false;
                 else if (resetWindowActive) resetWindowActive = false;
+            #if !defined(PLATFORM_WEB)
                 else if ((layout->controlCount <= 0) && (layout->anchorCount <= 1)) exitWindow = true;  // Quit application
                 else
                 {
@@ -577,6 +587,7 @@ int main(int argc, char *argv[])
                     selectedControl = -1;
                     selectedAnchor = -1;
                 }
+            #endif
             }
         }
 
@@ -2773,9 +2784,8 @@ int main(int argc, char *argv[])
 }
 
 //----------------------------------------------------------------------------------
-// Module Functions Definitions (local)
+// Module functions definition
 //----------------------------------------------------------------------------------
-
 #if defined(VERSION_ONE)            // Command line
 // Show command line usage info
 static void ShowCommandLineInfo(void)
