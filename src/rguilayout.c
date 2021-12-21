@@ -101,7 +101,7 @@
 
 #define MAX_UNDO_LEVELS             10      // Undo levels supported for the ring buffer
 
-#if (!defined(DEBUG) && (defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)))
+#if (!defined(_DEBUG) && (defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)))
 bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib)
 #endif
 
@@ -154,7 +154,7 @@ static void SaveLayout(GuiLayout *layout, const char *fileName, bool binary);   
 //----------------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
-#if !defined(DEBUG)
+#if !defined(_DEBUG)
     SetTraceLogLevel(LOG_NONE);         // Disable raylib trace log messsages
 #endif
     char inFileName[512] = { 0 };       // Input file name (required in case of drag & drop over executable)
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
 #endif      // VERSION_ONE
     }
 
-#if (!defined(DEBUG) && defined(VERSION_ONE) && (defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)))
+#if (!defined(_DEBUG) && (defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)))
     // WARNING (Windows): If program is compiled as Window application (instead of console),
     // no console is available to show output info... solution is compiling a console application
     // and closing console (FreeConsole()) when changing to GUI interface
@@ -2783,7 +2783,7 @@ static void ShowCommandLineInfo(void)
     printf("\n//////////////////////////////////////////////////////////////////////////////////\n");
     printf("//                                                                              //\n");
     printf("// %s v%s - %s                 //\n", toolName, toolVersion, toolDescription);
-    printf("// powered by raylib v4.0 (www.raylib.com) and raygui v3.0                      //\n");
+    printf("// powered by raylib v%s and raygui v%s                                       //\n", RAYLIB_VERSION, RAYGUI_VERSION);
     printf("// more info and bugs-report: github.com/raylibtech/rtools                      //\n");
     printf("// feedback and support:      ray[at]raylibtech.com                             //\n");
     printf("//                                                                              //\n");
@@ -3007,7 +3007,7 @@ static GuiLayout *LoadLayout(const char *fileName)
 
         if (rglFile != NULL)
         {
-            char signature[5] = "";
+            char signature[5] = { 0 };
             short version = 0;
             short reserved = 0;
 
