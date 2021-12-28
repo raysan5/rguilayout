@@ -51,7 +51,6 @@ typedef struct {
     Vector2 position;
 
     bool windowActive;
-    bool chkLicenseChecked;
 
     // Custom state variables (depend on development software)
     // NOTE: This variables should be added manually if required
@@ -175,7 +174,6 @@ GuiWindowAboutState InitGuiWindowAbout(void)
     GuiWindowAboutState state = { 0 };
 
     state.windowActive = false;
-    state.chkLicenseChecked = true;
 
     // Custom variables initialization
     state.windowWidth = 340;
@@ -190,11 +188,8 @@ void GuiWindowAbout(GuiWindowAboutState *state)
 {
     if (state->windowActive)
     {
-        GuiEnable();
-
-        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.85f));
-        state->position = (Vector2){ (float)GetScreenWidth()/2 - (float)state->windowWidth/2, (float)GetScreenHeight()/2 - (float)state->windowHeight/2 };
-        
+        // WARNING: GetScreen*() returns the window render size, not the logical original size
+        //state->position = (Vector2){ (float)GetScreenWidth()/2 - (float)state->windowWidth/2, (float)GetScreenHeight()/2 - (float)state->windowHeight/2 };
         state->windowActive = !GuiWindowBox((Rectangle){ state->position.x, state->position.y, (float)state->windowWidth, (float)state->windowHeight }, TextFormat("#191#About %s", TOOL_NAME));
 
         // Draw a background rectangle for convenience
@@ -216,7 +211,7 @@ void GuiWindowAbout(GuiWindowAboutState *state)
         if (GuiLabelButton((Rectangle){ state->position.x + 155, state->position.y + 160, 150, 15 }, linkGitraylibText)) { OpenURL("https://github.com/raysan5/raylib"); }
         if (GuiLabelButton((Rectangle){ state->position.x + 155, state->position.y + 180, 150, 15 }, linkGitrayguiText)) { OpenURL("https://github.com/raysan5/raygui"); }
 
-        GuiLine((Rectangle){ state->position.x, state->position.y + 200, state->windowWidth, 20 }, NULL);
+        GuiLine((Rectangle){ state->position.x, state->position.y + 200, (float)state->windowWidth, 20 }, NULL);
 
         GuiLabel((Rectangle){ state->position.x + 10, state->position.y + 220, 289, 20 }, lblCopyrightText);
         GuiLabel((Rectangle){ state->position.x + 10, state->position.y + 250, 65, 15 }, lblMoreInfoText);
@@ -226,7 +221,7 @@ void GuiWindowAbout(GuiWindowAboutState *state)
         if (GuiLabelButton((Rectangle){ state->position.x + 90 + MeasureTextEx(GuiGetFont(), linkMailText, (float)GuiGetStyle(DEFAULT, TEXT_SIZE), (float)GuiGetStyle(DEFAULT, TEXT_SPACING)).x + 4, state->position.y + 270, 165, 15 }, linkraylibtechText)) { OpenURL("https://twitter.com/raylibtech"); }
 
         GuiLabel((Rectangle){ state->position.x + 10, state->position.y + 270, 65, 15 }, lblSupportText);
-        GuiLine((Rectangle){ state->position.x, state->position.y + 285, state->windowWidth, 20 }, NULL);
+        GuiLine((Rectangle){ state->position.x, state->position.y + 285, (float)state->windowWidth, 20 }, NULL);
         GuiSetStyle(LABEL, TEXT_ALIGNMENT, labelTextAlign);
 
         DrawRectangle((int)state->position.x + 1, (int)state->position.y + 285 + 11, state->windowWidth - 2, 43, Fade(GetColor(GuiGetStyle(DEFAULT, BASE_COLOR_NORMAL)), 0.5f));
@@ -238,8 +233,6 @@ void GuiWindowAbout(GuiWindowAboutState *state)
 
         if (GuiButton((Rectangle){ state->position.x + state->windowWidth - 80, state->position.y + 305, 70, 25 }, btnCloseText)) state->windowActive = false;
         GuiSetStyle(BUTTON, TEXT_ALIGNMENT, buttonTextAlign);
-        
-        GuiDisable();
     }
 }
 
