@@ -5,8 +5,7 @@
 *   CONFIGURATION:
 *
 *   #define VERSION_ONE
-*       Enable PRO features for the tool:
-*       - Support command line usage
+*       Enable command-line usage and PRO features for the tool
 *
 *   #define CUSTOM_MODAL_DIALOGS
 *       Use custom raygui generated modal dialogs instead of native OS ones
@@ -47,15 +46,15 @@
 *
 **********************************************************************************************/
 
-#include "raylib.h"
-#include "rguilayout.h"
-
 #define TOOL_NAME               "rGuiLayout"
 #define TOOL_SHORT_NAME         "rGL"
 #define TOOL_VERSION            "2.5"
 #define TOOL_DESCRIPTION        "A simple and easy-to-use raygui layouts editor"
 #define TOOL_RELEASE_DATE       "Dec.2021"
 #define TOOL_LOGO_COLOR         0x7da9b9ff
+
+#include "raylib.h"
+#include "rguilayout.h"
 
 #if defined(PLATFORM_WEB)
     #define CUSTOM_MODAL_DIALOGS            // Force custom modal dialogs usage
@@ -579,7 +578,7 @@ int main(int argc, char *argv[])
                 if (windowAboutState.windowActive) windowAboutState.windowActive = false;
                 else if (windowCodegenState.windowCodegenActive) windowCodegenState.windowCodegenActive = false;
                 else if (resetWindowActive) resetWindowActive = false;
-            #if !defined(PLATFORM_WEB)
+#if !defined(PLATFORM_WEB)
                 else if ((layout->controlCount <= 0) && (layout->anchorCount <= 1)) exitWindow = true;  // Quit application
                 else
                 {
@@ -587,7 +586,7 @@ int main(int argc, char *argv[])
                     selectedControl = -1;
                     selectedAnchor = -1;
                 }
-            #endif
+#endif
             }
         }
 
@@ -1228,7 +1227,7 @@ int main(int argc, char *argv[])
                                         strcpy(prevText, layout->controls[selectedControl].text);
                                         textEditMode = true;
                                     }
-                                    else printf("WARNING: Can't edit text on this control\n");
+                                    else LOG("WARNING: Can't edit text on this control\n");
                                 }
 
                                 // Enable name edit mode
@@ -2786,14 +2785,14 @@ int main(int argc, char *argv[])
 //----------------------------------------------------------------------------------
 // Module functions definition
 //----------------------------------------------------------------------------------
-#if defined(VERSION_ONE)            // Command line
+#if defined(VERSION_ONE)
 // Show command line usage info
 static void ShowCommandLineInfo(void)
 {
     printf("\n//////////////////////////////////////////////////////////////////////////////////\n");
     printf("//                                                                              //\n");
     printf("// %s v%s - %s                 //\n", toolName, toolVersion, toolDescription);
-    printf("// powered by raylib v%s and raygui v%s                                       //\n", RAYLIB_VERSION, RAYGUI_VERSION);
+    printf("// powered by raylib v%s and raygui v%s                                   //\n", RAYLIB_VERSION, RAYGUI_VERSION);
     printf("// more info and bugs-report: github.com/raylibtech/rtools                      //\n");
     printf("// feedback and support:      ray[at]raylibtech.com                             //\n");
     printf("//                                                                              //\n");
@@ -2846,11 +2845,11 @@ static void ProcessCommandLine(int argc, char *argv[])
                 {
                     strcpy(inFileName, argv[i + 1]);    // Read input filename
                 }
-                else printf("WARNING: Input file extension not recognized\n");
+                else LOG("WARNING: Input file extension not recognized\n");
 
                 i++;
             }
-            else printf("WARNING: No input file provided\n");
+            else LOG("WARNING: No input file provided\n");
         }
         else if ((strcmp(argv[i], "-o") == 0) || (strcmp(argv[i], "--output") == 0))
         {
@@ -2861,11 +2860,11 @@ static void ProcessCommandLine(int argc, char *argv[])
                 {
                     strcpy(outFileName, argv[i + 1]);   // Read output filename
                 }
-                else printf("WARNING: Output file extension not recognized\n");
+                else LOG("WARNING: Output file extension not recognized\n");
 
                 i++;
             }
-            else printf("WARNING: No output file provided\n");
+            else LOG("WARNING: No output file provided\n");
         }
         else if ((strcmp(argv[i], "-t") == 0) || (strcmp(argv[i], "--template") == 0))
         {
@@ -2876,11 +2875,11 @@ static void ProcessCommandLine(int argc, char *argv[])
                 {
                     strcpy(templateFile, argv[i + 1]);   // Read template filename
                 }
-                else printf("WARNING: Template file extension not recognized\n");
+                else LOG("WARNING: Template file extension not recognized\n");
 
                 i++;
             }
-            else printf("WARNING: No template file provided\n");
+            else LOG("WARNING: No template file provided\n");
         }
 
         // TODO: Support codegen options: exportAnchors, defineRecs, fullComments...
@@ -2892,8 +2891,8 @@ static void ProcessCommandLine(int argc, char *argv[])
         // Set a default name for output in case not provided
         if (outFileName[0] == '\0') strcpy(outFileName, "output.c");
 
-        printf("\nInput file:       %s", inFileName);
-        printf("\nOutput file:      %s", outFileName);
+        LOG("\nInput file:       %s", inFileName);
+        LOG("\nOutput file:      %s", outFileName);
 
         // Support .rlg layout processing to generate .c
         GuiLayout *layout = LoadLayout(inFileName);
@@ -2930,7 +2929,7 @@ static void ProcessCommandLine(int argc, char *argv[])
 
     if (showUsageInfo) ShowCommandLineInfo();
 }
-#endif      // VERSION_ONE: Command line
+#endif      // VERSION_ONE
 
 //--------------------------------------------------------------------------------------------
 // Load/Save/Export data functions
@@ -3126,7 +3125,6 @@ static void SaveLayout(GuiLayout *layout, const char *fileName, bool binary)
             fprintf(rglFile, "# Anchor info:    a <id> <name> <posx> <posy> <enabled>\n");
             fprintf(rglFile, "# Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>\n#\n");
 
-            printf("r %i %i %i %i\n", (int)layout->refWindow.x, (int)layout->refWindow.y, (int)layout->refWindow.width, (int)layout->refWindow.height);
             fprintf(rglFile, "r %i %i %i %i\n", (int)layout->refWindow.x, (int)layout->refWindow.y, (int)layout->refWindow.width, (int)layout->refWindow.height);
             fprintf(rglFile, "a %03i %s %i %i %i\n", layout->anchors[0].id, layout->anchors[0].name, layout->anchors[0].x, layout->anchors[0].y, layout->anchors[0].enabled);
 
