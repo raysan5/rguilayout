@@ -13,7 +13,7 @@ BEGIN
       VALUE "FileDescription", "rGuiLayout - A simple and easy-to-use raygui layout editor"
       VALUE "FileVersion", "2.5"
       VALUE "InternalName", "rguilayout"
-      VALUE "LegalCopyright", "(c) 2021 raylib technologies (@raylibtech)"
+      VALUE "LegalCopyright", "(c) 2022 raylib technologies (@raylibtech)"
       //VALUE "OriginalFilename", "raylib_app.exe"
       VALUE "ProductName", "rGuiLayout"
       VALUE "ProductVersion", "2.5"
