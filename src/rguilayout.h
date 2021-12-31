@@ -68,7 +68,7 @@ struct GuiAnchorPoint {
     int y;
     bool enabled;
     bool hidding;
-    unsigned char name[MAX_ANCHOR_NAME_LENGTH];
+    unsigned char name[MAX_ANCHOR_NAME_LENGTH];     // 64 bytes
     GuiAnchorPoint *ap;
 };
 
@@ -77,8 +77,8 @@ typedef struct {
     int id;
     int type;
     Rectangle rec;
-    unsigned char name[MAX_CONTROL_NAME_LENGTH];
-    unsigned char text[MAX_CONTROL_TEXT_LENGTH];
+    unsigned char name[MAX_CONTROL_NAME_LENGTH];    // 64 bytes
+    unsigned char text[MAX_CONTROL_TEXT_LENGTH];    // 128 bytes
     GuiAnchorPoint *ap;
 } GuiLayoutControl;
 
@@ -86,8 +86,8 @@ typedef struct {
 typedef struct {
     int controlCount;
     int anchorCount;
-    GuiLayoutControl controls[MAX_GUI_CONTROLS];
-    GuiAnchorPoint anchors[MAX_ANCHOR_POINTS];
+    GuiLayoutControl controls[MAX_GUI_CONTROLS];    // 256 controls
+    GuiAnchorPoint anchors[MAX_ANCHOR_POINTS];      // 8 anchors
     Rectangle refWindow;
 } GuiLayout;
 
