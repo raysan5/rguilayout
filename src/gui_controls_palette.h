@@ -120,9 +120,7 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
 {
     GuiControlsPaletteState state = { 0 };
 
-    state.controlsAnchor = (Vector2){ GetScreenWidth() - 165, 0 };
-    state.containerScrollOffset = (Vector2){ 0, 0 };
-
+    // Controls default states
     state.windowBoxActive = true;
     state.buttonPressed = false;
     state.labelBtnPressed = false;
@@ -149,8 +147,6 @@ GuiControlsPaletteState InitGuiControlsPalette(void)
     state.dropdownBoxEditMode = false;
     state.dropdownBoxActive = 0;
 
-    state.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 160, 0, 160, GetScreenHeight() };
-
     // Custom variables initialization
     state.selectedControl = GUI_WINDOWBOX;
 
@@ -170,9 +166,9 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
         }
     }
 
-    state->controlsAnchor = (Vector2){ GetScreenWidth() - 165, state->containerScrollOffset.y };
+    state->controlsAnchor = (Vector2){ state->scrollPanelBounds.x - 5, state->containerScrollOffset.y + state->scrollPanelBounds.y };
 
-    UpdateControlsPaletteRecs(state);
+    UpdateControlsPaletteRecs(state);       // Update all controls rectangles (in case screen changed)
     //----------------------------------------------------------------------------------------------
 
     GuiScrollPanel(state->scrollPanelBounds, (Rectangle){ state->scrollPanelBounds.x, state->scrollPanelBounds.y, state->scrollPanelBounds.width - 10, 965 }, &state->containerScrollOffset);
@@ -213,8 +209,6 @@ void GuiControlsPalette(GuiControlsPaletteState *state)
 
 void UpdateControlsPaletteRecs(GuiControlsPaletteState *state)
 {
-    state->scrollPanelBounds = (Rectangle){ GetScreenWidth() - 160, 0, 160, GetScreenHeight() };
-
     state->controlRecs[GUI_WINDOWBOX] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 15, 125, 50 };
     state->controlRecs[GUI_GROUPBOX] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 75, 125, 30 };
     state->controlRecs[GUI_LINE] = (Rectangle){ state->controlsAnchor.x + 20, state->controlsAnchor.y + 105, 125, 25 };
