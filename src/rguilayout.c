@@ -330,7 +330,7 @@ int main(int argc, char *argv[])
 
     // GUI: Reset Layout Window
     //-----------------------------------------------------------------------------------
-    bool resetWindowActive = false;
+    bool windowResetActive = false;
     bool resetProgram = false;
     //-----------------------------------------------------------------------------------
 
@@ -574,7 +574,7 @@ int main(int argc, char *argv[])
                 // Close windows logic
                 if (windowAboutState.windowActive) windowAboutState.windowActive = false;
                 else if (windowCodegenState.windowCodegenActive) windowCodegenState.windowCodegenActive = false;
-                else if (resetWindowActive) resetWindowActive = false;
+                else if (windowResetActive) windowResetActive = false;
 #if !defined(PLATFORM_WEB)
                 else if ((layout->controlCount <= 0) && (layout->anchorCount <= 1)) exitWindow = true;  // Quit application
                 else
@@ -627,7 +627,7 @@ int main(int argc, char *argv[])
             if (IsKeyDown(KEY_LEFT_CONTROL))
             {
                 // Open reset window
-                if (IsKeyPressed(KEY_N)) resetWindowActive = true;
+                if (IsKeyPressed(KEY_N)) windowResetActive = true;
 
                 // Activate code generation export window
                 if (IsKeyPressed(KEY_ENTER))
@@ -1839,7 +1839,7 @@ int main(int argc, char *argv[])
         // If any window is shown, cancel any edition mode
         if (windowAboutState.windowActive ||
             windowCodegenState.windowCodegenActive ||
-            resetWindowActive ||
+            windowResetActive ||
             windowExitActive)
         {
             nameEditMode = false;
@@ -1888,7 +1888,7 @@ int main(int argc, char *argv[])
             ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
             // WARNING: Some windows should lock the main screen controls when shown
-            if (windowAboutState.windowActive || windowCodegenState.windowCodegenActive || windowExitActive || resetWindowActive ||
+            if (windowAboutState.windowActive || windowCodegenState.windowCodegenActive || windowExitActive || windowResetActive ||
                 showLoadFileDialog || showSaveFileDialog || showExportFileDialog) lockWorkArea = true;
             else lockWorkArea = false;
             if (lockWorkArea) GuiLock();
@@ -1951,7 +1951,7 @@ int main(int argc, char *argv[])
                 }
             }
 
-            // Draws the controls placed on the grid
+            // Draw the controls placed on the grid
             // TODO: Support controls editMode vs playMode, just unlock controls and lock edit!
             //----------------------------------------------------------------------------------------
             GuiLock();
@@ -2533,21 +2533,21 @@ int main(int argc, char *argv[])
 
             // GUI: New Layout Window (save)
             //----------------------------------------------------------------------------------------
-            if (resetWindowActive)
+            if (windowResetActive)
             {
                 int message = GuiMessageBox((Rectangle) { GetScreenWidth()/2 - 125, GetScreenHeight()/2 - 50, 250, 100 }, "Creating new layout", "Do you want to save the current layout?", "Yes;No");
 
-                if (message == 0) resetWindowActive = false;
+                if (message == 0) windowResetActive = false;
                 else if (message == 1)  // Yes
                 {
                     showSaveFileDialog = true;
                     resetProgram = true;
-                    resetWindowActive = false;
+                    windowResetActive = false;
                 }
                 else if (message == 2)  // No
                 {
                     resetProgram = true;
-                    resetWindowActive = false;
+                    windowResetActive = false;
                 }
             }
             //----------------------------------------------------------------------------------------
