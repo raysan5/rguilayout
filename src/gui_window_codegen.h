@@ -146,7 +146,7 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
     {
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.8f));
 
-        state->codegenAnchor = (Vector2){ GetScreenWidth()/2 - 450, GetScreenHeight()/2 - 320 };
+        state->codegenAnchor = (Vector2){ GetScreenWidth()/2.0f - 450, GetScreenHeight()/2.0f - 320 };
         state->windowCodegenActive = !GuiWindowBox((Rectangle){ state->codegenAnchor.x + 0, state->codegenAnchor.y + 0, 900, 640 }, "#7#Code Generation Window");
 
         GuiGroupBox((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 35, 220, 235 }, "Layout Info");
@@ -167,10 +167,7 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         state->generateButtonFunctionsChecked = GuiCheckBox((Rectangle){ state->codegenAnchor.x + 685, state->codegenAnchor.y + 415, 15, 15 }, "Generate button functions", state->generateButtonFunctionsChecked);
 
         state->generateCodePressed = GuiButton((Rectangle){ state->codegenAnchor.x + 665, state->codegenAnchor.y + 455, 220, 30 }, "#7#Export Generated Code");
-        
-#if !defined(VERSION_ONE)
-        GuiDisable();
-#endif
+
         // TODO: Add required fields to support a custom code template --> Requires documentation
         //if (GuiDropdownBox((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 300, 200, 25 }, "STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h);CUSTOM CODE FILE", &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
         if (GuiDropdownBox((Rectangle){ state->codegenAnchor.x + 675, state->codegenAnchor.y + 300, 200, 25 }, "STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h)", &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
@@ -180,9 +177,9 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         if (state->codeText != NULL)
         {
             Rectangle codePanel = { state->codegenAnchor.x + 10, state->codegenAnchor.y + 35, 645, 595 };
-            Rectangle view = GuiScrollPanel(codePanel, (Rectangle){ codePanel.x, codePanel.y, codePanel.width*2, state->codeHeight }, &state->codePanelScrollOffset);
+            Rectangle view = GuiScrollPanel(codePanel, (Rectangle){ codePanel.x, codePanel.y, codePanel.width*2, (float)state->codeHeight }, &state->codePanelScrollOffset);
 
-            BeginScissorMode(view.x, view.y, view.width, view.height);
+            BeginScissorMode((int)view.x, (int)view.y, (int)view.width, (int)view.height);
                 unsigned int linesCounter = 0;
                 unsigned char *currentLine = state->codeText;
 
@@ -195,7 +192,7 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
                     if (((state->codePanelScrollOffset.y + 20*linesCounter) >= 0) &&
                         ((state->codePanelScrollOffset.y + 20*linesCounter) < (codePanel.height - 2)))
                     {
-                        DrawText(currentLine, codePanel.x + state->codePanelScrollOffset.x + 10, codePanel.y + state->codePanelScrollOffset.y + 20*linesCounter + 8, 10, GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL)));
+                        DrawText(currentLine, (int)codePanel.x + (int)state->codePanelScrollOffset.x + 10, (int)codePanel.y + (int)state->codePanelScrollOffset.y + 20*linesCounter + 8, 10, GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL)));
                     }
 
                     if (nextLine) *nextLine = '\n';     // Restore newline-char, just to be tidy

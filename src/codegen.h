@@ -67,7 +67,7 @@ static void WriteFunctionDrawingH(unsigned char *toolstr, int *pos, GuiLayout la
 
 // Generic writting code functions (.c/.h)
 static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiLayoutControl control, bool exportAnchors, bool fullComments, const char *preText, int tabs, bool exportH);
-static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, bool define, bool initialize, const char* preText, int tabs);
+static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs);
 static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
 static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs);
 static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, const char *preText, int tabs);
@@ -98,14 +98,14 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, GuiL
 
     int bufferPos = 0;
     int codePos = 0;
-    int bufferLen = strlen(buffer);
+    int bufferLen = (int)strlen(buffer);
 
     for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
     {
         if (layout.anchors[a].enabled)
         {
-            layout.anchors[a].x -= layout.refWindow.x;
-            layout.anchors[a].y -= layout.refWindow.y;
+            layout.anchors[a].x -= (int)layout.refWindow.x;
+            layout.anchors[a].y -= (int)layout.refWindow.y;
         }
     }
 
@@ -129,7 +129,7 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, GuiL
             substr = TextSubtext(buffer, bufferPos, i - bufferPos);
 
             strcpy(toolstr + codePos, substr);
-            codePos = strlen(toolstr);
+            codePos = (int)strlen(toolstr);
 
             i += 2;
             bufferPos = i;
@@ -185,8 +185,8 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, GuiL
     {
         if (layout.anchors[a].enabled)
         {
-            layout.anchors[a].x += layout.refWindow.x;
-            layout.anchors[a].y += layout.refWindow.y;
+            layout.anchors[a].x += (int)layout.refWindow.x;
+            layout.anchors[a].y += (int)layout.refWindow.y;
         }
     }
 
@@ -310,8 +310,11 @@ static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayout layout, GuiL
     TextAppend(toolstr, "typedef struct {", pos);
     ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs + 1);
 
-    // Write anchors variables
-    if (config.exportAnchors && layout.anchorCount > 1) WriteAnchors(toolstr, pos, layout, config, true, false, "", tabs + 1);
+    // Write anchors variables (forced on .h) -> TODO: REVIEW!
+    //if (config.exportAnchors && layout.anchorCount > 1)
+    {
+        WriteAnchors(toolstr, pos, layout, config, true, false, "", tabs + 1);
+    }
 
     // Write controls variables
     if (layout.controlCount > 0) WriteControlsVariables(toolstr, pos, layout, config, true, false, "", tabs + 1);
@@ -369,8 +372,8 @@ static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayout
     ENDLINEAPPEND(toolstr, pos);
     TABAPPEND(toolstr, pos, tabs + 1);
 
-    // Init anchors
-    if (config.exportAnchors && layout.anchorCount > 1)
+    // Init anchors (forced on .h) -> TODO: REVIEW!
+    //if (config.exportAnchors && layout.anchorCount > 1)
     {
         WriteAnchors(toolstr, pos, layout, config, false, true, "state.", tabs + 1);
     }
@@ -579,6 +582,7 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
     {
         bool drawVariables = true;
         GuiLayoutControl control = layout.controls[i];
+
         switch (control.type)
         {
             case GUI_WINDOWBOX:
@@ -669,7 +673,7 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
 
                 if (define)
                 {
-                    TextAppend(toolstr, TextFormat("unsigned char %sText[%i]", control.name, MAX_CONTROL_TEXT_LENGTH), pos);
+                    TextAppend(toolstr, TextFormat("char %sText[%i]", control.name, MAX_CONTROL_TEXT_LENGTH), pos);
                     if (initialize) TextAppend(toolstr, TextFormat(" = \"%s\"", control.text), pos);
                 }
                 else if (initialize) TextAppend(toolstr, TextFormat("strcpy(%s%sText, \"%s\")", preText, control.name, control.text), pos);
@@ -685,6 +689,7 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
                 if (initialize) TextAppend(toolstr, " = false", pos);
                 TextAppend(toolstr, ";", pos);
                 ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+
                 if (define) TextAppend(toolstr, "int ", pos);
                 else TextAppend(toolstr, TextFormat("%s", preText), pos);
                 TextAppend(toolstr, TextFormat("%sValue", control.name), pos);
@@ -707,33 +712,51 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
                 if (define) TextAppend(toolstr, "Color ", pos);
                 else TextAppend(toolstr, TextFormat("%s", preText), pos);
                 TextAppend(toolstr, TextFormat("%sValue", control.name), pos);
-                // TODO: if (initialize) TextAppend(toolstr, TextFormat(" = { %i, %i }", (int)layout.anchors[i].x, (int)layout.anchors[i].y), pos);
+                if (initialize)
+                {
+                    TextAppend(toolstr, " = ", pos);
+                    if (!define) TextAppend(toolstr, "(Color)", pos);
+                    TextAppend(toolstr, "{ 0, 0, 0, 0 }", pos);
+                }
                 TextAppend(toolstr, ";", pos);
             } break;
             case GUI_SCROLLPANEL:
+            {
+                if (define) TextAppend(toolstr, "Rectangle ", pos);
+                else TextAppend(toolstr, TextFormat("%s", preText), pos);
+                TextAppend(toolstr, TextFormat("%sScrollView", control.name), pos);
+                if (initialize)
+                {
+                    TextAppend(toolstr, " = ", pos);
+                    if (!define) TextAppend(toolstr, "(Rectangle)", pos);
+                    TextAppend(toolstr, "{ 0, 0, 0, 0 }", pos);
+                }
+                TextAppend(toolstr, ";", pos);
+                ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+
                 if (define) TextAppend(toolstr, "Vector2 ", pos);
                 else TextAppend(toolstr, TextFormat("%s", preText), pos);
                 TextAppend(toolstr, TextFormat("%sScrollOffset", control.name), pos);
                 if (initialize)
                 {
                     TextAppend(toolstr, " = ", pos);
-                    if(!define) TextAppend(toolstr, "(Vector2)", pos);
+                    if (!define) TextAppend(toolstr, "(Vector2)", pos);
                     TextAppend(toolstr, "{ 0, 0 }", pos);
                 }
                 TextAppend(toolstr, ";", pos);
                 ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
+
                 if (define) TextAppend(toolstr, "Vector2 ", pos);
                 else TextAppend(toolstr, TextFormat("%s", preText), pos);
                 TextAppend(toolstr, TextFormat("%sBoundsOffset", control.name), pos);
                 if (initialize)
                 {
                     TextAppend(toolstr, " = ", pos);
-                    if(!define) TextAppend(toolstr, "(Vector2)", pos);
+                    if (!define) TextAppend(toolstr, "(Vector2)", pos);
                     TextAppend(toolstr, "{ 0, 0 }", pos);
                 }
                 TextAppend(toolstr, ";", pos);
-            // TODO SCROLLPANEL
-            break;
+            } break;
             case GUI_GROUPBOX:
             case GUI_LINE:
             case GUI_PANEL:
@@ -935,7 +958,7 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLay
         case GUI_SCROLLPANEL:
         {
             char *containerRec = GetScrollPanelContainerRecText(index, control, config.defineRecs, config.exportAnchors, preText);
-            TextAppend(toolstr, TextFormat("%sScrollOffset = GuiScrollPanel(%s, %s, %sScrollOffset);", name, containerRec, rec, name), pos); break;
+            TextAppend(toolstr, TextFormat("%sScrollView = GuiScrollPanel(%s, %s, &%sScrollOffset);", name, containerRec, rec, name), pos); break;
         }
         case GUI_LISTVIEW: TextAppend(toolstr, TextFormat("%sActive = GuiListView(%s, %s, &%sScrollIndex, %sActive);", name, rec, (text == NULL)? "null":text, name, name), pos); break;
         case GUI_COLORPICKER: TextAppend(toolstr, TextFormat("%sValue = GuiColorPicker(%s, %sValue);", name, rec, name), pos); break;
