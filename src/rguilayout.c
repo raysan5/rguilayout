@@ -66,6 +66,9 @@
 
 #undef RAYGUI_IMPLEMENTATION                // Avoid including raygui implementation again
 
+//#define GUI_MAIN_TOOLBAR_IMPLEMENTATION
+// TODO: #include "gui_main_toolbar.h"               // GUI: Main toolbar panel (file and visualization)
+
 #define GUI_WINDOW_ABOUT_IMPLEMENTATION
 #include "gui_window_about.h"               // GUI: About Window
 
@@ -305,6 +308,11 @@ int main(int argc, char *argv[])
     // GUI: Help panel
     //-----------------------------------------------------------------------------------
     bool helpActive = false;
+    //-----------------------------------------------------------------------------------
+    
+    // GUI: Main toolbar panel (file and visualization)
+    //----------------------------------------------------------------------------------
+    //GuiMainToolbarState mainToolbarState = InitGuiMainToolbar();
     //-----------------------------------------------------------------------------------
 
     // GUI: Controls Selection Palette
@@ -2465,6 +2473,9 @@ int main(int argc, char *argv[])
                 // NOTE: It uses GuiLock() to lock controls behaviour and just limit them to selection
                 //----------------------------------------------------------------------------------------
                 GuiControlsPalette(&paletteState);
+
+                // Update ScrollPanel bounds in case window is resized
+                paletteState.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 160, workAreaOffsetY, 160, GetScreenHeight() - workAreaOffsetY };
                 //----------------------------------------------------------------------------------------
             }
 
