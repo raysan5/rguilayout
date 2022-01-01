@@ -53,6 +53,8 @@
 #define TOOL_RELEASE_DATE       "Dec.2021"
 #define TOOL_LOGO_COLOR         0x7da9b9ff
 
+#define GUI_GRID_SIZE           20          // Pixel size for every grid square
+
 #include "raylib.h"
 #include "rguilayout.h"
 
@@ -61,6 +63,7 @@
     #include <emscripten/emscripten.h>      // Emscripten library - LLVM to JavaScript compiler
 #endif
 
+#define RAYGUI_GRID_ALPHA           0.1f
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"                         // Required for: IMGUI controls
 
@@ -111,7 +114,7 @@ bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib
 #define MIN_CONTROL_SIZE            10      // Minimum control size
 #define MOUSE_SCALE_MARK_SIZE       12      // Mouse scale mark size (bottom-right corner)
 
-#define MOVEMENT_FRAME_SPEED        10      // Controls movement speed in pixels per frame
+#define MOVEMENT_FRAME_SPEED        2       // Controls movement speed in pixels per frame: TODO: Review
 #define PANELS_EASING_FRAMES        60      // Controls the easing time in frames
 
 #define MAX_UNDO_LEVELS             10      // Undo levels supported for the ring buffer
@@ -146,6 +149,45 @@ static const char *toolDescription = TOOL_DESCRIPTION;
 
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
 
+#define HELP_LINES_COUNT    34
+
+const char *helpLines[HELP_LINES_COUNT] = {
+    "-File Options",
+    "LCTRL + N - New layout",
+    "LCTRL + O - Open layout file (.rgl)",
+    "LCTRL + S - Save layout file (.rgl)",
+    "LCTRL + ENTER - Export layout to code",
+    "-Control Edition",
+    "LSHIFT + ARROWS - Smooth edit position",
+    "LCTRL + ARROWS - Edit control scale",
+    "LCTRL + LSHIFT + ARROWS - Smooth edit scale",
+    "LCTRL + R - Resize control to closest snap",
+    "ARROWS - Edit control position (No Snap)",
+    "LCTRL + D - Duplicate selected control",
+    "DEL - Delete selected control",
+    "LCTRL + Z - Undo Action",
+    "LCTRL + Y - Redo Action",
+    "-Control Edition Ex",
+    "T - Control text editing (if possible)",
+    "N - Control name editing",
+    "ESC - Exit text/name editing mode",
+    "ENTER - Validate text/name edition",
+    "LALT + UP/DOWN - Control layer order",
+    "-Anchor Edition",
+    "A - Anchor editing mode",
+    "RMB - Link anchor to control",
+    "U - Unlink control from anchor",
+    "H - Hide/Unhide controls for selected anchor",
+    "-Visual Options",
+    "F1 - Toggle Help panel (this one)",
+    "F2 - Toggle About window",
+    "G - Toggle grid mode",
+    "S - Toggle snap to grid mode",
+    "RALT + UP/DOWN - Grid spacing + snap",
+    "F - Toggle control position (global/anchor)",
+    "SPACE - Tracemap Lock/Unlock",
+};
+
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
 //----------------------------------------------------------------------------------
@@ -159,6 +201,8 @@ static GuiLayout *LoadLayout(const char *fileName);         // Load raygui layou
 static void UnloadLayout(GuiLayout *layout);                // Unload raygui layout
 static void ResetLayout(GuiLayout *layout);                 // Reset layout to default values
 static void SaveLayout(GuiLayout *layout, const char *fileName);     // Save raygui layout as text file (.rgl)
+
+static void GuiHelpPanel(int posX, int posY, const char *title, const char **helpLines, int helpLinesCount);
 
 //----------------------------------------------------------------------------------
 // Program main entry point
@@ -218,7 +262,7 @@ int main(int argc, char *argv[])
     Vector2 mouse = { -1, -1 };             // Mouse position
 
     bool showGrid = true;                   // Show grid flag (KEY_G)
-    int gridLineSpacing = 5;                // Grid line spacing in pixels
+    int gridLineSpacing = 20;                // Grid line spacing in pixels
     int moveFrameCounter = 0;               // Movement frames counter
     int movePerFrame = 1;                   // Movement speed per frame
     int movePixel = 1;                      // Movement pixels (depends on grid spacing)
@@ -245,7 +289,7 @@ int main(int argc, char *argv[])
     // TODO: Check exclusive modes (work on its own) and combinable modes (can work in combination with other)
     // Replace all bool values by enumerator value, it should simplify code...
     int layoutEditMode = NONE;              // Layout edition mode
-    bool anyWindowActive = false;           // Check for any blocking window active
+    bool windowOverActive = false;           // Check for any blocking window active
 
     // Multiselection variables
     /*
@@ -307,7 +351,7 @@ int main(int argc, char *argv[])
 
     // GUI: Help panel
     //-----------------------------------------------------------------------------------
-    bool helpActive = false;
+    bool helpActive = true;
     //-----------------------------------------------------------------------------------
     
     // GUI: Main toolbar panel (file and visualization)
@@ -351,6 +395,7 @@ int main(int argc, char *argv[])
 
     // Rectangles used on controls preview drawing
     // NOTE: [x, y] position is set on mouse movement and cosidering snap mode
+    // TODO: Review default sizes to match GUI_GRID_SIZE
     Rectangle defaultRec[24] = {
         (Rectangle){ 0, 0, 125, 50},            // GUI_WINDOWBOX
         (Rectangle){ 0, 0, 125, 30},            // GUI_GROUPBOX
@@ -401,7 +446,7 @@ int main(int argc, char *argv[])
     int listViewScrollIndex = 0;
     int listViewActive = 0;
 
-    bool lockWorkArea = false;
+    int workAreaOffsetY = 0;        // TODO: Main toolbar height
 
     SetTargetFPS(120);
     //--------------------------------------------------------------------------------------
@@ -596,7 +641,7 @@ int main(int argc, char *argv[])
         }
 
         // Check for any blocking mode (window or text/name edition)
-        if (!anyWindowActive && !textEditMode && !nameEditMode)
+        if (!windowOverActive && !textEditMode && !nameEditMode)
         {
             // Enables or disables snapMode if not in textEditMode
             if (IsKeyPressed(KEY_S))
@@ -625,7 +670,7 @@ int main(int argc, char *argv[])
             resizeMode = IsKeyDown(KEY_LEFT_CONTROL);       // Toggle control resize mode
 
             // Enable/disable texture editing mode
-            if (tracemap.id > 0 && IsKeyPressed(KEY_SPACE))
+            if ((tracemap.id > 0) && IsKeyPressed(KEY_SPACE))
             {
                 if (tracemapSelected) tracemapBlocked = true;
                 else if (tracemapBlocked) tracemapBlocked = false;
@@ -706,7 +751,7 @@ int main(int argc, char *argv[])
         // Layout edition logic
         //----------------------------------------------------------------------------------------------
         // Check for any blocking mode (window or text/name edition)
-        if (!anyWindowActive && !nameEditMode && !textEditMode)
+        if (!windowOverActive && !nameEditMode && !textEditMode)
         {
             // Mouse snap logic
             //----------------------------------------------------------------------------------------------
@@ -745,6 +790,8 @@ int main(int argc, char *argv[])
 
             if (snapMode)
             {
+                // TODO: Review depending on the Grid size and position
+
                 int offsetX = (int)defaultRec[selectedType].x%movePixel;
                 int offsetY = (int)defaultRec[selectedType].y%movePixel;
 
@@ -1848,7 +1895,10 @@ int main(int argc, char *argv[])
         if (windowAboutState.windowActive ||
             windowCodegenState.windowCodegenActive ||
             windowResetActive ||
-            windowExitActive)
+            windowExitActive ||
+            showLoadFileDialog || 
+            showSaveFileDialog || 
+            showExportFileDialog)
         {
             nameEditMode = false;
             textEditMode = false;
@@ -1856,9 +1906,9 @@ int main(int argc, char *argv[])
             dragMoveMode = false;
             precisionMode = false;
 
-            anyWindowActive = true;
+            windowOverActive = true;        // There is some window overlap!
         }
-        else anyWindowActive = false;
+        else windowOverActive = false;
         //----------------------------------------------------------------------------------------------
 
         // Reset program logic
@@ -1896,14 +1946,11 @@ int main(int argc, char *argv[])
             ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
             // WARNING: Some windows should lock the main screen controls when shown
-            if (windowAboutState.windowActive || windowCodegenState.windowCodegenActive || windowExitActive || windowResetActive ||
-                showLoadFileDialog || showSaveFileDialog || showExportFileDialog) lockWorkArea = true;
-            else lockWorkArea = false;
-            if (lockWorkArea) GuiLock();
+            if (windowOverActive) GuiLock();
             else GuiUnlock();
 
             // Draw background grid
-            if (showGrid) GuiGrid((Rectangle){ 0, 0, GetScreenWidth(), GetScreenHeight() }, 20, 2);
+            if (showGrid) GuiGrid((Rectangle){ 0, workAreaOffsetY, GetScreenWidth(), GetScreenHeight() }, gridLineSpacing, 2);
 
             // Draw the tracemap texture if loaded
             //---------------------------------------------------------------------------------
@@ -2011,7 +2058,7 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-            if (!lockWorkArea) GuiUnlock();
+            if (!windowOverActive) GuiUnlock();
             //----------------------------------------------------------------------------------------
 
             // Draw reference window
@@ -2479,45 +2526,9 @@ int main(int argc, char *argv[])
                 //----------------------------------------------------------------------------------------
             }
 
-
             // GUI: Help panel
             //----------------------------------------------------------------------------------------
-            if (helpActive)
-            {
-                int helpPositionX = 20;
-
-                DrawRectangleRec((Rectangle){ helpPositionX + 20, 15, 280, 550 }, GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
-                GuiGroupBox((Rectangle){ helpPositionX + 20, 15, 280, 550 }, "[F1] Tool Shortcuts");
-                GuiLabel((Rectangle){ helpPositionX + 30, 35, 0, 0 }, "G - Toggle grid mode");
-                GuiLabel((Rectangle){ helpPositionX + 30, 55, 0, 0 }, "S - Toggle snap to grid mode");
-                GuiLabel((Rectangle){ helpPositionX + 30, 75, 0, 0 }, "F - Toggle control position (global/anchor)");
-                GuiLine((Rectangle){ helpPositionX + 30, 85, 260, 10 }, NULL);
-                GuiLabel((Rectangle){ helpPositionX + 30, 105, 0, 0 }, "SPACE - Lock/unlock control for editing");
-                GuiLabel((Rectangle){ helpPositionX + 30, 125, 0, 0 }, "ARROWS - Edit control position");
-                GuiLabel((Rectangle){ helpPositionX + 30, 145, 0, 0 }, "LSHIFT + ARROWS - Smooth edit position");
-                GuiLabel((Rectangle){ helpPositionX + 30, 165, 0, 0 }, "LCTRL + ARROWS - Edit control scale");
-                GuiLabel((Rectangle){ helpPositionX + 30, 185, 0, 0 }, "LCTRL + LSHIFT + ARROWS - Smooth edit scale");
-                GuiLabel((Rectangle){ helpPositionX + 30, 205, 0, 0 }, "LCTRL + R - Resize control to closest snap");
-                GuiLabel((Rectangle){ helpPositionX + 30, 225, 0, 0 }, "LCTRL + D - Duplicate selected control");
-                GuiLabel((Rectangle){ helpPositionX + 30, 245, 0, 0 }, "LCTRL + N - Resets layout");
-                GuiLabel((Rectangle){ helpPositionX + 30, 265, 0, 0 }, "DEL - Delete selected control");
-                GuiLine((Rectangle){ helpPositionX + 30, 275, 260, 10 }, NULL);
-                GuiLabel((Rectangle){ helpPositionX + 30, 295, 0, 0 }, "T - Control text editing (if possible)");
-                GuiLabel((Rectangle){ helpPositionX + 30, 315, 0, 0 }, "N - Control name editing ");
-                GuiLabel((Rectangle){ helpPositionX + 30, 335, 0, 0 }, "ESC - Exit text/name editing mode");
-                GuiLabel((Rectangle){ helpPositionX + 30, 355, 0, 0 }, "ENTER - Validate text/name edition");
-                GuiLine((Rectangle){ helpPositionX + 30, 365, 260, 10 }, NULL);
-                GuiLabel((Rectangle){ helpPositionX + 30, 385, 0, 0 }, "LALT + UP/DOWN - Control layer order");
-                GuiLine((Rectangle){ helpPositionX + 30, 395, 260, 10 }, NULL);
-                GuiLabel((Rectangle){ helpPositionX + 30, 415, 0, 0 }, "A - Anchor editing mode");
-                GuiLabel((Rectangle){ helpPositionX + 30, 435, 0, 0 }, "RMB - Link anchor to control");
-                GuiLabel((Rectangle){ helpPositionX + 30, 455, 0, 0 }, "U - Unlink control from anchor");
-                GuiLabel((Rectangle){ helpPositionX + 30, 475, 0, 0 }, "H - Hide/Unhide controls for selected anchor");
-                GuiLine((Rectangle){ helpPositionX + 30, 485, 260, 10 }, NULL);
-                GuiLabel((Rectangle){ helpPositionX + 30, 505, 0, 0 }, "LCTRL + S - Save layout file (.rgl)");
-                GuiLabel((Rectangle){ helpPositionX + 30, 525, 0, 0 }, "LCTRL + O - Open layout file (.rgl)");
-                GuiLabel((Rectangle){ helpPositionX + 30, 545, 0, 0 }, "LCTRL + ENTER - Export layout to code");
-            }
+            if (helpActive) GuiHelpPanel(20, 20, "[F1] Tool Shortcuts", helpLines, HELP_LINES_COUNT);
             //----------------------------------------------------------------------------------------
 
             // NOTE: If some overlap window is open and main window is locked, we draw a background rectangle
@@ -2525,6 +2536,11 @@ int main(int argc, char *argv[])
 
             // WARNING: Before drawing the windows, we unlock them
             GuiUnlock();
+            
+            // GUI: Main toolbar panel (file and visualization)
+            //----------------------------------------------------------------------------------
+            //GuiMainToolbar(&mainToolbarState);
+            //----------------------------------------------------------------------------------
 
             // GUI: Layout Code Generation Window
             //----------------------------------------------------------------------------------------
@@ -2534,6 +2550,7 @@ int main(int argc, char *argv[])
             {
                 showExportFileDialog = true;
                 windowCodegenState.windowCodegenActive = false;
+                windowCodegenState.generateCodePressed = false;
             }
             //----------------------------------------------------------------------------------------
 
@@ -3150,4 +3167,21 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
         }
     }
 */
+}
+
+static void GuiHelpPanel(int posX, int posY, const char *title, const char **helpLines, int helpLinesCount)
+{
+    int nextLineY = 0;
+
+    DrawRectangleRec((Rectangle) { posX, posY, 300, helpLinesCount*20 + 30 }, GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+    GuiGroupBox((Rectangle) { posX, posY, 300, helpLinesCount*20 + 30 }, title);
+    nextLineY += 25;
+
+    for (int i = 0; i < helpLinesCount; i++)
+    {
+        if (helpLines[i][0] != '-') GuiLabel((Rectangle) { posX + 15, posY + nextLineY, 0, 0 }, helpLines[i]);
+        else GuiLine((Rectangle) { posX + 15, posY + nextLineY, 270, 10 }, helpLines[i] + 1);
+
+        nextLineY += 20;
+    }
 }
