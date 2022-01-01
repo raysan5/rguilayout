@@ -893,36 +893,33 @@ int main(int argc, char *argv[])
                 }
                 else //focusedControl != -1
                 {
-                    //if (selectedControl == -1)
+                    // Change controls layer order (position inside array)
+                    if (orderEditMode)
                     {
-                        // Change controls layer order (position inside array)
-                        if (orderEditMode)
-                        {
-                            int newOrder = 0;
-                            if (IsKeyPressed(KEY_UP)) newOrder = 1;
-                            else if (IsKeyPressed(KEY_DOWN)) newOrder = -1;
-                            else newOrder -= GetMouseWheelMove();
+                        int newOrder = 0;
+                        if (IsKeyPressed(KEY_UP)) newOrder = 1;
+                        else if (IsKeyPressed(KEY_DOWN)) newOrder = -1;
+                        else newOrder -= GetMouseWheelMove();
 
-                            if ((newOrder > 0) && (focusedControl < layout->controlCount - 1))
-                            {
-                                // Move control towards beginning of array
-                                GuiLayoutControl auxControl = layout->controls[focusedControl];
-                                layout->controls[focusedControl] = layout->controls[focusedControl + 1];
-                                layout->controls[focusedControl].id -= 1;
-                                layout->controls[focusedControl + 1] = auxControl;
-                                layout->controls[focusedControl + 1].id += 1;
-                                selectedControl = -1;
-                            }
-                            else if ((newOrder < 0) && (focusedControl > 0))
-                            {
-                                // Move control towards end of array
-                                GuiLayoutControl auxControl = layout->controls[focusedControl];
-                                layout->controls[focusedControl] = layout->controls[focusedControl - 1];
-                                layout->controls[focusedControl].id += 1;
-                                layout->controls[focusedControl - 1] = auxControl;
-                                layout->controls[focusedControl - 1].id -= 1;
-                                selectedControl = -1;
-                            }
+                        if ((newOrder > 0) && (focusedControl < layout->controlCount - 1))
+                        {
+                            // Move control towards beginning of array
+                            GuiLayoutControl auxControl = layout->controls[focusedControl];
+                            layout->controls[focusedControl] = layout->controls[focusedControl + 1];
+                            layout->controls[focusedControl].id -= 1;
+                            layout->controls[focusedControl + 1] = auxControl;
+                            layout->controls[focusedControl + 1].id += 1;
+                            selectedControl = -1;
+                        }
+                        else if ((newOrder < 0) && (focusedControl > 0))
+                        {
+                            // Move control towards end of array
+                            GuiLayoutControl auxControl = layout->controls[focusedControl];
+                            layout->controls[focusedControl] = layout->controls[focusedControl - 1];
+                            layout->controls[focusedControl].id += 1;
+                            layout->controls[focusedControl - 1] = auxControl;
+                            layout->controls[focusedControl - 1].id -= 1;
+                            selectedControl = -1;
                         }
                     }
                 }
@@ -2081,31 +2078,31 @@ int main(int argc, char *argv[])
 
                                 switch (selectedType)
                                 {
-                                case GUI_WINDOWBOX: GuiWindowBox(defaultRec[selectedType], "WINDOW BOX"); break;
-                                case GUI_GROUPBOX: GuiGroupBox(defaultRec[selectedType], "GROUP BOX"); break;
-                                case GUI_LINE: GuiLine(defaultRec[selectedType], NULL); break;
-                                case GUI_PANEL: GuiPanel(defaultRec[selectedType]); break;
-                                case GUI_LABEL: GuiLabel(defaultRec[selectedType], "LABEL TEXT"); break;
-                                case GUI_BUTTON: GuiButton(defaultRec[selectedType], "BUTTON"); break;
-                                case GUI_LABELBUTTON: GuiLabelButton(defaultRec[selectedType], "LABEL_BUTTON"); break;
-                                case GUI_CHECKBOX: GuiCheckBox(defaultRec[selectedType], "CHECK BOX", false); break;
-                                case GUI_TOGGLE: GuiToggle(defaultRec[selectedType], "TOGGLE", false); break;
-                                case GUI_TOGGLEGROUP: GuiToggleGroup(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
-                                case GUI_COMBOBOX: GuiComboBox(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
-                                case GUI_DROPDOWNBOX: GuiDropdownBox(defaultRec[selectedType], "ONE;TWO;THREE", &dropdownBoxActive, false); break;
-                                case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedType], "TEXT BOX", 7, false); break;
-                                case GUI_TEXTBOXMULTI: GuiTextBoxMulti(defaultRec[selectedType], "TEXT BOX MULTI", 7, false); break;
-                                case GUI_VALUEBOX: GuiValueBox(defaultRec[selectedType], "VALUE BOX", &valueBoxValue, 42, 100, false); break;
-                                case GUI_SPINNER: GuiSpinner(defaultRec[selectedType], "SPINNER", &spinnerValue, 42, 3, false); break;
-                                case GUI_SLIDER: GuiSlider(defaultRec[selectedType], "SLIDER", NULL, 42, 0, 100); break;
-                                case GUI_SLIDERBAR: GuiSliderBar(defaultRec[selectedType], "SLIDER BAR", NULL, 40, 0, 100); break;
-                                case GUI_PROGRESSBAR: GuiProgressBar(defaultRec[selectedType], "PROGRESS BAR", NULL, 40, 0, 100); break;
-                                case GUI_STATUSBAR: GuiStatusBar(defaultRec[selectedType], "STATUS BAR"); break;
-                                case GUI_SCROLLPANEL: GuiScrollPanel(defaultRec[selectedType], defaultRec[selectedType], NULL); break;
-                                case GUI_LISTVIEW: GuiListView(defaultRec[selectedType], "ONE;TWO;THREE;FOUR", &listViewScrollIndex, listViewActive); break;
-                                case GUI_COLORPICKER: GuiColorPicker(defaultRec[selectedType], RED); break;
-                                case GUI_DUMMYREC: GuiDummyRec(defaultRec[selectedType], "DUMMY REC"); break;
-                                default: break;
+                                    case GUI_WINDOWBOX: GuiWindowBox(defaultRec[selectedType], "WINDOW BOX"); break;
+                                    case GUI_GROUPBOX: GuiGroupBox(defaultRec[selectedType], "GROUP BOX"); break;
+                                    case GUI_LINE: GuiLine(defaultRec[selectedType], NULL); break;
+                                    case GUI_PANEL: GuiPanel(defaultRec[selectedType]); break;
+                                    case GUI_LABEL: GuiLabel(defaultRec[selectedType], "LABEL TEXT"); break;
+                                    case GUI_BUTTON: GuiButton(defaultRec[selectedType], "BUTTON"); break;
+                                    case GUI_LABELBUTTON: GuiLabelButton(defaultRec[selectedType], "LABEL_BUTTON"); break;
+                                    case GUI_CHECKBOX: GuiCheckBox(defaultRec[selectedType], "CHECK BOX", false); break;
+                                    case GUI_TOGGLE: GuiToggle(defaultRec[selectedType], "TOGGLE", false); break;
+                                    case GUI_TOGGLEGROUP: GuiToggleGroup(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
+                                    case GUI_COMBOBOX: GuiComboBox(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
+                                    case GUI_DROPDOWNBOX: GuiDropdownBox(defaultRec[selectedType], "ONE;TWO;THREE", &dropdownBoxActive, false); break;
+                                    case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedType], "TEXT BOX", 7, false); break;
+                                    case GUI_TEXTBOXMULTI: GuiTextBoxMulti(defaultRec[selectedType], "TEXT BOX MULTI", 7, false); break;
+                                    case GUI_VALUEBOX: GuiValueBox(defaultRec[selectedType], "VALUE BOX", &valueBoxValue, 42, 100, false); break;
+                                    case GUI_SPINNER: GuiSpinner(defaultRec[selectedType], "SPINNER", &spinnerValue, 42, 3, false); break;
+                                    case GUI_SLIDER: GuiSlider(defaultRec[selectedType], "SLIDER", NULL, 42, 0, 100); break;
+                                    case GUI_SLIDERBAR: GuiSliderBar(defaultRec[selectedType], "SLIDER BAR", NULL, 40, 0, 100); break;
+                                    case GUI_PROGRESSBAR: GuiProgressBar(defaultRec[selectedType], "PROGRESS BAR", NULL, 40, 0, 100); break;
+                                    case GUI_STATUSBAR: GuiStatusBar(defaultRec[selectedType], "STATUS BAR"); break;
+                                    case GUI_SCROLLPANEL: GuiScrollPanel(defaultRec[selectedType], defaultRec[selectedType], NULL); break;
+                                    case GUI_LISTVIEW: GuiListView(defaultRec[selectedType], "ONE;TWO;THREE;FOUR", &listViewScrollIndex, listViewActive); break;
+                                    case GUI_COLORPICKER: GuiColorPicker(defaultRec[selectedType], RED); break;
+                                    case GUI_DUMMYREC: GuiDummyRec(defaultRec[selectedType], "DUMMY REC"); break;
+                                    default: break;
                                 }
 
                                 GuiFade(1.0f);
@@ -2181,13 +2178,12 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                // Focused anchor draws
+                // Draw focused anchor selector
                 if (focusedAnchor != 1)
                 {
                     // Anchor links
                     for (int i = 0; i < layout->controlCount; i++)
                     {
-                        //if (!layout->controls[i].ap->hidding)
                         if (layout->controls[i].ap->id == focusedAnchor)
                         {
                             if (focusedAnchor == 0) DrawLine(layout->controls[i].ap->x, layout->controls[i].ap->y, layout->controls[i].rec.x, layout->controls[i].rec.y, LIGHTGRAY);
@@ -2200,10 +2196,10 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                // Selected anchor draws
+                // Draw selected anchor
                 if (selectedAnchor != -1)
                 {
-                    // Anchor coordinates
+                    // Draw anchor coordinates
                     positionColor = anchorSelectedColor;
                     if (snapMode) positionColor = LIME;
                     if (!dragMoveMode && precisionMode) positionColor = BLUE;
@@ -2228,10 +2224,14 @@ int main(int argc, char *argv[])
                                 layout->anchors[selectedAnchor].x + ANCHOR_RADIUS,
                                 layout->anchors[selectedAnchor].y - 38, 20, positionColor);
                         }
-                        else DrawText(TextFormat("[%i, %i]", (int)(layout->refWindow.x), (int)(layout->refWindow.y)), layout->anchors[selectedAnchor].x + ANCHOR_RADIUS, layout->anchors[selectedAnchor].y - 38, 20, positionColor);
+                        else DrawText(TextFormat("[%i, %i]", 
+                                (int)(layout->refWindow.x), 
+                                (int)(layout->refWindow.y)), 
+                                layout->anchors[selectedAnchor].x + ANCHOR_RADIUS, 
+                                layout->anchors[selectedAnchor].y - 38, 20, positionColor);
                     }
 
-                    // Anchor links
+                    // Draw anchor links
                     for (int i = 0; i < layout->controlCount; i++)
                     {
                         //if (!layout->controls[i].ap->hidding)
@@ -2270,7 +2270,7 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                // Draw selected control
+                // Draw selected control from palette
                 if (selectedControl != -1)
                 {
                     // Selection rectangle
@@ -2415,10 +2415,10 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                // Draw focused control
+                // Draw focused control selector
                 if (focusedControl != -1)
                 {
-                    // Focused rectangle
+                    // Draw focused rectangle
                     Rectangle focusRec = layout->controls[focusedControl].rec;
 
                     if (layout->controls[focusedControl].type == GUI_WINDOWBOX) focusRec.height = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT;  // Defined inside raygui.h!
@@ -2441,7 +2441,7 @@ int main(int argc, char *argv[])
                     if (layout->controls[focusedControl].ap->id > 0) DrawLine(layout->controls[focusedControl].ap->x, layout->controls[focusedControl].ap->y, focusRec.x, focusRec.y, RED);
                 }
 
-                // Draw mouse scale mode selector
+                // Draw control scale mode selector
                 if (mouseScaleReady && (selectedControl >= 0))
                 {
                     Rectangle selectedRec = layout->controls[selectedControl].rec;
@@ -2454,64 +2454,60 @@ int main(int argc, char *argv[])
 
                     DrawRectangleLinesEx(selectedRec, 2, RED);
                     DrawTriangle((Vector2) { selectedRec.x + selectedRec.width - MOUSE_SCALE_MARK_SIZE, selectedRec.y + selectedRec.height },
-                        (Vector2) {
-                        selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height
-                    },
-                        (Vector2) {
-                        selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height - MOUSE_SCALE_MARK_SIZE
-                    }, RED);
+                                 (Vector2) { selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height },
+                                 (Vector2) { selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height - MOUSE_SCALE_MARK_SIZE }, RED);
                 }
 
                 // Draw reference window lines
                 if ((layout->refWindow.width > 0) && (layout->refWindow.height > 0)) DrawRectangleLinesEx(layout->refWindow, 1, Fade(BLACK, 0.7f));
 
-
-                // GUI: Help panel
-                //----------------------------------------------------------------------------------------
-                if (helpActive)
-                {
-                    int helpPositionX = 20;
-
-                    DrawRectangleRec((Rectangle) { helpPositionX + 20, 15, 280, 550 }, GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
-                    GuiGroupBox((Rectangle) { helpPositionX + 20, 15, 280, 550 }, "[F1] Tool Shortcuts");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 35, 0, 0 }, "G - Toggle grid mode");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 55, 0, 0 }, "S - Toggle snap to grid mode");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 75, 0, 0 }, "F - Toggle control position (global/anchor)");
-                    GuiLine((Rectangle) { helpPositionX + 30, 85, 260, 10 }, NULL);
-                    GuiLabel((Rectangle) { helpPositionX + 30, 105, 0, 0 }, "SPACE - Lock/unlock control for editing");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 125, 0, 0 }, "ARROWS - Edit control position");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 145, 0, 0 }, "LSHIFT + ARROWS - Smooth edit position");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 165, 0, 0 }, "LCTRL + ARROWS - Edit control scale");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 185, 0, 0 }, "LCTRL + LSHIFT + ARROWS - Smooth edit scale");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 205, 0, 0 }, "LCTRL + R - Resize control to closest snap");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 225, 0, 0 }, "LCTRL + D - Duplicate selected control");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 245, 0, 0 }, "LCTRL + N - Resets layout");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 265, 0, 0 }, "DEL - Delete selected control");
-                    GuiLine((Rectangle) { helpPositionX + 30, 275, 260, 10 }, NULL);
-                    GuiLabel((Rectangle) { helpPositionX + 30, 295, 0, 0 }, "T - Control text editing (if possible)");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 315, 0, 0 }, "N - Control name editing ");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 335, 0, 0 }, "ESC - Exit text/name editing mode");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 355, 0, 0 }, "ENTER - Validate text/name edition");
-                    GuiLine((Rectangle) { helpPositionX + 30, 365, 260, 10 }, NULL);
-                    GuiLabel((Rectangle) { helpPositionX + 30, 385, 0, 0 }, "LALT + UP/DOWN - Control layer order");
-                    GuiLine((Rectangle) { helpPositionX + 30, 395, 260, 10 }, NULL);
-                    GuiLabel((Rectangle) { helpPositionX + 30, 415, 0, 0 }, "A - Anchor editing mode");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 435, 0, 0 }, "RMB - Link anchor to control");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 455, 0, 0 }, "U - Unlink control from anchor");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 475, 0, 0 }, "H - Hide/Unhide controls for selected anchor");
-                    GuiLine((Rectangle) { helpPositionX + 30, 485, 260, 10 }, NULL);
-                    GuiLabel((Rectangle) { helpPositionX + 30, 505, 0, 0 }, "LCTRL + S - Save layout file (.rgl)");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 525, 0, 0 }, "LCTRL + O - Open layout file (.rgl)");
-                    GuiLabel((Rectangle) { helpPositionX + 30, 545, 0, 0 }, "LCTRL + ENTER - Export layout to code");
-                }
-                //----------------------------------------------------------------------------------------
-
                 // GUI: Controls Selection Palette
+                // NOTE: It uses GuiLock() to lock controls behaviour and just limit them to selection
                 //----------------------------------------------------------------------------------------
                 GuiControlsPalette(&paletteState);
                 //----------------------------------------------------------------------------------------
             }
-            //else {}  // (windowCodegenState.windowCodegenActive || windowAboutState.windowActive || resetWindowActive || windowExitActive)
+
+
+            // GUI: Help panel
+            //----------------------------------------------------------------------------------------
+            if (helpActive)
+            {
+                int helpPositionX = 20;
+
+                DrawRectangleRec((Rectangle){ helpPositionX + 20, 15, 280, 550 }, GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+                GuiGroupBox((Rectangle){ helpPositionX + 20, 15, 280, 550 }, "[F1] Tool Shortcuts");
+                GuiLabel((Rectangle){ helpPositionX + 30, 35, 0, 0 }, "G - Toggle grid mode");
+                GuiLabel((Rectangle){ helpPositionX + 30, 55, 0, 0 }, "S - Toggle snap to grid mode");
+                GuiLabel((Rectangle){ helpPositionX + 30, 75, 0, 0 }, "F - Toggle control position (global/anchor)");
+                GuiLine((Rectangle){ helpPositionX + 30, 85, 260, 10 }, NULL);
+                GuiLabel((Rectangle){ helpPositionX + 30, 105, 0, 0 }, "SPACE - Lock/unlock control for editing");
+                GuiLabel((Rectangle){ helpPositionX + 30, 125, 0, 0 }, "ARROWS - Edit control position");
+                GuiLabel((Rectangle){ helpPositionX + 30, 145, 0, 0 }, "LSHIFT + ARROWS - Smooth edit position");
+                GuiLabel((Rectangle){ helpPositionX + 30, 165, 0, 0 }, "LCTRL + ARROWS - Edit control scale");
+                GuiLabel((Rectangle){ helpPositionX + 30, 185, 0, 0 }, "LCTRL + LSHIFT + ARROWS - Smooth edit scale");
+                GuiLabel((Rectangle){ helpPositionX + 30, 205, 0, 0 }, "LCTRL + R - Resize control to closest snap");
+                GuiLabel((Rectangle){ helpPositionX + 30, 225, 0, 0 }, "LCTRL + D - Duplicate selected control");
+                GuiLabel((Rectangle){ helpPositionX + 30, 245, 0, 0 }, "LCTRL + N - Resets layout");
+                GuiLabel((Rectangle){ helpPositionX + 30, 265, 0, 0 }, "DEL - Delete selected control");
+                GuiLine((Rectangle){ helpPositionX + 30, 275, 260, 10 }, NULL);
+                GuiLabel((Rectangle){ helpPositionX + 30, 295, 0, 0 }, "T - Control text editing (if possible)");
+                GuiLabel((Rectangle){ helpPositionX + 30, 315, 0, 0 }, "N - Control name editing ");
+                GuiLabel((Rectangle){ helpPositionX + 30, 335, 0, 0 }, "ESC - Exit text/name editing mode");
+                GuiLabel((Rectangle){ helpPositionX + 30, 355, 0, 0 }, "ENTER - Validate text/name edition");
+                GuiLine((Rectangle){ helpPositionX + 30, 365, 260, 10 }, NULL);
+                GuiLabel((Rectangle){ helpPositionX + 30, 385, 0, 0 }, "LALT + UP/DOWN - Control layer order");
+                GuiLine((Rectangle){ helpPositionX + 30, 395, 260, 10 }, NULL);
+                GuiLabel((Rectangle){ helpPositionX + 30, 415, 0, 0 }, "A - Anchor editing mode");
+                GuiLabel((Rectangle){ helpPositionX + 30, 435, 0, 0 }, "RMB - Link anchor to control");
+                GuiLabel((Rectangle){ helpPositionX + 30, 455, 0, 0 }, "U - Unlink control from anchor");
+                GuiLabel((Rectangle){ helpPositionX + 30, 475, 0, 0 }, "H - Hide/Unhide controls for selected anchor");
+                GuiLine((Rectangle){ helpPositionX + 30, 485, 260, 10 }, NULL);
+                GuiLabel((Rectangle){ helpPositionX + 30, 505, 0, 0 }, "LCTRL + S - Save layout file (.rgl)");
+                GuiLabel((Rectangle){ helpPositionX + 30, 525, 0, 0 }, "LCTRL + O - Open layout file (.rgl)");
+                GuiLabel((Rectangle){ helpPositionX + 30, 545, 0, 0 }, "LCTRL + ENTER - Export layout to code");
+            }
+            //----------------------------------------------------------------------------------------
 
             // NOTE: If some overlap window is open and main window is locked, we draw a background rectangle
             if (GuiIsLocked()) DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.85f));
@@ -2582,18 +2578,18 @@ int main(int argc, char *argv[])
 
             if (selectedControl != -1)
             {
-                int defaultPadding = GuiGetStyle(DEFAULT, TEXT_PADDING);
-                int defaultTextAlign = GuiGetStyle(DEFAULT, TEXT_ALIGNMENT);
-                GuiSetStyle(DEFAULT, TEXT_PADDING, 10);
-                GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
+                int defaultPadding = GuiGetStyle(STATUSBAR, TEXT_PADDING);
+                int defaultTextAlign = GuiGetStyle(STATUSBAR, TEXT_ALIGNMENT);
+                GuiSetStyle(STATUSBAR, TEXT_PADDING, 10);
+                GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
                 GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24},
                              TextFormat("SELECTED CONTROL: #%03i  |  %s  |  REC (%i, %i, %i, %i)  |  %s",
                                         selectedControl, TextToUpper(controlTypeName[layout->controls[selectedControl].type]),
                                         (int)layout->controls[selectedControl].rec.x, (int)layout->controls[selectedControl].rec.y,
                                         (int)layout->controls[selectedControl].rec.width, (int)layout->controls[selectedControl].rec.height,
                                         layout->controls[selectedControl].name));
-                GuiSetStyle(DEFAULT, TEXT_PADDING, defaultPadding);
-                GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, defaultTextAlign);
+                GuiSetStyle(STATUSBAR, TEXT_PADDING, defaultPadding);
+                GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, defaultTextAlign);
             }
             else GuiStatusBar((Rectangle){ 447, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, NULL);
             //--------------------------------------------------------------------------------------------
