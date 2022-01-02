@@ -1332,16 +1332,16 @@ int GuiGetStyle(int control, int property)
 // Window Box control
 bool GuiWindowBox(Rectangle bounds, const char *title)
 {
+    // Window title bar height (including borders)
     // NOTE: This define is also used by GuiMessageBox() and GuiTextInputBox()
     #if !defined(RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT)
-        #define RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT        22
+        #define RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT        24
     #endif
 
     //GuiControlState state = guiState;
     bool clicked = false;
 
-    int statusBarHeight = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT + 2*GuiGetStyle(STATUSBAR, BORDER_WIDTH);
-    statusBarHeight += (statusBarHeight%2);
+    int statusBarHeight = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT;
 
     Rectangle statusBar = { bounds.x, bounds.y, bounds.width, (float)statusBarHeight };
     if (bounds.height < statusBarHeight*2.0f) bounds.height = statusBarHeight*2.0f;
@@ -3122,7 +3122,7 @@ int GuiMessageBox(Rectangle bounds, const char *title, const char *message, cons
         #define RAYGUI_MESSAGEBOX_BUTTON_HEIGHT    24
     #endif
     #if !defined(RAYGUI_MESSAGEBOX_BUTTON_PADDING)
-        #define RAYGUI_MESSAGEBOX_BUTTON_PADDING   10
+        #define RAYGUI_MESSAGEBOX_BUTTON_PADDING   12
     #endif
 
     int clicked = -1;    // Returns clicked button from buttons list, 0 refers to closed window button
@@ -3177,7 +3177,7 @@ int GuiTextInputBox(Rectangle bounds, const char *title, const char *message, co
         #define RAYGUI_TEXTINPUTBOX_BUTTON_PADDING     10
     #endif
     #if !defined(RAYGUI_TEXTINPUTBOX_HEIGHT)
-        #define RAYGUI_TEXTINPUTBOX_HEIGHT             30
+        #define RAYGUI_TEXTINPUTBOX_HEIGHT             24
     #endif
     #if !defined(RAYGUI_TEXTINPUTBOX_MAX_TEXT_LENGTH)
         #define RAYGUI_TEXTINPUTBOX_MAX_TEXT_LENGTH   256
@@ -3553,16 +3553,16 @@ void GuiLoadStyleDefault(void)
     // NOTE: Those properties are in default list but require specific values by control type
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
     GuiSetStyle(BUTTON, BORDER_WIDTH, 2);
-    GuiSetStyle(SLIDER, TEXT_PADDING, 5);
-    GuiSetStyle(CHECKBOX, TEXT_PADDING, 5);
+    GuiSetStyle(SLIDER, TEXT_PADDING, 4);
+    GuiSetStyle(CHECKBOX, TEXT_PADDING, 4);
     GuiSetStyle(CHECKBOX, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_RIGHT);
-    GuiSetStyle(TEXTBOX, TEXT_PADDING, 5);
+    GuiSetStyle(TEXTBOX, TEXT_PADDING, 4);
     GuiSetStyle(TEXTBOX, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
     GuiSetStyle(VALUEBOX, TEXT_PADDING, 4);
     GuiSetStyle(VALUEBOX, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
     GuiSetStyle(SPINNER, TEXT_PADDING, 4);
     GuiSetStyle(SPINNER, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
-    GuiSetStyle(STATUSBAR, TEXT_PADDING, 6);
+    GuiSetStyle(STATUSBAR, TEXT_PADDING, 8);
     GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
 
     // Initialize extended property values
@@ -3572,19 +3572,19 @@ void GuiLoadStyleDefault(void)
     GuiSetStyle(DEFAULT, LINE_COLOR, 0x90abb5ff);       // DEFAULT specific property
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, 0xf5f5f5ff); // DEFAULT specific property
     GuiSetStyle(TOGGLE, GROUP_PADDING, 2);
-    GuiSetStyle(SLIDER, SLIDER_WIDTH, 15);
+    GuiSetStyle(SLIDER, SLIDER_WIDTH, 16);
     GuiSetStyle(SLIDER, SLIDER_PADDING, 1);
     GuiSetStyle(PROGRESSBAR, PROGRESS_PADDING, 1);
     GuiSetStyle(CHECKBOX, CHECK_PADDING, 1);
-    GuiSetStyle(COMBOBOX, COMBO_BUTTON_WIDTH, 30);
+    GuiSetStyle(COMBOBOX, COMBO_BUTTON_WIDTH, 32);
     GuiSetStyle(COMBOBOX, COMBO_BUTTON_PADDING, 2);
     GuiSetStyle(DROPDOWNBOX, ARROW_PADDING, 16);
     GuiSetStyle(DROPDOWNBOX, DROPDOWN_ITEMS_PADDING, 2);
-    GuiSetStyle(TEXTBOX, TEXT_LINES_PADDING, 5);
+    GuiSetStyle(TEXTBOX, TEXT_LINES_PADDING, 4);
     GuiSetStyle(TEXTBOX, TEXT_INNER_PADDING, 4);
     GuiSetStyle(TEXTBOX, COLOR_SELECTED_FG, 0xf0fffeff);
     GuiSetStyle(TEXTBOX, COLOR_SELECTED_BG, 0x839affe0);
-    GuiSetStyle(SPINNER, SPIN_BUTTON_WIDTH, 20);
+    GuiSetStyle(SPINNER, SPIN_BUTTON_WIDTH, 24);
     GuiSetStyle(SPINNER, SPIN_BUTTON_PADDING, 2);
     GuiSetStyle(SCROLLBAR, BORDER_WIDTH, 0);
     GuiSetStyle(SCROLLBAR, ARROWS_VISIBLE, 0);
@@ -3592,15 +3592,15 @@ void GuiLoadStyleDefault(void)
     GuiSetStyle(SCROLLBAR, SCROLL_SLIDER_PADDING, 0);
     GuiSetStyle(SCROLLBAR, SCROLL_SLIDER_SIZE, 16);
     GuiSetStyle(SCROLLBAR, SCROLL_PADDING, 0);
-    GuiSetStyle(SCROLLBAR, SCROLL_SPEED, 10);
-    GuiSetStyle(LISTVIEW, LIST_ITEMS_HEIGHT, 0x1e);
+    GuiSetStyle(SCROLLBAR, SCROLL_SPEED, 12);
+    GuiSetStyle(LISTVIEW, LIST_ITEMS_HEIGHT, 24);
     GuiSetStyle(LISTVIEW, LIST_ITEMS_PADDING, 2);
-    GuiSetStyle(LISTVIEW, SCROLLBAR_WIDTH, 10);
+    GuiSetStyle(LISTVIEW, SCROLLBAR_WIDTH, 12);
     GuiSetStyle(LISTVIEW, SCROLLBAR_SIDE, SCROLLBAR_RIGHT_SIDE);
-    GuiSetStyle(COLORPICKER, COLOR_SELECTOR_SIZE, 6);
-    GuiSetStyle(COLORPICKER, HUEBAR_WIDTH, 0x14);
-    GuiSetStyle(COLORPICKER, HUEBAR_PADDING, 0xa);
-    GuiSetStyle(COLORPICKER, HUEBAR_SELECTOR_HEIGHT, 6);
+    GuiSetStyle(COLORPICKER, COLOR_SELECTOR_SIZE, 8);
+    GuiSetStyle(COLORPICKER, HUEBAR_WIDTH, 16);
+    GuiSetStyle(COLORPICKER, HUEBAR_PADDING, 8);
+    GuiSetStyle(COLORPICKER, HUEBAR_SELECTOR_HEIGHT, 8);
     GuiSetStyle(COLORPICKER, HUEBAR_SELECTOR_OVERFLOW, 2);
 
     guiFont = GetFontDefault();     // Initialize default font
