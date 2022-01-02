@@ -53,8 +53,6 @@
 #define TOOL_RELEASE_DATE       "Dec.2021"
 #define TOOL_LOGO_COLOR         0x7da9b9ff
 
-#define GUI_GRID_SIZE           20          // Pixel size for every grid square
-
 #include "raylib.h"
 #include "rguilayout.h"
 
@@ -63,7 +61,10 @@
     #include <emscripten/emscripten.h>      // Emscripten library - LLVM to JavaScript compiler
 #endif
 
-#define RAYGUI_GRID_ALPHA           0.1f
+#define RAYGUI_GRID_ALPHA                 0.1f
+#define RAYGUI_TEXTSPLIT_MAX_ELEMENTS     256
+#define RAYGUI_TEXTSPLIT_MAX_TEXT_SIZE   4096
+#define RAYGUI_TOGGLEGROUP_MAX_ELEMENTS   256
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"                         // Required for: IMGUI controls
 
@@ -112,10 +113,9 @@ bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib
 
 #define ANCHOR_RADIUS               20      // Default anchor radius
 #define MIN_CONTROL_SIZE            10      // Minimum control size
-#define MOUSE_SCALE_MARK_SIZE       12      // Mouse scale mark size (bottom-right corner)
+#define SCALE_BOX_CORNER_SIZE       12      // Scale box bottom-right corner square size
 
 #define MOVEMENT_FRAME_SPEED        2       // Controls movement speed in pixels per frame: TODO: Review
-#define PANELS_EASING_FRAMES        60      // Controls the easing time in frames
 
 #define MAX_UNDO_LEVELS             10      // Undo levels supported for the ring buffer
 
@@ -149,7 +149,7 @@ static const char *toolDescription = TOOL_DESCRIPTION;
 
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
 
-#define HELP_LINES_COUNT    34
+#define HELP_LINES_COUNT    33
 
 const char *helpLines[HELP_LINES_COUNT] = {
     "-File Options",
@@ -183,7 +183,7 @@ const char *helpLines[HELP_LINES_COUNT] = {
     "F2 - Toggle About window",
     "G - Toggle grid mode",
     "S - Toggle snap to grid mode",
-    "RALT + UP/DOWN - Grid spacing + snap",
+    //"RALT + UP/DOWN - Grid spacing + snap",
     "F - Toggle control position (global/anchor)",
     "SPACE - Tracemap Lock/Unlock",
 };
@@ -202,6 +202,7 @@ static void UnloadLayout(GuiLayout *layout);                // Unload raygui lay
 static void ResetLayout(GuiLayout *layout);                 // Reset layout to default values
 static void SaveLayout(GuiLayout *layout, const char *fileName);     // Save raygui layout as text file (.rgl)
 
+// Draw help panel with the provided lines
 static void GuiHelpPanel(int posX, int posY, const char *title, const char **helpLines, int helpLinesCount);
 
 //----------------------------------------------------------------------------------
@@ -261,11 +262,13 @@ int main(int argc, char *argv[])
     // General app variables
     Vector2 mouse = { -1, -1 };             // Mouse position
 
+    // Grid control variables
     bool showGrid = true;                   // Show grid flag (KEY_G)
-    int gridLineSpacing = 20;                // Grid line spacing in pixels
+    int gridSpacing = 8;                    // Grid minimum spacing in pixels (between every subdivision)
+    int gridSubdivisions = 3;               // Grid subdivisions (total size for every big line is gridSpacing*gridSubdivisions)
+    int gridSnapDelta = 1;                  // Grid snap minimum value in pixels
     int moveFrameCounter = 0;               // Movement frames counter
-    int movePerFrame = 1;                   // Movement speed per frame
-    int movePixel = 1;                      // Movement pixels (depends on grid spacing)
+    int moveFrameSpeed = 1;                 // Movement speed per frame
 
     // Work modes
     bool snapMode = false;                  // Snap mode flag (KEY_S)
@@ -275,6 +278,7 @@ int main(int argc, char *argv[])
     // NOTE: [E] - Exclusive mode operation, all other modes blocked
     bool dragMoveMode = false;              // [E] Control drag mode
     bool textEditMode = false;              // [E] Control text edit mode (KEY_T)
+    bool showIconPanel = false;             // Show icon panel for selection
     bool nameEditMode = false;              // [E] Control name edit mode (KEY_N)
     bool orderEditMode = false;             // Control order edit mode (focusedControl != -1 + KEY_LEFT_ALT)
     bool resizeMode = false;                // [E] Control size mode (controlSelected != -1 + KEY_LEFT_ALT)
@@ -393,35 +397,14 @@ int main(int argc, char *argv[])
     bool showExportFileDialog = false;
     //-----------------------------------------------------------------------------------
 
-    // Rectangles used on controls preview drawing
+    // Rectangles used on controls preview drawing, copied from palette
     // NOTE: [x, y] position is set on mouse movement and cosidering snap mode
-    // TODO: Review default sizes to match GUI_GRID_SIZE
-    Rectangle defaultRec[24] = {
-        (Rectangle){ 0, 0, 125, 50},            // GUI_WINDOWBOX
-        (Rectangle){ 0, 0, 125, 30},            // GUI_GROUPBOX
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_LINE
-        (Rectangle){ 0, 0, 125, 35 },           // GUI_PANEL
-        (Rectangle){ 0, 0, 126, 25 },           // GUI_LABEL
-        (Rectangle){ 0, 0, 125, 30 },           // GUI_BUTTON
-        (Rectangle){ 0, 0, 125, 30 },           // GUI_LABELBUTTON
-        (Rectangle){ 0, 0, 15, 15},             // GUI_CHECKBOX
-        (Rectangle){ 0, 0, 90, 25 },            // GUI_TOGGLE
-        (Rectangle){ 0, 0, 125/3, 25 },         // GUI_TOGGLEGROUP
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_COMBOBOX
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_DROPDOWNBOX
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_TEXTBOX
-        (Rectangle){ 0, 0, 125, 75 },           // GUI_TEXTBOXMULTI
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_VALUEBOX
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_SPINNER
-        (Rectangle){ 0, 0, 125, 15 },           // GUI_SLIDER
-        (Rectangle){ 0, 0, 125, 15 },           // GUI_SLIDERBAR
-        (Rectangle){ 0, 0, 125, 15 },           // GUI_PROGRESSBAR
-        (Rectangle){ 0, 0, 125, 25 },           // GUI_STATUSBAR
-        (Rectangle){ 0, 0, 125, 75 },           // GUI_SCROLLPANEL
-        (Rectangle){ 0, 0, 125, 75 },           // GUI_LISTVIEW
-        (Rectangle){ 0, 0, 95, 95 },            // GUI_COLORPICKER
-        (Rectangle){ 0, 0, 125, 30 },           // GUI_DUMMYREC
-    };
+    Rectangle defaultRec[CONTROLS_PALETTE_COUNT] = { 0 };
+    for (int i = 0; i < CONTROLS_PALETTE_COUNT; i++)
+    {
+        defaultRec[i].width = paletteState.controlRecs[i].width;
+        defaultRec[i].height = paletteState.controlRecs[i].height;
+    }
 
     // Generate code configuration
     GuiLayoutConfig config = { 0 };
@@ -448,6 +431,17 @@ int main(int argc, char *argv[])
 
     int workAreaOffsetY = 0;        // TODO: Main toolbar height
 
+    // Select icon ToggleGroup()
+    int selectedIcon = 0; 
+    char toggleIconsText[16*13*6] = { 0 };  // 13 lines with 16 icons per line -> TODO: Review if more icons are added!
+    for (int i = 0; i < 16*13; i++)
+    {
+        // NOTE: Every icon requires 6 text characters: "#001#;"
+        if ((i + 1)%16 == 0) strncpy(toggleIconsText + 6*i, TextFormat("#%03i#\n", i), 6);
+        else strncpy(toggleIconsText + 6*i, TextFormat("#%03i#;", i), 6);
+    }
+    toggleIconsText[16*13*6 - 1] = '\0';
+
     SetTargetFPS(120);
     //--------------------------------------------------------------------------------------
 
@@ -460,7 +454,7 @@ int main(int argc, char *argv[])
         //----------------------------------------------------------------------------------
         // Every second check if current layout has changed and record a new undo state
         if (!dragMoveMode && !orderEditMode && !resizeMode && !refWindowEditMode &&
-            !textEditMode && !nameEditMode && !anchorEditMode && !anchorLinkMode && !anchorMoveMode)
+            !textEditMode && !showIconPanel && !nameEditMode && !anchorEditMode && !anchorLinkMode && !anchorMoveMode)
         {
             undoFrameCounter++;
 
@@ -602,6 +596,7 @@ int main(int argc, char *argv[])
             if (textEditMode)       // Cancel text edit mode
             {
                 textEditMode = false;
+                showIconPanel = false;
                 if (selectedControl != -1)
                 {
                     memset(layout->controls[selectedControl].text, 0, MAX_CONTROL_TEXT_LENGTH);
@@ -649,13 +644,13 @@ int main(int argc, char *argv[])
                 snapMode = !snapMode;
                 if (snapMode)
                 {
-                    movePixel = gridLineSpacing;
-                    movePerFrame = MOVEMENT_FRAME_SPEED;
+                    gridSnapDelta = gridSpacing;
+                    moveFrameSpeed = MOVEMENT_FRAME_SPEED;
                 }
                 else
                 {
-                    movePixel = 1;
-                    movePerFrame = 1;
+                    gridSnapDelta = 1;      // 1 pixel variation
+                    moveFrameSpeed = 1;
                 }
             }
 
@@ -704,13 +699,16 @@ int main(int argc, char *argv[])
             }
 
             // Change grid spacing
+            // TODO: Look for a better mechanism
+            /*
             if (IsKeyDown(KEY_RIGHT_ALT))
             {
-                if (IsKeyPressed(KEY_UP)) gridLineSpacing++;
-                else if (IsKeyPressed(KEY_DOWN)) gridLineSpacing--;
+                if (IsKeyPressed(KEY_UP)) gridSpacing++;
+                else if (IsKeyPressed(KEY_DOWN)) gridSpacing--;
 
-                movePixel = gridLineSpacing;
+                gridSnapDelta = gridSpacing;
             }
+            */
         }
 
         // Basic program flow logic
@@ -757,13 +755,13 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------------
             if (snapMode && !anchorLinkMode)
             {
-                int offsetX = (int)mouse.x%gridLineSpacing;
-                int offsetY = (int)mouse.y%gridLineSpacing;
+                int offsetX = (int)mouse.x%gridSpacing;
+                int offsetY = (int)mouse.y%gridSpacing;
 
-                if (offsetX >= gridLineSpacing/2) mouse.x += (gridLineSpacing - offsetX);
+                if (offsetX >= gridSpacing/2) mouse.x += (gridSpacing - offsetX);
                 else mouse.x -= offsetX;
 
-                if (offsetY >= gridLineSpacing/2) mouse.y += (gridLineSpacing - offsetY);
+                if (offsetY >= gridSpacing/2) mouse.y += (gridSpacing - offsetY);
                 else mouse.y -= offsetY;
             }
             //----------------------------------------------------------------------------------------------
@@ -792,13 +790,13 @@ int main(int argc, char *argv[])
             {
                 // TODO: Review depending on the Grid size and position
 
-                int offsetX = (int)defaultRec[selectedType].x%movePixel;
-                int offsetY = (int)defaultRec[selectedType].y%movePixel;
+                int offsetX = (int)defaultRec[selectedType].x%gridSnapDelta;
+                int offsetY = (int)defaultRec[selectedType].y%gridSnapDelta;
 
-                if (offsetX >= gridLineSpacing/2) defaultRec[selectedType].x += (gridLineSpacing - offsetX);
+                if (offsetX >= gridSpacing/2) defaultRec[selectedType].x += (gridSpacing - offsetX);
                 else defaultRec[selectedType].x -= offsetX;
 
-                if (offsetY >= gridLineSpacing/2) defaultRec[selectedType].y += (gridLineSpacing - offsetY);
+                if (offsetY >= gridSpacing/2) defaultRec[selectedType].y += (gridSpacing - offsetY);
                 else defaultRec[selectedType].y -= offsetY;
             }
 
@@ -820,7 +818,7 @@ int main(int argc, char *argv[])
                                 else if (layout->controls[i].type == GUI_GROUPBOX)
                                 {
                                     layoutRec.y -= 10;
-                                    layoutRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;
+                                    layoutRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE)*2.0f;
                                 }
 
                                 if (layout->controls[i].ap->id > 0)
@@ -911,13 +909,13 @@ int main(int argc, char *argv[])
 
                                             if (snapMode)
                                             {
-                                                int offsetX = layout->anchors[i].x%gridLineSpacing;
-                                                int offsetY = layout->anchors[i].y%gridLineSpacing;
+                                                int offsetX = layout->anchors[i].x%gridSpacing;
+                                                int offsetY = layout->anchors[i].y%gridSpacing;
 
-                                                if (offsetX >= gridLineSpacing/2) layout->anchors[i].x += (gridLineSpacing - offsetX);
+                                                if (offsetX >= gridSpacing/2) layout->anchors[i].x += (gridSpacing - offsetX);
                                                 else layout->anchors[i].x -= offsetX;
 
-                                                if (offsetY >= gridLineSpacing/2) layout->anchors[i].y += (gridLineSpacing - offsetY);
+                                                if (offsetY >= gridSpacing/2) layout->anchors[i].y += (gridSpacing - offsetY);
                                                 else layout->anchors[i].y -= offsetY;
                                             }
 
@@ -1001,9 +999,9 @@ int main(int argc, char *argv[])
                     }
 
                     if (CheckCollisionPointRec(mouse, rec) &&
-                        CheckCollisionPointRec(mouse, (Rectangle){ rec.x + rec.width - MOUSE_SCALE_MARK_SIZE,
-                                                                   rec.y + rec.height - MOUSE_SCALE_MARK_SIZE,
-                                                                   MOUSE_SCALE_MARK_SIZE, MOUSE_SCALE_MARK_SIZE }))
+                        CheckCollisionPointRec(mouse, (Rectangle){ rec.x + rec.width - SCALE_BOX_CORNER_SIZE,
+                                                                   rec.y + rec.height - SCALE_BOX_CORNER_SIZE,
+                                                                   SCALE_BOX_CORNER_SIZE, SCALE_BOX_CORNER_SIZE }))
                     {
                         mouseScaleReady = true;
                         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) mouseScaleMode = true;
@@ -1017,8 +1015,8 @@ int main(int argc, char *argv[])
                         rec.width = (mouse.x - rec.x);
                         rec.height = (mouse.y - rec.y);
 
-                        if (rec.width < MOUSE_SCALE_MARK_SIZE) rec.width = MOUSE_SCALE_MARK_SIZE;
-                        if (rec.height < MOUSE_SCALE_MARK_SIZE) rec.height = MOUSE_SCALE_MARK_SIZE;
+                        if (rec.width < SCALE_BOX_CORNER_SIZE) rec.width = SCALE_BOX_CORNER_SIZE;
+                        if (rec.height < SCALE_BOX_CORNER_SIZE) rec.height = SCALE_BOX_CORNER_SIZE;
 
                         // NOTE: We must consider anchor offset!
                         if (layout->controls[selectedControl].ap->id > 0)
@@ -1043,13 +1041,13 @@ int main(int argc, char *argv[])
 
                             if (snapMode)
                             {
-                                int offsetX = (int)controlPosX%movePixel;
-                                int offsetY = (int)controlPosY%movePixel;
+                                int offsetX = (int)controlPosX%gridSnapDelta;
+                                int offsetY = (int)controlPosY%gridSnapDelta;
 
-                                if (offsetX >= movePixel/2) controlPosX += (movePixel - offsetX);
+                                if (offsetX >= gridSnapDelta/2) controlPosX += (gridSnapDelta - offsetX);
                                 else controlPosX -= offsetX;
 
-                                if (offsetY >= movePixel/2) controlPosY += (movePixel - offsetY);
+                                if (offsetY >= gridSnapDelta/2) controlPosY += (gridSnapDelta - offsetY);
                                 else controlPosY -= offsetY;
                             }
 
@@ -1101,22 +1099,22 @@ int main(int argc, char *argv[])
                                 }
 
                                 // Resize control
-                                int offsetX = (int)layout->controls[selectedControl].rec.width%movePixel;
-                                int offsetY = (int)layout->controls[selectedControl].rec.height%movePixel;
+                                int offsetX = (int)layout->controls[selectedControl].rec.width%gridSnapDelta;
+                                int offsetY = (int)layout->controls[selectedControl].rec.height%gridSnapDelta;
 
                                 if (precisionMode)
                                 {
-                                    if (IsKeyPressed(KEY_RIGHT)) layout->controls[selectedControl].rec.width += (movePixel - offsetX);
+                                    if (IsKeyPressed(KEY_RIGHT)) layout->controls[selectedControl].rec.width += (gridSnapDelta - offsetX);
                                     else if (IsKeyPressed(KEY_LEFT))
                                     {
-                                        if (offsetX == 0) offsetX = movePixel;
+                                        if (offsetX == 0) offsetX = gridSnapDelta;
                                         layout->controls[selectedControl].rec.width -= offsetX;
                                     }
 
-                                    if (IsKeyPressed(KEY_DOWN)) layout->controls[selectedControl].rec.height += (movePixel - offsetY);
+                                    if (IsKeyPressed(KEY_DOWN)) layout->controls[selectedControl].rec.height += (gridSnapDelta - offsetY);
                                     else if (IsKeyPressed(KEY_UP))
                                     {
-                                        if (offsetY == 0) offsetY = movePixel;
+                                        if (offsetY == 0) offsetY = gridSnapDelta;
                                         layout->controls[selectedControl].rec.height -= offsetY;
                                     }
 
@@ -1126,19 +1124,19 @@ int main(int argc, char *argv[])
                                 {
                                     moveFrameCounter++;
 
-                                    if ((moveFrameCounter%movePerFrame) == 0)
+                                    if ((moveFrameCounter%moveFrameSpeed) == 0)
                                     {
-                                        if (IsKeyDown(KEY_RIGHT)) layout->controls[selectedControl].rec.width += (movePixel - offsetX);
+                                        if (IsKeyDown(KEY_RIGHT)) layout->controls[selectedControl].rec.width += (gridSnapDelta - offsetX);
                                         else if (IsKeyDown(KEY_LEFT))
                                         {
-                                            if (offsetX == 0) offsetX = movePixel;
+                                            if (offsetX == 0) offsetX = gridSnapDelta;
                                             layout->controls[selectedControl].rec.width -= offsetX;
                                         }
 
-                                        if (IsKeyDown(KEY_DOWN)) layout->controls[selectedControl].rec.height += (movePixel - offsetY);
+                                        if (IsKeyDown(KEY_DOWN)) layout->controls[selectedControl].rec.height += (gridSnapDelta - offsetY);
                                         else if (IsKeyDown(KEY_UP))
                                         {
-                                            if (offsetY == 0) offsetY = movePixel;
+                                            if (offsetY == 0) offsetY = gridSnapDelta;
                                             layout->controls[selectedControl].rec.height -= offsetY;
                                         }
 
@@ -1162,22 +1160,22 @@ int main(int argc, char *argv[])
                                     controlPosY += layout->controls[selectedControl].ap->y;
                                 }
 
-                                int offsetX = (int)controlPosX%movePixel;
-                                int offsetY = (int)controlPosY%movePixel;
+                                int offsetX = (int)controlPosX%gridSnapDelta;
+                                int offsetY = (int)controlPosY%gridSnapDelta;
 
                                 if (precisionMode)
                                 {
-                                    if (IsKeyPressed(KEY_RIGHT))  controlPosX += (movePixel - offsetX);
+                                    if (IsKeyPressed(KEY_RIGHT))  controlPosX += (gridSnapDelta - offsetX);
                                     else if (IsKeyPressed(KEY_LEFT))
                                     {
-                                        if (offsetX == 0) offsetX = movePixel;
+                                        if (offsetX == 0) offsetX = gridSnapDelta;
                                         controlPosX -= offsetX;
                                     }
 
-                                    if (IsKeyPressed(KEY_DOWN)) controlPosY += (movePixel - offsetY);
+                                    if (IsKeyPressed(KEY_DOWN)) controlPosY += (gridSnapDelta - offsetY);
                                     else if (IsKeyPressed(KEY_UP))
                                     {
-                                        if (offsetY == 0) offsetY = movePixel;
+                                        if (offsetY == 0) offsetY = gridSnapDelta;
                                         controlPosY -= offsetY;
                                     }
 
@@ -1187,19 +1185,19 @@ int main(int argc, char *argv[])
                                 {
                                     moveFrameCounter++;
 
-                                    if ((moveFrameCounter%movePerFrame) == 0)
+                                    if ((moveFrameCounter%moveFrameSpeed) == 0)
                                     {
-                                        if (IsKeyDown(KEY_RIGHT)) controlPosX += (movePixel - offsetX);
+                                        if (IsKeyDown(KEY_RIGHT)) controlPosX += (gridSnapDelta - offsetX);
                                         else if (IsKeyDown(KEY_LEFT))
                                         {
-                                            if (offsetX == 0) offsetX = movePixel;
+                                            if (offsetX == 0) offsetX = gridSnapDelta;
                                             controlPosX -= offsetX;
                                         }
 
-                                        if (IsKeyDown(KEY_DOWN)) controlPosY += (movePixel - offsetY);
+                                        if (IsKeyDown(KEY_DOWN)) controlPosY += (gridSnapDelta - offsetY);
                                         else if (IsKeyDown(KEY_UP))
                                         {
-                                            if (offsetY == 0) offsetY = movePixel;
+                                            if (offsetY == 0) offsetY = gridSnapDelta;
                                             controlPosY -= offsetY;
                                         }
 
@@ -1267,11 +1265,7 @@ int main(int argc, char *argv[])
                                 }
                                 else if (IsKeyReleased(KEY_T))  // Enable text edit mode
                                 {
-                                    if (layout->controls[selectedControl].type != GUI_LINE &&
-                                        layout->controls[selectedControl].type != GUI_PANEL &&
-                                        layout->controls[selectedControl].type != GUI_VALUEBOX &&
-                                        layout->controls[selectedControl].type != GUI_SPINNER &&
-                                        //layout->controls[selectedControl].type != GUI_PROGRESSBAR &&
+                                    if (layout->controls[selectedControl].type != GUI_PANEL &&
                                         layout->controls[selectedControl].type != GUI_SCROLLPANEL &&
                                         //layout->controls[selectedControl].type != GUI_LISTVIEW &&
                                         layout->controls[selectedControl].type != GUI_COLORPICKER)
@@ -1571,23 +1565,23 @@ int main(int argc, char *argv[])
                             }
                             else
                             {
-                                int offsetX = (int)layout->anchors[selectedAnchor].x%movePixel;
-                                int offsetY = (int)layout->anchors[selectedAnchor].y%movePixel;
+                                int offsetX = (int)layout->anchors[selectedAnchor].x%gridSnapDelta;
+                                int offsetY = (int)layout->anchors[selectedAnchor].y%gridSnapDelta;
 
                                 // Move anchor with arrows once
                                 if (precisionMode)
                                 {
-                                    if (IsKeyPressed(KEY_RIGHT)) layout->anchors[selectedAnchor].x+= (movePixel - offsetX);
+                                    if (IsKeyPressed(KEY_RIGHT)) layout->anchors[selectedAnchor].x+= (gridSnapDelta - offsetX);
                                     else if (IsKeyPressed(KEY_LEFT))
                                     {
-                                        if (offsetX == 0) offsetX = movePixel;
+                                        if (offsetX == 0) offsetX = gridSnapDelta;
                                         layout->anchors[selectedAnchor].x-= offsetX;
                                     }
 
-                                    if (IsKeyPressed(KEY_DOWN)) layout->anchors[selectedAnchor].y+= (movePixel - offsetY);
+                                    if (IsKeyPressed(KEY_DOWN)) layout->anchors[selectedAnchor].y+= (gridSnapDelta - offsetY);
                                     else if (IsKeyPressed(KEY_UP))
                                     {
-                                        if (offsetY == 0) offsetY = movePixel;
+                                        if (offsetY == 0) offsetY = gridSnapDelta;
                                         layout->anchors[selectedAnchor].y-= offsetY;
                                     }
 
@@ -1597,20 +1591,20 @@ int main(int argc, char *argv[])
                                 {
                                     moveFrameCounter++;
 
-                                    if ((moveFrameCounter%movePerFrame) == 0)
+                                    if ((moveFrameCounter%moveFrameSpeed) == 0)
                                     {
-                                        if (IsKeyDown(KEY_RIGHT)) layout->anchors[selectedAnchor].x += (movePixel - offsetX);
+                                        if (IsKeyDown(KEY_RIGHT)) layout->anchors[selectedAnchor].x += (gridSnapDelta - offsetX);
                                         else if (IsKeyDown(KEY_LEFT))
                                         {
-                                            if (offsetX == 0) offsetX = movePixel;
+                                            if (offsetX == 0) offsetX = gridSnapDelta;
                                             layout->anchors[selectedAnchor].x -= offsetX;
                                         }
 
 
-                                        if (IsKeyDown(KEY_DOWN)) layout->anchors[selectedAnchor].y +=(movePixel - offsetY);
+                                        if (IsKeyDown(KEY_DOWN)) layout->anchors[selectedAnchor].y +=(gridSnapDelta - offsetY);
                                         else if (IsKeyDown(KEY_UP))
                                         {
-                                            if (offsetY == 0) offsetY = movePixel;
+                                            if (offsetY == 0) offsetY = gridSnapDelta;
                                             layout->anchors[selectedAnchor].y -= offsetY;
                                         }
 
@@ -1722,27 +1716,27 @@ int main(int argc, char *argv[])
                 {
                     if (dragMoveMode)
                     {
-                        int offsetX = (int)mouse.x%gridLineSpacing;
-                        int offsetY = (int)mouse.y%gridLineSpacing;
+                        int offsetX = (int)mouse.x%gridSpacing;
+                        int offsetY = (int)mouse.y%gridSpacing;
 
                         tracemapRec.x = prevPosition.x + (mouse.x - panOffset.x);
                         tracemapRec.y = prevPosition.y + (mouse.y - panOffset.y);
 
                         if (snapMode)
                         {
-                            if (offsetX >= gridLineSpacing/2) mouse.x += (gridLineSpacing - offsetX);
+                            if (offsetX >= gridSpacing/2) mouse.x += (gridSpacing - offsetX);
                             else mouse.x -= offsetX;
 
-                            if (offsetY >= gridLineSpacing/2) mouse.y += (gridLineSpacing - offsetY);
+                            if (offsetY >= gridSpacing/2) mouse.y += (gridSpacing - offsetY);
                             else mouse.y -= offsetY;
 
-                            offsetX = (int)tracemapRec.x%gridLineSpacing;
-                            offsetY = (int)tracemapRec.y%gridLineSpacing;
+                            offsetX = (int)tracemapRec.x%gridSpacing;
+                            offsetY = (int)tracemapRec.y%gridSpacing;
 
-                            if (offsetX >= gridLineSpacing/2) tracemapRec.x += (gridLineSpacing - offsetX);
+                            if (offsetX >= gridSpacing/2) tracemapRec.x += (gridSpacing - offsetX);
                             else tracemapRec.x -= offsetX;
 
-                            if (offsetY >= gridLineSpacing/2) tracemapRec.y += (gridLineSpacing - offsetY);
+                            if (offsetY >= gridSpacing/2) tracemapRec.y += (gridSpacing - offsetY);
                             else tracemapRec.y -= offsetY;
                         }
 
@@ -1757,13 +1751,13 @@ int main(int argc, char *argv[])
                             {
                                 if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_DOWN))
                                 {
-                                    tracemapRec.height += movePixel;
-                                    tracemapRec.width += movePixel;
+                                    tracemapRec.height += gridSnapDelta;
+                                    tracemapRec.width += gridSnapDelta;
                                 }
                                 else if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_UP))
                                 {
-                                    tracemapRec.height -= movePixel;
-                                    tracemapRec.width -= movePixel;
+                                    tracemapRec.height -= gridSnapDelta;
+                                    tracemapRec.width -= gridSnapDelta;
                                 }
 
                                 moveFrameCounter = 0;
@@ -1772,17 +1766,17 @@ int main(int argc, char *argv[])
                             {
                                 moveFrameCounter++;
 
-                                if ((moveFrameCounter%movePerFrame) == 0)
+                                if ((moveFrameCounter%moveFrameSpeed) == 0)
                                 {
                                     if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_DOWN))
                                     {
-                                        tracemapRec.height += movePixel;
-                                        tracemapRec.width += movePixel;
+                                        tracemapRec.height += gridSnapDelta;
+                                        tracemapRec.width += gridSnapDelta;
                                     }
                                     else if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_UP))
                                     {
-                                        tracemapRec.height -= movePixel;
-                                        tracemapRec.width -= movePixel;
+                                        tracemapRec.height -= gridSnapDelta;
+                                        tracemapRec.width -= gridSnapDelta;
                                     }
 
                                     moveFrameCounter = 0;
@@ -1795,22 +1789,22 @@ int main(int argc, char *argv[])
                         else
                         {
                             // Move map with arrows
-                            int offsetX = (int)tracemapRec.x%movePixel;
-                            int offsetY = (int)tracemapRec.y%movePixel;
+                            int offsetX = (int)tracemapRec.x%gridSnapDelta;
+                            int offsetY = (int)tracemapRec.y%gridSnapDelta;
 
                             if (precisionMode)
                             {
-                                if (IsKeyPressed(KEY_RIGHT))  tracemapRec.x += (movePixel - offsetX);
+                                if (IsKeyPressed(KEY_RIGHT))  tracemapRec.x += (gridSnapDelta - offsetX);
                                 else if (IsKeyPressed(KEY_LEFT))
                                 {
-                                    if (offsetX == 0) offsetX = movePixel;
+                                    if (offsetX == 0) offsetX = gridSnapDelta;
                                     tracemapRec.x -= offsetX;
                                 }
 
-                                if (IsKeyPressed(KEY_DOWN)) tracemapRec.y += (movePixel - offsetY);
+                                if (IsKeyPressed(KEY_DOWN)) tracemapRec.y += (gridSnapDelta - offsetY);
                                 else if (IsKeyPressed(KEY_UP))
                                 {
-                                    if (offsetY == 0) offsetY = movePixel;
+                                    if (offsetY == 0) offsetY = gridSnapDelta;
                                     tracemapRec.y -= offsetY;
                                 }
 
@@ -1820,19 +1814,19 @@ int main(int argc, char *argv[])
                             {
                                 moveFrameCounter++;
 
-                                if ((moveFrameCounter%movePerFrame) == 0)
+                                if ((moveFrameCounter%moveFrameSpeed) == 0)
                                 {
-                                    if (IsKeyDown(KEY_RIGHT)) tracemapRec.x += (movePixel - offsetX);
+                                    if (IsKeyDown(KEY_RIGHT)) tracemapRec.x += (gridSnapDelta - offsetX);
                                     else if (IsKeyDown(KEY_LEFT))
                                     {
-                                        if (offsetX == 0) offsetX = movePixel;
+                                        if (offsetX == 0) offsetX = gridSnapDelta;
                                         tracemapRec.x -= offsetX;
                                     }
 
-                                    if (IsKeyDown(KEY_DOWN)) tracemapRec.y += (movePixel - offsetY);
+                                    if (IsKeyDown(KEY_DOWN)) tracemapRec.y += (gridSnapDelta - offsetY);
                                     else if (IsKeyDown(KEY_UP))
                                     {
-                                        if (offsetY == 0) offsetY = movePixel;
+                                        if (offsetY == 0) offsetY = gridSnapDelta;
                                         tracemapRec.y -= offsetY;
                                     }
 
@@ -1925,6 +1919,7 @@ int main(int argc, char *argv[])
             precisionMode = false;
             nameEditMode = false;
             textEditMode = false;
+            showIconPanel = false;
 
             ResetLayout(layout);
 
@@ -1950,7 +1945,7 @@ int main(int argc, char *argv[])
             else GuiUnlock();
 
             // Draw background grid
-            if (showGrid) GuiGrid((Rectangle){ 0, workAreaOffsetY, GetScreenWidth(), GetScreenHeight() }, gridLineSpacing, 2);
+            if (showGrid) GuiGrid((Rectangle){ 0, workAreaOffsetY, GetScreenWidth(), GetScreenHeight() }, gridSpacing*gridSubdivisions, gridSubdivisions);
 
             // Draw the tracemap texture if loaded
             //---------------------------------------------------------------------------------
@@ -2018,6 +2013,8 @@ int main(int argc, char *argv[])
                     if (layout->controls[i].ap->id > 0) anchorOffset = (Vector2){ layout->controls[i].ap->x, layout->controls[i].ap->y };
                     Rectangle rec = { anchorOffset.x + layout->controls[i].rec.x, anchorOffset.y + layout->controls[i].rec.y, layout->controls[i].rec.width, layout->controls[i].rec.height };
 
+                    if (layout->controls[i].type == GUI_TOGGLEGROUP) rec.width /= 3;    // HACK!
+
                     switch (layout->controls[i].type)
                     {
                         case GUI_WINDOWBOX:
@@ -2025,15 +2022,19 @@ int main(int argc, char *argv[])
                             GuiFade(0.8f);
                             GuiWindowBox(rec, layout->controls[i].text);
                             GuiFade(1.0f);
-                        }break;
+                        } break;
                         case GUI_GROUPBOX: GuiGroupBox(rec, layout->controls[i].text); break;
-                        case GUI_LINE: GuiLine(rec, NULL); break;
+                        case GUI_LINE: 
+                        {
+                            if (layout->controls[i].text[0] == '\0') GuiLine(rec, NULL);
+                            else GuiLine(rec, layout->controls[i].text);
+                        } break;
                         case GUI_PANEL:
                         {
                             GuiFade(0.8f);
                             GuiPanel(rec);
                             GuiFade(1.0f);
-                        }break;
+                        } break;
                         case GUI_LABEL: GuiLabel(rec, layout->controls[i].text); break;
                         case GUI_BUTTON: GuiButton(rec, layout->controls[i].text); break;
                         case GUI_LABELBUTTON: GuiLabelButton(rec, layout->controls[i].text); break;
@@ -2142,7 +2143,9 @@ int main(int argc, char *argv[])
                                     case GUI_LABELBUTTON: GuiLabelButton(defaultRec[selectedType], "LABEL_BUTTON"); break;
                                     case GUI_CHECKBOX: GuiCheckBox(defaultRec[selectedType], "CHECK BOX", false); break;
                                     case GUI_TOGGLE: GuiToggle(defaultRec[selectedType], "TOGGLE", false); break;
-                                    case GUI_TOGGLEGROUP: GuiToggleGroup(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
+                                    // WARNING: Selection rectangle for GuiToggleGroup() considers all the control while the function expects only one piece!
+                                    // TODO: Review the rectangle defined for ToggleGroup() or review the control itself to receive the complete bounds with (?)
+                                    case GUI_TOGGLEGROUP: GuiToggleGroup((Rectangle) { defaultRec[selectedType].x, defaultRec[selectedType].y, defaultRec[selectedType].width/3, defaultRec[selectedType].height }, "ONE;TWO;THREE", 1); break;
                                     case GUI_COMBOBOX: GuiComboBox(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
                                     case GUI_DROPDOWNBOX: GuiDropdownBox(defaultRec[selectedType], "ONE;TWO;THREE", &dropdownBoxActive, false); break;
                                     case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedType], "TEXT BOX", 7, false); break;
@@ -2196,7 +2199,7 @@ int main(int argc, char *argv[])
                                         else if (type == GUI_GROUPBOX)
                                         {
                                             textboxRec.y -= 10;
-                                            textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;
+                                            textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE)*2;
                                         }
 
                                         if (layout->controls[i].ap->id > 0)
@@ -2212,7 +2215,7 @@ int main(int argc, char *argv[])
                                     for (int i = 0; i < layout->anchorCount; i++)
                                     {
                                         Rectangle textboxRec = (Rectangle){ layout->anchors[i].x, layout->anchors[i].y,
-                                                                                MeasureText(layout->anchors[i].name, GuiGetStyle(DEFAULT, TEXT_SIZE)) + 10, GuiGetStyle(DEFAULT, TEXT_SIZE) + 5 };
+                                                                            MeasureText(layout->anchors[i].name, GuiGetStyle(DEFAULT, TEXT_SIZE)) + 10, GuiGetStyle(DEFAULT, TEXT_SIZE) + 5 };
 
                                         DrawRectangleRec(textboxRec, WHITE);
                                         DrawRectangleRec(textboxRec, Fade(ORANGE, 0.1f));
@@ -2337,7 +2340,7 @@ int main(int argc, char *argv[])
                     else if (layout->controls[selectedControl].type == GUI_GROUPBOX)
                     {
                         selectedRec.y -= 10;
-                        selectedRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;
+                        selectedRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE)*2.0f;
                     }
 
                     if (layout->controls[selectedControl].ap->id > 0)
@@ -2389,7 +2392,7 @@ int main(int argc, char *argv[])
                     }
 
                     // Text edit
-                    if (textEditMode)
+                    if (textEditMode || showIconPanel)
                     {
                         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(SKYBLUE, 0.2f));
                         DrawText("Control text edit mode", 20, 25, 20, DARKGRAY);
@@ -2406,7 +2409,7 @@ int main(int argc, char *argv[])
                         else if (layout->controls[selectedControl].type == GUI_GROUPBOX)
                         {
                             textboxRec.y -= 10;
-                            textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;
+                            textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE)*2.0f;
                         }
 
                         if (layout->controls[selectedControl].ap->id > 0)
@@ -2415,12 +2418,28 @@ int main(int argc, char *argv[])
                             textboxRec.y += layout->controls[selectedControl].ap->y;
                         }
 
-                        // Draw GuiTextBox()/GuiTextBoxMulti()
+                        // Draw a GuiTextBox()/GuiTextBoxMulti() for text edition
                         if (layout->controls[selectedControl].type == GUI_TEXTBOXMULTI)
                         {
-                            if (GuiTextBoxMulti(textboxRec, layout->controls[selectedControl].text, 256, textEditMode)) textEditMode = !textEditMode;
+                            if (GuiTextBoxMulti(textboxRec, layout->controls[selectedControl].text, MAX_CONTROL_TEXT_LENGTH, textEditMode)) textEditMode = !textEditMode;
                         }
                         else if (GuiTextBox(textboxRec, layout->controls[selectedControl].text, MAX_CONTROL_TEXT_LENGTH, textEditMode)) textEditMode = !textEditMode;
+
+                        // Check if icon panel must be shown
+                        if ((strlen(layout->controls[selectedControl].text) == 1) && (layout->controls[selectedControl].text[0] == '#'))
+                        {
+                            showIconPanel = true;
+
+                            // Draw icons selector
+                            selectedIcon = GuiToggleGroup((Rectangle) { (int)textboxRec.x, (int)textboxRec.y + (int)textboxRec.height + 10, 18, 18 }, toggleIconsText, selectedIcon);
+                            if (selectedIcon > 0)
+                            {
+                                strcpy(layout->controls[selectedControl].text, TextFormat("#%03i#\0", selectedIcon));
+                                showIconPanel = false;
+                                textEditMode = true;
+                                selectedIcon = 0;
+                            }
+                        }
                     }
 
                     // Name edit
@@ -2440,7 +2459,7 @@ int main(int argc, char *argv[])
                         else if (layout->controls[selectedControl].type == GUI_GROUPBOX)
                         {
                             textboxRec.y -= 10;
-                            textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;
+                            textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE)*2.0f;
                         }
 
                         if (layout->controls[selectedControl].ap->id > 0)
@@ -2480,7 +2499,7 @@ int main(int argc, char *argv[])
                     else if (layout->controls[focusedControl].type == GUI_GROUPBOX)
                     {
                         focusRec.y -= 10;
-                        focusRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE) * 2;
+                        focusRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE)*2.0f;
                     }
 
                     if (layout->controls[focusedControl].ap->id > 0)
@@ -2508,9 +2527,9 @@ int main(int argc, char *argv[])
                     }
 
                     DrawRectangleLinesEx(selectedRec, 2, RED);
-                    DrawTriangle((Vector2) { selectedRec.x + selectedRec.width - MOUSE_SCALE_MARK_SIZE, selectedRec.y + selectedRec.height },
+                    DrawTriangle((Vector2) { selectedRec.x + selectedRec.width - SCALE_BOX_CORNER_SIZE, selectedRec.y + selectedRec.height },
                                  (Vector2) { selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height },
-                                 (Vector2) { selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height - MOUSE_SCALE_MARK_SIZE }, RED);
+                                 (Vector2) { selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height - SCALE_BOX_CORNER_SIZE }, RED);
                 }
 
                 // Draw reference window lines
@@ -2563,7 +2582,7 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
             if (windowResetActive)
             {
-                int message = GuiMessageBox((Rectangle) { GetScreenWidth()/2 - 125, GetScreenHeight()/2 - 50, 250, 100 }, "Creating new layout", "Do you want to save the current layout?", "Yes;No");
+                int message = GuiMessageBox((Rectangle) { GetScreenWidth()/2 - 120, GetScreenHeight()/2 - 48, 248, 96 }, "Creating new layout", "Do you want to save the current layout?", "Yes;No");
 
                 if (message == 0) windowResetActive = false;
                 else if (message == 1)  // Yes
@@ -2584,7 +2603,7 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
             if (windowExitActive)
             {
-                int message = GuiMessageBox((Rectangle) { GetScreenWidth()/2 - 125, GetScreenHeight()/2 - 50, 250, 100 }, "#159#Closing rGuiLayout", "Do you want to save before quitting?", "Yes;No");
+                int message = GuiMessageBox((Rectangle) { GetScreenWidth()/2 - 120, GetScreenHeight()/2 - 48, 248, 96 }, "#159#Closing rGuiLayout", "Do you want to save before quitting?", "Yes;No");
 
                 if (message == 0) windowExitActive = false;
                 else if (message == 1)  // Yes
@@ -2602,7 +2621,7 @@ int main(int argc, char *argv[])
             GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, TextFormat("MOUSE: (%i, %i)", (int)mouse.x, (int)mouse.y));
             GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (snapMode? "SNAP: ON" : "SNAP: OFF"));
             GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, TextFormat("CONTROLS COUNT: %i", layout->controlCount));
-            GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, 100, 24}, TextFormat("GRID SIZE: %i", gridLineSpacing));
+            GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, 100, 24}, TextFormat("GRID SIZE: %i", gridSpacing*gridSubdivisions));
 
             if (selectedControl != -1)
             {
@@ -3169,6 +3188,7 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
 */
 }
 
+// Draw help panel with the provided lines
 static void GuiHelpPanel(int posX, int posY, const char *title, const char **helpLines, int helpLinesCount)
 {
     int nextLineY = 0;
@@ -3179,7 +3199,7 @@ static void GuiHelpPanel(int posX, int posY, const char *title, const char **hel
 
     for (int i = 0; i < helpLinesCount; i++)
     {
-        if (helpLines[i][0] != '-') GuiLabel((Rectangle) { posX + 15, posY + nextLineY, 0, 0 }, helpLines[i]);
+        if ((helpLines[i][0] != '-') || (helpLines[i] == NULL)) GuiLabel((Rectangle) { posX + 15, posY + nextLineY, 0, 0 }, helpLines[i]);
         else GuiLine((Rectangle) { posX + 15, posY + nextLineY, 270, 10 }, helpLines[i] + 1);
 
         nextLineY += 20;
