@@ -495,7 +495,7 @@ RAYGUIAPI int GuiGetStyle(int control, int property);                   // Get o
 RAYGUIAPI bool GuiWindowBox(Rectangle bounds, const char *title);                                       // Window Box control, shows a window that can be closed
 RAYGUIAPI void GuiGroupBox(Rectangle bounds, const char *text);                                         // Group Box control with text name
 RAYGUIAPI void GuiLine(Rectangle bounds, const char *text);                                             // Line separator control, could contain text
-RAYGUIAPI void GuiPanel(Rectangle bounds);                                                              // Panel control, useful to group controls
+RAYGUIAPI void GuiPanel(Rectangle bounds);// TODO: const char *text);                                   // Panel control, useful to group controls
 RAYGUIAPI Rectangle GuiScrollPanel(Rectangle bounds, Rectangle content, Vector2 *scroll);               // Scroll Panel control
 
 // Basic controls set
@@ -1346,7 +1346,7 @@ bool GuiWindowBox(Rectangle bounds, const char *title)
     Rectangle statusBar = { bounds.x, bounds.y, bounds.width, (float)statusBarHeight };
     if (bounds.height < statusBarHeight*2.0f) bounds.height = statusBarHeight*2.0f;
 
-    Rectangle windowPanel = { bounds.x, bounds.y + (float)statusBarHeight - 1, bounds.width, bounds.height - (float)statusBarHeight };
+    Rectangle windowPanel = { bounds.x, bounds.y + (float)statusBarHeight - 1, bounds.width, bounds.height - (float)statusBarHeight + 1 };
     Rectangle closeButtonRec = { statusBar.x + statusBar.width - GuiGetStyle(STATUSBAR, BORDER_WIDTH) - 20,
                                  statusBar.y + statusBarHeight/2.0f - 18.0f/2.0f, 18, 18 };
 
@@ -1403,7 +1403,7 @@ void GuiGroupBox(Rectangle bounds, const char *text)
 void GuiLine(Rectangle bounds, const char *text)
 {
     #if !defined(RAYGUI_LINE_TEXT_PADDING)
-        #define RAYGUI_LINE_TEXT_PADDING  10
+        #define RAYGUI_LINE_TEXT_PADDING  8
     #endif
 
     GuiControlState state = guiState;
@@ -1417,26 +1417,28 @@ void GuiLine(Rectangle bounds, const char *text)
     {
         Rectangle textBounds = { 0 };
         textBounds.width = (float)GetTextWidth(text);
-        textBounds.height = (float)GuiGetStyle(DEFAULT, TEXT_SIZE);
+        textBounds.height = bounds.height;
         textBounds.x = bounds.x + RAYGUI_LINE_TEXT_PADDING;
-        textBounds.y = bounds.y - (float)GuiGetStyle(DEFAULT, TEXT_SIZE)/2;
+        textBounds.y = bounds.y;
 
         // Draw line with embedded text label: "--- text --------------"
-        GuiDrawRectangle(RAYGUI_CLITERAL(Rectangle){ bounds.x, bounds.y, RAYGUI_LINE_TEXT_PADDING - 2, 1 }, 0, BLANK, color);
+        GuiDrawRectangle(RAYGUI_CLITERAL(Rectangle){ bounds.x, bounds.y + bounds.height/2, RAYGUI_LINE_TEXT_PADDING - 2, 1 }, 0, BLANK, color);
         GuiLabel(textBounds, text);
-        GuiDrawRectangle(RAYGUI_CLITERAL(Rectangle){ bounds.x + RAYGUI_LINE_TEXT_PADDING + textBounds.width + 4, bounds.y, bounds.width - textBounds.width - RAYGUI_LINE_TEXT_PADDING - 4, 1 }, 0, BLANK, color);
+        GuiDrawRectangle(RAYGUI_CLITERAL(Rectangle){ bounds.x + RAYGUI_LINE_TEXT_PADDING + textBounds.width + 4, bounds.y + bounds.height/2, bounds.width - textBounds.width - RAYGUI_LINE_TEXT_PADDING - 4, 1 }, 0, BLANK, color);
     }
     //--------------------------------------------------------------------
 }
 
 // Panel control
-void GuiPanel(Rectangle bounds)
+void GuiPanel(Rectangle bounds) // TODO: const char *text)
 {
     #if !defined(RAYGUI_PANEL_BORDER_WIDTH)
         #define RAYGUI_PANEL_BORDER_WIDTH   1
     #endif
 
     GuiControlState state = guiState;
+
+    // TODO: Draw text somewhere if required, maybe like a window with a header section?
 
     // Draw control
     //--------------------------------------------------------------------
