@@ -231,7 +231,7 @@ static void WriteInitializationC(unsigned char *toolstr, int *pos, GuiLayout lay
     if (config.defineTexts) WriteConstText(toolstr, pos, layout, config, tabs);
 
     // Anchors
-    if (config.exportAnchors && layout.anchorCount > 0) WriteAnchors(toolstr, pos, layout, config, true, true, "", tabs);
+    if (config.exportAnchors && (layout.anchorCount > 0)) WriteAnchors(toolstr, pos, layout, config, true, true, "", tabs);
 
     // Control variables
     if (layout.controlCount > 0) WriteControlsVariables(toolstr, pos, layout, config, true, true, "", tabs);
@@ -310,11 +310,8 @@ static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayout layout, GuiL
     TextAppend(toolstr, "typedef struct {", pos);
     ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs + 1);
 
-    // Write anchors variables (forced on .h) -> TODO: REVIEW!
-    //if (config.exportAnchors && layout.anchorCount > 1)
-    {
-        WriteAnchors(toolstr, pos, layout, config, true, false, "", tabs + 1);
-    }
+    // Write anchors variables (forced on .h)
+    if (config.exportAnchors && (layout.anchorCount > 0)) WriteAnchors(toolstr, pos, layout, config, true, false, "", tabs + 1);
 
     // Write controls variables
     if (layout.controlCount > 0) WriteControlsVariables(toolstr, pos, layout, config, true, false, "", tabs + 1);
@@ -372,11 +369,8 @@ static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayout
     ENDLINEAPPEND(toolstr, pos);
     TABAPPEND(toolstr, pos, tabs + 1);
 
-    // Init anchors (forced on .h) -> TODO: REVIEW!
-    //if (config.exportAnchors && layout.anchorCount > 1)
-    {
-        WriteAnchors(toolstr, pos, layout, config, false, true, "state.", tabs + 1);
-    }
+    // Init anchors (forced on .h)
+    if (config.exportAnchors && (layout.anchorCount > 0)) WriteAnchors(toolstr, pos, layout, config, false, true, "state.", tabs + 1);
 
     // Init controls variables
     if (layout.controlCount > 0)
