@@ -60,5 +60,3 @@ Press `LCTRL + ENTER` to show code generation window, you can configure multiple
 In any case, consider a donation to help the author keep working on software for games development.
 
 *Copyright (c) 2015-2022 raylib technologies ([@raylibtech](https://twitter.com/raylibtech))*
-
-
