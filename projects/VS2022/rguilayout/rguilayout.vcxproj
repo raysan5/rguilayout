@@ -350,6 +350,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\codegen.h" />
+    <ClInclude Include="..\..\..\src\font_dos_vga.h" />
     <ClInclude Include="..\..\..\src\gui_controls_palette.h" />
     <ClInclude Include="..\..\..\src\gui_file_dialogs.h" />
     <ClInclude Include="..\..\..\src\gui_main_toolbar.h" />
