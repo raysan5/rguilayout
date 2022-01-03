@@ -57,6 +57,8 @@ typedef struct {
     // NOTE: This variables should be added manually if required
     unsigned char *codeText;        // Generated code string
     unsigned int codeHeight;        // Generated code drawing size
+    
+    Font font;
 
 } GuiWindowCodegenState;
 
@@ -105,6 +107,8 @@ void GuiWindowCodegen(GuiWindowCodegenState *state);
 
 #include "raygui.h"
 
+#include "font_dos_vga.h"
+
 GuiWindowCodegenState InitGuiWindowCodegen(void)
 {
     GuiWindowCodegenState state = { 0 };
@@ -136,6 +140,8 @@ GuiWindowCodegenState InitGuiWindowCodegen(void)
     // Custom variables initialization
     state.codeText = NULL;
     state.codeHeight = 0;
+    
+    state.font = LoadFont_DosVga();
 
     return state;
 }
@@ -192,7 +198,7 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
                     if (((state->codePanelScrollOffset.y + 20*linesCounter) >= 0) &&
                         ((state->codePanelScrollOffset.y + 20*linesCounter) < (codePanel.height - 2)))
                     {
-                        DrawText(currentLine, (int)codePanel.x + (int)state->codePanelScrollOffset.x + 10, (int)codePanel.y + (int)state->codePanelScrollOffset.y + 20*linesCounter + 8, 10, GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL)));
+                        DrawTextEx(state->font, currentLine, (Vector2) { codePanel.x + state->codePanelScrollOffset.x + 10, codePanel.y + state->codePanelScrollOffset.y + 20*linesCounter + 8 }, state->font.baseSize, -1, GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL)));
                     }
 
                     if (nextLine) *nextLine = '\n';     // Restore newline-char, just to be tidy
