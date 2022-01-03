@@ -49,7 +49,6 @@ typedef struct {
     bool helperGridActive;
     bool helperCursorActive;
     bool helperBoxActive;
-    bool fullScreenPressed;
 
     // Custom state variables (depend on development software)
     // NOTE: This variables should be added manually if required
@@ -129,7 +128,6 @@ GuiMainToolbarState InitGuiMainToolbar(void)
     state.helperGridActive = true;
     state.helperCursorActive = true;
     state.helperBoxActive = true;
-    state.fullScreenPressed = false;
 
     // Custom variables initialization
     state.supportImage = false;
