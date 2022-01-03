@@ -113,7 +113,7 @@ void GuiWindowAbout(GuiWindowAboutState *state);
     #define TOOL_RELEASE_DATE   "Dec.2021"
 #endif
 #if !defined(TOOL_LOGO_COLOR)
-    #define TOOL_LOGO_COLOR       0x000000ff
+    #define TOOL_LOGO_COLOR      0x000000ff
 #endif
 
 //----------------------------------------------------------------------------------
@@ -178,7 +178,7 @@ GuiWindowAboutState InitGuiWindowAbout(void)
     // Custom variables initialization
     state.windowWidth = 340;
     state.windowHeight = 340;
-    state.position = (Vector2){ (float)GetScreenWidth()/2 - (float)state.windowWidth/2, (float)GetScreenHeight()/2 - (float)state.windowHeight/2 };
+    state.position = (Vector2){ GetScreenWidth()/2 - state.windowWidth/2, GetScreenHeight()/2 - state.windowHeight/2 };
 
     return state;
 }
@@ -188,8 +188,6 @@ void GuiWindowAbout(GuiWindowAboutState *state)
 {
     if (state->windowActive)
     {
-        // WARNING: GetScreen*() returns the window render size, not the logical original size
-        //state->position = (Vector2){ (float)GetScreenWidth()/2 - (float)state->windowWidth/2, (float)GetScreenHeight()/2 - (float)state->windowHeight/2 };
         state->windowActive = !GuiWindowBox((Rectangle){ state->position.x, state->position.y, (float)state->windowWidth, (float)state->windowHeight }, TextFormat("#191#About %s", TOOL_NAME));
 
         // Draw a background rectangle for convenience
@@ -198,8 +196,10 @@ void GuiWindowAbout(GuiWindowAboutState *state)
         int labelTextAlign = GuiGetStyle(LABEL, TEXT_ALIGNMENT);
         GuiSetStyle(LABEL, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
         DrawTechIcon((int)state->position.x + 10, (int)state->position.y + 35, 64, TOOL_SHORT_NAME, 20, true, GetColor(TOOL_LOGO_COLOR));
-        GuiLabel((Rectangle){ state->position.x + 85, state->position.y + 35, 200, 30 }, TextFormat("%s %s (%s)", TOOL_NAME, TOOL_VERSION, TOOL_RELEASE_DATE));
-        GuiLabel((Rectangle){ state->position.x + 85, state->position.y + 60, 245, 20 }, TOOL_DESCRIPTION);
+        
+        bool singleLine = true;
+        GuiLabel((Rectangle){ state->position.x + 85, state->position.y + (singleLine? 55 : 35), 200, 30 }, TextFormat("%s %s (%s)", TOOL_NAME, TOOL_VERSION, TOOL_RELEASE_DATE));
+        GuiLabel((Rectangle){ state->position.x + 85, state->position.y + (singleLine? 78 : 60), 245, 20 }, TOOL_DESCRIPTION);
 
         GuiLine((Rectangle){ state->position.x, state->position.y + 100, (float)state->windowWidth, 20 }, NULL);
         GuiLabel((Rectangle){ state->position.x + 8, state->position.y + 113, 126, 25 }, lblUsedLibsText);
@@ -229,9 +229,8 @@ void GuiWindowAbout(GuiWindowAboutState *state)
         int buttonTextAlign = GuiGetStyle(BUTTON, TEXT_ALIGNMENT);
         GuiSetStyle(BUTTON, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_CENTER);
 
-        if (GuiButton((Rectangle) { state->position.x + state->windowWidth - 80 - 90, state->position.y + 305, 80, 24 }, btnDonateText)) { OpenURL(TextFormat("https://raylibtech.itch.io/%s/purchase", TOOL_NAME)); }
-
-        if (GuiButton((Rectangle){ state->position.x + state->windowWidth - 80, state->position.y + 305, 70, 25 }, btnCloseText)) state->windowActive = false;
+        if (GuiButton((Rectangle){ state->position.x + state->windowWidth - 80 - 90, state->position.y + 305, 80, 24 }, btnDonateText)) { OpenURL(TextFormat("https://raylibtech.itch.io/%s/purchase", TOOL_NAME)); }
+        if (GuiButton((Rectangle){ state->position.x + state->windowWidth - 80, state->position.y + 305, 70, 24 }, btnCloseText)) state->windowActive = false;
         GuiSetStyle(BUTTON, TEXT_ALIGNMENT, buttonTextAlign);
     }
 }
