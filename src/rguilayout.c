@@ -168,7 +168,7 @@ const char *helpLines[HELP_LINES_COUNT] = {
     "LCTRL + Z - Undo Action",
     "LCTRL + Y - Redo Action",
     "-Control Edition Ex",
-    "T - Control text editing (if possible)",
+    "T - Control text editing",
     "N - Control name editing",
     "ESC - Exit text/name editing mode",
     "ENTER - Validate text/name edition",
@@ -184,8 +184,8 @@ const char *helpLines[HELP_LINES_COUNT] = {
     "G - Toggle grid mode",
     "S - Toggle snap to grid mode",
     //"RALT + UP/DOWN - Grid spacing + snap",
-    "F - Toggle control position (global/anchor)",
-    "SPACE - Tracemap Lock/Unlock",
+    "F - Toggle control position info (global/anchor)",
+    "SPACE - Toggle tracemap Lock/Unlock",
 };
 
 //----------------------------------------------------------------------------------
@@ -588,7 +588,7 @@ int main(int argc, char *argv[])
         if (IsKeyPressed(KEY_F1)) helpActive = !helpActive;
 
         // Show window: about
-        if (IsKeyPressed(KEY_F2)) windowAboutState.windowActive = true;
+        if (IsKeyPressed(KEY_F2)) windowAboutState.windowActive = !windowAboutState.windowActive;
 
         // Show save layout message window on ESC
         if (IsKeyPressed(KEY_ESCAPE))
@@ -861,6 +861,8 @@ int main(int argc, char *argv[])
                                     || (layout->controls[layout->controlCount].type == GUI_CHECKBOX)
                                     || (layout->controls[layout->controlCount].type == GUI_TOGGLE)
                                     || (layout->controls[layout->controlCount].type == GUI_GROUPBOX)
+                                    || (layout->controls[layout->controlCount].type == GUI_VALUEBOX)
+                                    || (layout->controls[layout->controlCount].type == GUI_SPINNER)
                                     || (layout->controls[layout->controlCount].type == GUI_WINDOWBOX)
                                     || (layout->controls[layout->controlCount].type == GUI_STATUSBAR)
                                     || (layout->controls[layout->controlCount].type == GUI_DUMMYREC))
@@ -2012,8 +2014,6 @@ int main(int argc, char *argv[])
                     Vector2 anchorOffset = (Vector2){ 0, 0 };
                     if (layout->controls[i].ap->id > 0) anchorOffset = (Vector2){ layout->controls[i].ap->x, layout->controls[i].ap->y };
                     Rectangle rec = { anchorOffset.x + layout->controls[i].rec.x, anchorOffset.y + layout->controls[i].rec.y, layout->controls[i].rec.width, layout->controls[i].rec.height };
-
-                    if (layout->controls[i].type == GUI_TOGGLEGROUP) rec.width /= 3;    // HACK!
 
                     switch (layout->controls[i].type)
                     {
