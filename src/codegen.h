@@ -90,7 +90,7 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, GuiL
     #define MAX_VARIABLE_NAME_SIZE   64
 
 #if !defined(VERSION_ONE)
-    if (layout.controlCount > 12) layout.controlCount = 12;
+    if (layout.controlCount > 16) layout.controlCount = 16;
 #endif
 
     unsigned char *toolstr = (unsigned char *)calloc(MAX_CODE_SIZE, sizeof(unsigned char));
