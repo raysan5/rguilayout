@@ -33,7 +33,7 @@ _NOTE: This tool is itended to be used with [**raygui 3.1**](https://github.com/
  
 ## rGuiLayout Screenshot
 
-![rGuiLayout](screenshots/rguilayout_v100_shot03.png)
+![rGuiLayout](screenshots/rguilayout_v250_shot01.png)
  
 ## rGuiLayout Usage
 
