@@ -1,55 +1,64 @@
 <img align="left" src="logo/rguilayout_256x256.png" width=256>
 
 # rGuiLayout
-A simple and easy-to-use raygui layouts editor. 
 
-Useful for fast tools development. The perfect companion for [rGuiStyler](https://github.com/raysan5/rguistyler) tool.
+A simple and easy-to-use [raygui](https://github.com/raysan5/raygui) **layouts** editor.
 
-rGuiLayout comes in two flavours: **ZERO** (free version) and **ONE** (low-cost version). You can get them [here](https://raylibtech.itch.io/).
+Useful for custom tools layout creation. The best tool companion for [rGuiStyler](https://raylibtech.itch.io/rguistyler) and [rGuiIcons](https://raylibtech.itch.io/rguiicons).
+
+rGuiLayout can be used for free as a [WebAssembly online tool](https://raylibtech.itch.io/rguilayout) and it can also be downloaded as a **standalone tool** for _Windows_ and _Linux_ with some extra features.
 
 <br>
 
-## rGuiLayout ZERO features
+_NOTE: This tool is itended to be used with [**raygui 3.1**](https://github.com/raysan5/raygui)_
 
- - **+25 controls available to define your imgui layout**
- - Place controls visually and move/scale them freely
+## rGuiLayout Features
+
+ - **24 gui controls to define your immmediate-mode gui layout**
+ - Place controls and move/scale them freely
  - Snap to grid mode for maximum precission
- - Save/Load your layout as **.rgl files**
- - Supports image loading to be used as tracemap
- - Anchors mode support to link your controls
- - Controls text edition and name edition (for exported variables)
- - **+10 predefined layout available for reference**
- - **Completely portable (single file)**
- 
-## rGuiLayout ONE plus features
-
- - Powerful command line for batch conversion of rgl layouts
- - Import **.rgs** files to customize visual style (drag&drop)
+ - **Link controls** to anchors for better organization
+ - **Edit controls text and code name** (for exported variables)
+ - Icon selection panel on control text edition
+ - Save/Load your layout as `.rgl` **text file**
+ - Supports `.png` image loading to be used as **tracemap**
  - **Export layout directly as plain C code, ready to edit and compile**
- - Multiple code generation options to customize exported code
- 
-## rGuiLayout Usage
 
-The tool is pretty intuitive to use, it mostly works with mouse and several key shortcuts that can be seen just pressing F1 key.
-Use mouse wheel to navigate available controls or select them on right controls panel, place them and scale if required.
+### rGuiLayout Standalone Additional Features
 
-rGuiLayout allows loading .rgl layout files with drag&drop.
-
-rGuiLayout ONE also allows loading .rgs style files created with rGuiStyler and export created layouts as C code.
-
-Press LCTRL+ENTER to show code generation window, you can configure multiple export options to generate the code. To compile generated code, you need raygui v2.0 library (single-file header-only) and raylib v2.5 library.
-
-rGuiLayout ONE comes with a powerful command line for layout to code generation.
-To view all available operation just run on command line:
-
- > rguilayout.exe --help
+ - Support for more than 16 controls per layout
+ - Command-line support for `.rgl` to `.h` conversion
+ - Support for **custom code templates** to place your controls on
+ - **Completely portable (single-file, no-dependencies)**
  
 ## rGuiLayout Screenshot
 
 ![rGuiLayout](screenshots/rguilayout_v100_shot03.png)
+ 
+## rGuiLayout Usage
+
+The tool works with mouse and several key shortcuts, when opening the tool the shortcuts key info is automatically displayed (F1 key).
+
+Use mouse wheel to navigate along the available controls or select them on right controls panel, place them on the main grid and scale as required.
+
+Drag&drop `.rgl` layout files for automatic loading and save changes with `LCTRL + S` or `LCTRL + LSHIFT + S`.
+
+Press `LCTRL + ENTER` to show code generation window, you can configure multiple export options to generate the code. 
+
+**To compile generated code, you need `raygui v3.1-dev` library and `raylib v4.0`.**
+
+`rGuiLayout Standalone` comes with command-line support for batch conversion. For usage help:
+
+ > rguilayout.exe --help
 
 ## rGuiLayout License
 
-*Copyright (c) 2016-2020 raylib technologies ([@raylibtech](https://twitter.com/raylibtech)). All Rights Reserved.* Check [LICENSE](LICENSE) for details.
+`rGuiLayout` online tool can be used completely for free.
 
-In case you want a custom version of the tool, just get in touch: ray[at]raylibtech.com
+`rGuiLayout Standalone` desktop tool could be downloaded with a small donation. 
+
+In any case, consider a donation to help the author keep working on software for games development.
+
+*Copyright (c) 2015-2022 raylib technologies ([@raylibtech](https://twitter.com/raylibtech))*
+
+
