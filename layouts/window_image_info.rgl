@@ -27,11 +27,11 @@ c 008 4 mipmaps 100 90 70 20 2 01
 c 009 4 lblScaleFilter 10 110 80 20 2 Scale filter:
 c 010 4 scaleFilter 100 110 70 20 2 BILINEAR
 c 011 1 groupSelectedPixel 10 145 160 85 2 Selected Pixel
-c 012 24 pixelBox 20 155 65 65 2 <pixel>
+c 012 23 pixelBox 20 155 65 65 2 <pixel>
 c 013 4 compR 100 155 50 20 2 R: 205
 c 014 4 compG 100 170 50 20 2 G: 150
 c 015 4 compB 100 185 50 20 2 B: 80
 c 016 4 compA 100 200 50 20 2 A: 255
 c 017 5 ExtractPalette 10 430 160 30 2 Extract Palette
 c 018 4 lblPalette 10 235 151 25 2 Colors Palette: XXXX colors
-c 019 24 palette 10 260 160 160 2 <palette>
+c 019 23 palette 10 260 160 160 2 <palette>

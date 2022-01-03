@@ -1,42 +1,44 @@
 #
-# rgl text file (v1.0) - raygui layout text file generated using rGuiLayout
+# rgl layout text file (v2.5) - raygui layout file generated using rGuiLayout
 #
-# Total number of controls:     26
-# Anchor info:   a <id> <name> <posx> <posy> <enabled>
-# Control info:  c <id> <type> <name> <rectangle> <anchor_id> <text>
+# Number of controls:     26
 #
-r 40 200 1280 48
-a 000 anchor00 40 200 1
-a 001 anchorFullscreen 1239 0 1
-a 002 anchorZoom 324 0 1
-a 003 anchorBack 723 0 1
-a 004 anchorChannels 882 0 1
-a 005 anchorHelpers 1081 0 1
+# Ref. window:    r <x> <y> <width> <height>
+# Anchor info:    a <id> <name> <posx> <posy> <enabled>
+# Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
+#
+r 48 72 1288 40
+a 000 anchor00 48 72 1
+a 001 anchorFullscreen 1248 0 1
+a 002 anchorZoom 328 0 1
+a 003 anchorBack 720 0 1
+a 004 anchorChannels 880 0 1
+a 005 anchorHelpers 1080 0 1
 a 006 anchorMain 0 0 1
-a 007 anchor07 0 0 0
-c 000 3 panelEmpty 0 0 325 48 6 
-c 001 5 btnOpen 16 12 24 24 6 #1#
-c 002 5 btnExport 44 12 24 24 6 #7#
-c 003 10 showInfoWindow 86 13 22 22 6 #100#
-c 004 10 showEditWindow 110 13 22 22 6 #140#
-c 005 5 btnHelp 154 12 75 24 6 HELP
-c 006 5 btnAbout 234 12 75 24 6 #191#ABOUT
-c 007 3 panelBack 0 0 400 48 2 
-c 008 5 center 16 12 24 24 2 #105#
-c 009 18 zoom 86 19 150 12 2 ZOOM:
-c 010 4 lblScaleFilter 270 16 72 18 2 Scale Filter:
-c 011 10 scaleFilter 340 13 22 22 2 #34#;#35#
-c 012 3 panelZoom 0 0 160 48 3 
-c 013 4 lblBack 16 16 32 18 3 Back:
-c 014 10 background 50 13 22 22 3 ;;;
-c 015 3 panelChannels 0 0 200 48 4 
-c 016 4 lblChannels 16 16 56 18 4 Channels:
-c 017 10 channels 68 13 22 22 4 All;R;G;B;A
-c 018 3 panelHelpers 0 0 150 48 5 
-c 019 4 lblHelpers 16 15 50 18 5 Helpers:
-c 020 9 helperGrid 62 13 22 22 5 #97#
-c 021 9 helperCursor 86 13 22 22 5 #65#
-c 022 9 helperBox 110 13 22 22 5 #38#
-c 023 3 panelMain 149 0 10 48 5 
-c 024 3 visualization 0 0 53 48 1 
-c 025 5 fullScreen 15 12 24 24 1 #53
+a 007 anchor07 -8 128 0
+c 000 3 panelEmpty 0 0 328 40 6 
+c 001 5 btnOpen 16 8 24 24 6 #1#
+c 002 5 btnExport 48 8 24 24 6 #7#
+c 003 8 showInfoWindow 88 8 24 24 6 #100#
+c 004 8 showEditWindow 120 8 24 24 6 #140#
+c 005 5 btnHelp 160 8 72 24 6 HELP
+c 006 5 btnAbout 240 8 72 24 6 #191#ABOUT
+c 007 3 panelBack 0 0 392 40 2 
+c 008 5 center 16 8 24 24 2 #105#
+c 009 17 zoom 88 16 150 12 2 ZOOM:
+c 010 4 lblScaleFilter 264 8 72 24 2 Scale Filter:
+c 011 9 scaleFilter 336 8 24 24 2 #34#;#35#
+c 012 3 panelZoom 0 0 160 40 3 
+c 013 4 lblBack 16 8 32 24 3 Back:
+c 014 9 background 48 8 24 24 3 ;;;
+c 015 3 panelChannels 0 0 200 40 4 
+c 016 4 lblChannels 8 8 56 24 4 Channels:
+c 017 9 channels 64 8 24 24 4 All;R;G;B;A
+c 018 3 panelHelpers 0 0 152 40 5 
+c 019 4 lblHelpers 8 8 56 24 5 Helpers:
+c 020 8 helperGrid 56 8 24 24 5 #97#
+c 021 8 helperCursor 88 8 24 24 5 #65#
+c 024 8 helperBox 120 8 24 24 5 #38#
+c 023 3 panelMain 152 0 16 40 5 
+c 024 3 visualization 0 0 40 40 1 
+c 025 5 fullScreen 8 8 24 24 1 #53#

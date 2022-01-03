@@ -1,37 +1,37 @@
 #
-# rgl text file (v2.0) - raygui layout text file generated using rGuiLayout
+# rgl layout text file (v2.5) - raygui layout file generated using rGuiLayout
 #
-# Total number of controls:     19
+# Number of controls:     19
+#
 # Ref. window:    r <x> <y> <width> <height>
 # Anchor info:    a <id> <name> <posx> <posy> <enabled>
 # Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
 r 0 0 -1 -1
 a 000 anchor00 0 0 1
-a 001 anchor00 50 50 1
-a 002 anchor00 205 160 1
+a 001 anchor00 48 48 1
+a 002 anchor00 200 152 1
 a 003 anchor00 0 0 0
 a 004 anchor00 0 0 0
 a 005 anchor00 0 0 0
 a 006 anchor00 0 0 0
 a 007 anchor00 0 0 0
-c 000 0 resizeWindow 0 0 220 210 1 Image Resize Options
-c 001 4 lblResize 10 35 60 25 1 Resize:
-c 002 15 width 75 35 60 25 1 
+c 000 0 resizeWindow 0 0 224 216 1 Image Resize Options
+c 001 4 lblResize 8 32 56 24 1 Resize:
+c 002 14 width 72 32 64 24 1 
 c 003 4 lblx 140 35 15 25 1 x
-c 004 15 height 150 35 60 25 1 
-c 005 4 lblAlgorythm 10 70 65 25 1 Algorythm:
-c 006 11 algorythm 75 70 135 25 1 Nearest;Bilinear
-c 007 8 lockAspect 20 110 15 15 1 Lock Aspect Ratio
-c 008 8 canvasResize 20 135 15 15 1 Canvas Resize
-#c 009 10 canvasAnchor 0 0 15 15 2 ;;;;;
-c 009 8 checkTopLeft 0 0 15 15 2 
-c 010 8 checkTop 14 0 15 15 2 
-c 011 8 checkTopRight 28 0 15 15 2 
-c 012 8 checkLeft 0 14 15 15 2 
-c 013 8 checkCenter 14 14 15 15 2 
-c 014 8 checkRight 28 14 15 15 2 
-c 015 8 checkBottomLeft 0 28 15 15 2 
-c 016 8 checkBottom 14 28 15 15 2 
-c 017 8 checkBottomRight 28 28 15 15 2 
-c 018 5 ResizeImage 10 165 200 30 1 Resize Image
+c 004 14 height 152 32 64 24 1 
+c 005 4 lblAlgorythm 8 72 64 24 1 Algorythm:
+c 006 11 algorythm 72 72 144 24 1 Nearest;Bilinear
+c 007 7 lockAspect 16 112 16 16 1 Lock Aspect Ratio
+c 008 7 canvasResize 16 136 16 16 1 Canvas Resize
+c 009 7 checkTopLeft 0 0 16 16 2 
+c 010 7 checkTop 16 0 16 16 2 
+c 011 7 checkTopRight 32 0 16 16 2 
+c 012 7 checkLeft 0 16 16 16 2 
+c 013 7 checkCenter 16 16 16 16 2 
+c 014 7 checkRight 32 16 16 16 2 
+c 015 7 checkBottomLeft 0 32 16 16 2 
+c 016 7 checkBottom 16 32 16 16 2 
+c 017 7 checkBottomRight 32 32 16 16 2 
+c 018 5 ResizeImage 8 168 208 32 1 Resize Image

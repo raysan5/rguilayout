@@ -7,28 +7,28 @@
 # Anchor info:    a <id> <name> <posx> <posy> <enabled>
 # Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
-r 50 50 0 0
-a 000 anchor00 50 50 1
+r 72 48 0 0
+a 000 anchor00 72 48 1
 a 001 anchor01 0 0 1
-a 002 anchor02 -50 -50 0
-a 003 anchor03 -50 -50 0
-a 004 anchor04 -50 -50 0
-a 005 anchor05 -50 -50 0
-a 006 anchor06 -50 -50 0
-a 007 anchor07 -50 -50 0
-c 000 0 windowBox 0 0 300 385 1 rAudioPlayer
-c 001 3 time 10 35 110 50 1 
-c 002 3 info 130 35 160 35 1 
-c 003 17 volume 130 75 160 10 1 
-c 004 18 progress 10 95 280 15 1 
-c 005 5 btnPrev 10 120 30 30 1 |<
-c 006 5 btnPlay 40 120 30 30 1 >
-c 007 5 btnPause 70 120 30 30 1 ||
-c 008 5 btnStop 100 120 30 30 1 O
-c 009 5 btnNext 130 120 30 30 1 >|
-c 010 5 btnEject 180 120 30 30 1 >|
-c 011 9 shuffle 230 120 30 30 1 SF
-c 012 9 repeat 260 120 30 30 1 SF
-c 013 2 line 10 150 280 25 1 
-c 014 21 ListView015 10 170 280 180 1 ONE;TWO;THREE
-c 015 19 StatusBar015 0 360 300 25 1 SAMPLE TEXT
+a 002 anchor02 -72 -48 0
+a 003 anchor03 -72 -48 0
+a 004 anchor04 -72 -48 0
+a 005 anchor05 -72 -48 0
+a 006 anchor06 -72 -48 0
+a 007 anchor07 -72 -48 0
+c 000 0 windowBox 0 0 304 392 1 rAudioPlayer
+c 001 3 time 8 32 112 56 1 
+c 002 3 info 128 32 168 32 1 
+c 003 16 volume 128 72 168 12 1 
+c 004 17 progress 8 96 288 16 1 
+c 005 5 btnPrev 8 120 32 32 1 |<
+c 006 5 btnPlay 40 120 32 32 1 >
+c 007 5 btnPause 72 120 32 32 1 ||
+c 008 5 btnStop 104 120 32 32 1 O
+c 009 5 btnNext 136 120 32 32 1 >|
+c 010 5 btnEject 184 120 30 30 1 >|
+c 011 8 shuffle 232 120 32 32 1 SF
+c 012 8 repeat 264 120 32 32 1 SF
+c 013 2 line 8 152 288 24 1 
+c 014 20 ListView015 8 176 288 192 1 ONE;TWO;THREE
+c 015 18 StatusBar015 0 376 304 16 1 

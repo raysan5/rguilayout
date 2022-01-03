@@ -1,36 +1,37 @@
 #
-# rgl text file (v2.0) - raygui layout text file generated using rGuiLayout
+# rgl layout text file (v2.5) - raygui layout file generated using rGuiLayout
 #
-# Total number of controls:     19
+# Number of controls:     19
+#
 # Ref. window:    r <x> <y> <width> <height>
 # Anchor info:    a <id> <name> <posx> <posy> <enabled>
 # Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
-r 50 50 0 0
-a 000 anchor00 50 50 1
+r 48 48 0 0
+a 000 anchor00 48 48 1
 a 001 anchor01 0 0 1
-a 002 anchor02 -50 -50 0
-a 003 anchor03 -50 -50 0
-a 004 anchor04 -50 -50 0
-a 005 anchor05 300 150 0
-a 006 anchor06 300 150 0
-a 007 anchor07 300 150 0
-c 000 0 WindowBox000 0 0 235 545 1 rStegano
-c 001 4 Label002 10 45 95 25 1 PADDING BYTES
-c 002 16 Spinner019 105 45 120 25 1 
-c 003 4 Label011 10 85 95 25 1 STEGANO BITS
-c 004 8 CheckBox003 105 90 15 15 1 
-c 005 8 CheckBox004 120 90 15 15 1 
-c 006 8 CheckBox005 135 90 15 15 1 
-c 007 8 CheckBox006 150 90 15 15 1 
-c 008 8 CheckBox007 165 90 15 15 1 
-c 009 8 CheckBox008 180 90 15 15 1 
-c 010 8 CheckBox009 195 90 15 15 1 
-c 011 8 CheckBox010 210 90 15 15 1 
-c 012 4 Label012 10 115 91 25 1 CARRIER IMAGE:
-c 013 3 Panel013 10 140 215 175 1 
-c 014 4 Label014 10 325 61 25 1 MESSAGE:
-c 015 13 TextBox015 10 350 215 90 1 Message to be hidden in the image....
-c 016 2 Line017 0 445 235 25 1 
-c 017 5 Button016 10 475 215 30 1 STEGANO!
-c 018 20 StatusBar019 0 525 235 22 1 Status Info
+a 002 anchor02 -48 -48 0
+a 003 anchor03 -48 -48 0
+a 004 anchor04 -48 -48 0
+a 005 anchor05 302 152 0
+a 006 anchor06 302 152 0
+a 007 anchor07 302 152 0
+c 000 0 WindowBox000 0 0 240 520 1 rStegano
+c 001 4 Label002 8 40 88 24 1 PADDING BYTES
+c 002 15 Spinner019 104 40 128 24 1 
+c 003 4 Label011 8 80 96 16 1 STEGANO BITS
+c 004 7 CheckBox003 104 80 16 16 1 
+c 005 7 CheckBox004 120 80 16 16 1 
+c 006 7 CheckBox005 136 80 16 16 1 
+c 007 7 CheckBox006 152 80 16 16 1 
+c 008 7 CheckBox007 168 80 16 16 1 
+c 009 7 CheckBox008 184 80 16 16 1 
+c 010 7 CheckBox009 200 80 16 16 1 
+c 011 7 CheckBox010 216 80 16 16 1 
+c 012 4 Label012 8 104 91 25 1 CARRIER IMAGE:
+c 013 3 Panel013 8 128 224 168 1 
+c 014 4 Label014 8 304 61 25 1 MESSAGE:
+c 015 12 TextBox015 8 328 224 96 1 Message to be hidden in the image....
+c 016 2 Line017 0 424 235 25 1 
+c 017 5 Button016 8 448 224 32 1 STEGANO!
+c 018 19 StatusBar019 0 496 240 24 1 Status Info

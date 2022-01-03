@@ -1,0 +1,38 @@
+#
+# rgl layout text file (v2.5) - raygui layout file generated using rGuiLayout
+#
+# Number of controls:     20
+#
+# Ref. window:    r <x> <y> <width> <height>
+# Anchor info:    a <id> <name> <posx> <posy> <enabled>
+# Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
+#
+r 48 48 900 640
+a 000 anchor00 48 48 1
+a 001 codegenAnchor 0 0 1
+a 002 anchor02 -48 -48 0
+a 003 anchor03 -48 -48 0
+a 004 anchor04 -48 -48 0
+a 005 anchor05 302 152 0
+a 006 anchor06 302 152 0
+a 007 anchor07 302 152 0
+c 000 0 codeGenWindow 0 0 900 640 1 #7#Code Generate Window
+c 001 1 layoutInfoGroup 656 40 232 240 1 Layout Info
+c 002 4 lblName 664 48 50 25 1 Name:
+c 003 12 toolName 720 48 160 24 1 layout_name
+c 004 4 lblVersion 664 80 50 25 1 Version:
+c 005 12 toolVersion 720 80 160 24 1 1.0.0
+c 006 4 lblCompany 664 112 48 24 1 Company:
+c 007 12 company 720 112 160 24 1 raylib technologies
+c 008 4 lblDescription 664 144 100 25 1 Short Description:
+c 009 13 toolDescription 664 168 216 104 1 Tool Description
+c 010 1 codeGenGroup 656 296 232 176 1 Code Generation Options
+c 011 11 codeTemplate 664 312 216 24 1 STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h);CUSTOM CODE FILE¼)N
+c 012 7 exportAnchors 672 352 16 16 1 Export anchors
+c 013 7 defineRecs 672 376 16 16 1 Define Rectangles
+c 014 7 defineTexts 672 400 16 16 1 Define text as const
+c 015 7 fullComments 672 424 16 16 1 Include detailed comments
+c 016 5 GenerateCode 656 488 232 32 1 #7#Export Generate Code
+c 017 5 ExecuteCode 656 528 232 32 1 Execute Code
+c 018 20 codePanel 8 32 640 600 1 
+c 019 7 generateButtonFunctions 672 448 16 16 1 Generate button functions
