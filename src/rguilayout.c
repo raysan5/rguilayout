@@ -151,7 +151,7 @@ static bool saveChangesRequired = false;    // Flag to notice save changes are r
 
 #define HELP_LINES_COUNT    33
 
-const char *helpLines[HELP_LINES_COUNT] = {
+static const char *helpLines[HELP_LINES_COUNT] = {
     "-File Options",
     "LCTRL + N - New layout",
     "LCTRL + O - Open layout file (.rgl)",
@@ -3193,16 +3193,19 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
 static void GuiHelpPanel(int posX, int posY, const char *title, const char **helpLines, int helpLinesCount)
 {
     int nextLineY = 0;
+    int lineSpacing = 20;
 
-    DrawRectangleRec((Rectangle) { posX, posY, 300, helpLinesCount*20 + 30 }, GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
-    GuiGroupBox((Rectangle) { posX, posY, 300, helpLinesCount*20 + 30 }, title);
-    nextLineY += 25;
+    DrawRectangleRec((Rectangle) { posX, posY, 300, helpLinesCount*lineSpacing + 20 }, GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+    GuiGroupBox((Rectangle) { posX, posY, 300, helpLinesCount*lineSpacing + 20 }, title);
+    nextLineY += 12;
 
     for (int i = 0; i < helpLinesCount; i++)
     {
-        if ((helpLines[i][0] != '-') || (helpLines[i] == NULL)) GuiLabel((Rectangle) { posX + 15, posY + nextLineY, 0, 0 }, helpLines[i]);
-        else GuiLine((Rectangle) { posX + 15, posY + nextLineY, 270, 10 }, helpLines[i] + 1);
+        if (helpLines[i] == NULL) GuiLine((Rectangle) { posX, posY + nextLineY, 300, 12 }, helpLines[i]);
+        else if (helpLines[i][0] == '-') GuiLine((Rectangle) { posX, posY + nextLineY, 300, lineSpacing }, helpLines[i] + 1);
+        else GuiLabel((Rectangle) { posX + 12, posY + nextLineY, 0, lineSpacing }, helpLines[i]);
 
-        nextLineY += 20;
+        if (helpLines[i] == NULL) nextLineY += 12;
+        else nextLineY += lineSpacing;
     }
 }
