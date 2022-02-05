@@ -183,7 +183,7 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         if (state->codeText != NULL)
         {
             Rectangle codePanel = { state->codegenAnchor.x + 10, state->codegenAnchor.y + 35, 645, 595 };
-            Rectangle view = GuiScrollPanel(codePanel, (Rectangle){ codePanel.x, codePanel.y, codePanel.width*2, (float)state->codeHeight }, &state->codePanelScrollOffset);
+            Rectangle view = GuiScrollPanel(codePanel, NULL, (Rectangle){ codePanel.x, codePanel.y, codePanel.width*2, (float)state->codeHeight }, &state->codePanelScrollOffset);
 
             BeginScissorMode((int)view.x, (int)view.y, (int)view.width, (int)view.height);
                 unsigned int linesCounter = 0;

@@ -1,6 +1,6 @@
 /*******************************************************************************************
 *
-*   rGuiLayout v2.5 - A simple and easy-to-use raygui layouts editor
+*   rGuiLayout v2.6-dev - A simple and easy-to-use raygui layouts editor
 *
 *   CONFIGURATION:
 *
@@ -12,13 +12,14 @@
 *       NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   VERSIONS HISTORY:
-*       2.5  (xx-Jan-2022) Updated to raylib 4.0 and raygui 3.1
+*       2.6  (Mar-2022) Updated to raylib 4.1 and raygui 3.2
+*       2.5  (05-Jan-2022) Updated to raylib 4.0 and raygui 3.1
 *       2.0  (15-Sep-2019) Rewriten from scratch
 *       1.0  (14-May-2018) First release
 *
 *   DEPENDENCIES:
-*       raylib 4.0              - Windowing/input management and drawing
-*       raygui 3.1              - Immediate-mode GUI controls with custom styling and icons
+*       raylib 4.1              - Windowing/input management and drawing
+*       raygui 3.2              - Immediate-mode GUI controls with custom styling and icons
 *       tinyfiledialogs 3.8.8   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
 *
 *   COMPILATION (Windows - MinGW):
@@ -247,13 +248,9 @@ int main(int argc, char *argv[])
 
     // GUI usage mode - Initialization
     //--------------------------------------------------------------------------------------
-#if defined(PLATFORM_WEB)
-    const int screenWidth = 920;
-    const int screenHeight = 540;
-#else
-    const int screenWidth = 1000;
+    const int screenWidth = 1280;
     const int screenHeight = 800;
-#endif
+
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // Window configuration flags
     InitWindow(screenWidth, screenHeight, TextFormat("%s v%s | %s", toolName, toolVersion, toolDescription));
     SetWindowMinSize(540, 540);
@@ -1947,7 +1944,7 @@ int main(int argc, char *argv[])
             else GuiUnlock();
 
             // Draw background grid
-            if (showGrid) GuiGrid((Rectangle){ 0, workAreaOffsetY, GetScreenWidth(), GetScreenHeight() }, gridSpacing*gridSubdivisions, gridSubdivisions);
+            if (showGrid) GuiGrid((Rectangle){ 0, workAreaOffsetY, GetScreenWidth(), GetScreenHeight() }, NULL, gridSpacing*gridSubdivisions, gridSubdivisions);
 
             // Draw the tracemap texture if loaded
             //---------------------------------------------------------------------------------
@@ -2032,7 +2029,7 @@ int main(int argc, char *argv[])
                         case GUI_PANEL:
                         {
                             GuiFade(0.8f);
-                            GuiPanel(rec);
+                            GuiPanel(rec, layout->controls[i].text);
                             GuiFade(1.0f);
                         } break;
                         case GUI_LABEL: GuiLabel(rec, layout->controls[i].text); break;
@@ -2051,9 +2048,9 @@ int main(int argc, char *argv[])
                         case GUI_SLIDERBAR: GuiSliderBar(rec, layout->controls[i].text, NULL, 40, 0, 100); break;
                         case GUI_PROGRESSBAR: GuiProgressBar(rec, layout->controls[i].text, NULL, 40, 0, 100); break;
                         case GUI_STATUSBAR: GuiStatusBar(rec, layout->controls[i].text); break;
-                        case GUI_SCROLLPANEL: GuiScrollPanel(rec, rec, NULL); break;
+                        case GUI_SCROLLPANEL: GuiScrollPanel(rec, layout->controls[i].text, rec, NULL); break;
                         case GUI_LISTVIEW: GuiListView(rec, layout->controls[i].text, &listViewScrollIndex, listViewActive); break;
-                        case GUI_COLORPICKER: GuiColorPicker(rec, RED); break;
+                        case GUI_COLORPICKER: GuiColorPicker(rec, layout->controls[i].text, RED); break;
                         case GUI_DUMMYREC: GuiDummyRec(rec, layout->controls[i].text); break;
                         default: break;
                     }
@@ -2137,7 +2134,7 @@ int main(int argc, char *argv[])
                                     case GUI_WINDOWBOX: GuiWindowBox(defaultRec[selectedType], "WINDOW BOX"); break;
                                     case GUI_GROUPBOX: GuiGroupBox(defaultRec[selectedType], "GROUP BOX"); break;
                                     case GUI_LINE: GuiLine(defaultRec[selectedType], NULL); break;
-                                    case GUI_PANEL: GuiPanel(defaultRec[selectedType]); break;
+                                    case GUI_PANEL: GuiPanel(defaultRec[selectedType], NULL); break;
                                     case GUI_LABEL: GuiLabel(defaultRec[selectedType], "LABEL TEXT"); break;
                                     case GUI_BUTTON: GuiButton(defaultRec[selectedType], "BUTTON"); break;
                                     case GUI_LABELBUTTON: GuiLabelButton(defaultRec[selectedType], "LABEL_BUTTON"); break;
@@ -2156,9 +2153,9 @@ int main(int argc, char *argv[])
                                     case GUI_SLIDERBAR: GuiSliderBar(defaultRec[selectedType], "SLIDER BAR", NULL, 40, 0, 100); break;
                                     case GUI_PROGRESSBAR: GuiProgressBar(defaultRec[selectedType], "PROGRESS BAR", NULL, 40, 0, 100); break;
                                     case GUI_STATUSBAR: GuiStatusBar(defaultRec[selectedType], "STATUS BAR"); break;
-                                    case GUI_SCROLLPANEL: GuiScrollPanel(defaultRec[selectedType], defaultRec[selectedType], NULL); break;
+                                    case GUI_SCROLLPANEL: GuiScrollPanel(defaultRec[selectedType], NULL, defaultRec[selectedType], NULL); break;
                                     case GUI_LISTVIEW: GuiListView(defaultRec[selectedType], "ONE;TWO;THREE;FOUR", &listViewScrollIndex, listViewActive); break;
-                                    case GUI_COLORPICKER: GuiColorPicker(defaultRec[selectedType], RED); break;
+                                    case GUI_COLORPICKER: GuiColorPicker(defaultRec[selectedType], NULL, RED); break;
                                     case GUI_DUMMYREC: GuiDummyRec(defaultRec[selectedType], "DUMMY REC"); break;
                                     default: break;
                                 }
