@@ -925,8 +925,8 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLay
     {
         case GUI_WINDOWBOX: TextAppend(toolstr, TextFormat("%sActive = !GuiWindowBox(%s, %s);", name, rec, text), pos); break;
         case GUI_GROUPBOX: TextAppend(toolstr, TextFormat("GuiGroupBox(%s, %s);", rec, text), pos); break;
-        case GUI_LINE: TextAppend(toolstr, TextFormat("GuiLine(%s, NULL);", rec), pos); break;
-        case GUI_PANEL: TextAppend(toolstr, TextFormat("GuiPanel(%s);", rec), pos); break;
+        case GUI_LINE: TextAppend(toolstr, TextFormat("GuiLine(%s, %s);", rec, text), pos); break;
+        case GUI_PANEL: TextAppend(toolstr, TextFormat("GuiPanel(%s, %s);", rec, text), pos); break;
         case GUI_LABEL: TextAppend(toolstr, TextFormat("GuiLabel(%s, %s);", rec, text), pos); break;
         case GUI_BUTTON: 
             if(!config.exportButtonFunctions) TextAppend(toolstr, TextFormat("%sPressed = GuiButton(%s, %s); ", name, rec, text), pos); 
@@ -952,10 +952,10 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLay
         case GUI_SCROLLPANEL:
         {
             char *containerRec = GetScrollPanelContainerRecText(index, control, config.defineRecs, config.exportAnchors, preText);
-            TextAppend(toolstr, TextFormat("%sScrollView = GuiScrollPanel(%s, %s, &%sScrollOffset);", name, containerRec, rec, name), pos); break;
+            TextAppend(toolstr, TextFormat("%sScrollView = GuiScrollPanel(%s, %s, %s, &%sScrollOffset);", name, containerRec, text, rec, name), pos); break;
         }
         case GUI_LISTVIEW: TextAppend(toolstr, TextFormat("%sActive = GuiListView(%s, %s, &%sScrollIndex, %sActive);", name, rec, (text == NULL)? "null":text, name, name), pos); break;
-        case GUI_COLORPICKER: TextAppend(toolstr, TextFormat("%sValue = GuiColorPicker(%s, %sValue);", name, rec, name), pos); break;
+        case GUI_COLORPICKER: TextAppend(toolstr, TextFormat("%sValue = GuiColorPicker(%s, %s, %sValue);", name, text, rec, name), pos); break;
         case GUI_DUMMYREC: TextAppend(toolstr, TextFormat("GuiDummyRec(%s, %s);", rec, text), pos); break;
         default: break;
     }

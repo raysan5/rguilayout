@@ -2029,7 +2029,7 @@ int main(int argc, char *argv[])
                         case GUI_PANEL:
                         {
                             GuiFade(0.8f);
-                            GuiPanel(rec, layout->controls[i].text);
+                            GuiPanel(rec, (layout->controls[i].text[0] == '\0')? NULL : layout->controls[i].text);
                             GuiFade(1.0f);
                         } break;
                         case GUI_LABEL: GuiLabel(rec, layout->controls[i].text); break;
@@ -2048,9 +2048,9 @@ int main(int argc, char *argv[])
                         case GUI_SLIDERBAR: GuiSliderBar(rec, layout->controls[i].text, NULL, 40, 0, 100); break;
                         case GUI_PROGRESSBAR: GuiProgressBar(rec, layout->controls[i].text, NULL, 40, 0, 100); break;
                         case GUI_STATUSBAR: GuiStatusBar(rec, layout->controls[i].text); break;
-                        case GUI_SCROLLPANEL: GuiScrollPanel(rec, layout->controls[i].text, rec, NULL); break;
+                        case GUI_SCROLLPANEL: GuiScrollPanel(rec, (layout->controls[i].text[0] == '\0') ? NULL : layout->controls[i].text, rec, NULL); break;
                         case GUI_LISTVIEW: GuiListView(rec, layout->controls[i].text, &listViewScrollIndex, listViewActive); break;
-                        case GUI_COLORPICKER: GuiColorPicker(rec, layout->controls[i].text, RED); break;
+                        case GUI_COLORPICKER: GuiColorPicker(rec, (layout->controls[i].text[0] == '\0') ? NULL : layout->controls[i].text, RED); break;
                         case GUI_DUMMYREC: GuiDummyRec(rec, layout->controls[i].text); break;
                         default: break;
                     }
