@@ -445,7 +445,12 @@ int main(int argc, char *argv[])
     // Main game loop
     while (!exitWindow)             // Detect window close button
     {
-        if (WindowShouldClose()) windowExitActive = true;
+        if (WindowShouldClose())
+        {
+            // TODO: Review behaviour on PLATFORM_WEB
+            if (saveChangesRequired) windowExitActive = true;
+            else exitWindow = true;
+        }
 
         // Undo layout change logic
         //----------------------------------------------------------------------------------
