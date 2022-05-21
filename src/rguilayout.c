@@ -2631,7 +2631,7 @@ int main(int argc, char *argv[])
                 int defaultPadding = GuiGetStyle(STATUSBAR, TEXT_PADDING);
                 int defaultTextAlign = GuiGetStyle(STATUSBAR, TEXT_ALIGNMENT);
                 GuiSetStyle(STATUSBAR, TEXT_PADDING, 10);
-                GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
+                GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
                 GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24},
                              TextFormat("SELECTED CONTROL: #%03i  |  %s  |  REC (%i, %i, %i, %i)  |  %s",
                                         selectedControl, TextToUpper(controlTypeName[layout->controls[selectedControl].type]),

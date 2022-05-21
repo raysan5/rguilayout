@@ -168,7 +168,7 @@ void GuiMainToolbar(GuiMainToolbarState *state)
     state->zoomValue = GuiSliderBar((Rectangle){ state->anchorZoom.x + 86, state->anchorZoom.y + 19, 150, 12 }, "ZOOM:", TextFormat("%i%%", (int)(state->zoomValue*100.0f)), state->zoomValue, 0, 20.0f);
     
     int labelTextAlign = GuiGetStyle(LABEL, TEXT_ALIGNMENT);
-    GuiSetStyle(LABEL, TEXT_ALIGNMENT, GUI_TEXT_ALIGN_LEFT);
+    GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
 
     state->scaleFilterActive = GuiToggleGroup((Rectangle){ state->anchorZoom.x + 340, state->anchorZoom.y + 14, 22, 22 }, "#34#;#35#", state->scaleFilterActive);
     GuiLabel((Rectangle){ state->anchorZoom.x + 340 - MeasureTextEx(GuiGetFont(), "Filter:", (float)GuiGetStyle(DEFAULT, TEXT_SIZE), (float)GuiGetStyle(DEFAULT, TEXT_SPACING)).x - (float)GuiGetStyle(SLIDER, TEXT_PADDING), state->anchorZoom.y + 17, 72, 18 }, "Filter:");
