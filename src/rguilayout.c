@@ -530,7 +530,7 @@ int main(int argc, char *argv[])
             int fileCount = 0;
             char **droppedFiles = { 0 };
             char droppedFileName[256];
-            droppedFiles = GetDroppedFiles(&fileCount);
+            droppedFiles = LoadDroppedFiles(&fileCount);
             strcpy(droppedFileName, droppedFiles[0]);
 
             if (IsFileExtension(droppedFileName, ".rgl"))
@@ -564,7 +564,7 @@ int main(int argc, char *argv[])
             }
             else if (IsFileExtension(droppedFileName, ".rgs")) GuiLoadStyle(droppedFileName);
 
-            ClearDroppedFiles();
+            UnloadDroppedFiles();
         }
         //----------------------------------------------------------------------------------
 
