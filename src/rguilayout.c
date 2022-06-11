@@ -527,15 +527,11 @@ int main(int argc, char *argv[])
         //----------------------------------------------------------------------------------
         if (IsFileDropped())
         {
-            int fileCount = 0;
-            char **droppedFiles = { 0 };
-            char droppedFileName[256];
-            droppedFiles = LoadDroppedFiles(&fileCount);
-            strcpy(droppedFileName, droppedFiles[0]);
+            FilePathList droppedFiles = LoadDroppedFiles();
 
-            if (IsFileExtension(droppedFileName, ".rgl"))
+            if (IsFileExtension(droppedFiles.paths[0], ".rgl"))
             {
-                GuiLayout *tempLayout = LoadLayout(droppedFileName);
+                GuiLayout *tempLayout = LoadLayout(droppedFiles.paths[0]);
 
                 if (tempLayout != NULL)
                 {
@@ -546,7 +542,7 @@ int main(int argc, char *argv[])
                     // TODO: Probably this system should be designed in a diferent way...
                     for (int i = 0; i < layout->controlCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
 
-                    strcpy(inFileName, droppedFileName);
+                    strcpy(inFileName, droppedFiles.paths[0]);
                     SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
 
                     for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
@@ -556,15 +552,15 @@ int main(int argc, char *argv[])
                     UnloadLayout(tempLayout);
                 }
             }
-            else if (IsFileExtension(droppedFileName, ".png")) // Tracemap image
+            else if (IsFileExtension(droppedFiles.paths[0], ".png")) // Tracemap image
             {
                 if (tracemap.id > 0) UnloadTexture(tracemap);
-                tracemap = LoadTexture(droppedFileName);
+                tracemap = LoadTexture(droppedFiles.paths[0]);
                 tracemapRec = (Rectangle){30, 30, tracemap.width, tracemap.height};
             }
-            else if (IsFileExtension(droppedFileName, ".rgs")) GuiLoadStyle(droppedFileName);
+            else if (IsFileExtension(droppedFiles.paths[0], ".rgs")) GuiLoadStyle(droppedFiles.paths[0]);
 
-            UnloadDroppedFiles();
+            UnloadDroppedFiles(droppedFiles);    // Unload filepaths from memory
         }
         //----------------------------------------------------------------------------------
 
@@ -2651,7 +2647,7 @@ int main(int argc, char *argv[])
 #if defined(CUSTOM_MODAL_DIALOGS)
                 int result = GuiFileDialog(DIALOG_MESSAGE, "Load raygui layout file ...", inFileName, "Ok", "Just drag and drop your .rgl layout file!");
 #else
-                int result = GuiFileDialog(DIALOG_OPEN, "Load raygui layout file", inFileName, "*.rgl", "raygui Layout Files (*.rgl)");
+                int result = GuiFileDialog(DIALOG_OPEN_FILE, "Load raygui layout file", inFileName, "*.rgl", "raygui Layout Files (*.rgl)");
 #endif
                 if (result == 1)
                 {
@@ -2690,7 +2686,7 @@ int main(int argc, char *argv[])
 #if defined(CUSTOM_MODAL_DIALOGS)
                 int result = GuiFileDialog(DIALOG_TEXTINPUT, "Save raygui layout file...", outFileName, "Ok;Cancel", NULL);
 #else
-                int result = GuiFileDialog(DIALOG_SAVE, "Save raygui layout file...", outFileName, "*.rgl", "raygui Layout Files (*.rgl)");
+                int result = GuiFileDialog(DIALOG_SAVE_FILE, "Save raygui layout file...", outFileName, "*.rgl", "raygui Layout Files (*.rgl)");
 #endif
                 if (result == 1)
                 {
@@ -2726,7 +2722,7 @@ int main(int argc, char *argv[])
 #if defined(CUSTOM_MODAL_DIALOGS)
                 int result = GuiFileDialog(DIALOG_TEXTINPUT, "Export layout as code file...", outFileName, "Ok;Cancel", NULL);
 #else
-                int result = GuiFileDialog(DIALOG_SAVE, "Export layout as code file...", outFileName, "*.c;*.h", "Code Files");
+                int result = GuiFileDialog(DIALOG_SAVE_FILE, "Export layout as code file...", outFileName, "*.c;*.h", "Code Files");
 #endif
                 if (result == 1)
                 {
