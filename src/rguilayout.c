@@ -1,25 +1,24 @@
 /*******************************************************************************************
 *
-*   rGuiLayout v2.6-dev - A simple and easy-to-use raygui layouts editor
+*   rGuiLayout v3.0 - A simple and easy-to-use raygui layouts editor
 *
 *   CONFIGURATION:
-*
-*   #define VERSION_ONE
-*       Enable command-line usage and PRO features for the tool
 *
 *   #define CUSTOM_MODAL_DIALOGS
 *       Use custom raygui generated modal dialogs instead of native OS ones
 *       NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   VERSIONS HISTORY:
-*       2.6  (Mar-2022) Updated to raylib 4.1 and raygui 3.2
-*       2.5  (05-Jan-2022) Updated to raylib 4.0 and raygui 3.1
-*       2.0  (15-Sep-2019) Rewriten from scratch
-*       1.0  (14-May-2018) First release
+*       3.0  (xx-Nov-2022)  ADDED: Sponsor window for tools support
+*                           ADDED: Main toolbar, consistent with other tools
+*                           Updated to raylib 4.2 and raygui 3.5-dev
+*       2.5  (05-Jan-2022)  Updated to raylib 4.0 and raygui 3.1
+*       2.0  (15-Sep-2019)  Rewriten from scratch
+*       1.0  (14-May-2018)  First release
 *
 *   DEPENDENCIES:
-*       raylib 4.1              - Windowing/input management and drawing
-*       raygui 3.2              - Immediate-mode GUI controls with custom styling and icons
+*       raylib 4.2              - Windowing/input management and drawing
+*       raygui 3.5-dev          - Immediate-mode GUI controls with custom styling and icons
 *       tinyfiledialogs 3.8.8   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
 *
 *   COMPILATION (Windows - MinGW):
@@ -192,7 +191,7 @@ static const char *helpLines[HELP_LINES_COUNT] = {
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
 //----------------------------------------------------------------------------------
-#if defined(VERSION_ONE)
+#if defined(PLATFORM_DESKTOP)
 static void ShowCommandLineInfo(void);                      // Show command line usage info
 static void ProcessCommandLine(int argc, char *argv[]);     // Process command line input
 #endif
@@ -217,7 +216,7 @@ int main(int argc, char *argv[])
 #if !defined(_DEBUG)
     SetTraceLogLevel(LOG_NONE);         // Disable raylib trace log messsages
 #endif
-#if defined(VERSION_ONE)
+#if defined(PLATFORM_DESKTOP)
     // Command-line usage mode
     //--------------------------------------------------------------------------------------
     if (argc > 1)
@@ -238,7 +237,7 @@ int main(int argc, char *argv[])
             return 0;
         }
     }
-#endif      // VERSION_ONE
+#endif      // PLATFORM_DESKTOP
 #if (!defined(_DEBUG) && (defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)))
     // WARNING (Windows): If program is compiled as Window application (instead of console),
     // no console is available to show output info... solution is compiling a console application
@@ -2838,7 +2837,7 @@ int main(int argc, char *argv[])
 //----------------------------------------------------------------------------------
 // Module functions definition
 //----------------------------------------------------------------------------------
-#if defined(VERSION_ONE)
+#if defined(PLATFORM_DESKTOP)
 // Show command line usage info
 static void ShowCommandLineInfo(void)
 {
@@ -2982,7 +2981,7 @@ static void ProcessCommandLine(int argc, char *argv[])
 
     if (showUsageInfo) ShowCommandLineInfo();
 }
-#endif      // VERSION_ONE
+#endif      // PLATFORM_DESKTOP
 
 //--------------------------------------------------------------------------------------------
 // Load/Save/Export data functions
