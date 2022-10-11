@@ -89,6 +89,21 @@
 #define GUI_WINDOW_CODEGEN_IMPLEMENTATION
 #include "gui_window_codegen.h"             // GUI: Code Generation Window
 
+// raygui embedded styles
+// NOTE: Included in the same order as selector
+#define MAX_GUI_STYLES_AVAILABLE   12       // NOTE: Included light style
+#include "styles/style_jungle.h"            // raygui style: jungle
+#include "styles/style_candy.h"             // raygui style: candy
+#include "styles/style_lavanda.h"           // raygui style: lavanda
+#include "styles/style_cyber.h"             // raygui style: cyber
+#include "styles/style_terminal.h"          // raygui style: terminal
+#include "styles/style_ashes.h"             // raygui style: ashes
+#include "styles/style_bluish.h"            // raygui style: bluish
+#include "styles/style_dark.h"              // raygui style: dark
+#include "styles/style_cherry.h"            // raygui style: cherry
+#include "styles/style_sunny.h"             // raygui style: sunny
+#include "styles/style_enefete.h"           // raygui style: enefete
+
 #include <stdlib.h>                         // Required for: calloc(), free()
 #include <stdarg.h>                         // Required for: va_list, va_start(), vfprintf(), va_end()
 #include <string.h>                         // Required for: strcpy(), strcat(), strlen()
@@ -2142,7 +2157,7 @@ int main(int argc, char *argv[])
                                     case GUI_TOGGLE: GuiToggle(defaultRec[selectedType], "TOGGLE", false); break;
                                     // WARNING: Selection rectangle for GuiToggleGroup() considers all the control while the function expects only one piece!
                                     // TODO: Review the rectangle defined for ToggleGroup() or review the control itself to receive the complete bounds with (?)
-                                    case GUI_TOGGLEGROUP: GuiToggleGroup((Rectangle) { defaultRec[selectedType].x, defaultRec[selectedType].y, defaultRec[selectedType].width/3, defaultRec[selectedType].height }, "ONE;TWO;THREE", 1); break;
+                                    case GUI_TOGGLEGROUP: GuiToggleGroup((Rectangle){ defaultRec[selectedType].x, defaultRec[selectedType].y, defaultRec[selectedType].width/3, defaultRec[selectedType].height }, "ONE;TWO;THREE", 1); break;
                                     case GUI_COMBOBOX: GuiComboBox(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
                                     case GUI_DROPDOWNBOX: GuiDropdownBox(defaultRec[selectedType], "ONE;TWO;THREE", &dropdownBoxActive, false); break;
                                     case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedType], "TEXT BOX", 7, false); break;
@@ -2428,7 +2443,7 @@ int main(int argc, char *argv[])
                             showIconPanel = true;
 
                             // Draw icons selector
-                            selectedIcon = GuiToggleGroup((Rectangle) { (int)textboxRec.x, (int)textboxRec.y + (int)textboxRec.height + 10, 18, 18 }, toggleIconsText, selectedIcon);
+                            selectedIcon = GuiToggleGroup((Rectangle){ (int)textboxRec.x, (int)textboxRec.y + (int)textboxRec.height + 10, 18, 18 }, toggleIconsText, selectedIcon);
                             if (selectedIcon > 0)
                             {
                                 strcpy(layout->controls[selectedControl].text, TextFormat("#%03i#\0", selectedIcon));
@@ -2580,7 +2595,7 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
             if (windowResetActive)
             {
-                int message = GuiMessageBox((Rectangle) { GetScreenWidth()/2 - 120, GetScreenHeight()/2 - 48, 248, 96 }, "Creating new layout", "Do you want to save the current layout?", "Yes;No");
+                int message = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 120, GetScreenHeight()/2 - 48, 248, 96 }, "Creating new layout", "Do you want to save the current layout?", "Yes;No");
 
                 if (message == 0) windowResetActive = false;
                 else if (message == 1)  // Yes
@@ -2601,7 +2616,7 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
             if (windowExitActive)
             {
-                int message = GuiMessageBox((Rectangle) { GetScreenWidth()/2 - 120, GetScreenHeight()/2 - 48, 248, 96 }, "#159#Closing rGuiLayout", "Do you want to save before quitting?", "Yes;No");
+                int message = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 120, GetScreenHeight()/2 - 48, 248, 96 }, "#159#Closing rGuiLayout", "Do you want to save before quitting?", "Yes;No");
 
                 if (message == 0) windowExitActive = false;
                 else if (message == 1)  // Yes
@@ -3192,15 +3207,15 @@ static void GuiHelpPanel(int posX, int posY, const char *title, const char **hel
     int nextLineY = 0;
     int lineSpacing = 20;
 
-    DrawRectangleRec((Rectangle) { posX, posY, 300, helpLinesCount*lineSpacing + 20 }, GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
-    GuiGroupBox((Rectangle) { posX, posY, 300, helpLinesCount*lineSpacing + 20 }, title);
+    DrawRectangleRec((Rectangle){ posX, posY, 300, helpLinesCount*lineSpacing + 20 }, GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+    GuiGroupBox((Rectangle){ posX, posY, 300, helpLinesCount*lineSpacing + 20 }, title);
     nextLineY += 12;
 
     for (int i = 0; i < helpLinesCount; i++)
     {
-        if (helpLines[i] == NULL) GuiLine((Rectangle) { posX, posY + nextLineY, 300, 12 }, helpLines[i]);
-        else if (helpLines[i][0] == '-') GuiLine((Rectangle) { posX, posY + nextLineY, 300, lineSpacing }, helpLines[i] + 1);
-        else GuiLabel((Rectangle) { posX + 12, posY + nextLineY, 0, lineSpacing }, helpLines[i]);
+        if (helpLines[i] == NULL) GuiLine((Rectangle){ posX, posY + nextLineY, 300, 12 }, helpLines[i]);
+        else if (helpLines[i][0] == '-') GuiLine((Rectangle){ posX, posY + nextLineY, 300, lineSpacing }, helpLines[i] + 1);
+        else GuiLabel((Rectangle){ posX + 12, posY + nextLineY, 0, lineSpacing }, helpLines[i]);
 
         if (helpLines[i] == NULL) nextLineY += 12;
         else nextLineY += lineSpacing;
