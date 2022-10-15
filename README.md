@@ -10,7 +10,7 @@ rGuiLayout can be used for free as a [WebAssembly online tool](https://raylibtec
 
 <br>
 
-_NOTE: This tool is itended to be used with [**raygui 3.1**](https://github.com/raysan5/raygui)_
+_NOTE: This tool is itended to be used with [**raygui 3.5-dev**](https://github.com/raysan5/raygui)_
 
 ## rGuiLayout Features
 
@@ -53,7 +53,9 @@ Press `LCTRL + ENTER` to show code generation window, you can configure multiple
 
 ## rGuiLayout License
 
-`rGuiLayout` online tool can be used completely for free.
+`rGuiLayout` source code is distributed as **open source**, licensed under an unmodified [zlib/libpng license](LICENSE). 
+
+`rGuiLayout` binaries are completely free for anyone willing to compile them directly from source.
 
 `rGuiLayout Standalone` desktop tool could be downloaded with a small donation. 
 
