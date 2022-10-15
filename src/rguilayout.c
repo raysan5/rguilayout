@@ -67,11 +67,10 @@
 #define TOOL_SHORT_NAME         "rGL"
 #define TOOL_VERSION            "3.0"
 #define TOOL_DESCRIPTION        "A simple and easy-to-use raygui layouts editor"
-#define TOOL_RELEASE_DATE       "Dec.2021"
+#define TOOL_RELEASE_DATE       "Oct.2022"
 #define TOOL_LOGO_COLOR         0x7da9b9ff
 
 #include "raylib.h"
-#include "rguilayout.h"
 
 #if defined(PLATFORM_WEB)
     #define CUSTOM_MODAL_DIALOGS            // Force custom modal dialogs usage
@@ -99,6 +98,8 @@
 
 #define GUI_FILE_DIALOGS_IMPLEMENTATION
 #include "gui_file_dialogs.h"               // GUI: File Dialogs
+
+#include "rguilayout.h"                     // Gui layout types definition
 
 #define GUI_CONTROLS_PALETTE_IMPLEMENTATION
 #include "gui_controls_palette.h"           // GUI: Controls Palette
@@ -480,7 +481,8 @@ int main(int argc, char *argv[])
     int listViewScrollIndex = 0;
     int listViewActive = 0;
 
-    int workAreaOffsetY = 0;        // TODO: Main toolbar height
+    // Work area to place components
+    Rectangle workArea = { 48, 48*2, 800, 600 };
 
     // Select icon ToggleGroup()
     int selectedIcon = 0; 
@@ -2038,7 +2040,7 @@ int main(int argc, char *argv[])
             else GuiUnlock();
 
             // Draw background grid
-            if (showGrid) GuiGrid((Rectangle){ 0, workAreaOffsetY, GetScreenWidth(), GetScreenHeight() }, NULL, gridSpacing*gridSubdivisions, gridSubdivisions);
+            if (showGrid) GuiGrid(workArea, NULL, gridSpacing*gridSubdivisions, gridSubdivisions);
 
             // Draw the tracemap texture if loaded
             //---------------------------------------------------------------------------------
@@ -2264,9 +2266,9 @@ int main(int argc, char *argv[])
                                 // Draw cursor position
                                 positionColor = MAROON;
                                 if (snapMode) positionColor = LIME;
-                                DrawText(TextFormat("[%i, %i, %i, %i]", (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y,
+                                DrawText(TextFormat("[%i, %i, %i, %i]", (int)defaultRec[selectedType].x - (int)workArea.x, (int)defaultRec[selectedType].y - (int)workArea.y,
                                     (int)defaultRec[selectedType].width, (int)defaultRec[selectedType].height),
-                                    (int)defaultRec[selectedType].x, (int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
+                                    (int)defaultRec[selectedType].x, ((int)defaultRec[selectedType].y < ((int)workArea.y + 8))? (int)defaultRec[selectedType].y + 30 : (int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
 
                                 // Draw controls name
                                 if (IsKeyDown(KEY_N))
@@ -2632,7 +2634,7 @@ int main(int argc, char *argv[])
                 GuiControlsPalette(&paletteState);
 
                 // Update ScrollPanel bounds in case window is resized
-                paletteState.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 160, workAreaOffsetY, 160, GetScreenHeight() - workAreaOffsetY };
+                paletteState.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 170, workArea.y, 170, GetScreenHeight() - workArea.y - 24 };
                 //----------------------------------------------------------------------------------------
             }
             
