@@ -5,7 +5,6 @@ CUSTOM TEMPLATES for CODE GUI CODE GENERATION
 When defining a custom template for code generation, the following variables can be defined to generate 
 different parts of code, just place your variables in your custom template wherever that data definition is required.
 
-
 // General layout config variables
 $(GUILAYOUT_NAME)               // Layout name
 $(GUILAYOUT_NAME_UPPERCASE)     // Layout name UPPERCASE
