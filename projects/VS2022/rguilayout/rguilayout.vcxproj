@@ -357,7 +357,7 @@
     <ClInclude Include="..\..\..\src\gui_window_about.h" />
     <ClInclude Include="..\..\..\src\gui_window_codegen.h" />
     <ClInclude Include="..\..\..\src\rguilayout.h" />
-    <ClInclude Include="..\..\..\src\templates.h" />
+    <ClInclude Include="..\..\..\src\code_templates.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\rguilayout.c" />
