@@ -9,16 +9,20 @@
 *       NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   VERSIONS HISTORY:
-*       3.0  (xx-Nov-2022)  ADDED: Sponsor window for tools support
-*                           ADDED: Main toolbar, consistent with other tools
-*                           Updated to raylib 4.2 and raygui 3.5-dev
+*       3.0  (xx-Oct-2022)  ADDED: Main toolbar, consistent with other tools
+*                           ADDED: Sponsor window for tools support
+*                           ADDED: Multiple UI styles selection
+*                           REVIEWED: Codegen window font and templates
+*                           Updated to raylib 4.5-dev and raygui 3.5-dev
+*                           Source code re-licensed as open-source
 *       2.5  (05-Jan-2022)  Updated to raylib 4.0 and raygui 3.1
 *       2.0  (15-Sep-2019)  Rewriten from scratch
 *       1.0  (14-May-2018)  First release
 *
 *   DEPENDENCIES:
-*       raylib 4.2              - Windowing/input management and drawing
+*       raylib 4.5-dev          - Windowing/input management and drawing
 *       raygui 3.5-dev          - Immediate-mode GUI controls with custom styling and icons
+*       rpng 1.0                - PNG chunks management
 *       tinyfiledialogs 3.8.8   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
 *
 *   COMPILATION (Windows - MinGW):
@@ -29,26 +33,39 @@
 *       gcc -o rguilayout rguilayout.c external/tinyfiledialogs.c -s -Iexternal -no-pie -D_DEFAULT_SOURCE /
 *           -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 *
+*   NOTE: On PLATFORM_ANDROID and PLATFORM_WEB file dialogs are not available
+*
 *   DEVELOPERS:
-*       Ramon Santamaria (@raysan5):    Supervision, design and maintenance.
+*       Ramon Santamaria (@raysan5):    Supervision, review, redesign, update and maintenance.
 *       Sergio Martinez (@anidealgift): Developer and designer (v2.0 - Jan.2019)
 *       Adria Arranz (@Adri102):        Developer and designer (v1.0 - Jun.2018)
 *       Jordi Jorba (@KoroBli):         Developer and designer (v1.0 - Jun.2018)
 *
 *
-*   LICENSE: Propietary License
+*   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2017-2022 raylib technologies (@raylibtech). All Rights Reserved.
+*   Copyright (c) 2017-2022 raylib technologies (@raylibtech) / Ramon Santamaria (@raysan5)
 *
-*   Unauthorized copying of this file, via any medium is strictly prohibited
-*   This project is proprietary and confidential unless the owner allows
-*   usage in any other form by expresely written permission.
+*   This software is provided "as-is", without any express or implied warranty. In no event
+*   will the authors be held liable for any damages arising from the use of this software.
+*
+*   Permission is granted to anyone to use this software for any purpose, including commercial
+*   applications, and to alter it and redistribute it freely, subject to the following restrictions:
+*
+*     1. The origin of this software must not be misrepresented; you must not claim that you
+*     wrote the original software. If you use this software in a product, an acknowledgment
+*     in the product documentation would be appreciated but is not required.
+*
+*     2. Altered source versions must be plainly marked as such, and must not be misrepresented
+*     as being the original software.
+*
+*     3. This notice may not be removed or altered from any source distribution.
 *
 **********************************************************************************************/
 
 #define TOOL_NAME               "rGuiLayout"
 #define TOOL_SHORT_NAME         "rGL"
-#define TOOL_VERSION            "2.5"
+#define TOOL_VERSION            "3.0"
 #define TOOL_DESCRIPTION        "A simple and easy-to-use raygui layouts editor"
 #define TOOL_RELEASE_DATE       "Dec.2021"
 #define TOOL_LOGO_COLOR         0x7da9b9ff
@@ -61,6 +78,7 @@
     #include <emscripten/emscripten.h>      // Emscripten library - LLVM to JavaScript compiler
 #endif
 
+// NOTE: Some redefines are required to support icons panel drawing
 #define RAYGUI_GRID_ALPHA                 0.1f
 #define RAYGUI_TEXTSPLIT_MAX_ELEMENTS     256
 #define RAYGUI_TEXTSPLIT_MAX_TEXT_SIZE   4096
@@ -70,21 +88,24 @@
 
 #undef RAYGUI_IMPLEMENTATION                // Avoid including raygui implementation again
 
-//#define GUI_MAIN_TOOLBAR_IMPLEMENTATION
-// TODO: #include "gui_main_toolbar.h"               // GUI: Main toolbar panel (file and visualization)
+#define GUI_MAIN_TOOLBAR_IMPLEMENTATION
+#include "gui_main_toolbar.h"               // GUI: Main toolbar
 
 #define GUI_WINDOW_ABOUT_IMPLEMENTATION
 #include "gui_window_about.h"               // GUI: About Window
 
+#define GUI_WINDOW_SPONSOR_IMPLEMENTATION
+#include "gui_window_sponsor.h"             // GUI: Sponsor Window
+
+#define GUI_FILE_DIALOGS_IMPLEMENTATION
+#include "gui_file_dialogs.h"               // GUI: File Dialogs
+
 #define GUI_CONTROLS_PALETTE_IMPLEMENTATION
 #include "gui_controls_palette.h"           // GUI: Controls Palette
 
-#define GUI_FILE_DIALOGS_IMPLEMENTATION
-#include "gui_file_dialogs.h"               // GUI: File Dialog
-
 #define CODEGEN_IMPLEMENTATION
 #include "codegen.h"                        // Code generation functions
-#include "templates.h"                      // Code template files (char buffers)
+#include "code_templates.h"                 // Code template files (char buffers)
 
 #define GUI_WINDOW_CODEGEN_IMPLEMENTATION
 #include "gui_window_codegen.h"             // GUI: Code Generation Window
@@ -104,6 +125,10 @@
 #include "styles/style_sunny.h"             // raygui style: sunny
 #include "styles/style_enefete.h"           // raygui style: enefete
 
+#define RPNG_IMPLEMENTATION
+#include "external/rpng.h"                  // PNG chunks management
+
+// Standard C libraries
 #include <stdlib.h>                         // Required for: calloc(), free()
 #include <stdarg.h>                         // Required for: va_list, va_start(), vfprintf(), va_end()
 #include <string.h>                         // Required for: strcpy(), strcat(), strlen()
@@ -120,23 +145,24 @@ bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib
 // Simple log system to avoid printf() calls if required
 // NOTE: Avoiding those calls, also avoids const strings memory usage
 #define SUPPORT_LOG_INFO
-#if defined(SUPPORT_LOG_INFO)
-  #define LOG(...) printf(__VA_ARGS__)
+#if defined(SUPPORT_LOG_INFO) && defined(_DEBUG)
+    #define LOG(...) printf(__VA_ARGS__)
 #else
-  #define LOG(...)
+    #define LOG(...)
 #endif
 
 #define ANCHOR_RADIUS               20      // Default anchor radius
 #define MIN_CONTROL_SIZE            10      // Minimum control size
 #define SCALE_BOX_CORNER_SIZE       12      // Scale box bottom-right corner square size
 
-#define MOVEMENT_FRAME_SPEED        2       // Controls movement speed in pixels per frame: TODO: Review
+#define MOVEMENT_FRAME_SPEED         2      // Controls movement speed in pixels per frame: TODO: Review
 
-#define MAX_UNDO_LEVELS             10      // Undo levels supported for the ring buffer
+#define MAX_UNDO_LEVELS             32      // Undo levels supported for the ring buffer
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
+// Layout editing mode enabled
 typedef enum {
     NONE = 0,
 
@@ -164,13 +190,18 @@ static const char *toolDescription = TOOL_DESCRIPTION;
 
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
 
-#define HELP_LINES_COUNT    33
+#define HELP_LINES_COUNT    37
 
+// Tool help info
 static const char *helpLines[HELP_LINES_COUNT] = {
+    "F1 - Show Help window",
+    "F2 - Show About window",
+    "F3 - Show Sponsor window",
     "-File Options",
-    "LCTRL + N - New layout",
+    "LCTRL + N - New layout file (.rgl)",
     "LCTRL + O - Open layout file (.rgl)",
     "LCTRL + S - Save layout file (.rgl)",
+    "LCTRL + E - Export layout file",
     "LCTRL + ENTER - Export layout to code",
     "-Control Edition",
     "LSHIFT + ARROWS - Smooth edit position",
@@ -194,17 +225,15 @@ static const char *helpLines[HELP_LINES_COUNT] = {
     "U - Unlink control from anchor",
     "H - Hide/Unhide controls for selected anchor",
     "-Visual Options",
-    "F1 - Toggle Help panel (this one)",
-    "F2 - Toggle About window",
-    "G - Toggle grid mode",
-    "S - Toggle snap to grid mode",
+    "LCTRL + G - Toggle grid mode",
+    "LALT + S - Toggle snap to grid mode",
     //"RALT + UP/DOWN - Grid spacing + snap",
-    "F - Toggle control position info (global/anchor)",
+    "LCTRL + F - Toggle control position info (global/anchor)",
     "SPACE - Toggle tracemap Lock/Unlock",
 };
 
 //----------------------------------------------------------------------------------
-// Module specific Functions Declaration
+// Module Functions Declaration
 //----------------------------------------------------------------------------------
 #if defined(PLATFORM_DESKTOP)
 static void ShowCommandLineInfo(void);                      // Show command line usage info
@@ -217,8 +246,8 @@ static void UnloadLayout(GuiLayout *layout);                // Unload raygui lay
 static void ResetLayout(GuiLayout *layout);                 // Reset layout to default values
 static void SaveLayout(GuiLayout *layout, const char *fileName);     // Save raygui layout as text file (.rgl)
 
-// Draw help panel with the provided lines
-static void GuiHelpPanel(int posX, int posY, const char *title, const char **helpLines, int helpLinesCount);
+// Auxiliar functions
+static int GuiHelpWindow(Rectangle bounds, const char *title, const char **helpLines, int helpLinesCount); // Draw help window with the provided lines
 
 //----------------------------------------------------------------------------------
 // Program main entry point
@@ -242,8 +271,7 @@ int main(int argc, char *argv[])
         {
             if (IsFileExtension(argv[1], ".rgl"))
             {
-                // Open file with graphic interface
-                strcpy(inFileName, argv[1]);        // Read input filename
+                strcpy(inFileName, argv[1]);        // Read input filename to open with gui interface
             }
         }
         else
@@ -252,7 +280,7 @@ int main(int argc, char *argv[])
             return 0;
         }
     }
-#endif      // PLATFORM_DESKTOP
+#endif  // PLATFORM_DESKTOP
 #if (!defined(_DEBUG) && (defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)))
     // WARNING (Windows): If program is compiled as Window application (instead of console),
     // no console is available to show output info... solution is compiling a console application
@@ -267,11 +295,11 @@ int main(int argc, char *argv[])
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // Window configuration flags
     InitWindow(screenWidth, screenHeight, TextFormat("%s v%s | %s", toolName, toolVersion, toolDescription));
-    SetWindowMinSize(540, 540);
+    SetWindowMinSize(1280, 720);
     SetExitKey(0);
 
-    // General app variables
-    Vector2 mouse = { -1, -1 };             // Mouse position
+    // General pourpose variables
+    Vector2 mouse = { 0, 0 };               // Mouse position
 
     // Grid control variables
     bool showGrid = true;                   // Show grid flag (KEY_G)
@@ -374,6 +402,21 @@ int main(int argc, char *argv[])
     //GuiMainToolbarState mainToolbarState = InitGuiMainToolbar();
     //-----------------------------------------------------------------------------------
 
+    // GUI: Main toolbar panel (file and visualization)
+    //-----------------------------------------------------------------------------------
+    GuiMainToolbarState mainToolbarState = InitGuiMainToolbar();
+    //-----------------------------------------------------------------------------------
+
+    // GUI: About Window
+    //-----------------------------------------------------------------------------------
+    GuiWindowAboutState windowAboutState = InitGuiWindowAbout();
+    //-----------------------------------------------------------------------------------
+    
+    // GUI: Sponsor Window
+    //-----------------------------------------------------------------------------------
+    GuiWindowSponsorState windowSponsorState = InitGuiWindowSponsor();
+    //-----------------------------------------------------------------------------------
+
     // GUI: Controls Selection Palette
     //-----------------------------------------------------------------------------------
     GuiControlsPaletteState paletteState = InitGuiControlsPalette();
@@ -384,14 +427,11 @@ int main(int argc, char *argv[])
     GuiWindowCodegenState windowCodegenState = InitGuiWindowCodegen();
     //-----------------------------------------------------------------------------------
 
-    // GUI: About Window
-    //-----------------------------------------------------------------------------------
-    GuiWindowAboutState windowAboutState = InitGuiWindowAbout();
-    //-----------------------------------------------------------------------------------
+    bool windowHelpActive = false;
 
     // GUI: Exit Window
     //-----------------------------------------------------------------------------------
-    bool exitWindow = false;
+    bool closeWindow = false;
     bool windowExitActive = false;
     //-----------------------------------------------------------------------------------
 
@@ -453,18 +493,15 @@ int main(int argc, char *argv[])
     }
     toggleIconsText[16*13*6 - 1] = '\0';
 
-    SetTargetFPS(120);
+    SetTargetFPS(60);       // Set our game desired framerate
     //--------------------------------------------------------------------------------------
 
     // Main game loop
-    while (!exitWindow)             // Detect window close button
+    while (!closeWindow)    // Detect window close button
     {
-        if (WindowShouldClose())
-        {
-            // TODO: Review behaviour on PLATFORM_WEB
-            if (saveChangesRequired) windowExitActive = true;
-            else exitWindow = true;
-        }
+        // WARNING: ASINCIFY requires this line,
+        // it contains the call to emscripten_sleep() for PLATFORM_WEB
+        if (WindowShouldClose()) windowExitActive = true;
 
         // Undo layout change logic
         //----------------------------------------------------------------------------------
@@ -543,6 +580,7 @@ int main(int argc, char *argv[])
         {
             FilePathList droppedFiles = LoadDroppedFiles();
 
+            // Supports loading .rgl layout files (text or binary) and .png tracemap images
             if (IsFileExtension(droppedFiles.paths[0], ".rgl"))
             {
                 GuiLayout *tempLayout = LoadLayout(droppedFiles.paths[0]);
@@ -574,7 +612,7 @@ int main(int argc, char *argv[])
             }
             else if (IsFileExtension(droppedFiles.paths[0], ".rgs")) GuiLoadStyle(droppedFiles.paths[0]);
 
-            UnloadDroppedFiles(droppedFiles);    // Unload filepaths from memory
+            UnloadDroppedFiles(droppedFiles);   // Unload filepaths from memory
         }
         //----------------------------------------------------------------------------------
 
@@ -596,13 +634,19 @@ int main(int argc, char *argv[])
             }
         }
 
-        // Show window: help
-        if (IsKeyPressed(KEY_F1)) helpActive = !helpActive;
+        // Show dialog: export style file (.rgs, .png, .h)
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) showExportFileDialog = true;
 
-        // Show window: about
+        // Toggle window: help
+        if (IsKeyPressed(KEY_F1)) windowHelpActive = !windowHelpActive;
+
+        // Toggle window: about
         if (IsKeyPressed(KEY_F2)) windowAboutState.windowActive = !windowAboutState.windowActive;
 
-        // Show save layout message window on ESC
+        // Toggle window: sponsor
+        if (IsKeyPressed(KEY_F3)) windowSponsorState.windowActive = !windowSponsorState.windowActive;
+
+        // Show closing window on ESC
         if (IsKeyPressed(KEY_ESCAPE))
         {
             if (textEditMode)       // Cancel text edit mode
@@ -636,7 +680,7 @@ int main(int argc, char *argv[])
                 else if (windowCodegenState.windowCodegenActive) windowCodegenState.windowCodegenActive = false;
                 else if (windowResetActive) windowResetActive = false;
 #if !defined(PLATFORM_WEB)
-                else if ((layout->controlCount <= 0) && (layout->anchorCount <= 1)) exitWindow = true;  // Quit application
+                else if ((layout->controlCount <= 0) && (layout->anchorCount <= 1)) closeWindow = true;  // Quit application
                 else
                 {
                     windowExitActive = !windowExitActive;
@@ -646,7 +690,7 @@ int main(int argc, char *argv[])
 #endif
             }
         }
-
+        
         // Check for any blocking mode (window or text/name edition)
         if (!windowOverActive && !textEditMode && !nameEditMode)
         {
@@ -722,8 +766,43 @@ int main(int argc, char *argv[])
             }
             */
         }
+        
+        // Main toolbar logic
+        //----------------------------------------------------------------------------------
+        // Visual options logic
+        if (mainToolbarState.visualStyleActive != mainToolbarState.prevVisualStyleActive)
+        {
+            // Reset to default internal style
+            // NOTE: Required to unload any previously loaded font texture
+            GuiLoadStyleDefault();
+
+            switch (mainToolbarState.visualStyleActive)
+            {
+                case 1: GuiLoadStyleJungle(); break;
+                case 2: GuiLoadStyleCandy(); break;
+                case 3: GuiLoadStyleLavanda(); break;
+                case 4: GuiLoadStyleCyber(); break;
+                case 5: GuiLoadStyleTerminal(); break;
+                case 6: GuiLoadStyleAshes(); break;
+                case 7: GuiLoadStyleBluish(); break;
+                case 8: GuiLoadStyleDark(); break;
+                case 9: GuiLoadStyleCherry(); break;
+                case 10: GuiLoadStyleSunny(); break;
+                case 11: GuiLoadStyleEnefete(); break;
+                default: break;
+            }
+
+            mainToolbarState.prevVisualStyleActive = mainToolbarState.visualStyleActive;
+        }
+
+        // Help options logic
+        if (mainToolbarState.btnHelpPressed) windowHelpActive = true;                   // Help button logic
+        if (mainToolbarState.btnAboutPressed) windowAboutState.windowActive = true;     // About window button logic
+        if (mainToolbarState.btnSponsorPressed) windowSponsorState.windowActive = true; // User sponsor logic
+        //----------------------------------------------------------------------------------
 
         // Basic program flow logic
+        //----------------------------------------------------------------------------------
         mouse = GetMousePosition();
 
         // Code generation window logic
@@ -793,8 +872,6 @@ int main(int argc, char *argv[])
 
             // Controls selection and edition logic
             //----------------------------------------------------------------------------------------------
-
-            // Updates the default rectangle position
             defaultRec[selectedType].x = mouse.x - defaultRec[selectedType].width/2;
             defaultRec[selectedType].y = mouse.y - defaultRec[selectedType].height/2;
 
@@ -1899,13 +1976,16 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------------
         }
 
-        // If any window is shown, cancel any edition mode
+        // WARNING: If any window is shown, cancel any edition mode
         if (windowAboutState.windowActive ||
+            windowSponsorState.windowActive ||
             windowCodegenState.windowCodegenActive ||
             windowResetActive ||
             windowExitActive ||
-            showLoadFileDialog || 
-            showSaveFileDialog || 
+            windowHelpActive ||
+            //windowExportActive ||
+            showLoadFileDialog ||
+            showSaveFileDialog ||
             showExportFileDialog)
         {
             nameEditMode = false;
@@ -1951,7 +2031,6 @@ int main(int argc, char *argv[])
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing();
-
             ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
             // WARNING: Some windows should lock the main screen controls when shown
@@ -2556,22 +2635,33 @@ int main(int argc, char *argv[])
                 paletteState.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 160, workAreaOffsetY, 160, GetScreenHeight() - workAreaOffsetY };
                 //----------------------------------------------------------------------------------------
             }
-
-            // GUI: Help panel
-            //----------------------------------------------------------------------------------------
-            if (helpActive) GuiHelpPanel(20, 20, "[F1] Tool Shortcuts", helpLines, HELP_LINES_COUNT);
-            //----------------------------------------------------------------------------------------
-
+            
             // NOTE: If some overlap window is open and main window is locked, we draw a background rectangle
             if (GuiIsLocked()) DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.85f));
 
             // WARNING: Before drawing the windows, we unlock them
             GuiUnlock();
             
-            // GUI: Main toolbar panel (file and visualization)
+            // GUI: Main toolbar panel
             //----------------------------------------------------------------------------------
-            //GuiMainToolbar(&mainToolbarState);
+            GuiMainToolbar(&mainToolbarState);
             //----------------------------------------------------------------------------------
+            // GUI: About Window
+            //----------------------------------------------------------------------------------------
+            GuiWindowAbout(&windowAboutState);
+            //----------------------------------------------------------------------------------------
+            
+            // GUI: Sponsor Window
+            //----------------------------------------------------------------------------------------
+            windowSponsorState.position = (Vector2){ (float)screenWidth/2 - windowSponsorState.windowWidth/2, (float)screenHeight/2 - windowSponsorState.windowHeight/2 - 20 };
+            GuiWindowSponsor(&windowSponsorState);
+            //----------------------------------------------------------------------------------------
+
+            // GUI: Help Window
+            //----------------------------------------------------------------------------------------
+            Rectangle helpWindowBounds = { (float)screenWidth/2 - 330/2, (float)screenHeight/2 - 400.0f/2, 330, 0 };
+            if (windowHelpActive) windowHelpActive = GuiHelpWindow(helpWindowBounds, GuiIconText(ICON_HELP, TextFormat("%s Shortcuts", TOOL_NAME)), helpLines, HELP_LINES_COUNT);
+            //----------------------------------------------------------------------------------------
 
             // GUI: Layout Code Generation Window
             //----------------------------------------------------------------------------------------
@@ -2616,20 +2706,20 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
             if (windowExitActive)
             {
-                int message = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 120, GetScreenHeight()/2 - 48, 248, 96 }, "#159#Closing rGuiLayout", "Do you want to save before quitting?", "Yes;No");
+                int result = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 120, GetScreenHeight()/2 - 48, 248, 96 }, "#159#Closing rGuiLayout", "Do you want to save before quitting?", "Yes;No");
 
-                if (message == 0) windowExitActive = false;
-                else if (message == 1)  // Yes
+                if (result == 0) windowExitActive = false;
+                else if (result == 1)  // Yes
                 {
                     showSaveFileDialog = true;
                     windowExitActive = false;
-                    exitWindow = true;
+                    closeWindow = true;
                 }
-                else if (message == 2) exitWindow = true;
+                else if (result == 2) closeWindow = true;
             }
             //----------------------------------------------------------------------------------------
 
-            // Draw status bar bottom with debug information
+            // GUI: Status bar
             //--------------------------------------------------------------------------------------------
             GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, TextFormat("MOUSE: (%i, %i)", (int)mouse.x, (int)mouse.y));
             GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (snapMode? "SNAP: ON" : "SNAP: OFF"));
@@ -2652,7 +2742,7 @@ int main(int argc, char *argv[])
                 GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, defaultTextAlign);
             }
             else GuiStatusBar((Rectangle){ 447, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, NULL);
-            //--------------------------------------------------------------------------------------------
+            //----------------------------------------------------------------------------------------
 
             // GUI: Load File Dialog (and loading logic)
             //----------------------------------------------------------------------------------------
@@ -2699,6 +2789,7 @@ int main(int argc, char *argv[])
             {
 #if defined(CUSTOM_MODAL_DIALOGS)
                 int result = GuiFileDialog(DIALOG_TEXTINPUT, "Save raygui layout file...", outFileName, "Ok;Cancel", NULL);
+                //int result = GuiTextInputBox((Rectangle){ screenWidth/2 - 280/2, screenHeight/2 - 112/2 - 30, 280, 112 }, "#2#Save raygui style file...", NULL, "#2#Save", outFileName, 512, NULL);
 #else
                 int result = GuiFileDialog(DIALOG_SAVE_FILE, "Save raygui layout file...", outFileName, "*.rgl", "raygui Layout Files (*.rgl)");
 #endif
@@ -2730,8 +2821,8 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
             if (showExportFileDialog)
             {
-                if (windowCodegenState.codeTemplateActive == 0) strcpy(outFileName, TextFormat("gui_%s.c", config.name));
-                else if (windowCodegenState.codeTemplateActive == 1) strcpy(outFileName, TextFormat("gui_%s.h", config.name));
+                //if (windowCodegenState.codeTemplateActive == 0) strcpy(outFileName, TextFormat("gui_%s.c", config.name));
+                //else if (windowCodegenState.codeTemplateActive == 1) strcpy(outFileName, TextFormat("gui_%s.h", config.name));
 
 #if defined(CUSTOM_MODAL_DIALOGS)
                 int result = GuiFileDialog(DIALOG_TEXTINPUT, "Export layout as code file...", outFileName, "Ok;Cancel", NULL);
@@ -3201,23 +3292,26 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
 */
 }
 
-// Draw help panel with the provided lines
-static void GuiHelpPanel(int posX, int posY, const char *title, const char **helpLines, int helpLinesCount)
+// Draw help window with the provided lines
+static int GuiHelpWindow(Rectangle bounds, const char *title, const char **helpLines, int helpLinesCount)
 {
     int nextLineY = 0;
-    int lineSpacing = 20;
 
-    DrawRectangleRec((Rectangle){ posX, posY, 300, helpLinesCount*lineSpacing + 20 }, GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
-    GuiGroupBox((Rectangle){ posX, posY, 300, helpLinesCount*lineSpacing + 20 }, title);
-    nextLineY += 12;
+    // Calculate window height if not externally provided a desired height
+    if (bounds.height == 0) bounds.height = (float)(helpLinesCount*24 + 24);
+
+    int windowHelpActive = !GuiWindowBox(bounds, title);
+    nextLineY += (24 + 2);
 
     for (int i = 0; i < helpLinesCount; i++)
     {
-        if (helpLines[i] == NULL) GuiLine((Rectangle){ posX, posY + nextLineY, 300, 12 }, helpLines[i]);
-        else if (helpLines[i][0] == '-') GuiLine((Rectangle){ posX, posY + nextLineY, 300, lineSpacing }, helpLines[i] + 1);
-        else GuiLabel((Rectangle){ posX + 12, posY + nextLineY, 0, lineSpacing }, helpLines[i]);
+        if (helpLines[i] == NULL) GuiLine((Rectangle){ bounds.x, bounds.y + nextLineY, 330, 12 }, helpLines[i]);
+        else if (helpLines[i][0] == '-') GuiLine((Rectangle){ bounds.x, bounds.y + nextLineY, 330, 24 }, helpLines[i] + 1);
+        else GuiLabel((Rectangle){ bounds.x + 12, bounds.y + nextLineY, bounds.width, 24 }, helpLines[i]);
 
         if (helpLines[i] == NULL) nextLineY += 12;
-        else nextLineY += lineSpacing;
+        else nextLineY += 24;
     }
+
+    return windowHelpActive;
 }
