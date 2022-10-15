@@ -58,7 +58,7 @@ typedef struct {
     unsigned char *codeText;        // Generated code string
     unsigned int codeHeight;        // Generated code drawing size
     
-    Font font;
+    Font font;          // Font used for text drawing
 
 } GuiWindowCodegenState;
 
@@ -141,7 +141,7 @@ GuiWindowCodegenState InitGuiWindowCodegen(void)
     state.codeText = NULL;
     state.codeHeight = 0;
     
-    state.font = LoadFont_DosVga();
+    state.font = LoadFont_DosVga();     // TODO: Review font
 
     return state;
 }

@@ -363,6 +363,7 @@ int main(int argc, char *argv[])
 
     // Init default layout
     GuiLayout *layout = NULL;
+    
     if (inFileName[0] != '\0')          // Load dropped file if provided
     {
         layout = LoadLayout(inFileName);
@@ -371,7 +372,7 @@ int main(int argc, char *argv[])
     else layout = LoadLayout(NULL);     // Load empty layout
 
     // Define undo system variables
-    GuiLayout *undoLayouts = (GuiLayout *)calloc(MAX_UNDO_LEVELS, sizeof(GuiLayout));   // Layouts array
+    GuiLayout *undoLayouts = (GuiLayout *)RL_CALLOC(MAX_UNDO_LEVELS, sizeof(GuiLayout));   // Layouts array
     int currentUndoIndex = 0;
     int firstUndoIndex = 0;
     int lastUndoIndex = 0;
@@ -392,16 +393,6 @@ int main(int argc, char *argv[])
     // Track previous text/name to cancel editing
     char prevText[MAX_CONTROL_TEXT_LENGTH] = { 0 };
     char prevName[MAX_CONTROL_NAME_LENGTH] = { 0 };
-
-    // GUI: Help panel
-    //-----------------------------------------------------------------------------------
-    bool helpActive = true;
-    //-----------------------------------------------------------------------------------
-    
-    // GUI: Main toolbar panel (file and visualization)
-    //----------------------------------------------------------------------------------
-    //GuiMainToolbarState mainToolbarState = InitGuiMainToolbar();
-    //-----------------------------------------------------------------------------------
 
     // GUI: Main toolbar panel (file and visualization)
     //-----------------------------------------------------------------------------------
@@ -428,18 +419,21 @@ int main(int argc, char *argv[])
     GuiWindowCodegenState windowCodegenState = InitGuiWindowCodegen();
     //-----------------------------------------------------------------------------------
 
+    // GUI: Help panel
+    //-----------------------------------------------------------------------------------
     bool windowHelpActive = false;
+    //-----------------------------------------------------------------------------------
 
     // GUI: Exit Window
     //-----------------------------------------------------------------------------------
-    bool closeWindow = false;
     bool windowExitActive = false;
+    bool closeWindow = false;
     //-----------------------------------------------------------------------------------
 
     // GUI: Reset Layout Window
     //-----------------------------------------------------------------------------------
     bool windowResetActive = false;
-    bool resetProgram = false;
+    bool resetLayout = false;
     //-----------------------------------------------------------------------------------
 
     // GUI: Custom file dialogs
@@ -449,16 +443,8 @@ int main(int argc, char *argv[])
     bool showExportFileDialog = false;
     //-----------------------------------------------------------------------------------
 
-    // Rectangles used on controls preview drawing, copied from palette
-    // NOTE: [x, y] position is set on mouse movement and cosidering snap mode
-    Rectangle defaultRec[CONTROLS_PALETTE_COUNT] = { 0 };
-    for (int i = 0; i < CONTROLS_PALETTE_COUNT; i++)
-    {
-        defaultRec[i].width = paletteState.controlRecs[i].width;
-        defaultRec[i].height = paletteState.controlRecs[i].height;
-    }
-
-    // Generate code configuration
+    // Layout code generation configuration
+    //------------------------------------------------------------------------------------
     GuiLayoutConfig config = { 0 };
     strcpy(config.name, "window_codegen");
     strcpy(config.version, toolVersion);
@@ -473,6 +459,7 @@ int main(int argc, char *argv[])
 
     GuiLayoutConfig prevConfig = { 0 };
     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
+    //------------------------------------------------------------------------------------
 
     // Controls temp variables
     int dropdownBoxActive = 0;
@@ -481,19 +468,28 @@ int main(int argc, char *argv[])
     int listViewScrollIndex = 0;
     int listViewActive = 0;
 
-    // Work area to place components
-    Rectangle workArea = { 48, 48*2, 800, 600 };
+    // Rectangles used on controls preview drawing, copied from palette
+    // NOTE: [x, y] position is set on mouse movement and cosidering snap mode
+    Rectangle defaultRec[CONTROLS_PALETTE_COUNT] = { 0 };
+    for (int i = 0; i < CONTROLS_PALETTE_COUNT; i++)
+    {
+        defaultRec[i].width = paletteState.controlRecs[i].width;
+        defaultRec[i].height = paletteState.controlRecs[i].height;
+    }
 
     // Select icon ToggleGroup()
     int selectedIcon = 0; 
-    char toggleIconsText[16*13*6] = { 0 };  // 13 lines with 16 icons per line -> TODO: Review if more icons are added!
-    for (int i = 0; i < 16*13; i++)
+    char toggleIconsText[16*14*6] = { 0 };  // 14 lines with 16 icons per line -> TODO: Review if more icons are added!
+    for (int i = 0; i < 16*14; i++)
     {
         // NOTE: Every icon requires 6 text characters: "#001#;"
         if ((i + 1)%16 == 0) strncpy(toggleIconsText + 6*i, TextFormat("#%03i#\n", i), 6);
         else strncpy(toggleIconsText + 6*i, TextFormat("#%03i#;", i), 6);
     }
-    toggleIconsText[16*13*6 - 1] = '\0';
+    toggleIconsText[16*14*6 - 1] = '\0';
+
+    // Work area to place components
+    Rectangle workArea = { 48, 48*2, 800, 600 };
 
     SetTargetFPS(60);       // Set our game desired framerate
     //--------------------------------------------------------------------------------------
@@ -679,10 +675,11 @@ int main(int argc, char *argv[])
             {
                 // Close windows logic
                 if (windowAboutState.windowActive) windowAboutState.windowActive = false;
+                if (windowSponsorState.windowActive) windowSponsorState.windowActive = false;
                 else if (windowCodegenState.windowCodegenActive) windowCodegenState.windowCodegenActive = false;
                 else if (windowResetActive) windowResetActive = false;
 #if !defined(PLATFORM_WEB)
-                else if ((layout->controlCount <= 0) && (layout->anchorCount <= 1)) closeWindow = true;  // Quit application
+                else if ((layout->controlCount <= 0) && (layout->anchorCount <= 1)) closeWindow = true;
                 else
                 {
                     windowExitActive = !windowExitActive;
@@ -750,14 +747,14 @@ int main(int argc, char *argv[])
 
                     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
-                    free(windowCodegenState.codeText);
+                    RL_FREE(windowCodegenState.codeText);
                     windowCodegenState.codeText = GenLayoutCode(guiTemplateStandardCode, *layout, config);
                     windowCodegenState.windowCodegenActive = true;
                 }
             }
 
             // Change grid spacing
-            // TODO: Look for a better mechanism
+            // TODO: Look for a better mechanism  --> Project config window
             /*
             if (IsKeyDown(KEY_RIGHT_ALT))
             {
@@ -830,7 +827,7 @@ int main(int argc, char *argv[])
                 //else if (windowCodegenState.codeTemplateActive == 2) template = LoadFileText(/*custom_template*/);
                 currentCodeTemplate = windowCodegenState.codeTemplateActive;
 
-                free(windowCodegenState.codeText);
+                RL_FREE(windowCodegenState.codeText);
                 windowCodegenState.codeText = GenLayoutCode(template, *layout, config);
                 memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
@@ -1978,32 +1975,9 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------------
         }
 
-        // WARNING: If any window is shown, cancel any edition mode
-        if (windowAboutState.windowActive ||
-            windowSponsorState.windowActive ||
-            windowCodegenState.windowCodegenActive ||
-            windowResetActive ||
-            windowExitActive ||
-            windowHelpActive ||
-            //windowExportActive ||
-            showLoadFileDialog ||
-            showSaveFileDialog ||
-            showExportFileDialog)
-        {
-            nameEditMode = false;
-            textEditMode = false;
-            resizeMode = false;
-            dragMoveMode = false;
-            precisionMode = false;
-
-            windowOverActive = true;        // There is some window overlap!
-        }
-        else windowOverActive = false;
-        //----------------------------------------------------------------------------------------------
-
         // Reset program logic
         //----------------------------------------------------------------------------------------------
-        if (resetProgram)
+        if (resetLayout)
         {
             focusedAnchor = -1;
             selectedAnchor = -1;
@@ -2026,18 +2000,39 @@ int main(int argc, char *argv[])
             currentUndoIndex = 0;
             firstUndoIndex = 0;
 
-            resetProgram = false;
+            resetLayout = false;
         }
+        
+        // WARNING: If any window is shown, cancel any edition mode
+        if (windowAboutState.windowActive ||
+            windowSponsorState.windowActive ||
+            windowCodegenState.windowCodegenActive ||
+            windowResetActive ||
+            windowExitActive ||
+            windowHelpActive ||
+            showLoadFileDialog ||
+            showSaveFileDialog ||
+            showExportFileDialog)
+        {
+            nameEditMode = false;
+            textEditMode = false;
+            resizeMode = false;
+            dragMoveMode = false;
+            precisionMode = false;
+
+            windowOverActive = true;        // There is some window overlap!
+        }
+        else windowOverActive = false;
+
+        // WARNING: Some windows should lock the main screen controls when shown
+        if (windowOverActive) GuiLock();
+        else GuiUnlock();
         //----------------------------------------------------------------------------------
 
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing();
             ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
-
-            // WARNING: Some windows should lock the main screen controls when shown
-            if (windowOverActive) GuiLock();
-            else GuiUnlock();
 
             // Draw background grid
             if (showGrid) GuiGrid(workArea, NULL, gridSpacing*gridSubdivisions, gridSubdivisions);
@@ -2648,6 +2643,7 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------
             GuiMainToolbar(&mainToolbarState);
             //----------------------------------------------------------------------------------
+            
             // GUI: About Window
             //----------------------------------------------------------------------------------------
             GuiWindowAbout(&windowAboutState);
@@ -2677,12 +2673,6 @@ int main(int argc, char *argv[])
             }
             //----------------------------------------------------------------------------------------
 
-            // GUI: About Window
-            //----------------------------------------------------------------------------------------
-            windowAboutState.position = (Vector2){ GetScreenWidth()/2 - windowAboutState.windowWidth/2, GetScreenHeight()/2 - windowAboutState.windowHeight/2 };
-            GuiWindowAbout(&windowAboutState);
-            //----------------------------------------------------------------------------------------
-
             // GUI: New Layout Window (save)
             //----------------------------------------------------------------------------------------
             if (windowResetActive)
@@ -2693,12 +2683,12 @@ int main(int argc, char *argv[])
                 else if (message == 1)  // Yes
                 {
                     showSaveFileDialog = true;
-                    resetProgram = true;
+                    resetLayout = true;
                     windowResetActive = false;
                 }
                 else if (message == 2)  // No
                 {
-                    resetProgram = true;
+                    resetLayout = true;
                     windowResetActive = false;
                 }
             }
@@ -2933,8 +2923,8 @@ int main(int argc, char *argv[])
     UnloadLayout(layout);       // Unload raygui layout
     UnloadTexture(tracemap);    // Unload tracemap texture (if loaded)
 
-    free(undoLayouts);          // Free undo layouts array
-    free(windowCodegenState.codeText);  // Free loaded codeText memory
+    RL_FREE(undoLayouts);       // Free undo layouts array (allocated with RL_CALLOC)
+    RL_FREE(windowCodegenState.codeText);  // Free loaded codeText memory
 
     CloseWindow();              // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
@@ -3075,7 +3065,7 @@ static void ProcessCommandLine(int argc, char *argv[])
         if (guiTemplateCustom != NULL)
         {
             toolstr = GenLayoutCode(guiTemplateCustom, *layout, config);
-            free(guiTemplateCustom);
+            RL_FREE(guiTemplateCustom);
         }
         else toolstr = GenLayoutCode(guiTemplateStandardCode, *layout, config);
 
@@ -3084,7 +3074,7 @@ static void ProcessCommandLine(int argc, char *argv[])
         fclose(ftool);
 
         UnloadLayout(layout);
-        free(toolstr);
+        RL_FREE(toolstr);
     }
 
     if (showUsageInfo) ShowCommandLineInfo();
@@ -3098,7 +3088,7 @@ static void ProcessCommandLine(int argc, char *argv[])
 // NOTE: If NULL provided, an empty layout is initialized
 static GuiLayout *LoadLayout(const char *fileName)
 {
-    GuiLayout *layout = (GuiLayout *)calloc(1, sizeof(GuiLayout));
+    GuiLayout *layout = (GuiLayout *)RL_CALLOC(1, sizeof(GuiLayout));
 
     ResetLayout(layout);    // Init some default values
 
@@ -3216,7 +3206,7 @@ static void ResetLayout(GuiLayout *layout)
 // Save layout information as text file
 static void SaveLayout(GuiLayout *layout, const char *fileName)
 {
-    #define RGL_FILE_VERSION_TEXT "2.5"
+    #define RGL_FILE_VERSION_TEXT "3.0"
 
     FILE *rglFile = fopen(fileName, "wt");
 
