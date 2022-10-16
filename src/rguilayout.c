@@ -101,8 +101,8 @@
 
 #include "rguilayout.h"                     // Gui layout types definition
 
-#define GUI_CONTROLS_PALETTE_IMPLEMENTATION
-#include "gui_controls_palette.h"           // GUI: Controls Palette
+#define GUI_WINDOW_CONTROLS_PALETTE_IMPLEMENTATION
+#include "gui_window_controls_palette.h"    // GUI: Controls Palette
 
 #define CODEGEN_IMPLEMENTATION
 #include "codegen.h"                        // Code generation functions
@@ -420,7 +420,7 @@ int main(int argc, char *argv[])
 
     // GUI: Controls Selection Palette
     //-----------------------------------------------------------------------------------
-    GuiControlsPaletteState paletteState = InitGuiControlsPalette();
+    GuiWindowControlsPaletteState paletteState = InitGuiWindowControlsPalette();
     //-----------------------------------------------------------------------------------
 
     // GUI: Layout Code Generation Window
@@ -2635,7 +2635,7 @@ int main(int argc, char *argv[])
                 // GUI: Controls Selection Palette
                 // NOTE: It uses GuiLock() to lock controls behaviour and just limit them to selection
                 //----------------------------------------------------------------------------------------
-                GuiControlsPalette(&paletteState);
+                GuiWindowControlsPalette(&paletteState);
 
                 // Update ScrollPanel bounds in case window is resized
                 paletteState.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 170, workArea.y, 170, GetScreenHeight() - workArea.y - 24 };
