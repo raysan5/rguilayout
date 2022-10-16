@@ -59,14 +59,15 @@
 //----------------------------------------------------------------------------------
 // Gui window structure declaration
 typedef struct {
-    Vector2 position;
-
     bool windowActive;
 
-    // Custom state variables (depend on development software)
-    // NOTE: This variables should be added manually if required
     int windowWidth;
     int windowHeight;
+
+    Vector2 position;
+    Vector2 panOffset;
+    bool dragMode;
+    bool supportDrag;
 
 } GuiWindowAboutState;
 
@@ -186,10 +187,13 @@ GuiWindowAboutState InitGuiWindowAbout(void)
 
     state.windowActive = false;
 
-    // Custom variables initialization
     state.windowWidth = 340;
     state.windowHeight = 340;
+
     state.position = (Vector2){ GetScreenWidth()/2 - state.windowWidth/2, GetScreenHeight()/2 - state.windowHeight/2 };
+    state.panOffset = (Vector2){ 0, 0 };
+    bool dragMode = false;
+    bool supportDrag = false;
 
     return state;
 }
@@ -199,6 +203,43 @@ void GuiWindowAbout(GuiWindowAboutState *state)
 {
     if (state->windowActive)
     {
+        // Update window dragging
+        //----------------------------------------------------------------------------------------
+        if (state->supportDrag)
+        {
+            Vector2 mousePosition = GetMousePosition();
+
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            {
+                // Window can be dragged from the top window bar
+                if (CheckCollisionPointRec(mousePosition, (Rectangle){ state->position.x, state->position.y, (float)state->windowWidth, RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT }))
+                {
+                    state->dragMode = true;
+                    state->panOffset.x = mousePosition.x - state->position.x;
+                    state->panOffset.y = mousePosition.y - state->position.y;
+                }
+            }
+
+            if (state->dragMode)
+            {
+                state->position.x = (mousePosition.x - state->panOffset.x);
+                state->position.y = (mousePosition.y - state->panOffset.y);
+
+                // Check screen limits to avoid moving out of screen
+                if (state->position.x < 0) state->position.x = 0;
+                else if (state->position.x > (GetScreenWidth() - state->windowWidth)) state->position.x = GetScreenWidth() - state->windowWidth;
+
+                if (state->position.y < 0) state->position.y = 0;
+                else if (state->position.y > (GetScreenHeight() - state->windowHeight)) state->position.y = GetScreenHeight() - state->windowHeight;
+
+                if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) state->dragMode = false;
+            }
+        }
+        else state->position = (Vector2){ GetScreenWidth()/2 - state->windowWidth/2, GetScreenHeight()/2 - state->windowHeight/2 };
+        //----------------------------------------------------------------------------------------
+
+        // Draw window and controls
+        //----------------------------------------------------------------------------------------
         state->windowActive = !GuiWindowBox((Rectangle){ state->position.x, state->position.y, (float)state->windowWidth, (float)state->windowHeight }, TextFormat("#191#About %s", TOOL_NAME));
 
         // Draw a background rectangle for convenience
@@ -244,6 +285,7 @@ void GuiWindowAbout(GuiWindowAboutState *state)
         if (GuiButton((Rectangle){ state->position.x + state->windowWidth - 80 - 90, state->position.y + 305, 80, 24 }, btnDonateText)) { OpenURL(TextFormat("https://raylibtech.itch.io/%s/purchase", TOOL_NAME)); }
         if (GuiButton((Rectangle){ state->position.x + state->windowWidth - 80, state->position.y + 305, 70, 24 }, btnCloseText)) state->windowActive = false;
         GuiSetStyle(BUTTON, TEXT_ALIGNMENT, buttonTextAlign);
+        //----------------------------------------------------------------------------------------
     }
 }
 
