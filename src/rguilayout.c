@@ -126,7 +126,11 @@
 #include "styles/style_sunny.h"             // raygui style: sunny
 #include "styles/style_enefete.h"           // raygui style: enefete
 
+// WARNING: When compiling in raylib DLL mode, this include generates missing symbols issues: zinflate, sdefl_bound, zsdeflate
+// because those symbols are provided by raylib but are moved to the external DLL
+// Otherwise, when compiling in static mode, defining RPNG_DEFLATE_IMPLEMENTATION generated symbol duplicates
 #define RPNG_IMPLEMENTATION
+//#define RPNG_DEFLATE_IMPLEMENTATION
 #include "external/rpng.h"                  // PNG chunks management
 
 // Standard C libraries
@@ -298,6 +302,11 @@ int main(int argc, char *argv[])
     InitWindow(screenWidth, screenHeight, TextFormat("%s v%s | %s", toolName, toolVersion, toolDescription));
     SetWindowMinSize(1280, 720);
     SetExitKey(0);
+
+    // Code font generation for embedding
+    // WARNING: It requires SUPPORT_FILEFORMAT_TTF enabled by raylib
+    //Font codeFont = LoadFontEx("resources/gohufont-14.ttf", 14, NULL, 0);
+    //ExportFontAsCode(codeFont, "gohufont.h");
 
     // General pourpose variables
     Vector2 mouse = { 0, 0 };               // Mouse position
@@ -676,7 +685,7 @@ int main(int argc, char *argv[])
                 // Close windows logic
                 if (windowAboutState.windowActive) windowAboutState.windowActive = false;
                 if (windowSponsorState.windowActive) windowSponsorState.windowActive = false;
-                else if (windowCodegenState.windowCodegenActive) windowCodegenState.windowCodegenActive = false;
+                else if (windowCodegenState.windowActive) windowCodegenState.windowActive = false;
                 else if (windowResetActive) windowResetActive = false;
 #if !defined(PLATFORM_WEB)
                 else if ((layout->controlCount <= 0) && (layout->anchorCount <= 1)) closeWindow = true;
@@ -743,13 +752,13 @@ int main(int argc, char *argv[])
                     config.defineRecs = windowCodegenState.defineRecsChecked;
                     config.defineTexts = windowCodegenState.defineTextsChecked;
                     config.fullComments = windowCodegenState.fullCommentsChecked;
-                    config.exportButtonFunctions = windowCodegenState.generateButtonFunctionsChecked;
+                    config.exportButtonFunctions = windowCodegenState.genButtonFuncsChecked;
 
                     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
                     RL_FREE(windowCodegenState.codeText);
                     windowCodegenState.codeText = GenLayoutCode(guiTemplateStandardCode, *layout, config);
-                    windowCodegenState.windowCodegenActive = true;
+                    windowCodegenState.windowActive = true;
                 }
             }
 
@@ -806,7 +815,7 @@ int main(int argc, char *argv[])
 
         // Code generation window logic
         //----------------------------------------------------------------------------------
-        if (windowCodegenState.windowCodegenActive)
+        if (windowCodegenState.windowActive)
         {
             strcpy(config.name, windowCodegenState.toolNameText);
             strcpy(config.version, windowCodegenState.toolVersionText);
@@ -816,7 +825,7 @@ int main(int argc, char *argv[])
             config.defineRecs = windowCodegenState.defineRecsChecked;
             config.defineTexts = windowCodegenState.defineTextsChecked;
             config.fullComments = windowCodegenState.fullCommentsChecked;
-            config.exportButtonFunctions = windowCodegenState.generateButtonFunctionsChecked;
+            config.exportButtonFunctions = windowCodegenState.genButtonFuncsChecked;
 
             if ((currentCodeTemplate != windowCodegenState.codeTemplateActive) ||
                 (memcmp(&config, &prevConfig, sizeof(GuiLayoutConfig)) != 0))
@@ -2006,7 +2015,7 @@ int main(int argc, char *argv[])
         // WARNING: If any window is shown, cancel any edition mode
         if (windowAboutState.windowActive ||
             windowSponsorState.windowActive ||
-            windowCodegenState.windowCodegenActive ||
+            windowCodegenState.windowActive ||
             windowResetActive ||
             windowExitActive ||
             windowHelpActive ||
@@ -2665,11 +2674,11 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
             GuiWindowCodegen(&windowCodegenState);
 
-            if (windowCodegenState.generateCodePressed)
+            if (windowCodegenState.btnGenerateCodePressed)
             {
                 showExportFileDialog = true;
-                windowCodegenState.windowCodegenActive = false;
-                windowCodegenState.generateCodePressed = false;
+                windowCodegenState.windowActive = false;
+                windowCodegenState.btnGenerateCodePressed = false;
             }
             //----------------------------------------------------------------------------------------
 
