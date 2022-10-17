@@ -51,14 +51,20 @@ typedef struct {
     bool btnLoadFilePressed;
     bool btnSaveFilePressed;
     bool btnExportFilePressed;
+    bool btnCloseFilePressed;
+
     // Editor options
+    // EDIT: Controls: TextEdit (CTRL+T), NameEdit (CTRL+N), Delete (SUP), Duplicate (CTRL+D)
+    // EDIT: Anchor-controls: Hide/Show (H), Show controls names (N - no control selected), Show controls order (ALT)
+    // EDIT: SnapMode (S), Undo/Redo (CTRL+Z/CTRL+Y)
 
     // Tool options
+    // TOOL: ControlPanel, Tracemap: Load, View, Alpha, Lock
 
     // Visual options
+    bool showGridActive;
     int visualStyleActive;
     int prevVisualStyleActive;
-    int btnReloadStylePressed;
     int languageActive;
 
     // Help options
@@ -132,6 +138,7 @@ GuiMainToolbarState InitGuiMainToolbar(void)
     state.btnLoadFilePressed = false;
     state.btnSaveFilePressed = false;
     state.btnExportFilePressed = false;
+    state.btnCloseFilePressed = false;
 
     // Edit options
     //...
@@ -140,6 +147,7 @@ GuiMainToolbarState InitGuiMainToolbar(void)
     //...
 
     // Visuals options
+    state.showGridActive = true;
     state.visualStyleActive = 0;
     state.prevVisualStyleActive = 0;
     state.languageActive = 0;
@@ -159,12 +167,12 @@ void GuiMainToolbar(GuiMainToolbarState *state)
 {
     // Toolbar panels
     state->anchorRight.x = GetScreenWidth() - 104;       // Update right-anchor panel
-    state->anchorVisuals.x = state->anchorRight.x - 220 + 1;    // Update right-anchor panel
+    state->anchorVisuals.x = state->anchorRight.x - 224 + 1;    // Update right-anchor panel
 
     GuiPanel((Rectangle){ state->anchorFile.x, state->anchorFile.y, 160, 40 }, NULL);
     GuiPanel((Rectangle){ state->anchorEdit.x, state->anchorEdit.y, 188, 40 }, NULL);
     GuiPanel((Rectangle){ state->anchorTools.x, state->anchorTools.y, state->anchorVisuals.x - state->anchorTools.x + 1, 40 }, NULL);
-    GuiPanel((Rectangle){ state->anchorVisuals.x, state->anchorVisuals.y, 220, 40 }, NULL);
+    GuiPanel((Rectangle){ state->anchorVisuals.x, state->anchorVisuals.y, 224, 40 }, NULL);
     GuiPanel((Rectangle){ state->anchorRight.x, state->anchorRight.y, 104, 40 }, NULL);
 
     // Project/File options
@@ -172,17 +180,20 @@ void GuiMainToolbar(GuiMainToolbarState *state)
     state->btnLoadFilePressed = GuiButton((Rectangle){ state->anchorFile.x + 12 + 24 + 4, state->anchorFile.y + 8, 24, 24 }, "#5#");
     state->btnSaveFilePressed = GuiButton((Rectangle){ state->anchorFile.x + 12 + 48 + 8, state->anchorFile.y + 8, 24, 24 }, "#6#");
     state->btnExportFilePressed = GuiButton((Rectangle){ state->anchorFile.x + 12 + 72 + 12, state->anchorFile.y + 8, 24, 24 }, "#7#");
+    state->btnCloseFilePressed = GuiButton((Rectangle){ state->anchorFile.x + 12 + 96 + 16, state->anchorFile.y + 8, 24, 24 }, "#9#");
 
     // Edit options
     //...
+    
     // Tool options
     //...
+    
     // Visuals options
-    GuiLabel((Rectangle){ state->anchorVisuals.x + 10, state->anchorVisuals.y + 8, 60, 24 }, "Style:");
+    state->showGridActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12, state->anchorVisuals.y + 8, 24, 24 }, "#97#", state->showGridActive);
+    GuiLabel((Rectangle){ state->anchorVisuals.x + 12 + 32, state->anchorVisuals.y + 8, 60, 24 }, "Style:");
     GuiSetStyle(COMBOBOX, COMBO_BUTTON_WIDTH, 40);
-    state->visualStyleActive = GuiComboBox((Rectangle){ state->anchorVisuals.x + 8 + 48, state->anchorVisuals.y + 8, 120, 24 }, "Light;Jungle;Candy;Lavanda;Cyber;Terminal;Ashes;Bluish;Dark;Cherry;Sunny;Enefete", state->visualStyleActive);
+    state->visualStyleActive = GuiComboBox((Rectangle){ state->anchorVisuals.x + 8 + 48 + 32, state->anchorVisuals.y + 8, 120, 24 }, "Light;Jungle;Candy;Lavanda;Cyber;Terminal;Ashes;Bluish;Dark;Cherry;Sunny;Enefete", state->visualStyleActive);
     GuiSetStyle(COMBOBOX, COMBO_BUTTON_WIDTH, 32);
-    state->btnReloadStylePressed = GuiButton((Rectangle){ state->anchorVisuals.x + 8 + 48 + 120 + 8, state->anchorVisuals.y + 8, 24, 24 }, "#76#");
 
     // Info options
     state->btnHelpPressed = GuiButton((Rectangle){ state->anchorRight.x + (GetScreenWidth() - state->anchorRight.x) - 12 - 72 - 8, state->anchorRight.y + 8, 24, 24 }, "#193#");
