@@ -135,7 +135,7 @@ GuiWindowControlsPaletteState InitGuiWindowControlsPalette(void)
     GuiWindowControlsPaletteState state = { 0 };
 
     state.windowActive = true;
-    state.windowBounds = (Rectangle){ GetScreenWidth() - 200, 60, 180, GetScreenHeight() - 60 - 30 };
+    state.windowBounds = (Rectangle){ GetScreenWidth() - 180, 40, 180, GetScreenHeight() - 40 - 24 };
     state.selectedControl = GUI_WINDOWBOX;
 
     state.panOffset = (Vector2){ 0, 0 };
