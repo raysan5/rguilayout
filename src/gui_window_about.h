@@ -61,10 +61,7 @@
 typedef struct {
     bool windowActive;
 
-    int windowWidth;
-    int windowHeight;
-
-    Vector2 position;
+    Rectangle windowBounds;
     Vector2 panOffset;
     bool dragMode;
     bool supportDrag;
@@ -187,13 +184,10 @@ GuiWindowAboutState InitGuiWindowAbout(void)
 
     state.windowActive = false;
 
-    state.windowWidth = 340;
-    state.windowHeight = 340;
-
-    state.position = (Vector2){ GetScreenWidth()/2 - state.windowWidth/2, GetScreenHeight()/2 - state.windowHeight/2 };
+    state.windowBounds = (Rectangle){ GetScreenWidth()/2 - 360/2, GetScreenHeight()/2 - 340/2, 360, 340 };
     state.panOffset = (Vector2){ 0, 0 };
-    bool dragMode = false;
-    bool supportDrag = false;
+    state.dragMode = false;
+    state.supportDrag = false;
 
     return state;
 }
@@ -212,81 +206,81 @@ void GuiWindowAbout(GuiWindowAboutState *state)
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             {
                 // Window can be dragged from the top window bar
-                if (CheckCollisionPointRec(mousePosition, (Rectangle){ state->position.x, state->position.y, (float)state->windowWidth, RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT }))
+                if (CheckCollisionPointRec(mousePosition, (Rectangle){ state->windowBounds.x, state->windowBounds.y, (float)state->windowBounds.width, RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT }))
                 {
                     state->dragMode = true;
-                    state->panOffset.x = mousePosition.x - state->position.x;
-                    state->panOffset.y = mousePosition.y - state->position.y;
+                    state->panOffset.x = mousePosition.x - state->windowBounds.x;
+                    state->panOffset.y = mousePosition.y - state->windowBounds.y;
                 }
             }
 
             if (state->dragMode)
             {
-                state->position.x = (mousePosition.x - state->panOffset.x);
-                state->position.y = (mousePosition.y - state->panOffset.y);
+                state->windowBounds.x = (mousePosition.x - state->panOffset.x);
+                state->windowBounds.y = (mousePosition.y - state->panOffset.y);
 
                 // Check screen limits to avoid moving out of screen
-                if (state->position.x < 0) state->position.x = 0;
-                else if (state->position.x > (GetScreenWidth() - state->windowWidth)) state->position.x = GetScreenWidth() - state->windowWidth;
+                if (state->windowBounds.x < 0) state->windowBounds.x = 0;
+                else if (state->windowBounds.x > (GetScreenWidth() - state->windowBounds.width)) state->windowBounds.x = GetScreenWidth() - state->windowBounds.width;
 
-                if (state->position.y < 0) state->position.y = 0;
-                else if (state->position.y > (GetScreenHeight() - state->windowHeight)) state->position.y = GetScreenHeight() - state->windowHeight;
+                if (state->windowBounds.y < 40) state->windowBounds.y = 40;
+                else if (state->windowBounds.y > (GetScreenHeight() - state->windowBounds.height - 24)) state->windowBounds.y = GetScreenHeight() - state->windowBounds.height - 24;
 
                 if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) state->dragMode = false;
             }
         }
-        else state->position = (Vector2){ GetScreenWidth()/2 - state->windowWidth/2, GetScreenHeight()/2 - state->windowHeight/2 };
         //----------------------------------------------------------------------------------------
 
         // Draw window and controls
         //----------------------------------------------------------------------------------------
-        state->windowActive = !GuiWindowBox((Rectangle){ state->position.x, state->position.y, (float)state->windowWidth, (float)state->windowHeight }, TextFormat("#191#About %s", TOOL_NAME));
+        state->windowActive = !GuiWindowBox(state->windowBounds, TextFormat("#191#About %s", TOOL_NAME));
 
         // Draw a background rectangle for convenience
-        DrawRectangle((int)state->position.x + 1, (int)state->position.y + 4 + 20, state->windowWidth - 2, 90 - 4, Fade(GetColor(GuiGetStyle(DEFAULT, BASE_COLOR_NORMAL)), 0.5f));
+        DrawRectangle((int)state->windowBounds.x + 1, (int)state->windowBounds.y + 4 + 20, state->windowBounds.width - 2, 90 - 4, Fade(GetColor(GuiGetStyle(DEFAULT, BASE_COLOR_NORMAL)), 0.5f));
 
         int labelTextAlign = GuiGetStyle(LABEL, TEXT_ALIGNMENT);
         GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
-        DrawTechIcon((int)state->position.x + 10, (int)state->position.y + 35, 64, TOOL_SHORT_NAME, 20, true, GetColor(TOOL_LOGO_COLOR));
+        DrawTechIcon((int)state->windowBounds.x + 10, (int)state->windowBounds.y + 35, 64, TOOL_SHORT_NAME, 20, true, GetColor(TOOL_LOGO_COLOR));
         
         bool singleLine = true;
-        GuiLabel((Rectangle){ state->position.x + 85, state->position.y + (singleLine? 55 : 35), 200, 30 }, TextFormat("%s %s (%s)", TOOL_NAME, TOOL_VERSION, TOOL_RELEASE_DATE));
-        GuiLabel((Rectangle){ state->position.x + 85, state->position.y + (singleLine? 78 : 60), 245, 20 }, TOOL_DESCRIPTION);
+        GuiLabel((Rectangle){ state->windowBounds.x + 85, state->windowBounds.y + (singleLine? 55 : 35), 200, 30 }, TextFormat("%s %s (%s)", TOOL_NAME, TOOL_VERSION, TOOL_RELEASE_DATE));
+        GuiLabel((Rectangle){ state->windowBounds.x + 85, state->windowBounds.y + (singleLine? 78 : 60), (float)state->windowBounds.width, 20 }, TOOL_DESCRIPTION);
 
-        GuiLine((Rectangle){ state->position.x, state->position.y + 100, (float)state->windowWidth, 20 }, NULL);
-        GuiLabel((Rectangle){ state->position.x + 8, state->position.y + 112, 126, 24 }, lblUsedLibsText);
+        GuiLine((Rectangle){ state->windowBounds.x, state->windowBounds.y + 100, (float)state->windowBounds.width, 20 }, NULL);
+        GuiLabel((Rectangle){ state->windowBounds.x + 8, state->windowBounds.y + 112, 126, 24 }, lblUsedLibsText);
 
-        DrawTechIcon((int)state->position.x + 10, (int)state->position.y + 135, 64, "raylib", 10, false, BLACK);
-        DrawTechIcon((int)state->position.x + 80, (int)state->position.y + 135, 64, "raygui", 10, false, GRAY);
+        DrawTechIcon((int)state->windowBounds.x + 10, (int)state->windowBounds.y + 135, 64, "raylib", 10, false, BLACK);
+        DrawTechIcon((int)state->windowBounds.x + 80, (int)state->windowBounds.y + 135, 64, "raygui", 10, false, GRAY);
 
-        if (GuiLabelButton((Rectangle){ state->position.x + 155, state->position.y + 135, 80, 16 }, linkraylibText)) { OpenURL("https://www.raylib.com/"); }
-        if (GuiLabelButton((Rectangle){ state->position.x + 155, state->position.y + 160, 150, 16 }, linkGitraylibText)) { OpenURL("https://github.com/raysan5/raylib"); }
-        if (GuiLabelButton((Rectangle){ state->position.x + 155, state->position.y + 180, 150, 16 }, linkGitrayguiText)) { OpenURL("https://github.com/raysan5/raygui"); }
+        if (GuiLabelButton((Rectangle){ state->windowBounds.x + 155, state->windowBounds.y + 135, 80, 16 }, linkraylibText)) { OpenURL("https://www.raylib.com/"); }
+        if (GuiLabelButton((Rectangle){ state->windowBounds.x + 155, state->windowBounds.y + 160, 150, 16 }, linkGitraylibText)) { OpenURL("https://github.com/raysan5/raylib"); }
+        if (GuiLabelButton((Rectangle){ state->windowBounds.x + 155, state->windowBounds.y + 180, 150, 16 }, linkGitrayguiText)) { OpenURL("https://github.com/raysan5/raygui"); }
 
-        GuiLine((Rectangle){ state->position.x, state->position.y + 200, (float)state->windowWidth, 20 }, NULL);
+        GuiLine((Rectangle){ state->windowBounds.x, state->windowBounds.y + 200, (float)state->windowBounds.width, 20 }, NULL);
 
-        GuiLabel((Rectangle){ state->position.x + 10, state->position.y + 220, 289, 20 }, lblCopyrightText);
-        GuiLabel((Rectangle){ state->position.x + 10, state->position.y + 250, 65, 16 }, lblMoreInfoText);
+        GuiLabel((Rectangle){ state->windowBounds.x + 10, state->windowBounds.y + 220, 289, 20 }, lblCopyrightText);
+        GuiLabel((Rectangle){ state->windowBounds.x + 10, state->windowBounds.y + 250, 65, 16 }, lblMoreInfoText);
 
         float linkMailTextWidth = MeasureTextEx(GuiGetFont(), linkMailText, (float)GuiGetStyle(DEFAULT, TEXT_SIZE), (float)GuiGetStyle(DEFAULT, TEXT_SPACING)).x;
-        if (GuiLabelButton((Rectangle){ state->position.x + 90, state->position.y + 250, 165, 16 }, TextFormat("www.raylibtech.com/%s", TextToLower(TOOL_NAME)))) { OpenURL("https://www.raylibtech.com/"); }
-        if (GuiLabelButton((Rectangle){ state->position.x + 90, state->position.y + 270, linkMailTextWidth, 16 }, linkMailText)) { OpenURL("mailto:ray@raylibtech.com"); }
-        if (GuiLabelButton((Rectangle){ state->position.x + 90 + linkMailTextWidth + 4, state->position.y + 270, MeasureTextEx(GuiGetFont(), linkraylibtechText, (float)GuiGetStyle(DEFAULT, TEXT_SIZE), (float)GuiGetStyle(DEFAULT, TEXT_SPACING)).x, 16 }, linkraylibtechText)) { OpenURL("https://twitter.com/raylibtech"); }
+        if (GuiLabelButton((Rectangle){ state->windowBounds.x + 90, state->windowBounds.y + 250, 165, 16 }, TextFormat("www.raylibtech.com/%s", TextToLower(TOOL_NAME)))) { OpenURL("https://www.raylibtech.com/"); }
+        if (GuiLabelButton((Rectangle){ state->windowBounds.x + 90, state->windowBounds.y + 270, linkMailTextWidth, 16 }, linkMailText)) { OpenURL("mailto:ray@raylibtech.com"); }
+        if (GuiLabelButton((Rectangle){ state->windowBounds.x + 90 + linkMailTextWidth + 4, state->windowBounds.y + 270, MeasureTextEx(GuiGetFont(), linkraylibtechText, (float)GuiGetStyle(DEFAULT, TEXT_SIZE), (float)GuiGetStyle(DEFAULT, TEXT_SPACING)).x, 16 }, linkraylibtechText)) { OpenURL("https://twitter.com/raylibtech"); }
 
-        GuiLabel((Rectangle){ state->position.x + 10, state->position.y + 270, 65, 16 }, lblSupportText);
-        GuiLine((Rectangle){ state->position.x, state->position.y + 285, (float)state->windowWidth, 20 }, NULL);
+        GuiLabel((Rectangle){ state->windowBounds.x + 10, state->windowBounds.y + 270, 65, 16 }, lblSupportText);
+        GuiLine((Rectangle){ state->windowBounds.x, state->windowBounds.y + 285, (float)state->windowBounds.width, 20 }, NULL);
         GuiSetStyle(LABEL, TEXT_ALIGNMENT, labelTextAlign);
 
-        DrawRectangle((int)state->position.x + 1, (int)state->position.y + 285 + 11, state->windowWidth - 2, 43, Fade(GetColor(GuiGetStyle(DEFAULT, BASE_COLOR_NORMAL)), 0.5f));
+        DrawRectangle((int)state->windowBounds.x + 1, (int)state->windowBounds.y + 285 + 11, state->windowBounds.width - 2, 43, Fade(GetColor(GuiGetStyle(DEFAULT, BASE_COLOR_NORMAL)), 0.5f));
 
         int buttonTextAlign = GuiGetStyle(BUTTON, TEXT_ALIGNMENT);
         GuiSetStyle(BUTTON, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
 
-        if (GuiButton((Rectangle){ state->position.x + state->windowWidth - 80 - 90, state->position.y + 305, 80, 24 }, btnDonateText)) { OpenURL(TextFormat("https://raylibtech.itch.io/%s/purchase", TOOL_NAME)); }
-        if (GuiButton((Rectangle){ state->position.x + state->windowWidth - 80, state->position.y + 305, 70, 24 }, btnCloseText)) state->windowActive = false;
+        if (GuiButton((Rectangle){ state->windowBounds.x + state->windowBounds.width - 80 - 90, state->windowBounds.y + 305, 80, 24 }, btnDonateText)) { OpenURL(TextFormat("https://raylibtech.itch.io/%s/purchase", TOOL_NAME)); }
+        if (GuiButton((Rectangle){ state->windowBounds.x + state->windowBounds.width - 80, state->windowBounds.y + 305, 70, 24 }, btnCloseText)) state->windowActive = false;
         GuiSetStyle(BUTTON, TEXT_ALIGNMENT, buttonTextAlign);
         //----------------------------------------------------------------------------------------
     }
+    else state->windowBounds = (Rectangle){ GetScreenWidth()/2 - state->windowBounds.width/2, GetScreenHeight()/2 - state->windowBounds.height/2, state->windowBounds.width, state->windowBounds.height };
 }
 
 #endif // GUI_WINDOW_ABOUT_IMPLEMENTATION

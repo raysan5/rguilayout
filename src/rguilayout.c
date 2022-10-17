@@ -252,7 +252,7 @@ static void ResetLayout(GuiLayout *layout);                 // Reset layout to d
 static void SaveLayout(GuiLayout *layout, const char *fileName);     // Save raygui layout as text file (.rgl)
 
 // Auxiliar functions
-static int GuiHelpWindow(Rectangle bounds, const char *title, const char **helpLines, int helpLinesCount); // Draw help window with the provided lines
+static int GuiWindowHelp(Rectangle bounds, const char *title, const char **helpLines, int helpLinesCount); // Draw help window with the provided lines
 
 //----------------------------------------------------------------------------------
 // Program main entry point
@@ -420,7 +420,7 @@ int main(int argc, char *argv[])
 
     // GUI: Controls Selection Palette
     //-----------------------------------------------------------------------------------
-    GuiWindowControlsPaletteState paletteState = InitGuiWindowControlsPalette();
+    GuiWindowControlsPaletteState windowControlsPaletteState = InitGuiWindowControlsPalette();
     //-----------------------------------------------------------------------------------
 
     // GUI: Layout Code Generation Window
@@ -482,8 +482,8 @@ int main(int argc, char *argv[])
     Rectangle defaultRec[CONTROLS_PALETTE_COUNT] = { 0 };
     for (int i = 0; i < CONTROLS_PALETTE_COUNT; i++)
     {
-        defaultRec[i].width = paletteState.controlRecs[i].width;
-        defaultRec[i].height = paletteState.controlRecs[i].height;
+        defaultRec[i].width = windowControlsPaletteState.controlRecs[i].width;
+        defaultRec[i].height = windowControlsPaletteState.controlRecs[i].height;
     }
 
     // Select icon ToggleGroup()
@@ -867,14 +867,14 @@ int main(int argc, char *argv[])
 
             // Palette selected control logic
             //----------------------------------------------------------------------------------------------
-            if (!CheckCollisionPointRec(mouse, paletteState.scrollPanelBounds))
+            if (!CheckCollisionPointRec(mouse, windowControlsPaletteState.scrollPanelBounds))
             {
-                if (focusedControl == -1) paletteState.selectedControl -= GetMouseWheelMove();
+                if (focusedControl == -1) windowControlsPaletteState.selectedControl -= GetMouseWheelMove();
 
-                if (paletteState.selectedControl < GUI_WINDOWBOX) paletteState.selectedControl = GUI_WINDOWBOX;
-                else if (paletteState.selectedControl > GUI_DUMMYREC) paletteState.selectedControl = GUI_DUMMYREC;
+                if (windowControlsPaletteState.selectedControl < GUI_WINDOWBOX) windowControlsPaletteState.selectedControl = GUI_WINDOWBOX;
+                else if (windowControlsPaletteState.selectedControl > GUI_DUMMYREC) windowControlsPaletteState.selectedControl = GUI_DUMMYREC;
 
-                selectedType = paletteState.selectedControl;
+                selectedType = windowControlsPaletteState.selectedControl;
             }
             //----------------------------------------------------------------------------------------------
 
@@ -897,7 +897,7 @@ int main(int argc, char *argv[])
                 else defaultRec[selectedType].y -= offsetY;
             }
 
-            if (!CheckCollisionPointRec(mouse, paletteState.scrollPanelBounds))
+            if (!CheckCollisionPointRec(mouse, windowControlsPaletteState.scrollPanelBounds))
             {
                 if (!dragMoveMode)
                 {
@@ -2217,7 +2217,7 @@ int main(int argc, char *argv[])
 
             if (!GuiIsLocked())
             {
-                if (!(CheckCollisionPointRec(mouse, paletteState.scrollPanelBounds)))
+                if (!(CheckCollisionPointRec(mouse, windowControlsPaletteState.scrollPanelBounds)))
                 {
                     if ((focusedAnchor == -1) && (focusedControl == -1) && !tracemapFocused && !refWindowEditMode)
                     {
@@ -2635,10 +2635,10 @@ int main(int argc, char *argv[])
                 // GUI: Controls Selection Palette
                 // NOTE: It uses GuiLock() to lock controls behaviour and just limit them to selection
                 //----------------------------------------------------------------------------------------
-                GuiWindowControlsPalette(&paletteState);
+                GuiWindowControlsPalette(&windowControlsPaletteState);
 
                 // Update ScrollPanel bounds in case window is resized
-                paletteState.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 170, workArea.y, 170, GetScreenHeight() - workArea.y - 24 };
+                windowControlsPaletteState.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 170, workArea.y, 170, GetScreenHeight() - workArea.y - 24 };
                 //----------------------------------------------------------------------------------------
             }
             
@@ -2667,7 +2667,7 @@ int main(int argc, char *argv[])
             // GUI: Help Window
             //----------------------------------------------------------------------------------------
             Rectangle helpWindowBounds = { (float)screenWidth/2 - 330/2, (float)screenHeight/2 - 400.0f/2, 330, 0 };
-            if (windowHelpActive) windowHelpActive = GuiHelpWindow(helpWindowBounds, GuiIconText(ICON_HELP, TextFormat("%s Shortcuts", TOOL_NAME)), helpLines, HELP_LINES_COUNT);
+            if (windowHelpActive) windowHelpActive = GuiWindowHelp(helpWindowBounds, GuiIconText(ICON_HELP, TextFormat("%s Shortcuts", TOOL_NAME)), helpLines, HELP_LINES_COUNT);
             //----------------------------------------------------------------------------------------
 
             // GUI: Layout Code Generation Window
@@ -3294,7 +3294,7 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
 }
 
 // Draw help window with the provided lines
-static int GuiHelpWindow(Rectangle bounds, const char *title, const char **helpLines, int helpLinesCount)
+static int GuiWindowHelp(Rectangle bounds, const char *title, const char **helpLines, int helpLinesCount)
 {
     int nextLineY = 0;
 
