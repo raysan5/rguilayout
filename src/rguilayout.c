@@ -497,8 +497,8 @@ int main(int argc, char *argv[])
     }
     toggleIconsText[16*14*6 - 1] = '\0';
 
-    // Work area to place components
-    Rectangle workArea = { 48, 48*2, 800, 600 };
+    // Work area to place components (full screen by default)
+    Rectangle workArea = { 0, 40, GetScreenWidth(), GetScreenHeight() - 40 - 24 };
 
     SetTargetFPS(60);       // Set our game desired framerate
     //--------------------------------------------------------------------------------------
@@ -813,6 +813,15 @@ int main(int argc, char *argv[])
         //----------------------------------------------------------------------------------
         mouse = GetMousePosition();
 
+        if (IsWindowResized())
+        {
+            workArea.width = GetScreenWidth();
+            workArea.height = GetScreenHeight() - 40 - 24;
+            windowControlsPaletteState.windowBounds.x = workArea.width - windowControlsPaletteState.windowBounds.width;
+            windowControlsPaletteState.windowBounds.y = 40;
+            windowControlsPaletteState.windowBounds.height = workArea.height;
+        }
+
         // Code generation window logic
         //----------------------------------------------------------------------------------
         if (windowCodegenState.windowActive)
@@ -897,7 +906,9 @@ int main(int argc, char *argv[])
                 else defaultRec[selectedType].y -= offsetY;
             }
 
-            if (!CheckCollisionPointRec(mouse, windowControlsPaletteState.scrollPanelBounds))
+            // Work area logic (controls placement and selection)
+            if (CheckCollisionPointRec(mouse, workArea) &&
+                !CheckCollisionPointRec(mouse, windowControlsPaletteState.windowBounds))
             {
                 if (!dragMoveMode)
                 {
@@ -2075,8 +2086,8 @@ int main(int argc, char *argv[])
                         if (snapMode) positionColor = LIME;
                         if (!dragMoveMode && precisionMode) positionColor = BLUE;
                         DrawText(TextFormat("[%i, %i, %i, %i]",
-                                            (int)tracemapRec.x,
-                                            (int)tracemapRec.y,
+                                            (int)tracemapRec.x - (int)workArea.x,
+                                            (int)tracemapRec.y - (int)workArea.y,
                                             (int)tracemapRec.width,
                                             (int)tracemapRec.height), tracemapRec.x, tracemapRec.y - 20, 20, positionColor);
                     }
@@ -2116,7 +2127,7 @@ int main(int argc, char *argv[])
                     {
                         case GUI_WINDOWBOX:
                         {
-                            GuiFade(0.8f);
+                            GuiFade(0.7f);
                             GuiWindowBox(rec, layout->controls[i].text);
                             GuiFade(1.0f);
                         } break;
@@ -2217,7 +2228,8 @@ int main(int argc, char *argv[])
 
             if (!GuiIsLocked())
             {
-                if (!(CheckCollisionPointRec(mouse, windowControlsPaletteState.scrollPanelBounds)))
+                if (CheckCollisionPointRec(mouse, workArea) &&
+                    !CheckCollisionPointRec(mouse, windowControlsPaletteState.windowBounds))
                 {
                     if ((focusedAnchor == -1) && (focusedControl == -1) && !tracemapFocused && !refWindowEditMode)
                     {
@@ -2270,8 +2282,11 @@ int main(int argc, char *argv[])
                                 // Draw cursor position
                                 positionColor = MAROON;
                                 if (snapMode) positionColor = LIME;
-                                DrawText(TextFormat("[%i, %i, %i, %i]", (int)defaultRec[selectedType].x - (int)workArea.x, (int)defaultRec[selectedType].y - (int)workArea.y,
-                                    (int)defaultRec[selectedType].width, (int)defaultRec[selectedType].height),
+                                DrawText(TextFormat("[%i, %i, %i, %i]", 
+                                    (int)defaultRec[selectedType].x - (int)workArea.x, 
+                                    (int)defaultRec[selectedType].y - (int)workArea.y,
+                                    (int)defaultRec[selectedType].width, 
+                                    (int)defaultRec[selectedType].height),
                                     (int)defaultRec[selectedType].x, ((int)defaultRec[selectedType].y < ((int)workArea.y + 8))? (int)defaultRec[selectedType].y + 30 : (int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
 
                                 // Draw controls name
@@ -2362,8 +2377,8 @@ int main(int argc, char *argv[])
                     if (selectedAnchor > 0)
                     {
                         DrawText(TextFormat("[%i, %i]",
-                            (int)(layout->anchors[selectedAnchor].x - layout->refWindow.x),
-                            (int)(layout->anchors[selectedAnchor].y - layout->refWindow.y)),
+                            (int)(layout->anchors[selectedAnchor].x - layout->refWindow.x - (int)workArea.x),
+                            (int)(layout->anchors[selectedAnchor].y - layout->refWindow.y - (int)workArea.y)),
                             layout->anchors[selectedAnchor].x + ANCHOR_RADIUS,
                             layout->anchors[selectedAnchor].y - 38, 20, positionColor);
                     }
@@ -2660,13 +2675,12 @@ int main(int argc, char *argv[])
             
             // GUI: Sponsor Window
             //----------------------------------------------------------------------------------------
-            windowSponsorState.position = (Vector2){ (float)screenWidth/2 - windowSponsorState.windowWidth/2, (float)screenHeight/2 - windowSponsorState.windowHeight/2 - 20 };
             GuiWindowSponsor(&windowSponsorState);
             //----------------------------------------------------------------------------------------
 
             // GUI: Help Window
             //----------------------------------------------------------------------------------------
-            Rectangle helpWindowBounds = { (float)screenWidth/2 - 330/2, (float)screenHeight/2 - 400.0f/2, 330, 0 };
+            Rectangle helpWindowBounds = { (float)GetScreenWidth()/2 - 330/2, (float)GetScreenHeight()/2 - 700.0f/2, 330, 0 };
             if (windowHelpActive) windowHelpActive = GuiWindowHelp(helpWindowBounds, GuiIconText(ICON_HELP, TextFormat("%s Shortcuts", TOOL_NAME)), helpLines, HELP_LINES_COUNT);
             //----------------------------------------------------------------------------------------
 
@@ -2707,16 +2721,15 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
             if (windowExitActive)
             {
-                int result = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 120, GetScreenHeight()/2 - 48, 248, 96 }, "#159#Closing rGuiLayout", "Do you want to save before quitting?", "Yes;No");
+                int result = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 120, GetScreenHeight()/2 - 48, 248, 96 }, "#159#Closing rGuiLayout", "Do you want to close without saving?", "Yes;No");
 
-                if (result == 0) windowExitActive = false;
-                else if (result == 1)  // Yes
+                if (result == 0)
                 {
                     showSaveFileDialog = true;
                     windowExitActive = false;
                     closeWindow = true;
                 }
-                else if (result == 2) closeWindow = true;
+                else if (result >= 1) closeWindow = true;
             }
             //----------------------------------------------------------------------------------------
 
