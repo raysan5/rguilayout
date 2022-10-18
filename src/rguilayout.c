@@ -1099,7 +1099,8 @@ int main(int argc, char *argv[])
                 }
 
                 // Unselect control
-                if (!mouseScaleReady && (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)))
+                if (!mouseScaleReady && !CheckCollisionPointRec(mouse, (Rectangle){ 0, 0, GetScreenWidth(), 40 }) &&
+                    (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)))
                 {
                     selectedControl = focusedControl;
                     if ((focusedAnchor != -1) || anchorLinkMode || anchorEditMode) selectedControl = -1;
@@ -1564,14 +1565,15 @@ int main(int argc, char *argv[])
             }
 
             // Unselect anchor
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+            if (!CheckCollisionPointRec(mouse, (Rectangle){ 0, 0, GetScreenWidth(), 40 }) && 
+                (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)))
             {
                 selectedAnchor = focusedAnchor;
                 if (anchorLinkMode) selectedAnchor = -1;
             }
 
             // Actions with one anchor selected
-            if (selectedAnchor != -1)
+            if ((selectedAnchor != -1) && !CheckCollisionPointRec(mouse, (Rectangle){ 0, 0, GetScreenWidth(), 40 }))
             {
                 // Link anchor
                 if (!anchorLinkMode)
@@ -1593,6 +1595,7 @@ int main(int argc, char *argv[])
                         if (dragMoveMode)
                         {
                             if (selectedAnchor == 0) anchorEditMode = false;
+
                             // Move anchor without moving controls
                             if (anchorMoveMode && !anchorEditMode)
                             {
@@ -2678,6 +2681,10 @@ int main(int argc, char *argv[])
             
             // GUI: Main toolbar panel
             //----------------------------------------------------------------------------------
+            mainToolbarState.controlSelected = (selectedControl >= 0);
+            mainToolbarState.anchorSelected = (selectedAnchor >= 0);
+            mainToolbarState.tracemapSelected = tracemapSelected;
+
             GuiMainToolbar(&mainToolbarState);
             //----------------------------------------------------------------------------------
             
