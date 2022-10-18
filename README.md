@@ -22,13 +22,12 @@ _NOTE: This tool is itended to be used with [**raygui 3.5-dev**](https://github.
  - Icon selection panel on control text edition
  - Save/Load your layout as `.rgl` **text file**
  - Supports `.png` image loading to be used as **tracemap**
+ - Support for **custom code templates** to place your controls on
  - **Export layout directly as plain C code, ready to edit and compile**
 
 ### rGuiLayout Standalone Additional Features
 
- - Support for more than 16 controls per layout
  - Command-line support for `.rgl` to `.h` conversion
- - Support for **custom code templates** to place your controls on
  - **Completely portable (single-file, no-dependencies)**
  
 ## rGuiLayout Screenshot
@@ -45,7 +44,7 @@ Drag&drop `.rgl` layout files for automatic loading and save changes with `LCTRL
 
 Press `LCTRL + ENTER` to show code generation window, you can configure multiple export options to generate the code. 
 
-**To compile generated code, you need `raygui v3.1-dev` library and `raylib v4.0`.**
+**To compile generated code, you need `raygui v3.5-dev` library and `raylib v4.5-dev`.**
 
 `rGuiLayout Standalone` comes with command-line support for batch conversion. For usage help:
 
