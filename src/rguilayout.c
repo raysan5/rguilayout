@@ -732,7 +732,15 @@ int main(int argc, char *argv[])
             if (IsKeyPressed(KEY_G)) mainToolbarState.showGridActive = !mainToolbarState.showGridActive;              // Toggle Grid mode
 
             anchorEditMode = IsKeyDown(KEY_A);              // Toggle anchor mode editing (on key down)
-            orderEditMode = IsKeyDown(KEY_LEFT_ALT);        // Toggle controls drawing order
+            //orderEditMode = IsKeyDown(KEY_LEFT_ALT);        
+
+            // Toggle controls drawing order mode
+            // NOTE: In this mode controls can be re-organized for drawing order
+            if (IsKeyPressed(KEY_LEFT_ALT))
+            {
+                mainToolbarState.showControlOrderActive = !mainToolbarState.showControlOrderActive;
+                orderEditMode = mainToolbarState.showControlOrderActive;
+            }
 
             precisionEditMode = IsKeyDown(KEY_LEFT_SHIFT);      // Toggle precision move/scale mode
             resizeMode = IsKeyDown(KEY_LEFT_CONTROL);       // Toggle control resize mode
@@ -2304,7 +2312,9 @@ int main(int argc, char *argv[])
                                     (int)defaultRec[selectedType].x, ((int)defaultRec[selectedType].y < ((int)workArea.y + 8))? (int)defaultRec[selectedType].y + 30 : (int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
 
                                 // Draw controls name
-                                if (IsKeyDown(KEY_N))
+                                if (IsKeyPressed(KEY_N)) mainToolbarState.showControlNamesActive = !mainToolbarState.showControlNamesActive;
+
+                                if (mainToolbarState.showControlNamesActive)
                                 {
                                     GuiLock();
                                     for (int i = 0; i < layout->controlCount; i++)
@@ -2754,7 +2764,10 @@ int main(int argc, char *argv[])
 
             // GUI: Status bar
             //--------------------------------------------------------------------------------------------
-            GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, TextFormat("MOUSE: (%i, %i)", (int)mouse.x, (int)mouse.y));
+
+            // TODO: Review and add more info about current edition mode
+
+            GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, NULL);
             GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (mainToolbarState.snapModeActive? "SNAP: ON" : "SNAP: OFF"));
             GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, TextFormat("CONTROLS COUNT: %i", layout->controlCount));
             GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, 100, 24}, TextFormat("GRID SIZE: %i", gridSpacing*gridSubdivisions));
