@@ -195,7 +195,7 @@ static const char *toolDescription = TOOL_DESCRIPTION;
 
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
 
-#define HELP_LINES_COUNT    37
+#define HELP_LINES_COUNT    36
 
 // Tool help info
 static const char *helpLines[HELP_LINES_COUNT] = {
@@ -206,8 +206,7 @@ static const char *helpLines[HELP_LINES_COUNT] = {
     "LCTRL + N - New layout file (.rgl)",
     "LCTRL + O - Open layout file (.rgl)",
     "LCTRL + S - Save layout file (.rgl)",
-    "LCTRL + E - Export layout file",
-    "LCTRL + ENTER - Export layout to code",
+    "LCTRL + E - Export layout to code",
     "-Control Edition",
     "LSHIFT + ARROWS - Smooth edit position",
     "LCTRL + ARROWS - Edit control scale",
@@ -233,7 +232,7 @@ static const char *helpLines[HELP_LINES_COUNT] = {
     "LCTRL + G - Toggle grid mode",
     "LALT + S - Toggle snap to grid mode",
     //"RALT + UP/DOWN - Grid spacing + snap",
-    "LCTRL + F - Toggle control position info (global/anchor)",
+    "LCTRL + F - Toggle control position info (global/anchor)",     // TODO: Really?
     "SPACE - Toggle tracemap Lock/Unlock",
 };
 
@@ -311,47 +310,43 @@ int main(int argc, char *argv[])
     // General pourpose variables
     Vector2 mouse = { 0, 0 };               // Mouse position
 
+    // Work area to place components (full screen by default)
+    Rectangle workArea = { 0, 40, GetScreenWidth(), GetScreenHeight() - 40 - 24 };
+    bool windowOverActive = false;          // Check for any blocking window active
+
     // Grid control variables
-    bool showGrid = true;                   // Show grid flag (KEY_G)
     int gridSpacing = 8;                    // Grid minimum spacing in pixels (between every subdivision)
     int gridSubdivisions = 3;               // Grid subdivisions (total size for every big line is gridSpacing*gridSubdivisions)
     int gridSnapDelta = 1;                  // Grid snap minimum value in pixels
     int moveFrameCounter = 0;               // Movement frames counter
     int moveFrameSpeed = 1;                 // Movement speed per frame
 
-    // Work modes
-    bool snapMode = false;                  // Snap mode flag (KEY_S)
-    bool useGlobalPos = false;              // Control global position mode
-    bool precisionMode = false;             // Control precision mode (KEY_LEFT_SHIFT)
-
+    // Control edit modes
     // NOTE: [E] - Exclusive mode operation, all other modes blocked
     bool dragMoveMode = false;              // [E] Control drag mode
     bool textEditMode = false;              // [E] Control text edit mode (KEY_T)
-    bool showIconPanel = false;             // Show icon panel for selection
     bool nameEditMode = false;              // [E] Control name edit mode (KEY_N)
-    bool orderEditMode = false;             // Control order edit mode (focusedControl != -1 + KEY_LEFT_ALT)
-    bool resizeMode = false;                // [E] Control size mode (controlSelected != -1 + KEY_LEFT_ALT)
+    bool resizeMode = false;                // [E] Control size mode ((controlSelected != -1) + KEY_LEFT_ALT)
+    bool orderEditMode = false;             // Control order edit mode ((focusedControl != -1) + KEY_LEFT_ALT)
+    bool precisionEditMode = false;         // Control precision edit mode (KEY_LEFT_SHIFT)
     bool mouseScaleMode = false;            // [E] Control is being scaled by mouse
     bool mouseScaleReady = false;           // Mouse is on position to start control scaling
-    bool refWindowEditMode = false;         // [E] Refence window edit mode
 
+    // Anchor edit modes
     bool anchorEditMode = false;            // [E] Anchor edition mode
     bool anchorLinkMode = false;            // [E] Anchor linkage mode
     bool anchorMoveMode = false;            // [E] Anchor move mode
 
+    // Ref window edit mode
+    bool refWindowEditMode = false;         // [E] Refence window edit mode
+
+    // Toggle global controls position info
+    // NOTE: It could be useful at some moment (but not usual)
+    bool showGlobalPosition = false;        // Control global position mode
+
     // TODO: Check exclusive modes (work on its own) and combinable modes (can work in combination with other)
     // Replace all bool values by enumerator value, it should simplify code...
-    int layoutEditMode = NONE;              // Layout edition mode
-    bool windowOverActive = false;           // Check for any blocking window active
-
-    // Multiselection variables
-    /*
-    bool multiSelectMode = false;           // [E] Multiselection mode
-    Rectangle multiSelectRec = { 0 };
-    Vector2 multiSelectStartPos = { 0 };
-    int multiSelectControls[20] = { -1 };
-    int multiSelectCount = 0;
-    */
+    //int layoutEditMode = NONE;              // Layout edition mode
 
     // Controls variables
     int selectedControl = -1;               // Control selected on layout
@@ -370,7 +365,16 @@ int main(int argc, char *argv[])
     Color anchorCircleColor = BLACK;
     Color anchorSelectedColor = RED;
 
+    // TODO: Support multiple controls selection
+    // Multiselection variables
+    //bool multiSelectMode = false;           // [E] Multiselection mode
+    //Rectangle multiSelectRec = { 0 };
+    //Vector2 multiSelectStartPos = { 0 };
+    //int multiSelectControls[20] = { -1 };
+    //int multiSelectCount = 0;
+
     // Init default layout
+    //-------------------------------------------------------------------------
     GuiLayout *layout = NULL;
     
     if (inFileName[0] != '\0')          // Load dropped file if provided
@@ -380,15 +384,22 @@ int main(int argc, char *argv[])
     }
     else layout = LoadLayout(NULL);     // Load empty layout
 
-    // Define undo system variables
+    // Previous text/name, required when cancel editing
+    char prevText[MAX_CONTROL_TEXT_LENGTH] = { 0 };
+    char prevName[MAX_CONTROL_NAME_LENGTH] = { 0 };
+    //-------------------------------------------------------------------------
+
+    // Undo/redo system variables
+    //-------------------------------------------------------------------------
     GuiLayout *undoLayouts = (GuiLayout *)RL_CALLOC(MAX_UNDO_LEVELS, sizeof(GuiLayout));   // Layouts array
     int currentUndoIndex = 0;
     int firstUndoIndex = 0;
     int lastUndoIndex = 0;
     int undoFrameCounter = 0;
 
-    // Init undo system with current layout
+    // Init undo/redo system with current layout
     for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
+    //-------------------------------------------------------------------------
 
     // Tracemap (background image for reference) variables
     Texture2D tracemap = { 0 };
@@ -399,9 +410,45 @@ int main(int argc, char *argv[])
     float tracemapFade = 0.5f;
     Color tracemapColor = RED;
 
-    // Track previous text/name to cancel editing
-    char prevText[MAX_CONTROL_TEXT_LENGTH] = { 0 };
-    char prevName[MAX_CONTROL_NAME_LENGTH] = { 0 };
+    // Controls temp variables (default values)
+    int dropdownBoxActive = 0;
+    int spinnerValue = 0;
+    int valueBoxValue = 0;
+    int listViewScrollIndex = 0;
+    int listViewActive = 0;
+
+    // Icons panel variables
+    //-------------------------------------------------------------------------
+    bool showIconPanel = false;             // Show icon panel for selection
+
+    int selectedIcon = 0;                   // Current icon selected
+    char toggleIconsText[16*14*6] = { 0 };  // 14 lines with 16 icons per line -> TODO: Review if more icons are added!
+    for (int i = 0; i < 16*14; i++)
+    {
+        // NOTE: Every icon requires 6 text characters: "#001#;"
+        if ((i + 1)%16 == 0) strncpy(toggleIconsText + 6*i, TextFormat("#%03i#\n", i), 6);
+        else strncpy(toggleIconsText + 6*i, TextFormat("#%03i#;", i), 6);
+    }
+    toggleIconsText[16*14*6 - 1] = '\0';
+    //-------------------------------------------------------------------------
+
+    // Layout code generation configuration
+    //------------------------------------------------------------------------------------
+    GuiLayoutConfig config = { 0 };
+    strcpy(config.name, "window_codegen");
+    strcpy(config.version, toolVersion);
+    strcpy(config.company, "raylib technologies");
+    strcpy(config.description, "tool description");
+    config.exportAnchors = false;
+    config.defineRecs = false;
+    config.defineTexts = false;
+    config.fullComments = false;
+    config.exportButtonFunctions = false;
+    int currentCodeTemplate = 0;
+
+    GuiLayoutConfig prevConfig = { 0 };
+    memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
+    //------------------------------------------------------------------------------------
 
     // GUI: Main toolbar panel (file and visualization)
     //-----------------------------------------------------------------------------------
@@ -421,6 +468,15 @@ int main(int argc, char *argv[])
     // GUI: Controls Selection Palette
     //-----------------------------------------------------------------------------------
     GuiWindowControlsPaletteState windowControlsPaletteState = InitGuiWindowControlsPalette();
+
+    // Rectangles used on controls preview drawing, copied from palette
+    // NOTE: [x, y] position is set on mouse movement and considering snap mode
+    Rectangle defaultRec[CONTROLS_PALETTE_COUNT] = { 0 };
+    for (int i = 0; i < CONTROLS_PALETTE_COUNT; i++)
+    {
+        defaultRec[i].width = windowControlsPaletteState.controlRecs[i].width;
+        defaultRec[i].height = windowControlsPaletteState.controlRecs[i].height;
+    }
     //-----------------------------------------------------------------------------------
 
     // GUI: Layout Code Generation Window
@@ -450,55 +506,8 @@ int main(int argc, char *argv[])
     bool showLoadFileDialog = false;
     bool showSaveFileDialog = false;
     bool showExportFileDialog = false;
+    bool showLoadTracemapDialog = false;
     //-----------------------------------------------------------------------------------
-
-    // Layout code generation configuration
-    //------------------------------------------------------------------------------------
-    GuiLayoutConfig config = { 0 };
-    strcpy(config.name, "window_codegen");
-    strcpy(config.version, toolVersion);
-    strcpy(config.company, "raylib technologies");
-    strcpy(config.description, "tool description");
-    config.exportAnchors = false;
-    config.defineRecs = false;
-    config.defineTexts = false;
-    config.fullComments = false;
-    config.exportButtonFunctions = false;
-    int currentCodeTemplate = 0;
-
-    GuiLayoutConfig prevConfig = { 0 };
-    memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
-    //------------------------------------------------------------------------------------
-
-    // Controls temp variables
-    int dropdownBoxActive = 0;
-    int spinnerValue = 0;
-    int valueBoxValue = 0;
-    int listViewScrollIndex = 0;
-    int listViewActive = 0;
-
-    // Rectangles used on controls preview drawing, copied from palette
-    // NOTE: [x, y] position is set on mouse movement and cosidering snap mode
-    Rectangle defaultRec[CONTROLS_PALETTE_COUNT] = { 0 };
-    for (int i = 0; i < CONTROLS_PALETTE_COUNT; i++)
-    {
-        defaultRec[i].width = windowControlsPaletteState.controlRecs[i].width;
-        defaultRec[i].height = windowControlsPaletteState.controlRecs[i].height;
-    }
-
-    // Select icon ToggleGroup()
-    int selectedIcon = 0; 
-    char toggleIconsText[16*14*6] = { 0 };  // 14 lines with 16 icons per line -> TODO: Review if more icons are added!
-    for (int i = 0; i < 16*14; i++)
-    {
-        // NOTE: Every icon requires 6 text characters: "#001#;"
-        if ((i + 1)%16 == 0) strncpy(toggleIconsText + 6*i, TextFormat("#%03i#\n", i), 6);
-        else strncpy(toggleIconsText + 6*i, TextFormat("#%03i#;", i), 6);
-    }
-    toggleIconsText[16*14*6 - 1] = '\0';
-
-    // Work area to place components (full screen by default)
-    Rectangle workArea = { 0, 40, GetScreenWidth(), GetScreenHeight() - 40 - 24 };
 
     SetTargetFPS(60);       // Set our game desired framerate
     //--------------------------------------------------------------------------------------
@@ -702,11 +711,11 @@ int main(int argc, char *argv[])
         // Check for any blocking mode (window or text/name edition)
         if (!windowOverActive && !textEditMode && !nameEditMode)
         {
-            // Enables or disables snapMode if not in textEditMode
+            // Enables or disables mainToolbarState.snapModeActive if not in textEditMode
             if (IsKeyPressed(KEY_S))
             {
-                snapMode = !snapMode;
-                if (snapMode)
+                mainToolbarState.snapModeActive = !mainToolbarState.snapModeActive;
+                if (mainToolbarState.snapModeActive)
                 {
                     gridSnapDelta = gridSpacing;
                     moveFrameSpeed = MOVEMENT_FRAME_SPEED;
@@ -719,13 +728,13 @@ int main(int argc, char *argv[])
             }
 
             // Work modes
-            if (IsKeyPressed(KEY_F)) useGlobalPos = !useGlobalPos;      // Toggle global position info (anchor reference or global reference)
-            if (IsKeyPressed(KEY_G)) showGrid = !showGrid;              // Toggle Grid mode
+            if (IsKeyPressed(KEY_F)) showGlobalPosition = !showGlobalPosition;      // Toggle global position info (anchor reference or global reference)
+            if (IsKeyPressed(KEY_G)) mainToolbarState.showGridActive = !mainToolbarState.showGridActive;              // Toggle Grid mode
 
             anchorEditMode = IsKeyDown(KEY_A);              // Toggle anchor mode editing (on key down)
             orderEditMode = IsKeyDown(KEY_LEFT_ALT);        // Toggle controls drawing order
 
-            precisionMode = IsKeyDown(KEY_LEFT_SHIFT);      // Toggle precision move/scale mode
+            precisionEditMode = IsKeyDown(KEY_LEFT_SHIFT);      // Toggle precision move/scale mode
             resizeMode = IsKeyDown(KEY_LEFT_CONTROL);       // Toggle control resize mode
 
             // Enable/disable texture editing mode
@@ -777,6 +786,8 @@ int main(int argc, char *argv[])
         
         // Main toolbar logic
         //----------------------------------------------------------------------------------
+        windowControlsPaletteState.windowActive = mainToolbarState.showControlPanelActive;
+        
         // Visual options logic
         if (mainToolbarState.visualStyleActive != mainToolbarState.prevVisualStyleActive)
         {
@@ -861,7 +872,7 @@ int main(int argc, char *argv[])
         {
             // Mouse snap logic
             //----------------------------------------------------------------------------------------------
-            if (snapMode && !anchorLinkMode)
+            if (mainToolbarState.snapModeActive && !anchorLinkMode)
             {
                 int offsetX = (int)mouse.x%gridSpacing;
                 int offsetY = (int)mouse.y%gridSpacing;
@@ -892,7 +903,7 @@ int main(int argc, char *argv[])
             defaultRec[selectedType].x = mouse.x - defaultRec[selectedType].width/2;
             defaultRec[selectedType].y = mouse.y - defaultRec[selectedType].height/2;
 
-            if (snapMode)
+            if (mainToolbarState.snapModeActive)
             {
                 // TODO: Review depending on the Grid size and position
 
@@ -1017,7 +1028,7 @@ int main(int argc, char *argv[])
                                             layout->anchors[i].x = layout->controls[layout->controlCount].rec.x;
                                             layout->anchors[i].y = layout->controls[layout->controlCount].rec.y;
 
-                                            if (snapMode)
+                                            if (mainToolbarState.snapModeActive)
                                             {
                                                 int offsetX = layout->anchors[i].x%gridSpacing;
                                                 int offsetY = layout->anchors[i].y%gridSpacing;
@@ -1149,7 +1160,7 @@ int main(int argc, char *argv[])
                             int controlPosX = prevPosition.x + (mouse.x - panOffset.x);
                             int controlPosY = prevPosition.y + (mouse.y - panOffset.y);
 
-                            if (snapMode)
+                            if (mainToolbarState.snapModeActive)
                             {
                                 int offsetX = (int)controlPosX%gridSnapDelta;
                                 int offsetY = (int)controlPosY%gridSnapDelta;
@@ -1161,7 +1172,7 @@ int main(int argc, char *argv[])
                                 else controlPosY -= offsetY;
                             }
 
-                            if (useGlobalPos && (layout->controls[selectedControl].ap->id != 0))
+                            if (showGlobalPosition && (layout->controls[selectedControl].ap->id != 0))
                             {
                                 controlPosX -= layout->controls[selectedControl].ap->x;
                                 controlPosY -= layout->controls[selectedControl].ap->y;
@@ -1212,7 +1223,7 @@ int main(int argc, char *argv[])
                                 int offsetX = (int)layout->controls[selectedControl].rec.width%gridSnapDelta;
                                 int offsetY = (int)layout->controls[selectedControl].rec.height%gridSnapDelta;
 
-                                if (precisionMode)
+                                if (precisionEditMode)
                                 {
                                     if (IsKeyPressed(KEY_RIGHT)) layout->controls[selectedControl].rec.width += (gridSnapDelta - offsetX);
                                     else if (IsKeyPressed(KEY_LEFT))
@@ -1264,7 +1275,7 @@ int main(int argc, char *argv[])
                                 int controlPosX = (int)layout->controls[selectedControl].rec.x;
                                 int controlPosY = (int)layout->controls[selectedControl].rec.y;
 
-                                if (useGlobalPos && (layout->controls[selectedControl].ap->id != 0))
+                                if (showGlobalPosition && (layout->controls[selectedControl].ap->id != 0))
                                 {
                                     controlPosX += layout->controls[selectedControl].ap->x;
                                     controlPosY += layout->controls[selectedControl].ap->y;
@@ -1273,7 +1284,7 @@ int main(int argc, char *argv[])
                                 int offsetX = (int)controlPosX%gridSnapDelta;
                                 int offsetY = (int)controlPosY%gridSnapDelta;
 
-                                if (precisionMode)
+                                if (precisionEditMode)
                                 {
                                     if (IsKeyPressed(KEY_RIGHT))  controlPosX += (gridSnapDelta - offsetX);
                                     else if (IsKeyPressed(KEY_LEFT))
@@ -1315,7 +1326,7 @@ int main(int argc, char *argv[])
                                     }
                                 }
 
-                                if (useGlobalPos && (layout->controls[selectedControl].ap->id != 0))
+                                if (showGlobalPosition && (layout->controls[selectedControl].ap->id != 0))
                                 {
                                     controlPosX -= layout->controls[selectedControl].ap->x;
                                     controlPosY -= layout->controls[selectedControl].ap->y;
@@ -1360,7 +1371,7 @@ int main(int argc, char *argv[])
                                 {
                                     panOffset = mouse;
 
-                                    if (useGlobalPos && (layout->controls[selectedControl].ap->id != 0))
+                                    if (showGlobalPosition && (layout->controls[selectedControl].ap->id != 0))
                                     {
                                         prevPosition = (Vector2){ layout->controls[selectedControl].rec.x + layout->controls[selectedControl].ap->x,
                                                                   layout->controls[selectedControl].rec.y + layout->controls[selectedControl].ap->y };
@@ -1679,7 +1690,7 @@ int main(int argc, char *argv[])
                                 int offsetY = (int)layout->anchors[selectedAnchor].y%gridSnapDelta;
 
                                 // Move anchor with arrows once
-                                if (precisionMode)
+                                if (precisionEditMode)
                                 {
                                     if (IsKeyPressed(KEY_RIGHT)) layout->anchors[selectedAnchor].x+= (gridSnapDelta - offsetX);
                                     else if (IsKeyPressed(KEY_LEFT))
@@ -1832,7 +1843,7 @@ int main(int argc, char *argv[])
                         tracemapRec.x = prevPosition.x + (mouse.x - panOffset.x);
                         tracemapRec.y = prevPosition.y + (mouse.y - panOffset.y);
 
-                        if (snapMode)
+                        if (mainToolbarState.snapModeActive)
                         {
                             if (offsetX >= gridSpacing/2) mouse.x += (gridSpacing - offsetX);
                             else mouse.x -= offsetX;
@@ -1857,7 +1868,7 @@ int main(int argc, char *argv[])
                         if (resizeMode)
                         {
                             // NOTE: la escala no es proporcional ahora mismo, se tiene que ajustar
-                            if (precisionMode)
+                            if (precisionEditMode)
                             {
                                 if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_DOWN))
                                 {
@@ -1902,7 +1913,7 @@ int main(int argc, char *argv[])
                             int offsetX = (int)tracemapRec.x%gridSnapDelta;
                             int offsetY = (int)tracemapRec.y%gridSnapDelta;
 
-                            if (precisionMode)
+                            if (precisionEditMode)
                             {
                                 if (IsKeyPressed(KEY_RIGHT))  tracemapRec.x += (gridSnapDelta - offsetX);
                                 else if (IsKeyPressed(KEY_LEFT))
@@ -1946,7 +1957,7 @@ int main(int argc, char *argv[])
                             //------------------------------------------------------------------
 
                             // Change alpha NOTE: Mover fuera, que sea un control global.
-                            if (precisionMode)
+                            if (precisionEditMode)
                             {
                                 if (IsKeyPressed(KEY_KP_ADD)) tracemapFade += 0.05f;
                                 else if (IsKeyPressed(KEY_KP_SUBTRACT) || IsKeyPressed(KEY_MINUS)) tracemapFade -= 0.05f;
@@ -2006,7 +2017,7 @@ int main(int argc, char *argv[])
 
             resizeMode = false;
             dragMoveMode = false;
-            precisionMode = false;
+            precisionEditMode = false;
             nameEditMode = false;
             textEditMode = false;
             showIconPanel = false;
@@ -2038,7 +2049,7 @@ int main(int argc, char *argv[])
             textEditMode = false;
             resizeMode = false;
             dragMoveMode = false;
-            precisionMode = false;
+            precisionEditMode = false;
 
             windowOverActive = true;        // There is some window overlap!
         }
@@ -2055,7 +2066,7 @@ int main(int argc, char *argv[])
             ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
             // Draw background grid
-            if (showGrid) GuiGrid(workArea, NULL, gridSpacing*gridSubdivisions, gridSubdivisions);
+            if (mainToolbarState.showGridActive) GuiGrid(workArea, NULL, gridSpacing*gridSubdivisions, gridSubdivisions);
 
             // Draw the tracemap texture if loaded
             //---------------------------------------------------------------------------------
@@ -2082,9 +2093,9 @@ int main(int argc, char *argv[])
                         DrawRectangleRec(tracemapRec, Fade(tracemapColor, 0.5f));
 
                         positionColor = MAROON;
-                        if (useGlobalPos) positionColor = RED;
-                        if (snapMode) positionColor = LIME;
-                        if (!dragMoveMode && precisionMode) positionColor = BLUE;
+                        if (showGlobalPosition) positionColor = RED;
+                        if (mainToolbarState.snapModeActive) positionColor = LIME;
+                        if (!dragMoveMode && precisionEditMode) positionColor = BLUE;
                         DrawText(TextFormat("[%i, %i, %i, %i]",
                                             (int)tracemapRec.x - (int)workArea.x,
                                             (int)tracemapRec.y - (int)workArea.y,
@@ -2281,7 +2292,7 @@ int main(int argc, char *argv[])
 
                                 // Draw cursor position
                                 positionColor = MAROON;
-                                if (snapMode) positionColor = LIME;
+                                if (mainToolbarState.snapModeActive) positionColor = LIME;
                                 DrawText(TextFormat("[%i, %i, %i, %i]", 
                                     (int)defaultRec[selectedType].x - (int)workArea.x, 
                                     (int)defaultRec[selectedType].y - (int)workArea.y,
@@ -2371,8 +2382,8 @@ int main(int argc, char *argv[])
                 {
                     // Draw anchor coordinates
                     positionColor = anchorSelectedColor;
-                    if (snapMode) positionColor = LIME;
-                    if (!dragMoveMode && precisionMode) positionColor = BLUE;
+                    if (mainToolbarState.snapModeActive) positionColor = LIME;
+                    if (!dragMoveMode && precisionEditMode) positionColor = BLUE;
 
                     if (selectedAnchor > 0)
                     {
@@ -2471,11 +2482,11 @@ int main(int argc, char *argv[])
 
                     // Control Coordinates
                     positionColor = MAROON;
-                    if (useGlobalPos) positionColor = RED;
-                    if (snapMode) positionColor = LIME;
-                    if (!dragMoveMode && precisionMode) positionColor = BLUE;
+                    if (showGlobalPosition) positionColor = RED;
+                    if (mainToolbarState.snapModeActive) positionColor = LIME;
+                    if (!dragMoveMode && precisionEditMode) positionColor = BLUE;
 
-                    if (!useGlobalPos)
+                    if (!showGlobalPosition)
                     {
                         if (layout->controls[selectedControl].ap->id > 0)
                         {
@@ -2496,8 +2507,8 @@ int main(int argc, char *argv[])
                     else
                     {
                         DrawText(TextFormat("[%i, %i, %i, %i]",
-                            (int)(selectedRec.x - layout->refWindow.x),
-                            (int)(selectedRec.y - layout->refWindow.y),
+                            (int)(selectedRec.x - layout->refWindow.x - workArea.x),
+                            (int)(selectedRec.y - layout->refWindow.y - workArea.y),
                             (int)layout->controls[selectedControl].rec.width,
                             (int)layout->controls[selectedControl].rec.height),
                             selectedRec.x, selectedRec.y - 30, 20, positionColor);
@@ -2652,6 +2663,8 @@ int main(int argc, char *argv[])
                 //----------------------------------------------------------------------------------------
                 GuiWindowControlsPalette(&windowControlsPaletteState);
 
+                mainToolbarState.showControlPanelActive = windowControlsPaletteState.windowActive;
+
                 // Update ScrollPanel bounds in case window is resized
                 windowControlsPaletteState.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 170, workArea.y, 170, GetScreenHeight() - workArea.y - 24 };
                 //----------------------------------------------------------------------------------------
@@ -2721,22 +2734,21 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
             if (windowExitActive)
             {
-                int result = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 120, GetScreenHeight()/2 - 48, 248, 96 }, "#159#Closing rGuiLayout", "Do you want to close without saving?", "Yes;No");
+                int result = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 320/2, GetScreenHeight()/2 - 120/2, 320, 120 }, "#159#Closing rGuiLayout", "Do you want to close without saving?", "Yes;No");
 
-                if (result == 0)
+                if ((result == 0) || (result == 1)) closeWindow = true;
+                else if (result == 2) 
                 {
                     showSaveFileDialog = true;
                     windowExitActive = false;
-                    closeWindow = true;
                 }
-                else if (result >= 1) closeWindow = true;
             }
             //----------------------------------------------------------------------------------------
 
             // GUI: Status bar
             //--------------------------------------------------------------------------------------------
             GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, TextFormat("MOUSE: (%i, %i)", (int)mouse.x, (int)mouse.y));
-            GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (snapMode? "SNAP: ON" : "SNAP: OFF"));
+            GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (mainToolbarState.snapModeActive? "SNAP: ON" : "SNAP: OFF"));
             GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, TextFormat("CONTROLS COUNT: %i", layout->controlCount));
             GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, 100, 24}, TextFormat("GRID SIZE: %i", gridSpacing*gridSubdivisions));
 

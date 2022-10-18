@@ -54,15 +54,29 @@ typedef struct {
     bool btnCloseFilePressed;
 
     // Editor options
-    // EDIT: Controls: TextEdit (CTRL+T), NameEdit (CTRL+N), Delete (SUP), Duplicate (CTRL+D)
-    // EDIT: Anchor-controls: Hide/Show (H), Show controls names (N - no control selected), Show controls order (ALT)
-    // EDIT: SnapMode (S), Undo/Redo (CTRL+Z/CTRL+Y)
+    bool btnUndoPressed;                // Shortcut: CTRL+Z
+    bool btnRedoPressed;                // Shortcut: CTRL+Y
+
+    // Selected control edit options
+    bool btnEditTextPressed;            // Edit control text, Shortcut: CTRL+T
+    bool btnEditNamePressed;            // Edit control name, Shortcut: CTRL+N
+    bool btnDeleteControlPressed;       // Delecte control, Shortcut: DELETE
+    bool btnDuplicateControlPressed;    // Ducplicate control, Shortcut: CTRL+D
+    bool btnResizeControlPressed;       // Resize control to closest snap, Shortcut: CTRL+R
 
     // Tool options
-    // TOOL: ControlPanel, Tracemap: Load, View, Alpha, Lock
+    bool snapModeActive;                // Shortcut: SHIFT+S
+
+    bool hideAnchorControlsActive;      // Toggle Hide/Show, Shortcut: CTRL+H
+    bool showControlNamesActive;        // Show controls names, Shortcut: N - no control selected
+    bool showControlOrderActive;        // Show controls drawing order, Shortcut: ALT (Use mouse wheel to reorder)
+    bool showControlPanelActive;        // Toggle control panel window
+
+    bool btnLoadTracemapPressed;        // Load tracemap image
+    // TOOL: Tracemap: Load, View, Alpha, Lock
 
     // Visual options
-    bool showGridActive;
+    bool showGridActive;                // Show grid
     int visualStyleActive;
     int prevVisualStyleActive;
     int languageActive;
@@ -73,7 +87,10 @@ typedef struct {
     bool btnSponsorPressed;
 
     // Custom variables
-    // TODO.
+    // NOTE: Required to enable/disable some toolbar elements
+    bool controlSelected;
+    bool anchorSelected;
+    bool tracemapSelected;
 
 } GuiMainToolbarState;
 
@@ -129,7 +146,7 @@ GuiMainToolbarState InitGuiMainToolbar(void)
     // Anchors for panels
     state.anchorFile = (Vector2){ 0, 0 };
     state.anchorEdit = (Vector2){ state.anchorFile.x + 160 - 1, 0 };
-    state.anchorTools = (Vector2){ state.anchorEdit.x + 188 - 1, 0 };
+    state.anchorTools = (Vector2){ state.anchorEdit.x + 300 - 1, 0 };
     state.anchorVisuals = (Vector2){ 0, 0 };    // Anchor right, depends on screen width
     state.anchorRight = (Vector2){ 0, 0 };      // Anchor right, depends on screen width
 
@@ -140,11 +157,26 @@ GuiMainToolbarState InitGuiMainToolbar(void)
     state.btnExportFilePressed = false;
     state.btnCloseFilePressed = false;
 
-    // Edit options
-    //...
+    // Editor options
+    state.btnUndoPressed = false;                // Shortcut: CTRL+Z
+    state.btnRedoPressed = false;                // Shortcut: CTRL+Y
+
+    // Selected control edit options
+    state.btnEditTextPressed = false;            // Shortcut: CTRL+T
+    state.btnEditNamePressed = false;            // Shortcut: CTRL+N
+    state.btnDeleteControlPressed = false;       // Shortcut: DELETE
+    state.btnDuplicateControlPressed = false;    // Shortcut: CTRL+D
+    state.btnResizeControlPressed = false;       // Shortcut: CTRL+R
 
     // Tool options
-    //...
+    state.snapModeActive = false;                // Shortcut: SHIFT+S
+
+    state.hideAnchorControlsActive = false;      // Toggle Hide/Show, Shortcut: CTRL+H
+    state.showControlNamesActive = false;        // Show controls names, Shortcut: N - no control selected
+    state.showControlOrderActive = false;        // Show controls drawing order, Shortcut: ALT (Use mouse wheel to reorder)
+    state.showControlPanelActive = true;         // Toggle control panel window
+
+    state.btnLoadTracemapPressed = false;        // Load tracemap image
 
     // Visuals options
     state.showGridActive = true;
@@ -158,7 +190,9 @@ GuiMainToolbarState InitGuiMainToolbar(void)
     state.btnSponsorPressed = false;
 
     // Custom variables
-    // TODO.
+    state.controlSelected = false;
+    state.anchorSelected = false;
+    state.tracemapSelected = false;
 
     return state;
 }
@@ -170,7 +204,7 @@ void GuiMainToolbar(GuiMainToolbarState *state)
     state->anchorVisuals.x = state->anchorRight.x - 224 + 1;    // Update right-anchor panel
 
     GuiPanel((Rectangle){ state->anchorFile.x, state->anchorFile.y, 160, 40 }, NULL);
-    GuiPanel((Rectangle){ state->anchorEdit.x, state->anchorEdit.y, 188, 40 }, NULL);
+    GuiPanel((Rectangle){ state->anchorEdit.x, state->anchorEdit.y, 300, 40 }, NULL);
     GuiPanel((Rectangle){ state->anchorTools.x, state->anchorTools.y, state->anchorVisuals.x - state->anchorTools.x + 1, 40 }, NULL);
     GuiPanel((Rectangle){ state->anchorVisuals.x, state->anchorVisuals.y, 224, 40 }, NULL);
     GuiPanel((Rectangle){ state->anchorRight.x, state->anchorRight.y, 104, 40 }, NULL);
@@ -182,12 +216,45 @@ void GuiMainToolbar(GuiMainToolbarState *state)
     state->btnExportFilePressed = GuiButton((Rectangle){ state->anchorFile.x + 12 + 72 + 12, state->anchorFile.y + 8, 24, 24 }, "#7#");
     state->btnCloseFilePressed = GuiButton((Rectangle){ state->anchorFile.x + 12 + 96 + 16, state->anchorFile.y + 8, 24, 24 }, "#9#");
 
-    // Edit options
-    //...
-    
+    // Editor options
+    state->btnUndoPressed = GuiButton((Rectangle){ state->anchorEdit.x + 12, state->anchorEdit.y + 8, 24, 24 }, "#72#");  
+    state->btnRedoPressed = GuiButton((Rectangle){ state->anchorEdit.x + 12 + 24 + 4, state->anchorEdit.y + 8, 24, 24 }, "#73#");
+
+    if (!state->controlSelected) GuiDisable();
+    GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_RIGHT);
+    GuiLabel((Rectangle){ state->anchorEdit.x + 12 + 48 + 16, state->anchorEdit.y + 8, 64, 24 }, "Control:");
+    GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
+    state->btnEditTextPressed = GuiButton((Rectangle){ state->anchorEdit.x + 60 + 72 + 16, state->anchorEdit.y + 8, 24, 24 }, "#30#");
+    state->btnEditNamePressed = GuiButton((Rectangle){ state->anchorEdit.x + 60 + 96 + 20, state->anchorEdit.y + 8, 24, 24 }, "#31#");
+    state->btnDeleteControlPressed = GuiButton((Rectangle){ state->anchorEdit.x + 60 + 120 + 24, state->anchorEdit.y + 8, 24, 24 }, "#143#");
+    state->btnDuplicateControlPressed = GuiButton((Rectangle){ state->anchorEdit.x + 60 + 144 + 28, state->anchorEdit.y + 8, 24, 24 }, "#16#");
+    state->btnResizeControlPressed = GuiButton((Rectangle){ state->anchorEdit.x + 60 + 168 + 32, state->anchorEdit.y + 8, 24, 24 }, "#33#");
+    GuiEnable();
+
     // Tool options
-    //...
+    state->snapModeActive = GuiToggle((Rectangle){ state->anchorTools.x + 12, state->anchorTools.y + 8, 24, 24 }, "#50#", state->snapModeActive);
+
+    if (!state->anchorSelected) GuiDisable();
+    GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_RIGHT);
+    GuiLabel((Rectangle){ state->anchorTools.x + 12 + 24 + 8, state->anchorTools.y + 8, 64, 24 }, "Anchor:");
+    GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
+    state->hideAnchorControlsActive = GuiToggle((Rectangle){ state->anchorTools.x + 80 + 24 + 8, state->anchorTools.y + 8, 24, 24 }, state->hideAnchorControlsActive? "#45#" : "#44#", state->hideAnchorControlsActive);
+    GuiEnable();
     
+    if (state->controlSelected) GuiDisable();
+    GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_RIGHT);
+    GuiLabel((Rectangle){ state->anchorTools.x + 88 + 48 + 8, state->anchorTools.y + 8, 64, 24 }, "Layout:");
+    GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
+    state->showControlNamesActive = GuiToggle((Rectangle){ state->anchorTools.x + 148 + 48 + 16 , state->anchorTools.y + 8, 24, 24 }, "#214#", state->showControlNamesActive);
+    state->showControlOrderActive = GuiToggle((Rectangle){ state->anchorTools.x + 148 + 72 + 20, state->anchorTools.y + 8, 24, 24 }, "#197#", state->showControlOrderActive);
+    GuiEnable();
+    state->showControlPanelActive = GuiToggle((Rectangle){ state->anchorTools.x + 148 + 96 + 24, state->anchorTools.y + 8, 24, 24 }, "#101#", state->showControlPanelActive);
+
+    GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_RIGHT);
+    GuiLabel((Rectangle){ state->anchorTools.x + 148 + 132 + 36, state->anchorTools.y + 8, 64, 24 }, "Tracemap:");
+    GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
+    state->btnLoadTracemapPressed = GuiButton((Rectangle){ state->anchorTools.x + 148 + 200 + 36, state->anchorTools.y + 8, 24, 24 }, "#12#");
+
     // Visuals options
     state->showGridActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12, state->anchorVisuals.y + 8, 24, 24 }, "#97#", state->showGridActive);
     GuiLabel((Rectangle){ state->anchorVisuals.x + 12 + 32, state->anchorVisuals.y + 8, 60, 24 }, "Style:");
