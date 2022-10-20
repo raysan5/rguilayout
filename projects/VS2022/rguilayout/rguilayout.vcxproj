@@ -349,16 +349,14 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-
-    <ClInclude Include="..\..\..\src\rguilayout.h" />
+    <ClInclude Include="..\..\..\src\codegen.h" />
+    <ClInclude Include="..\..\..\src\font_gohufont.h" />
+    <ClInclude Include="..\..\..\src\gui_window_controls_palette.h" />
     <ClInclude Include="..\..\..\src\gui_file_dialogs.h" />
     <ClInclude Include="..\..\..\src\gui_main_toolbar.h" />
     <ClInclude Include="..\..\..\src\gui_window_about.h" />
-    <ClInclude Include="..\..\..\src\gui_window_sponsor.h" />
-    <ClInclude Include="..\..\..\src\gui_window_controls_palette.h" />
     <ClInclude Include="..\..\..\src\gui_window_codegen.h" />
-    <ClInclude Include="..\..\..\src\codegen.h" />
-    <ClInclude Include="..\..\..\src\font_gohufont.h" />
+    <ClInclude Include="..\..\..\src\rguilayout.h" />
     <ClInclude Include="..\..\..\src\code_templates.h" />
   </ItemGroup>
   <ItemGroup>
