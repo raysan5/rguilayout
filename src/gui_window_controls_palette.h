@@ -213,18 +213,21 @@ void GuiWindowControlsPalette(GuiWindowControlsPaletteState *state)
         else state->windowBounds = (Rectangle){ GetScreenWidth() - 200, 60, 180, GetScreenHeight() - 60 - 30 };
         //----------------------------------------------------------------------------------------
         
-        // Update selected control alette panel logic
+        // Update selected control palette panel logic
         //----------------------------------------------------------------------------------------------
-        for (int i = 0; i < CONTROLS_PALETTE_COUNT; i++)
+        if (!GuiIsLocked())
         {
-            if (CheckCollisionPointRec(GetMousePosition(), state->controlRecs[i]))
+            for (int i = 0; i < CONTROLS_PALETTE_COUNT; i++)
             {
-                state->selectedControl = i;
-                break;
+                if (CheckCollisionPointRec(GetMousePosition(), state->controlRecs[i]))
+                {
+                    state->selectedControl = i;
+                    break;
+                }
             }
-        }
 
-        UpdateControlsPaletteRecs(state);       // Update all controls rectangles (in case screen changed)
+            UpdateControlsPaletteRecs(state);       // Update all controls rectangles (in case screen changed)
+        }
         //----------------------------------------------------------------------------------------------
 
         // Draw window and controls

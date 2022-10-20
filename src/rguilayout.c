@@ -312,7 +312,7 @@ int main(int argc, char *argv[])
 
     // Work area to place components (full screen by default)
     Rectangle workArea = { 0, 40, GetScreenWidth(), GetScreenHeight() - 40 - 24 };
-    bool windowOverActive = false;          // Check for any blocking window active
+    bool showWindowActive = false;          // Check for any blocking window active
 
     // Grid control variables
     int gridSpacing = 8;                    // Grid minimum spacing in pixels (between every subdivision)
@@ -555,7 +555,7 @@ int main(int argc, char *argv[])
         else undoFrameCounter = 120;
 
         // Recover previous layout state from buffer
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Z))
+        if ((IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Z)) || mainToolbarState.btnUndoPressed)
         {
             if (currentUndoIndex != firstUndoIndex)
             {
@@ -570,7 +570,7 @@ int main(int argc, char *argv[])
         }
 
         // Recover next layout state from buffer
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Y))
+        if ((IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Y)) || mainToolbarState.btnRedoPressed)
         {
             if (currentUndoIndex != lastUndoIndex)
             {
@@ -635,11 +635,14 @@ int main(int argc, char *argv[])
         // Keyboard shortcuts
         //----------------------------------------------------------------------------------
         // Show window: load layout
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O)) showLoadFileDialog = true;
+        if (mainToolbarState.btnNewFilePressed || mainToolbarState.btnCloseFilePressed) windowResetActive = true;
+
+        // Show window: load layout
+        if ((IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O)) || mainToolbarState.btnLoadFilePressed) showLoadFileDialog = true;
 
         // Show dialog: save layout
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_S)) showSaveFileDialog = true;
-        else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S))
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_S)) showSaveFileDialog = true;   // SaveAs dialog
+        else if ((IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) || mainToolbarState.btnSaveFilePressed)
         {
             if (inFileName[0] == '\0') showSaveFileDialog = true;
             else
@@ -650,8 +653,11 @@ int main(int argc, char *argv[])
             }
         }
 
-        // Show dialog: export style file (.rgs, .png, .h)
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) showExportFileDialog = true;
+        // Show dialog: export layout as code
+        if ((IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) || mainToolbarState.btnExportFilePressed) windowCodegenState.windowActive = true;
+
+        // Show dialog: load tracemap image
+        if ((IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_O)) || mainToolbarState.btnLoadTracemapPressed) showLoadTracemapDialog = true;
 
         // Toggle window: help
         if (IsKeyPressed(KEY_F1)) windowHelpActive = !windowHelpActive;
@@ -696,6 +702,7 @@ int main(int argc, char *argv[])
                 if (windowSponsorState.windowActive) windowSponsorState.windowActive = false;
                 else if (windowCodegenState.windowActive) windowCodegenState.windowActive = false;
                 else if (windowResetActive) windowResetActive = false;
+                else if (windowExitActive) windowExitActive = false;
 #if !defined(PLATFORM_WEB)
                 else if ((layout->controlCount <= 0) && (layout->anchorCount <= 1)) closeWindow = true;
                 else
@@ -709,9 +716,12 @@ int main(int argc, char *argv[])
         }
         
         // Check for any blocking mode (window or text/name edition)
-        if (!windowOverActive && !textEditMode && !nameEditMode)
+        if (!showWindowActive && !textEditMode && !nameEditMode)
         {
-            // Enables or disables mainToolbarState.snapModeActive if not in textEditMode
+            // Toggle Grid mode
+            if (IsKeyPressed(KEY_G)) mainToolbarState.showGridActive = !mainToolbarState.showGridActive;
+
+            // Toggle Snap to grid mode
             if (IsKeyPressed(KEY_S))
             {
                 mainToolbarState.snapModeActive = !mainToolbarState.snapModeActive;
@@ -727,9 +737,8 @@ int main(int argc, char *argv[])
                 }
             }
 
-            // Work modes
-            if (IsKeyPressed(KEY_F)) showGlobalPosition = !showGlobalPosition;      // Toggle global position info (anchor reference or global reference)
-            if (IsKeyPressed(KEY_G)) mainToolbarState.showGridActive = !mainToolbarState.showGridActive;              // Toggle Grid mode
+            // Toggle global position info (anchor reference or global reference)
+            if (IsKeyPressed(KEY_F)) showGlobalPosition = !showGlobalPosition;
 
             anchorEditMode = IsKeyDown(KEY_A);              // Toggle anchor mode editing (on key down)
             //orderEditMode = IsKeyDown(KEY_LEFT_ALT);        
@@ -876,7 +885,7 @@ int main(int argc, char *argv[])
         // Layout edition logic
         //----------------------------------------------------------------------------------------------
         // Check for any blocking mode (window or text/name edition)
-        if (!windowOverActive && !nameEditMode && !textEditMode)
+        if (!showWindowActive && !nameEditMode && !textEditMode)
         {
             // Mouse snap logic
             //----------------------------------------------------------------------------------------------
@@ -1393,7 +1402,7 @@ int main(int argc, char *argv[])
                                 {
                                     anchorLinkMode = true;      // Enable anchor link mode
                                 }
-                                else if (IsKeyReleased(KEY_T))  // Enable text edit mode
+                                else if (IsKeyReleased(KEY_T) || mainToolbarState.btnEditTextPressed)  // Enable text edit mode
                                 {
                                     if (layout->controls[selectedControl].type != GUI_PANEL &&
                                         layout->controls[selectedControl].type != GUI_SCROLLPANEL &&
@@ -1407,7 +1416,7 @@ int main(int argc, char *argv[])
                                 }
 
                                 // Enable name edit mode
-                                else if (IsKeyReleased(KEY_N))
+                                else if (IsKeyReleased(KEY_N) || mainToolbarState.btnEditNamePressed)
                                 {
                                     nameEditMode = true;
                                     strcpy(prevName, layout->controls[selectedControl].name);
@@ -2049,12 +2058,13 @@ int main(int argc, char *argv[])
         if (windowAboutState.windowActive ||
             windowSponsorState.windowActive ||
             windowCodegenState.windowActive ||
-            windowResetActive ||
-            windowExitActive ||
             windowHelpActive ||
+            windowExitActive ||
+            windowResetActive ||
             showLoadFileDialog ||
             showSaveFileDialog ||
-            showExportFileDialog)
+            showExportFileDialog ||
+            showLoadTracemapDialog)
         {
             nameEditMode = false;
             textEditMode = false;
@@ -2062,12 +2072,12 @@ int main(int argc, char *argv[])
             dragMoveMode = false;
             precisionEditMode = false;
 
-            windowOverActive = true;        // There is some window overlap!
+            showWindowActive = true;        // There is some window overlap!
         }
-        else windowOverActive = false;
+        else showWindowActive = false;
 
         // WARNING: Some windows should lock the main screen controls when shown
-        if (windowOverActive) GuiLock();
+        if (showWindowActive) GuiLock();
         else GuiUnlock();
         //----------------------------------------------------------------------------------
 
@@ -2189,7 +2199,7 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-            if (!windowOverActive) GuiUnlock();
+            if (!showWindowActive) GuiUnlock();
             //----------------------------------------------------------------------------------------
 
             // Draw reference window
@@ -2250,6 +2260,7 @@ int main(int argc, char *argv[])
 
             if (!GuiIsLocked())
             {
+                // Layout controls drawing 
                 if (CheckCollisionPointRec(mouse, workArea) &&
                     !CheckCollisionPointRec(mouse, windowControlsPaletteState.windowBounds))
                 {
@@ -2670,25 +2681,19 @@ int main(int argc, char *argv[])
 
                 // Draw reference window lines
                 if ((layout->refWindow.width > 0) && (layout->refWindow.height > 0)) DrawRectangleLinesEx(layout->refWindow, 1, Fade(BLACK, 0.7f));
-
-                // GUI: Controls Selection Palette
-                // NOTE: It uses GuiLock() to lock controls behaviour and just limit them to selection
-                //----------------------------------------------------------------------------------------
-                GuiWindowControlsPalette(&windowControlsPaletteState);
-
-                mainToolbarState.showControlPanelActive = windowControlsPaletteState.windowActive;
-
-                // Update ScrollPanel bounds in case window is resized
-                windowControlsPaletteState.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 170, workArea.y, 170, GetScreenHeight() - workArea.y - 24 };
-                //----------------------------------------------------------------------------------------
             }
-            
-            // NOTE: If some overlap window is open and main window is locked, we draw a background rectangle
-            if (GuiIsLocked()) DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.85f));
 
-            // WARNING: Before drawing the windows, we unlock them
-            GuiUnlock();
-            
+            // GUI: Controls Selection Palette
+            // NOTE: It uses GuiLock() to lock controls behaviour and just limit them to selection
+            //----------------------------------------------------------------------------------------
+            GuiWindowControlsPalette(&windowControlsPaletteState);
+
+            mainToolbarState.showControlPanelActive = windowControlsPaletteState.windowActive;
+
+            // Update ScrollPanel bounds in case window is resized
+            windowControlsPaletteState.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 170, workArea.y, 170, GetScreenHeight() - workArea.y - 24 };
+            //----------------------------------------------------------------------------------------
+
             // GUI: Main toolbar panel
             //----------------------------------------------------------------------------------
             mainToolbarState.controlSelected = (selectedControl >= 0);
@@ -2697,6 +2702,53 @@ int main(int argc, char *argv[])
 
             GuiMainToolbar(&mainToolbarState);
             //----------------------------------------------------------------------------------
+
+            // GUI: Status bar
+            //--------------------------------------------------------------------------------------------
+
+            // TODO: Review and add more info about current edition mode
+
+            GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, NULL);
+            GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (mainToolbarState.snapModeActive? "SNAP: ON" : "SNAP: OFF"));
+            GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, TextFormat("CONTROLS COUNT: %i", layout->controlCount));
+            GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, 100, 24}, TextFormat("GRID SIZE: %i", gridSpacing*gridSubdivisions));
+
+            if (selectedControl != -1)
+            {
+                int defaultPadding = GuiGetStyle(STATUSBAR, TEXT_PADDING);
+                int defaultTextAlign = GuiGetStyle(STATUSBAR, TEXT_ALIGNMENT);
+                GuiSetStyle(STATUSBAR, TEXT_PADDING, 10);
+                GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
+                GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24},
+                    TextFormat("SELECTED CONTROL: #%03i  |  %s  |  REC (%i, %i, %i, %i)  |  %s",
+                        selectedControl, TextToUpper(controlTypeName[layout->controls[selectedControl].type]),
+                        (int)layout->controls[selectedControl].rec.x, (int)layout->controls[selectedControl].rec.y,
+                        (int)layout->controls[selectedControl].rec.width, (int)layout->controls[selectedControl].rec.height,
+                        layout->controls[selectedControl].name));
+                GuiSetStyle(STATUSBAR, TEXT_PADDING, defaultPadding);
+                GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, defaultTextAlign);
+            }
+            else GuiStatusBar((Rectangle){ 447, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, NULL);
+            //----------------------------------------------------------------------------------------
+            
+            // NOTE: If some overlap window is open and main window is locked, we draw a background rectangle
+            //if (GuiIsLocked())    // WARNING: It takes one extra frame to process, so we just check required conditions
+            if (windowAboutState.windowActive ||
+                windowSponsorState.windowActive ||
+                windowCodegenState.windowActive ||
+                windowHelpActive ||
+                windowExitActive ||
+                windowResetActive ||
+                showLoadFileDialog ||
+                showSaveFileDialog ||
+                showExportFileDialog ||
+                showLoadTracemapDialog)
+            {
+                DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.8f));
+            }
+
+            // WARNING: Before drawing the windows, we unlock them
+            GuiUnlock();
             
             // GUI: About Window
             //----------------------------------------------------------------------------------------
@@ -2730,7 +2782,7 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
             if (windowResetActive)
             {
-                int message = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 120, GetScreenHeight()/2 - 48, 248, 96 }, "Creating new layout", "Do you want to save the current layout?", "Yes;No");
+                int message = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 320/2, GetScreenHeight()/2 - 120/2, 320, 120 }, "#8# Creating new layout", "Do you want to save the current layout?", "Yes;No");
 
                 if (message == 0) windowResetActive = false;
                 else if (message == 1)  // Yes
@@ -2753,41 +2805,14 @@ int main(int argc, char *argv[])
             {
                 int result = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 320/2, GetScreenHeight()/2 - 120/2, 320, 120 }, "#159#Closing rGuiLayout", "Do you want to close without saving?", "Yes;No");
 
-                if ((result == 0) || (result == 1)) closeWindow = true;
-                else if (result == 2) 
+                if (result == 0) windowExitActive = false;
+                else if (result == 1) closeWindow = true;
+                else if (result == 2)
                 {
                     showSaveFileDialog = true;
                     windowExitActive = false;
                 }
             }
-            //----------------------------------------------------------------------------------------
-
-            // GUI: Status bar
-            //--------------------------------------------------------------------------------------------
-
-            // TODO: Review and add more info about current edition mode
-
-            GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, NULL);
-            GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (mainToolbarState.snapModeActive? "SNAP: ON" : "SNAP: OFF"));
-            GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, TextFormat("CONTROLS COUNT: %i", layout->controlCount));
-            GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, 100, 24}, TextFormat("GRID SIZE: %i", gridSpacing*gridSubdivisions));
-
-            if (selectedControl != -1)
-            {
-                int defaultPadding = GuiGetStyle(STATUSBAR, TEXT_PADDING);
-                int defaultTextAlign = GuiGetStyle(STATUSBAR, TEXT_ALIGNMENT);
-                GuiSetStyle(STATUSBAR, TEXT_PADDING, 10);
-                GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
-                GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24},
-                             TextFormat("SELECTED CONTROL: #%03i  |  %s  |  REC (%i, %i, %i, %i)  |  %s",
-                                        selectedControl, TextToUpper(controlTypeName[layout->controls[selectedControl].type]),
-                                        (int)layout->controls[selectedControl].rec.x, (int)layout->controls[selectedControl].rec.y,
-                                        (int)layout->controls[selectedControl].rec.width, (int)layout->controls[selectedControl].rec.height,
-                                        layout->controls[selectedControl].name));
-                GuiSetStyle(STATUSBAR, TEXT_PADDING, defaultPadding);
-                GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, defaultTextAlign);
-            }
-            else GuiStatusBar((Rectangle){ 447, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, NULL);
             //----------------------------------------------------------------------------------------
 
             // GUI: Load File Dialog (and loading logic)
@@ -2897,76 +2922,32 @@ int main(int argc, char *argv[])
             }
             //----------------------------------------------------------------------------------------
 
-            /*
-            // Draw UNDO system info
-            //--------------------------------------------------------------------------------------------
-            DrawText("UNDO SYSTEM", 215, 34, 10, DARKGRAY);
-
-            // Draw index marks
-            DrawRectangle(308 + 25*currentUndoIndex, 15, 8, 8, RED);
-            DrawRectangleLines(302 + 25*firstUndoIndex, 50 + 2, 8, 8, BLACK);
-            DrawRectangle(314 + 25*lastUndoIndex, 50 + 2, 8, 8, BLACK);
-
-            // Draw background gray slots
-            for (int i = 0; i < MAX_UNDO_LEVELS; i++)
+            // GUI: Load Tracemap File Dialog
+            //----------------------------------------------------------------------------------------
+            if (showLoadTracemapDialog)
             {
-                DrawRectangle(300 + 25*i, 25, 25, 25, LIGHTGRAY);
-                DrawRectangleLines(300 + 25*i, 25, 25, 25, GRAY);
-            }
+#if defined(CUSTOM_MODAL_DIALOGS)
+                int result = GuiFileDialog(DIALOG_MESSAGE, "#12#Load tracemap image", inFileName, "Ok", "Just drag and drop your .png tracemap!");
+#else
+                int result = GuiFileDialog(DIALOG_OPEN_FILE, "Load tracemap image", inFileName, "*.png", "Tracemap Image (*.png)");
+#endif
+                if (result == 1)
+                {
+                    // Load layout file
+                    Texture2D tempTracemap = LoadTexture(inFileName);
 
-            // Draw occupied slots: firstUndoIndex --> lastUndoIndex
-            if (firstUndoIndex <= lastUndoIndex)
-            {
-                for (int i = firstUndoIndex; i < lastUndoIndex + 1; i++)
-                {
-                    DrawRectangle(300 + 25*i, 25, 25, 25, SKYBLUE);
-                    DrawRectangleLines(300 + 25*i, 25, 25, 25, BLUE);
-                }
-            }
-            else if (lastUndoIndex < firstUndoIndex)
-            {
-                for (int i = firstUndoIndex; i < MAX_UNDO_LEVELS; i++)
-                {
-                    DrawRectangle(300 + 25*i, 25, 25, 25, SKYBLUE);
-                    DrawRectangleLines(300 + 25*i, 25, 25, 25, BLUE);
+                    if (tempTracemap.id > 0)
+                    {
+                        if (tracemap.id > 0) UnloadTexture(tracemap);
+                        tracemap = tempTracemap;
+                        tracemapRec = (Rectangle){ 30, 30, tracemap.width, tracemap.height };
+                    }
+                    else inFileName[0] = '\0';
                 }
 
-                for (int i = 0; i < lastUndoIndex + 1; i++)
-                {
-                    DrawRectangle(300 + 25*i, 25, 25, 25, SKYBLUE);
-                    DrawRectangleLines(300 + 25*i, 25, 25, 25, BLUE);
-                }
+                if (result >= 0) showLoadTracemapDialog = false;
             }
-
-            // Draw occupied slots: firstUndoIndex --> currentUndoIndex
-            if (firstUndoIndex < currentUndoIndex)
-            {
-                for (int i = firstUndoIndex; i < currentUndoIndex; i++)
-                {
-                    DrawRectangle(300 + 25*i, 25, 25, 25, GREEN);
-                    DrawRectangleLines(300 + 25*i, 25, 25, 25, LIME);
-                }
-            }
-            else if (currentUndoIndex < firstUndoIndex)
-            {
-                for (int i = firstUndoIndex; i < MAX_UNDO_LEVELS; i++)
-                {
-                    DrawRectangle(300 + 25*i, 25, 25, 25, GREEN);
-                    DrawRectangleLines(300 + 25*i, 25, 25, 25, LIME);
-                }
-
-                for (int i = 0; i < currentUndoIndex; i++)
-                {
-                    DrawRectangle(300 + 25*i, 25, 25, 25, GREEN);
-                    DrawRectangleLines(300 + 25*i, 25, 25, 25, LIME);
-                }
-            }
-
-            // Draw current selected UNDO slot
-            DrawRectangle(300 + 25*currentUndoIndex, 25, 25, 25, GOLD);
-            DrawRectangleLines(300 + 25*currentUndoIndex, 25, 25, 25, ORANGE);
-            //--------------------------------------------------------------------------------------------
-            */
+            //----------------------------------------------------------------------------------------
 
         EndDrawing();
         //----------------------------------------------------------------------------------
