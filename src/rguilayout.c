@@ -404,7 +404,7 @@ int main(int argc, char *argv[])
     // Tracemap (background image for reference) variables
     Texture2D tracemap = { 0 };
     Rectangle tracemapRec = { 0 };
-    bool tracemapBlocked = false;
+    bool tracemapLocked = false;
     bool tracemapFocused = false;
     bool tracemapSelected = false;
     float tracemapFade = 0.5f;
@@ -757,8 +757,8 @@ int main(int argc, char *argv[])
             // Enable/disable texture editing mode
             if ((tracemap.id > 0) && IsKeyPressed(KEY_SPACE))
             {
-                if (tracemapSelected) tracemapBlocked = true;
-                else if (tracemapBlocked) tracemapBlocked = false;
+                if (tracemapSelected) tracemapLocked = true;
+                else if (tracemapLocked) tracemapLocked = false;
             }
 
             // Check modes requiring LEFT_CONTROL modifier
@@ -1400,26 +1400,17 @@ int main(int argc, char *argv[])
                                 }
                                 else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON))
                                 {
-                                    anchorLinkMode = true;      // Enable anchor link mode
+                                    anchorLinkMode = true;          // Enable anchor link mode
                                 }
-                                else if (IsKeyReleased(KEY_T) || mainToolbarState.btnEditTextPressed)  // Enable text edit mode
+                                else if (IsKeyReleased(KEY_T))      // Enable text edit mode
                                 {
-                                    if (layout->controls[selectedControl].type != GUI_PANEL &&
-                                        layout->controls[selectedControl].type != GUI_SCROLLPANEL &&
-                                        //layout->controls[selectedControl].type != GUI_LISTVIEW &&
-                                        layout->controls[selectedControl].type != GUI_COLORPICKER)
-                                    {
-                                        strcpy(prevText, layout->controls[selectedControl].text);
-                                        textEditMode = true;
-                                    }
-                                    else LOG("WARNING: Can't edit text on this control\n");
+                                    strcpy(prevText, layout->controls[selectedControl].text);
+                                    textEditMode = true;
                                 }
-
-                                // Enable name edit mode
-                                else if (IsKeyReleased(KEY_N) || mainToolbarState.btnEditNamePressed)
+                                else if (IsKeyReleased(KEY_N))      // Enable name edit mode
                                 {
-                                    nameEditMode = true;
                                     strcpy(prevName, layout->controls[selectedControl].name);
+                                    nameEditMode = true;
                                 }
                             }
                         }
@@ -1536,15 +1527,16 @@ int main(int argc, char *argv[])
 
             // Anchors selection and edition logic
             //----------------------------------------------------------------------------------------------
+            // Anchor selection logic: mouse over anchor to focus)
             if (!dragMoveMode)
             {
                 focusedAnchor = -1;
 
-                // Checks if mouse is over an anchor
                 for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
                 {
                     if (layout->anchors[i].enabled)
                     {
+                        // Checks if mouse is over an anchor
                         if (CheckCollisionPointCircle(mouse, (Vector2){ layout->anchors[i].x, layout->anchors[i].y }, ANCHOR_RADIUS))
                         {
                             focusedAnchor = i;
@@ -1553,36 +1545,37 @@ int main(int argc, char *argv[])
                 }
             }
 
-            // Editing anchors
-            if (focusedAnchor == -1)
+            // New anchor creation logic (if possible)
+            if ((focusedControl == -1) && (focusedAnchor == -1))
             {
-                if (focusedControl == -1)
+                // Conditions to check
+                if (anchorEditMode && 
+                    !anchorLinkMode && 
+                    !tracemapFocused && 
+                    !tracemapSelected &&
+                    (layout->anchorCount < MAX_ANCHOR_POINTS))
                 {
-                    // Create new anchor
-                    if (!anchorLinkMode && anchorEditMode && layout->anchorCount < MAX_ANCHOR_POINTS && !tracemapFocused && !tracemapSelected)
+                    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                     {
-                        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                        layout->anchorCount++;
+                        for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
                         {
-                            layout->anchorCount++;
-                            for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
+                            if (!layout->anchors[i].enabled)
                             {
-                                if (!layout->anchors[i].enabled)
-                                {
-                                    layout->anchors[i].x = mouse.x;
-                                    layout->anchors[i].y = mouse.y;
-                                    layout->anchors[i].enabled = true;
-                                    focusedAnchor = i;
-                                    selectedAnchor = i;
-                                    break;
-                                }
+                                layout->anchors[i].x = mouse.x;
+                                layout->anchors[i].y = mouse.y;
+                                layout->anchors[i].enabled = true;
+                                focusedAnchor = i;
+                                selectedAnchor = i;
+                                break;
                             }
                         }
                     }
                 }
             }
 
-            // Unselect anchor
-            if (!CheckCollisionPointRec(mouse, (Rectangle){ 0, 0, GetScreenWidth(), 40 }) && 
+            // Select/unselect focused anchor logic
+            if (!CheckCollisionPointRec(mouse, (Rectangle){ 0, 0, GetScreenWidth(), 40 }) &&            // Avoid top bar
                 (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)))
             {
                 selectedAnchor = focusedAnchor;
@@ -1590,7 +1583,7 @@ int main(int argc, char *argv[])
             }
 
             // Actions with one anchor selected
-            if ((selectedAnchor != -1) && !CheckCollisionPointRec(mouse, (Rectangle){ 0, 0, GetScreenWidth(), 40 }))
+            if ((selectedAnchor != -1) && !CheckCollisionPointRec(mouse, (Rectangle){ 0, 0, GetScreenWidth(), 40 })) // Avoid top bar
             {
                 // Link anchor
                 if (!anchorLinkMode)
@@ -1758,12 +1751,12 @@ int main(int argc, char *argv[])
                                 // Activate anchor position edit mode
                                 if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                                 {
-                                    if (selectedAnchor == 0 && anchorEditMode) refWindowEditMode = true;
+                                    if ((selectedAnchor == 0) && anchorEditMode) refWindowEditMode = true;
                                     else dragMoveMode = true;
                                 }
                                 else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) anchorLinkMode = true;  // Activate anchor link mode
                                 else if (IsKeyPressed(KEY_H)) layout->anchors[selectedAnchor].hidding = !layout->anchors[selectedAnchor].hidding;   // Hide/Unhide anchors
-                                else if (IsKeyPressed(KEY_U) && selectedAnchor > 0)                     // Unlinks controls from selected anchor
+                                else if (IsKeyPressed(KEY_U) && (selectedAnchor > 0))                   // Unlinks controls from selected anchor
                                 {
                                     for (int i = 0; i < layout->controlCount; i++)
                                     {
@@ -1846,7 +1839,7 @@ int main(int argc, char *argv[])
 
             // Tracemap edition logic
             //----------------------------------------------------------------------------------------------
-            if (!tracemapBlocked)
+            if (!tracemapLocked)
             {
                 tracemapFocused = false;
                 if (CheckCollisionPointRec(mouse, tracemapRec) && focusedControl == -1 && focusedAnchor == -1) tracemapFocused = true;
@@ -1999,7 +1992,7 @@ int main(int argc, char *argv[])
                                 tracemapRec.x = 0;
                                 tracemapRec.y = 0;
 
-                                //tracemapBlocked = false;
+                                //tracemapLocked = false;
                                 tracemapFocused = false;
                                 tracemapSelected = false;
                             }
@@ -2020,8 +2013,6 @@ int main(int argc, char *argv[])
             {
                 tracemapFocused = false;
                 tracemapSelected = false;
-
-                //if (CheckCollisionPointRec(mouse, tracemapRec) && focusedControl == -1 && focusedAnchor == -1) tracemapFocused = true;
             }
             //----------------------------------------------------------------------------------------------
         }
@@ -2089,13 +2080,13 @@ int main(int argc, char *argv[])
             // Draw background grid
             if (mainToolbarState.showGridActive) GuiGrid(workArea, NULL, gridSpacing*gridSubdivisions, gridSubdivisions);
 
-            // Draw the tracemap texture if loaded
+            // Draw tracemap
             //---------------------------------------------------------------------------------
             if (tracemap.id > 0)
             {
                 DrawTexturePro(tracemap, (Rectangle){ 0, 0, tracemap.width, tracemap.height }, tracemapRec, (Vector2){ 0, 0 }, 0.0f, Fade(WHITE, tracemapFade));
 
-                if (tracemapBlocked)
+                if (tracemapLocked)
                 {
                     if (tracemapFocused) DrawRectangleLinesEx(tracemapRec, 1, MAROON);
                     else DrawRectangleLinesEx(tracemapRec, 1, GRAY);
@@ -2127,23 +2118,7 @@ int main(int argc, char *argv[])
             }
             //---------------------------------------------------------------------------------
 
-            // Draw reference window edit mode
-            if ((layout->refWindow.width > 0) && (layout->refWindow.height > 0))
-            {
-                if (refWindowEditMode)
-                {
-                    DrawRectangleRec(layout->refWindow, Fade(BLACK, 0.1f));
-
-                    DrawText(TextFormat("[%i]", (int)layout->refWindow.width),
-                             layout->refWindow.x + layout->refWindow.width - MeasureText(TextFormat("[%i]",(int)layout->refWindow.width), 20) - 5,
-                             layout->refWindow.y + layout->refWindow.height + 5, 20, positionColor);
-                    DrawText(TextFormat("[%i]", (int)layout->refWindow.height),
-                             layout->refWindow.x + layout->refWindow.width + 5,
-                             layout->refWindow.y + layout->refWindow.height - 20, 20, positionColor);
-                }
-            }
-
-            // Draw the controls placed on the grid
+            // Draw controls
             // TODO: Support controls editMode vs playMode, just unlock controls and lock edit!
             //----------------------------------------------------------------------------------------
             GuiLock();
@@ -2209,6 +2184,23 @@ int main(int argc, char *argv[])
 
             // Draw reference window
             //----------------------------------------------------------------------------------------
+
+            // Reference window edit mode lines
+            if ((layout->refWindow.width > 0) && (layout->refWindow.height > 0))
+            {
+                if (refWindowEditMode)
+                {
+                    DrawRectangleRec(layout->refWindow, Fade(BLACK, 0.1f));
+
+                    DrawText(TextFormat("[%i]", (int)layout->refWindow.width),
+                        layout->refWindow.x + layout->refWindow.width - MeasureText(TextFormat("[%i]",(int)layout->refWindow.width), 20) - 5,
+                        layout->refWindow.y + layout->refWindow.height + 5, 20, positionColor);
+                    DrawText(TextFormat("[%i]", (int)layout->refWindow.height),
+                        layout->refWindow.x + layout->refWindow.width + 5,
+                        layout->refWindow.y + layout->refWindow.height - 20, 20, positionColor);
+                }
+            }
+
             anchorSelectedColor = DARKGRAY;
             anchorCircleColor = DARKGRAY;
             if (selectedAnchor == 0)
@@ -2227,7 +2219,7 @@ int main(int argc, char *argv[])
             DrawRectangle(layout->anchors[0].x, layout->anchors[0].y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, Fade(anchorCircleColor, 0.8f));
             //----------------------------------------------------------------------------------------
 
-            // Draw the anchor points
+            // Draw anchors
             //----------------------------------------------------------------------------------------
             for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
             {
@@ -2578,6 +2570,7 @@ int main(int argc, char *argv[])
                         else if (GuiTextBox(textboxRec, layout->controls[selectedControl].text, MAX_CONTROL_TEXT_LENGTH, textEditMode)) textEditMode = !textEditMode;
 
                         // Check if icon panel must be shown
+                        // TODO: Icons panel behaviour should be reviewed
                         if ((strlen(layout->controls[selectedControl].text) == 1) && (layout->controls[selectedControl].text[0] == '#'))
                         {
                             showIconPanel = true;
@@ -2699,13 +2692,69 @@ int main(int argc, char *argv[])
             windowControlsPaletteState.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 170, workArea.y, 170, GetScreenHeight() - workArea.y - 24 };
             //----------------------------------------------------------------------------------------
 
-            // GUI: Main toolbar panel
+            // GUI: Main toolbar panel + control/anchor buttons logic
             //----------------------------------------------------------------------------------
-            mainToolbarState.controlSelected = (selectedControl >= 0);
-            mainToolbarState.anchorSelected = (selectedAnchor >= 0);
+            mainToolbarState.controlSelected = selectedControl;
+            mainToolbarState.anchorSelected = selectedAnchor;
             mainToolbarState.tracemapSelected = tracemapSelected;
 
+            mainToolbarState.hideAnchorControlsActive = layout->anchors[selectedAnchor].hidding;
+
             GuiMainToolbar(&mainToolbarState);
+
+            // Enable control text edit mode if required
+            if (mainToolbarState.btnEditTextPressed)
+            {
+                strcpy(prevText, layout->controls[selectedControl].text);
+                textEditMode = true;
+            }
+
+            // Enable control name edit mode if required
+            if (mainToolbarState.btnEditNamePressed)
+            {
+                strcpy(prevName, layout->controls[selectedControl].name);
+                nameEditMode = true;
+            }
+
+            // Delete selected control if required
+            if (mainToolbarState.btnDeleteControlPressed)
+            {
+                mouseScaleReady = false;
+
+                for (int i = selectedControl; i < layout->controlCount; i++)
+                {
+                    layout->controls[i].type = layout->controls[i + 1].type;
+                    layout->controls[i].rec = layout->controls[i + 1].rec;
+                    memset(layout->controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
+                    memset(layout->controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
+                    strcpy(layout->controls[i].text, layout->controls[i + 1].text);
+                    strcpy(layout->controls[i].name, layout->controls[i + 1].name);
+                    layout->controls[i].ap = layout->controls[i + 1].ap;
+                }
+
+                layout->controlCount--;
+                focusedControl = -1;
+                selectedControl = -1;
+            }
+
+            // Duplicate control if required
+            if (mainToolbarState.btnDuplicateControlPressed)
+            {
+                layout->controls[layout->controlCount].id = layout->controlCount;
+                layout->controls[layout->controlCount].type = layout->controls[selectedControl].type;
+                layout->controls[layout->controlCount].rec = layout->controls[selectedControl].rec;
+                layout->controls[layout->controlCount].rec.x += 10;
+                layout->controls[layout->controlCount].rec.y += 10;
+                strcpy(layout->controls[layout->controlCount].text, layout->controls[selectedControl].text);
+                strcpy(layout->controls[layout->controlCount].name, TextFormat("%s%03i", controlTypeName[layout->controls[layout->controlCount].type], layout->controlCount));
+                layout->controls[layout->controlCount].ap = layout->controls[selectedControl].ap;            // Default anchor point (0, 0)
+
+                layout->controlCount++;
+
+                selectedControl = layout->controlCount - 1;
+            }
+
+            if (selectedAnchor != -1) layout->anchors[selectedAnchor].hidding = mainToolbarState.hideAnchorControlsActive;
             //----------------------------------------------------------------------------------
 
             // GUI: Status bar
@@ -2726,12 +2775,34 @@ int main(int argc, char *argv[])
             // Selected control info
             GuiSetStyle(STATUSBAR, TEXT_PADDING, 10);
             GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
-            GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 }, (selectedControl != -1)?
-                TextFormat("SELECTED CONTROL:  %s  #%03i  (%i, %i, %i, %i)  |  NAME: %s",
-                    TextToUpper(controlTypeName[layout->controls[selectedControl].type]), selectedControl,
-                    (int)layout->controls[selectedControl].rec.x, (int)layout->controls[selectedControl].rec.y,
-                    (int)layout->controls[selectedControl].rec.width, (int)layout->controls[selectedControl].rec.height,
-                    layout->controls[selectedControl].name) : "NO CONTROL SELECTED");
+            if (selectedControl != -1)
+            {
+                GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 },
+                    TextFormat("SELECTED CONTROL: %03i  (%i, %i, %i, %i)  | TYPE: %s | NAME: %s", selectedControl, 
+                        (int)layout->controls[selectedControl].rec.x, (int)layout->controls[selectedControl].rec.y,
+                        (int)layout->controls[selectedControl].rec.width, (int)layout->controls[selectedControl].rec.height,
+                        TextToUpper(controlTypeName[layout->controls[selectedControl].type]),
+                        layout->controls[selectedControl].name));
+            }
+            else if (selectedAnchor != -1)
+            {
+                // Count controls linked to an anchor
+                int count = 0;
+                for (int i = 0; i < layout->controlCount; i++) if (layout->controls[i].ap->id == layout->anchors[selectedAnchor].id) count++;
+
+                GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 },
+                    TextFormat("SELECTED ANCHOR: %02i  (%i, %i) | CONTROLS: %03i | %s", selectedAnchor, 
+                        (int)layout->anchors[selectedAnchor].x, (int)layout->anchors[selectedAnchor].y, count, 
+                        (int)layout->anchors[selectedAnchor].hidding? "HIDDEN MODE" : "VISIBLE"));
+            }
+            else if (tracemapSelected)
+            {
+                GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 },
+                    TextFormat("SELECTED TRACEMAP: (%i, %i, %i, %i) | OPACITY: %i %% | %s",
+                        (int)tracemapRec.x, (int)tracemapRec.y, (int)tracemapRec.width, (int)tracemapRec.height, 
+                        (int)(tracemapFade*100.0f), tracemapLocked? "LOCKED" : "UNLOCKED"));
+            }
+            else GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 }, "NO CONTROL | ANCHOR | TRACEMAP SELECTED");
 
             // Environment info, far right position anchor
             GuiSetStyle(STATUSBAR, TEXT_PADDING, 0);
@@ -2740,7 +2811,7 @@ int main(int argc, char *argv[])
             GuiStatusBar((Rectangle){ GetScreenWidth() - 180 - 120 + 2, GetScreenHeight() - 24, 120, 24 }, (mainToolbarState.snapModeActive? "SNAP: ON" : "SNAP: OFF"));
             GuiStatusBar((Rectangle){ GetScreenWidth() - 180, GetScreenHeight() - 24, 180, 24}, TextFormat("GRID: %i px | %i Divs.", gridSpacing*gridSubdivisions, gridSubdivisions));
             GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
-            GuiSetStyle(STATUSBAR, TEXT_PADDING, 10);
+            GuiSetStyle(STATUSBAR, TEXT_PADDING, 8);
             //----------------------------------------------------------------------------------------
             
             // NOTE: If some overlap window is open and main window is locked, we draw a background rectangle
