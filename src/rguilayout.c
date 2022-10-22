@@ -324,13 +324,13 @@ int main(int argc, char *argv[])
     // Control edit modes
     // NOTE: [E] - Exclusive mode operation, all other modes blocked
     bool dragMoveMode = false;              // [E] Control drag mode
-    bool textEditMode = false;              // [E] Control text edit mode (KEY_T)
-    bool nameEditMode = false;              // [E] Control name edit mode (KEY_N)
     bool resizeMode = false;                // [E] Control size mode ((controlSelected != -1) + KEY_LEFT_ALT)
-    bool orderEditMode = false;             // Control order edit mode ((focusedControl != -1) + KEY_LEFT_ALT)
-    bool precisionEditMode = false;         // Control precision edit mode (KEY_LEFT_SHIFT)
     bool mouseScaleMode = false;            // [E] Control is being scaled by mouse
     bool mouseScaleReady = false;           // Mouse is on position to start control scaling
+    bool textEditMode = false;              // [E] Control text edit mode (KEY_T)
+    bool nameEditMode = false;              // [E] Control name edit mode (KEY_N)
+    bool orderEditMode = false;             // Control order edit mode ((focusedControl != -1) + KEY_LEFT_ALT)
+    bool precisionEditMode = false;         // Control precision edit mode (KEY_LEFT_SHIFT)
 
     // Anchor edit modes
     bool anchorEditMode = false;            // [E] Anchor edition mode
@@ -2171,7 +2171,7 @@ int main(int argc, char *argv[])
                         } break;
                         case GUI_PANEL:
                         {
-                            GuiFade(0.8f);
+                            GuiFade(0.7f);
                             GuiPanel(rec, (layout->controls[i].text[0] == '\0')? NULL : layout->controls[i].text);
                             GuiFade(1.0f);
                         } break;
@@ -2191,7 +2191,12 @@ int main(int argc, char *argv[])
                         case GUI_SLIDERBAR: GuiSliderBar(rec, layout->controls[i].text, NULL, 40, 0, 100); break;
                         case GUI_PROGRESSBAR: GuiProgressBar(rec, layout->controls[i].text, NULL, 40, 0, 100); break;
                         case GUI_STATUSBAR: GuiStatusBar(rec, layout->controls[i].text); break;
-                        case GUI_SCROLLPANEL: GuiScrollPanel(rec, (layout->controls[i].text[0] == '\0') ? NULL : layout->controls[i].text, rec, NULL); break;
+                        case GUI_SCROLLPANEL: 
+                        {
+                            GuiFade(0.7f);
+                            GuiScrollPanel(rec, (layout->controls[i].text[0] == '\0') ? NULL : layout->controls[i].text, rec, NULL);
+                            GuiFade(1.0f);
+                        } break;
                         case GUI_LISTVIEW: GuiListView(rec, layout->controls[i].text, &listViewScrollIndex, listViewActive); break;
                         case GUI_COLORPICKER: GuiColorPicker(rec, (layout->controls[i].text[0] == '\0') ? NULL : layout->controls[i].text, RED); break;
                         case GUI_DUMMYREC: GuiDummyRec(rec, layout->controls[i].text); break;
@@ -2705,30 +2710,37 @@ int main(int argc, char *argv[])
 
             // GUI: Status bar
             //--------------------------------------------------------------------------------------------
+            GuiSetStyle(STATUSBAR, TEXT_PADDING, 0);
+            GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
+            GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 160, 24}, TextFormat("CONTROLS COUNT: %i", layout->controlCount));
 
-            // TODO: Review and add more info about current edition mode
+            // Show edit mode depending on the element/property being edited
+            if (textEditMode) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: TEXT");
+            else if (nameEditMode) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: NAME");
+            else if (anchorEditMode) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: ANCHOR");
+            else if (orderEditMode) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: LAYER");
+            else if (selectedControl != -1) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: CONTROL");
+            else if (tracemapSelected)  GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: TRACEMAP");
+            else GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: LAYOUT");
 
-            GuiStatusBar((Rectangle){ 0, GetScreenHeight() - 24, 126, 24}, NULL);
-            GuiStatusBar((Rectangle){ 124, GetScreenHeight() - 24, 81, 24}, (mainToolbarState.snapModeActive? "SNAP: ON" : "SNAP: OFF"));
-            GuiStatusBar((Rectangle){ 204, GetScreenHeight() - 24, 145, 24}, TextFormat("CONTROLS COUNT: %i", layout->controlCount));
-            GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, 100, 24}, TextFormat("GRID SIZE: %i", gridSpacing*gridSubdivisions));
+            // Selected control info
+            GuiSetStyle(STATUSBAR, TEXT_PADDING, 10);
+            GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
+            GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 }, (selectedControl != -1)?
+                TextFormat("SELECTED CONTROL:  %s  #%03i  (%i, %i, %i, %i)  |  NAME: %s",
+                    TextToUpper(controlTypeName[layout->controls[selectedControl].type]), selectedControl,
+                    (int)layout->controls[selectedControl].rec.x, (int)layout->controls[selectedControl].rec.y,
+                    (int)layout->controls[selectedControl].rec.width, (int)layout->controls[selectedControl].rec.height,
+                    layout->controls[selectedControl].name) : "NO CONTROL SELECTED");
 
-            if (selectedControl != -1)
-            {
-                int defaultPadding = GuiGetStyle(STATUSBAR, TEXT_PADDING);
-                int defaultTextAlign = GuiGetStyle(STATUSBAR, TEXT_ALIGNMENT);
-                GuiSetStyle(STATUSBAR, TEXT_PADDING, 10);
-                GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
-                GuiStatusBar((Rectangle){ 348, GetScreenHeight() - 24, GetScreenWidth() - 348, 24},
-                    TextFormat("SELECTED CONTROL: #%03i  |  %s  |  REC (%i, %i, %i, %i)  |  %s",
-                        selectedControl, TextToUpper(controlTypeName[layout->controls[selectedControl].type]),
-                        (int)layout->controls[selectedControl].rec.x, (int)layout->controls[selectedControl].rec.y,
-                        (int)layout->controls[selectedControl].rec.width, (int)layout->controls[selectedControl].rec.height,
-                        layout->controls[selectedControl].name));
-                GuiSetStyle(STATUSBAR, TEXT_PADDING, defaultPadding);
-                GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, defaultTextAlign);
-            }
-            else GuiStatusBar((Rectangle){ 447, GetScreenHeight() - 24, GetScreenWidth() - 348, 24}, NULL);
+            // Environment info, far right position anchor
+            GuiSetStyle(STATUSBAR, TEXT_PADDING, 0);
+            GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
+            GuiStatusBar((Rectangle){ 160 + 168 + 600 - 3, GetScreenHeight() - 24, GetScreenWidth() - 928 - 180 - 120 + 6, 24 }, NULL);
+            GuiStatusBar((Rectangle){ GetScreenWidth() - 180 - 120 + 2, GetScreenHeight() - 24, 120, 24 }, (mainToolbarState.snapModeActive? "SNAP: ON" : "SNAP: OFF"));
+            GuiStatusBar((Rectangle){ GetScreenWidth() - 180, GetScreenHeight() - 24, 180, 24}, TextFormat("GRID: %i px | %i Divs.", gridSpacing*gridSubdivisions, gridSubdivisions));
+            GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
+            GuiSetStyle(STATUSBAR, TEXT_PADDING, 10);
             //----------------------------------------------------------------------------------------
             
             // NOTE: If some overlap window is open and main window is locked, we draw a background rectangle
@@ -2820,7 +2832,7 @@ int main(int argc, char *argv[])
             if (showLoadFileDialog)
             {
 #if defined(CUSTOM_MODAL_DIALOGS)
-                int result = GuiFileDialog(DIALOG_MESSAGE, "Load raygui layout file ...", inFileName, "Ok", "Just drag and drop your .rgl layout file!");
+                int result = GuiFileDialog(DIALOG_MESSAGE, "#5#Load raygui layout file ...", inFileName, "Ok", "Just drag and drop your .rgl layout file!");
 #else
                 int result = GuiFileDialog(DIALOG_OPEN_FILE, "Load raygui layout file", inFileName, "*.rgl", "raygui Layout Files (*.rgl)");
 #endif
@@ -2859,7 +2871,7 @@ int main(int argc, char *argv[])
             if (showSaveFileDialog)
             {
 #if defined(CUSTOM_MODAL_DIALOGS)
-                int result = GuiFileDialog(DIALOG_TEXTINPUT, "Save raygui layout file...", outFileName, "Ok;Cancel", NULL);
+                int result = GuiFileDialog(DIALOG_TEXTINPUT, "#6#Save raygui layout file...", outFileName, "Ok;Cancel", NULL);
                 //int result = GuiTextInputBox((Rectangle){ screenWidth/2 - 280/2, screenHeight/2 - 112/2 - 30, 280, 112 }, "#2#Save raygui style file...", NULL, "#2#Save", outFileName, 512, NULL);
 #else
                 int result = GuiFileDialog(DIALOG_SAVE_FILE, "Save raygui layout file...", outFileName, "*.rgl", "raygui Layout Files (*.rgl)");
@@ -2896,7 +2908,7 @@ int main(int argc, char *argv[])
                 //else if (windowCodegenState.codeTemplateActive == 1) strcpy(outFileName, TextFormat("gui_%s.h", config.name));
 
 #if defined(CUSTOM_MODAL_DIALOGS)
-                int result = GuiFileDialog(DIALOG_TEXTINPUT, "Export layout as code file...", outFileName, "Ok;Cancel", NULL);
+                int result = GuiFileDialog(DIALOG_TEXTINPUT, "#7#Export layout as code file...", outFileName, "Ok;Cancel", NULL);
 #else
                 int result = GuiFileDialog(DIALOG_SAVE_FILE, "Export layout as code file...", outFileName, "*.c;*.h", "Code Files");
 #endif
