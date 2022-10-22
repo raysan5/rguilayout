@@ -358,24 +358,19 @@ int main(int argc, char *argv[])
 
     // TODO: Check exclusive modes (work on its own) and combinable modes (can work in combination with other)
     // Replace all bool values by enumerator value, it should simplify code...
-    //int layoutEditMode = NONE;              // Layout edition mode
 
     // Controls variables
     int selectedControl = -1;               // Control selected on layout
     int focusedControl = -1;                // Control focused on layout
     int selectedType = GUI_WINDOWBOX;       // Control type selected on panel
-    Color selectedControlColor = RED;       // Control selected color
-    Color positionColor = MAROON;           // Control position text color
+
+    // Anchors variables
+    int selectedAnchor = -1;
+    int focusedAnchor = -1;
+    GuiAnchorPoint auxAnchor = { MAX_ANCHOR_POINTS, 0, 0, 0 };  // Auxiliar anchor
 
     Vector2 panOffset = { 0 };
     Vector2 prevPosition = { 0 };
-
-    // Anchors control variables
-    GuiAnchorPoint auxAnchor = { 9, 0, 0, 0 };
-    int selectedAnchor = -1;
-    int focusedAnchor = -1;
-    Color anchorCircleColor = BLACK;
-    Color anchorSelectedColor = RED;
 
     // TODO: Support multiple controls selection
     // Multiselection variables
@@ -385,9 +380,43 @@ int main(int argc, char *argv[])
     //int multiSelectControls[20] = { -1 };
     //int multiSelectCount = 0;
 
-    //Color colorModes[8] = { };
+    // Define default colors for the different modes and states
+    //Color colorModes[30] = { };
+    Color colEditNameOverlay = GREEN;       // Fade: 0.2f
+    Color colEditTextOverlay = SKYBLUE;     // Fade: 0.2f
+    Color colEditNameBackRec = WHITE;
 
-    Color tracemapColor = RED;
+    Color colCursorCreation = RED;
+
+    Color colControlFocused = RED;
+    Color colControlFocusedLines = MAROON;
+    Color colControlSelected = RED;
+    Color colControlSelectedResize = BLUE;
+    Color colControlRecTextDefault = RED;
+    Color colControlRecTextGlobal = MAROON;
+    Color colControlRecTextSnap = LIME;
+    Color colControlRecTextPrecision = BLUE;
+    Color colControlScaleSelector = RED;
+
+    Color colAnchorCursor = RED;
+    Color colAnchorDefault = BLUE;
+    Color colAnchorSelected = ORANGE;
+    Color colAnchorSelected2 = RED;
+    Color colAnchorDisabled = DARKGRAY;
+    Color colAnchorHidden = GRAY;
+    Color colAnchorCircleDefault = { 253, 86, 95, 255 }; // LIGHTRED
+    Color colAnchorLinkLine0 = LIGHTGRAY;
+    Color colAnchorLinkLine = RED;
+    Color colAnchorLinkLineHidden = GRAY;
+
+    Color colRefWindow = BLACK;             // Fade: 0.1f
+    Color colRefWindowText = DARKGRAY;
+
+    Color colTracemapFocusedLines = MAROON;
+    Color colTracemapSelected = RED;
+    Color colTracemapLines = GRAY;
+    Color colTracemapResize = BLUE;
+
 
     // Init default layout
     //-------------------------------------------------------------------------
@@ -1633,7 +1662,7 @@ int main(int argc, char *argv[])
                             {
                                 for (int i = 0; i < layout->controlCount; i++)
                                 {
-                                    if (layout->controls[i].ap->id == 9) //auxAnchor ID
+                                    if (layout->controls[i].ap->id == MAX_ANCHOR_POINTS)    // Auxiliar anchor id
                                     {
                                         if (layout->controls[i].ap->id > 0)
                                         {
@@ -1680,7 +1709,7 @@ int main(int argc, char *argv[])
                                 {
                                     for (int i = 0; i < layout->controlCount; i++)
                                     {
-                                        if (layout->controls[i].ap->id == 9) //auxAnchor ID
+                                        if (layout->controls[i].ap->id == MAX_ANCHOR_POINTS)  // Auxiliar anchor id
                                         {
                                             layout->controls[i].rec.x += layout->controls[i].ap->x;
                                             layout->controls[i].rec.y += layout->controls[i].ap->y;
@@ -2112,31 +2141,32 @@ int main(int argc, char *argv[])
 
                 if (tracemap.locked)
                 {
-                    if (tracemap.focused) DrawRectangleLinesEx(tracemap.rec, 1, MAROON);
-                    else DrawRectangleLinesEx(tracemap.rec, 1, GRAY);
+                    if (tracemap.focused) DrawRectangleLinesEx(tracemap.rec, 1, colTracemapFocusedLines);
+                    else DrawRectangleLinesEx(tracemap.rec, 1, colTracemapLines);
                 }
                 else
                 {
                     if (tracemap.focused)
                     {
-                        DrawRectangleRec(tracemap.rec, Fade(RED, 0.1f));
-                        DrawRectangleLinesEx(tracemap.rec, 1, MAROON);
+                        DrawRectangleRec(tracemap.rec, Fade(colTracemapSelected, 0.1f));
+                        DrawRectangleLinesEx(tracemap.rec, 1, colTracemapFocusedLines);
                     }
                     if (tracemap.selected)
                     {
-                        tracemapColor = RED;
-                        if (!dragMoveMode && resizeMode) tracemapColor = BLUE;
-                        DrawRectangleRec(tracemap.rec, Fade(tracemapColor, 0.5f));
+                        Color colTracemap = colTracemapSelected;
+                        if (!dragMoveMode && resizeMode) colTracemap = colTracemapResize;
+                        DrawRectangleRec(tracemap.rec, Fade(colTracemap, 0.5f));
 
-                        positionColor = MAROON;
-                        if (showGlobalPosition) positionColor = RED;
-                        if (mainToolbarState.snapModeActive) positionColor = LIME;
-                        if (!dragMoveMode && precisionEditMode) positionColor = BLUE;
+                        Color colPositionText = colControlRecTextDefault;
+                        if (showGlobalPosition) colPositionText = colControlRecTextGlobal;
+                        if (mainToolbarState.snapModeActive) colPositionText = colControlRecTextSnap;
+                        if (!dragMoveMode && precisionEditMode) colPositionText = colControlRecTextPrecision;
+
                         DrawText(TextFormat("[%i, %i, %i, %i]",
                                             (int)tracemap.rec.x - (int)workArea.x,
                                             (int)tracemap.rec.y - (int)workArea.y,
                                             (int)tracemap.rec.width,
-                                            (int)tracemap.rec.height), tracemap.rec.x, tracemap.rec.y - 20, 20, positionColor);
+                                            (int)tracemap.rec.height), tracemap.rec.x, tracemap.rec.y - 20, 20, colPositionText);
                     }
                 }
             }
@@ -2208,39 +2238,42 @@ int main(int argc, char *argv[])
 
             // Draw reference window
             //----------------------------------------------------------------------------------------
-
             // Reference window edit mode lines
             if ((layout->refWindow.width > 0) && (layout->refWindow.height > 0))
             {
                 if (refWindowEditMode)
                 {
-                    DrawRectangleRec(layout->refWindow, Fade(BLACK, 0.1f));
+                    DrawRectangleRec(layout->refWindow, Fade(colRefWindow, 0.1f));
 
                     DrawText(TextFormat("[%i]", (int)layout->refWindow.width),
                         layout->refWindow.x + layout->refWindow.width - MeasureText(TextFormat("[%i]",(int)layout->refWindow.width), 20) - 5,
-                        layout->refWindow.y + layout->refWindow.height + 5, 20, positionColor);
+                        layout->refWindow.y + layout->refWindow.height + 5, 20, colRefWindowText);
+
                     DrawText(TextFormat("[%i]", (int)layout->refWindow.height),
                         layout->refWindow.x + layout->refWindow.width + 5,
-                        layout->refWindow.y + layout->refWindow.height - 20, 20, positionColor);
+                        layout->refWindow.y + layout->refWindow.height - 20, 20, colRefWindowText);
                 }
             }
 
-            anchorSelectedColor = DARKGRAY;
-            anchorCircleColor = DARKGRAY;
+            // TODO: Review this colors mess
+            Color colAnchor = colAnchorDisabled;
+            Color colAnchorCircle = colAnchorDisabled;
+
             if (selectedAnchor == 0)
             {
-                if (anchorEditMode) { anchorSelectedColor = ORANGE; anchorCircleColor = ORANGE;}
-                DrawRectangle(layout->anchors[0].x - ANCHOR_RADIUS, layout->anchors[0].y - ANCHOR_RADIUS, ANCHOR_RADIUS*2, ANCHOR_RADIUS*2, Fade(anchorSelectedColor, 0.2f));
-            }
-            if (focusedAnchor == 0)
-            {
-                anchorCircleColor = BLACK;
-                if (anchorEditMode) anchorCircleColor = ORANGE;
+                if (anchorEditMode) { colAnchor = colAnchorSelected; colAnchorCircle = colAnchorSelected;}
+                DrawRectangle(layout->anchors[0].x - ANCHOR_RADIUS, layout->anchors[0].y - ANCHOR_RADIUS, ANCHOR_RADIUS*2, ANCHOR_RADIUS*2, Fade(colAnchor, 0.2f));
             }
 
-            DrawRectangleLines(layout->anchors[0].x - ANCHOR_RADIUS, layout->anchors[0].y - ANCHOR_RADIUS, ANCHOR_RADIUS*2, ANCHOR_RADIUS*2, Fade(anchorCircleColor, 0.5f));
-            DrawRectangle(layout->anchors[0].x - ANCHOR_RADIUS - 5, layout->anchors[0].y, ANCHOR_RADIUS*2 + 10, 1, Fade(anchorCircleColor, 0.8f));
-            DrawRectangle(layout->anchors[0].x, layout->anchors[0].y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, Fade(anchorCircleColor, 0.8f));
+            if (focusedAnchor == 0)
+            {
+                colAnchorCircle = colAnchorDisabled;
+                if (anchorEditMode) colAnchorCircle = colAnchorSelected;
+            }
+
+            DrawRectangleLines(layout->anchors[0].x - ANCHOR_RADIUS, layout->anchors[0].y - ANCHOR_RADIUS, ANCHOR_RADIUS*2, ANCHOR_RADIUS*2, Fade(colAnchorCircle, 0.5f));
+            DrawRectangle(layout->anchors[0].x - ANCHOR_RADIUS - 5, layout->anchors[0].y, ANCHOR_RADIUS*2 + 10, 1, Fade(colAnchorCircle, 0.8f));
+            DrawRectangle(layout->anchors[0].x, layout->anchors[0].y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, Fade(colAnchorCircle, 0.8f));
             //----------------------------------------------------------------------------------------
 
             // Draw anchors
@@ -2249,32 +2282,33 @@ int main(int argc, char *argv[])
             {
                 if (layout->anchors[i].enabled)
                 {
-                    if (selectedAnchor > 0 && layout->anchors[i].id == selectedAnchor)
+                    if ((selectedAnchor > 0) && (layout->anchors[i].id == selectedAnchor))
                     {
                         if (layout->anchors[i].hidding)
                         {
-                            anchorCircleColor = GRAY;
-                            anchorSelectedColor = GRAY;
+                            colAnchorCircle = colAnchorHidden;
+                            colAnchor = colAnchorHidden;
                         }
                         else
                         {
-                            anchorCircleColor = (Color){ 253, 86, 95, 255 }; // LIGHTRED
-                            anchorSelectedColor = RED;
+                            colAnchorCircle = colAnchorCircleDefault;
+                            colAnchor = colAnchorSelected2;
                         }
-                        if (anchorMoveMode || (anchorEditMode && (focusedAnchor > 0) && (layout->anchors[i].id == focusedAnchor))) anchorSelectedColor = ORANGE;
-                        DrawCircle(layout->anchors[i].x, layout->anchors[i].y, ANCHOR_RADIUS, Fade(anchorSelectedColor, 0.2f));
+                        if (anchorMoveMode || (anchorEditMode && (focusedAnchor > 0) && (layout->anchors[i].id == focusedAnchor))) colAnchor = colAnchorSelected;
+                        DrawCircle(layout->anchors[i].x, layout->anchors[i].y, ANCHOR_RADIUS, Fade(colAnchor, 0.2f));
                     }
-                    else if (layout->anchors[i].hidding) anchorCircleColor = GRAY;
-                    else anchorCircleColor = BLUE;
+                    else if (layout->anchors[i].hidding) colAnchorCircle = colAnchorHidden;
+                    else colAnchorCircle = colAnchorDefault;
+
                     if (focusedAnchor > 0 && layout->anchors[i].id == focusedAnchor)
                     {
-                        if (anchorEditMode) anchorCircleColor = ORANGE;
-                        else anchorCircleColor = RED;
+                        if (anchorEditMode) colAnchorCircle = colAnchorSelected;
+                        else colAnchorCircle = colAnchorSelected2;
                     }
 
-                    DrawCircleLines(layout->anchors[i].x, layout->anchors[i].y, ANCHOR_RADIUS, Fade(anchorCircleColor, 0.5f));
-                    DrawRectangle(layout->anchors[i].x - ANCHOR_RADIUS - 5, layout->anchors[i].y, ANCHOR_RADIUS*2 + 10, 1, anchorCircleColor);
-                    DrawRectangle(layout->anchors[i].x, layout->anchors[i].y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, anchorCircleColor);
+                    DrawCircleLines(layout->anchors[i].x, layout->anchors[i].y, ANCHOR_RADIUS, Fade(colAnchorCircle, 0.5f));
+                    DrawRectangle(layout->anchors[i].x - ANCHOR_RADIUS - 5, layout->anchors[i].y, ANCHOR_RADIUS*2 + 10, 1, colAnchorCircle);
+                    DrawRectangle(layout->anchors[i].x, layout->anchors[i].y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, colAnchorCircle);
                 }
             }
             //----------------------------------------------------------------------------------------
@@ -2330,26 +2364,27 @@ int main(int argc, char *argv[])
                                 GuiUnlock();
 
                                 // Draw default cursor
-                                DrawRectangle(mouse.x - 8, mouse.y, 17, 1, RED);
-                                DrawRectangle(mouse.x, mouse.y - 8, 1, 17, RED);
+                                DrawRectangle(mouse.x - 8, mouse.y, 17, 1, colCursorCreation);
+                                DrawRectangle(mouse.x, mouse.y - 8, 1, 17, colCursorCreation);
 
                                 // Draw cursor position
-                                positionColor = MAROON;
-                                if (mainToolbarState.snapModeActive) positionColor = LIME;
+                                Color colPositionText = colControlRecTextDefault;
+                                if (mainToolbarState.snapModeActive) colPositionText = colControlRecTextSnap;
+
                                 DrawText(TextFormat("[%i, %i, %i, %i]",
                                     (int)defaultRec[selectedType].x - (int)workArea.x,
                                     (int)defaultRec[selectedType].y - (int)workArea.y,
                                     (int)defaultRec[selectedType].width,
                                     (int)defaultRec[selectedType].height),
-                                    (int)defaultRec[selectedType].x, ((int)defaultRec[selectedType].y < ((int)workArea.y + 8))? (int)defaultRec[selectedType].y + 30 : (int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
+                                    (int)defaultRec[selectedType].x, ((int)defaultRec[selectedType].y < ((int)workArea.y + 8))? (int)defaultRec[selectedType].y + 30 : (int)defaultRec[selectedType].y - 30, 20, Fade(colPositionText, 0.5f));
                             }
                         }
                         else
                         {
                             // Draw anchor cursor
-                            DrawCircleLines(mouse.x, mouse.y, ANCHOR_RADIUS, Fade(RED, 0.5f));
-                            DrawRectangle(mouse.x - ANCHOR_RADIUS - 5, mouse.y, ANCHOR_RADIUS*2 + 10, 1, RED);
-                            DrawRectangle(mouse.x, mouse.y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, RED);
+                            DrawCircleLines(mouse.x, mouse.y, ANCHOR_RADIUS, Fade(colAnchorCursor, 0.5f));
+                            DrawRectangle(mouse.x - ANCHOR_RADIUS - 5, mouse.y, ANCHOR_RADIUS*2 + 10, 1, colAnchorCursor);
+                            DrawRectangle(mouse.x, mouse.y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, colAnchorCursor);
                         }
                     }
                 }
@@ -2385,7 +2420,7 @@ int main(int argc, char *argv[])
                             textboxRec.y += layout->controls[i].ap->y;
                         }
 
-                        DrawRectangleRec(textboxRec, WHITE);
+                        DrawRectangleRec(textboxRec, colEditNameBackRec);
                         GuiTextBox(textboxRec, layout->controls[i].name, MAX_CONTROL_NAME_LENGTH, false);
                     }
 
@@ -2394,8 +2429,8 @@ int main(int argc, char *argv[])
                         Rectangle textboxRec = (Rectangle){ layout->anchors[i].x, layout->anchors[i].y,
                             MeasureText(layout->anchors[i].name, GuiGetStyle(DEFAULT, TEXT_SIZE)) + 10, GuiGetStyle(DEFAULT, TEXT_SIZE) + 5 };
 
-                        DrawRectangleRec(textboxRec, WHITE);
-                        DrawRectangleRec(textboxRec, Fade(ORANGE, 0.1f));
+                        DrawRectangleRec(textboxRec, colEditNameBackRec);
+                        DrawRectangleRec(textboxRec, Fade(colAnchorSelected, 0.1f));
                         GuiTextBox(textboxRec, layout->anchors[i].name, MAX_ANCHOR_NAME_LENGTH, false);
                     }
 
@@ -2410,12 +2445,12 @@ int main(int argc, char *argv[])
                     {
                         if (layout->controls[i].ap->id == focusedAnchor)
                         {
-                            if (focusedAnchor == 0) DrawLine(layout->controls[i].ap->x, layout->controls[i].ap->y, layout->controls[i].rec.x, layout->controls[i].rec.y, LIGHTGRAY);
+                            if (focusedAnchor == 0) DrawLine(layout->controls[i].ap->x, layout->controls[i].ap->y, layout->controls[i].rec.x, layout->controls[i].rec.y, colAnchorLinkLine0);
                             else if (!layout->controls[i].ap->hidding)
                             {
-                                DrawLine(layout->controls[i].ap->x, layout->controls[i].ap->y, layout->controls[i].ap->x + layout->controls[i].rec.x, layout->controls[i].ap->y + layout->controls[i].rec.y, RED);
+                                DrawLine(layout->controls[i].ap->x, layout->controls[i].ap->y, layout->controls[i].ap->x + layout->controls[i].rec.x, layout->controls[i].ap->y + layout->controls[i].rec.y, colAnchorLinkLine);
                             }
-                            else DrawLine(layout->controls[i].ap->x, layout->controls[i].ap->y, layout->controls[i].ap->x + layout->controls[i].rec.x, layout->controls[i].ap->y + layout->controls[i].rec.y, GRAY);
+                            else DrawLine(layout->controls[i].ap->x, layout->controls[i].ap->y, layout->controls[i].ap->x + layout->controls[i].rec.x, layout->controls[i].ap->y + layout->controls[i].rec.y, colAnchorLinkLineHidden);
                         }
                     }
                 }
@@ -2424,9 +2459,10 @@ int main(int argc, char *argv[])
                 if (selectedAnchor != -1)
                 {
                     // Draw anchor coordinates
-                    positionColor = anchorSelectedColor;
-                    if (mainToolbarState.snapModeActive) positionColor = LIME;
-                    if (!dragMoveMode && precisionEditMode) positionColor = BLUE;
+                    Color colPositionText = colControlRecTextDefault;
+                    if (showGlobalPosition) colPositionText = colControlRecTextGlobal;
+                    if (mainToolbarState.snapModeActive) colPositionText = colControlRecTextSnap;
+                    if (!dragMoveMode && precisionEditMode) colPositionText = colControlRecTextPrecision;
 
                     if (selectedAnchor > 0)
                     {
@@ -2434,7 +2470,7 @@ int main(int argc, char *argv[])
                             (int)(layout->anchors[selectedAnchor].x - layout->refWindow.x - (int)workArea.x),
                             (int)(layout->anchors[selectedAnchor].y - layout->refWindow.y - (int)workArea.y)),
                             layout->anchors[selectedAnchor].x + ANCHOR_RADIUS,
-                            layout->anchors[selectedAnchor].y - 38, 20, positionColor);
+                            layout->anchors[selectedAnchor].y - 38, 20, colPositionText);
                     }
                     else
                     {
@@ -2446,13 +2482,13 @@ int main(int argc, char *argv[])
                                 (int)layout->refWindow.width,
                                 (int)layout->refWindow.height),
                                 layout->anchors[selectedAnchor].x + ANCHOR_RADIUS,
-                                layout->anchors[selectedAnchor].y - 38, 20, positionColor);
+                                layout->anchors[selectedAnchor].y - 38, 20, colPositionText);
                         }
                         else DrawText(TextFormat("[%i, %i]",
                                 (int)(layout->refWindow.x),
                                 (int)(layout->refWindow.y)),
                                 layout->anchors[selectedAnchor].x + ANCHOR_RADIUS,
-                                layout->anchors[selectedAnchor].y - 38, 20, positionColor);
+                                layout->anchors[selectedAnchor].y - 38, 20, colPositionText);
                     }
 
                     // Draw anchor links
@@ -2461,27 +2497,26 @@ int main(int argc, char *argv[])
                         //if (!layout->controls[i].ap->hidding)
                         if (layout->controls[i].ap->id == selectedAnchor)
                         {
-                            if (selectedAnchor == 0) DrawLine(layout->controls[i].ap->x, layout->controls[i].ap->y, layout->controls[i].rec.x, layout->controls[i].rec.y, LIGHTGRAY);
+                            if (selectedAnchor == 0) DrawLine(layout->controls[i].ap->x, layout->controls[i].ap->y, layout->controls[i].rec.x, layout->controls[i].rec.y, Fade(colAnchorLinkLine0, 0.5f));
                             else if (!layout->controls[i].ap->hidding)
                             {
-                                DrawLine(layout->controls[i].ap->x, layout->controls[i].ap->y, layout->controls[i].ap->x + layout->controls[i].rec.x, layout->controls[i].ap->y + layout->controls[i].rec.y, RED);
+                                DrawLine(layout->controls[i].ap->x, layout->controls[i].ap->y, layout->controls[i].ap->x + layout->controls[i].rec.x, layout->controls[i].ap->y + layout->controls[i].rec.y, colAnchorLinkLine);
                             }
-                            else DrawLine(layout->controls[i].ap->x, layout->controls[i].ap->y, layout->controls[i].ap->x + layout->controls[i].rec.x, layout->controls[i].ap->y + layout->controls[i].rec.y, GRAY);
+                            else DrawLine(layout->controls[i].ap->x, layout->controls[i].ap->y, layout->controls[i].ap->x + layout->controls[i].rec.x, layout->controls[i].ap->y + layout->controls[i].rec.y, colAnchorLinkLine0);
                         }
                     }
 
                     // Draw anchor link mode
                     if (anchorLinkMode)
                     {
-                        if (selectedAnchor == 0) DrawLine(layout->anchors[selectedAnchor].x, layout->anchors[selectedAnchor].y, mouse.x, mouse.y, BLACK);
-                        else DrawLine(layout->anchors[selectedAnchor].x, layout->anchors[selectedAnchor].y, mouse.x, mouse.y, RED);
+                        if (selectedAnchor == 0) DrawLine(layout->anchors[selectedAnchor].x, layout->anchors[selectedAnchor].y, mouse.x, mouse.y, colAnchorLinkLine0);
+                        else DrawLine(layout->anchors[selectedAnchor].x, layout->anchors[selectedAnchor].y, mouse.x, mouse.y, colAnchorLinkLine);
                     }
 
                     // Draw name edit mode
                     if (nameEditMode)
                     {
-                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(ORANGE, 0.2f));
-                        DrawText("Anchor name edit mode", 20, 20, 20, DARKGRAY);
+                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(colAnchorSelected, 0.2f));
 
                         int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
                         int textWidth = MeasureText(layout->anchors[selectedAnchor].name, fontSize);
@@ -2498,8 +2533,8 @@ int main(int argc, char *argv[])
                 if (selectedControl != -1)
                 {
                     // Selection rectangle
-                    selectedControlColor = RED;
-                    if (!dragMoveMode && resizeMode) selectedControlColor = BLUE;
+                    Color colControl = colControlSelected;
+                    if (!dragMoveMode && resizeMode) colControl = colControlSelectedResize;
 
                     Rectangle selectedRec = layout->controls[selectedControl].rec;
                     if (layout->controls[selectedControl].type == GUI_WINDOWBOX) selectedRec.height = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT;  // Defined inside raygui.h!
@@ -2515,19 +2550,19 @@ int main(int argc, char *argv[])
                         selectedRec.y += layout->controls[selectedControl].ap->y;
                     }
 
-                    DrawRectangleRec(selectedRec, Fade(selectedControlColor, 0.3f));
+                    DrawRectangleRec(selectedRec, Fade(colControl, 0.3f));
 
                     // Control Link
-                    if (layout->controls[selectedControl].ap->id > 0) DrawLine(layout->controls[selectedControl].ap->x, layout->controls[selectedControl].ap->y, selectedRec.x, selectedRec.y, RED);
+                    if (layout->controls[selectedControl].ap->id > 0) DrawLine(layout->controls[selectedControl].ap->x, layout->controls[selectedControl].ap->y, selectedRec.x, selectedRec.y, colAnchorLinkLine);
 
                     // Linking
-                    if (anchorLinkMode) DrawLine(selectedRec.x, selectedRec.y, mouse.x, mouse.y, RED);
+                    if (anchorLinkMode) DrawLine(selectedRec.x, selectedRec.y, mouse.x, mouse.y, colAnchorLinkLine);
 
                     // Control Coordinates
-                    positionColor = MAROON;
-                    if (showGlobalPosition) positionColor = RED;
-                    if (mainToolbarState.snapModeActive) positionColor = LIME;
-                    if (!dragMoveMode && precisionEditMode) positionColor = BLUE;
+                    Color colPositionText = colControlRecTextDefault;
+                    if (showGlobalPosition) colPositionText = colControlRecTextGlobal;
+                    if (mainToolbarState.snapModeActive) colPositionText = colControlRecTextSnap;
+                    if (!dragMoveMode && precisionEditMode) colPositionText = colControlRecTextPrecision;
 
                     if (!showGlobalPosition)
                     {
@@ -2538,14 +2573,14 @@ int main(int argc, char *argv[])
                                 (int)(layout->controls[selectedControl].rec.y),
                                 (int)layout->controls[selectedControl].rec.width,
                                 (int)layout->controls[selectedControl].rec.height),
-                                selectedRec.x, selectedRec.y - 30, 20, positionColor);
+                                selectedRec.x, selectedRec.y - 30, 20, colPositionText);
                         }
                         else DrawText(TextFormat("[%i, %i, %i, %i]",
                             (int)(selectedRec.x - layout->refWindow.x),
                             (int)(selectedRec.y - layout->refWindow.y),
                             (int)layout->controls[selectedControl].rec.width,
                             (int)layout->controls[selectedControl].rec.height),
-                            selectedRec.x, selectedRec.y - 30, 20, positionColor);
+                            selectedRec.x, selectedRec.y - 30, 20, colPositionText);
                     }
                     else
                     {
@@ -2554,14 +2589,13 @@ int main(int argc, char *argv[])
                             (int)(selectedRec.y - layout->refWindow.y - workArea.y),
                             (int)layout->controls[selectedControl].rec.width,
                             (int)layout->controls[selectedControl].rec.height),
-                            selectedRec.x, selectedRec.y - 30, 20, positionColor);
+                            selectedRec.x, selectedRec.y - 30, 20, colPositionText);
                     }
 
                     // Text edit
                     if (textEditMode || showIconPanel)
                     {
-                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(SKYBLUE, 0.2f));
-                        DrawText("Control text edit mode", 20, 25, 20, DARKGRAY);
+                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(colEditTextOverlay, 0.2f));
 
                         Rectangle textboxRec = layout->controls[selectedControl].rec;
 
@@ -2612,8 +2646,7 @@ int main(int argc, char *argv[])
                     // Name edit
                     if (nameEditMode)
                     {
-                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GREEN, 0.2f));
-                        DrawText("Control name edit mode", 20, 20, 20, DARKGRAY);
+                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(colEditNameOverlay, 0.2f));
 
                         Rectangle textboxRec = layout->controls[selectedControl].rec;
 
@@ -2681,11 +2714,14 @@ int main(int argc, char *argv[])
                         focusRec.y += layout->controls[focusedControl].ap->y;
                     }
 
-                    if (focusedControl != selectedControl) DrawRectangleRec(focusRec, Fade(RED, 0.1f));
+                    if (focusedControl != selectedControl) DrawRectangleRec(focusRec, Fade(colControlFocused, 0.1f));
 
-                    DrawRectangleLinesEx(focusRec, 1, MAROON);
+                    DrawRectangleLinesEx(focusRec, 1, colControlFocusedLines);
 
-                    if (layout->controls[focusedControl].ap->id > 0) DrawLine(layout->controls[focusedControl].ap->x, layout->controls[focusedControl].ap->y, focusRec.x, focusRec.y, RED);
+                    if (layout->controls[focusedControl].ap->id > 0)
+                    {
+                        DrawLine(layout->controls[focusedControl].ap->x, layout->controls[focusedControl].ap->y, focusRec.x, focusRec.y, colAnchorLinkLine);
+                    }
                 }
 
                 // Draw control scale mode selector
@@ -2699,14 +2735,14 @@ int main(int argc, char *argv[])
                         selectedRec.y += layout->controls[selectedControl].ap->y;
                     }
 
-                    DrawRectangleLinesEx(selectedRec, 2, RED);
+                    DrawRectangleLinesEx(selectedRec, 2, colControlScaleSelector);
                     DrawTriangle((Vector2) { selectedRec.x + selectedRec.width - SCALE_BOX_CORNER_SIZE, selectedRec.y + selectedRec.height },
                                  (Vector2) { selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height },
-                                 (Vector2) { selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height - SCALE_BOX_CORNER_SIZE }, RED);
+                                 (Vector2) { selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height - SCALE_BOX_CORNER_SIZE }, colControlScaleSelector);
                 }
 
                 // Draw reference window lines
-                if ((layout->refWindow.width > 0) && (layout->refWindow.height > 0)) DrawRectangleLinesEx(layout->refWindow, 1, Fade(BLACK, 0.7f));
+                if ((layout->refWindow.width > 0) && (layout->refWindow.height > 0)) DrawRectangleLinesEx(layout->refWindow, 1, Fade(colRefWindow, 0.7f));
             }
 
             // GUI: Controls Selection Palette
