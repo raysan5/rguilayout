@@ -158,7 +158,7 @@ bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib
 
 #define ANCHOR_RADIUS               20      // Default anchor radius
 #define MIN_CONTROL_SIZE            10      // Minimum control size
-#define SCALE_BOX_CORNER_SIZE       12      // Scale box bottom-right corner square size
+#define SCALE_BOX_CORNER_SIZE        8      // Scale box bottom-right corner square size
 
 #define MOVEMENT_FRAME_SPEED         2      // Controls movement speed in pixels per frame: TODO: Review
 
@@ -185,6 +185,18 @@ typedef enum {
 
     TRACEMAP_EDIT,
 } LayoutEditMode;
+
+// Tracemap type
+typedef struct {
+    Texture2D texture;
+    Rectangle rec;
+
+    bool focused;
+    bool selected;
+    bool visible;
+    bool locked;
+    float alpha;
+} Tracemap;
 
 //----------------------------------------------------------------------------------
 // Global Variables Definition
@@ -329,7 +341,7 @@ int main(int argc, char *argv[])
     bool mouseScaleReady = false;           // Mouse is on position to start control scaling
     bool textEditMode = false;              // [E] Control text edit mode (KEY_T)
     bool nameEditMode = false;              // [E] Control name edit mode (KEY_N)
-    bool orderEditMode = false;             // Control order edit mode ((focusedControl != -1) + KEY_LEFT_ALT)
+    bool orderLayerMode = false;            // Control order edit mode ((focusedControl != -1) + KEY_LEFT_ALT)
     bool precisionEditMode = false;         // Control precision edit mode (KEY_LEFT_SHIFT)
 
     // Anchor edit modes
@@ -373,6 +385,10 @@ int main(int argc, char *argv[])
     //int multiSelectControls[20] = { -1 };
     //int multiSelectCount = 0;
 
+    //Color colorModes[8] = { };
+
+    Color tracemapColor = RED;
+
     // Init default layout
     //-------------------------------------------------------------------------
     GuiLayout *layout = NULL;
@@ -402,14 +418,7 @@ int main(int argc, char *argv[])
     //-------------------------------------------------------------------------
 
     // Tracemap (background image for reference) variables
-    Texture2D tracemap = { 0 };
-    Rectangle tracemapRec = { 0 };
-    bool tracemapLocked = false;
-    bool tracemapFocused = false;
-    bool tracemapSelected = false;
-    bool tracemapVisible = true;
-    float tracemapAlpha = 0.5f;
-    Color tracemapColor = RED;
+    Tracemap tracemap = { 0 };
 
     // Controls temp variables (default values)
     int dropdownBoxActive = 0;
@@ -523,7 +532,7 @@ int main(int argc, char *argv[])
         // Undo layout change logic
         //----------------------------------------------------------------------------------
         // Every second check if current layout has changed and record a new undo state
-        if (!dragMoveMode && !orderEditMode && !resizeMode && !refWindowEditMode &&
+        if (!dragMoveMode && !orderLayerMode && !resizeMode && !refWindowEditMode &&
             !textEditMode && !showIconPanel && !nameEditMode && !anchorEditMode && !anchorLinkMode && !anchorMoveMode)
         {
             undoFrameCounter++;
@@ -623,9 +632,9 @@ int main(int argc, char *argv[])
             }
             else if (IsFileExtension(droppedFiles.paths[0], ".png")) // Tracemap image
             {
-                if (tracemap.id > 0) UnloadTexture(tracemap);
-                tracemap = LoadTexture(droppedFiles.paths[0]);
-                tracemapRec = (Rectangle){30, 30, tracemap.width, tracemap.height};
+                if (tracemap.texture.id > 0) UnloadTexture(tracemap.texture);
+                tracemap.texture = LoadTexture(droppedFiles.paths[0]);
+                tracemap.rec = (Rectangle){30, 30, tracemap.texture.width, tracemap.texture.height};
 
                 mainToolbarState.tracemapLoaded = true;
             }
@@ -740,28 +749,34 @@ int main(int argc, char *argv[])
                 }
             }
 
+            // TODO: Toggle controls name drawing
+            //if (IsKeyPressed(KEY_N)) mainToolbarState.showControlNamesActive = !mainToolbarState.showControlNamesActive;
+
             // Toggle global position info (anchor reference or global reference)
             if (IsKeyPressed(KEY_F)) showGlobalPosition = !showGlobalPosition;
 
-            anchorEditMode = IsKeyDown(KEY_A);              // Toggle anchor mode editing (on key down)
-            //orderEditMode = IsKeyDown(KEY_LEFT_ALT);        
+            // Toggle anchor mode editing (on key down)
+            anchorEditMode = IsKeyDown(KEY_A);
 
             // Toggle controls drawing order mode
             // NOTE: In this mode controls can be re-organized for drawing order
             if (IsKeyPressed(KEY_LEFT_ALT))
             {
                 mainToolbarState.showControlOrderActive = !mainToolbarState.showControlOrderActive;
-                orderEditMode = mainToolbarState.showControlOrderActive;
+                orderLayerMode = mainToolbarState.showControlOrderActive;
             }
 
-            precisionEditMode = IsKeyDown(KEY_LEFT_SHIFT);      // Toggle precision move/scale mode
-            resizeMode = IsKeyDown(KEY_LEFT_CONTROL);       // Toggle control resize mode
+            // Toggle precision move/scale mode
+            precisionEditMode = IsKeyDown(KEY_LEFT_SHIFT);
 
-            // Enable/disable texture editing mode
-            if ((tracemap.id > 0) && IsKeyPressed(KEY_SPACE))
+            // Toggle control resize mode
+            resizeMode = IsKeyDown(KEY_LEFT_CONTROL);       
+
+            // Toggle tracemap lock mode
+            if ((tracemap.texture.id > 0) && IsKeyPressed(KEY_SPACE))
             {
-                if (tracemapSelected) tracemapLocked = true;
-                else if (tracemapLocked) tracemapLocked = false;
+                if (tracemap.selected) tracemap.locked = true;
+                else if (tracemap.locked) tracemap.locked = false;
             }
 
             // Check modes requiring LEFT_CONTROL modifier
@@ -982,8 +997,8 @@ int main(int argc, char *argv[])
                     if ((focusedAnchor == -1) && 
                         (selectedAnchor == -1) && 
                         (selectedControl == -1) && 
-                        !tracemapFocused && 
-                        !tracemapSelected)
+                        !tracemap.focused && 
+                        !tracemap.selected)
                     {
                         // Create new control
                         if (!anchorEditMode && !anchorLinkMode)
@@ -1092,7 +1107,7 @@ int main(int argc, char *argv[])
                 else //focusedControl != -1
                 {
                     // Change controls layer order (position inside array)
-                    if (orderEditMode)
+                    if (orderLayerMode)
                     {
                         int newOrder = 0;
                         if (IsKeyPressed(KEY_UP)) newOrder = 1;
@@ -1558,8 +1573,8 @@ int main(int argc, char *argv[])
                 // Conditions to check
                 if (anchorEditMode && 
                     !anchorLinkMode && 
-                    !tracemapFocused && 
-                    !tracemapSelected &&
+                    !tracemap.focused && 
+                    !tracemap.selected &&
                     (layout->anchorCount < MAX_ANCHOR_POINTS))
                 {
                     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
@@ -1846,22 +1861,22 @@ int main(int argc, char *argv[])
 
             // Tracemap edition logic
             //----------------------------------------------------------------------------------------------
-            if (tracemapVisible && !tracemapLocked)
+            if (tracemap.visible && !tracemap.locked)
             {
-                tracemapFocused = false;
-                if (CheckCollisionPointRec(mouse, tracemapRec) && (focusedControl == -1) && (focusedAnchor == -1)) tracemapFocused = true;
+                tracemap.focused = false;
+                if (CheckCollisionPointRec(mouse, tracemap.rec) && (focusedControl == -1) && (focusedAnchor == -1)) tracemap.focused = true;
 
-                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, workArea))  tracemapSelected = tracemapFocused;
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, workArea))  tracemap.selected = tracemap.focused;
 
-                if (tracemapSelected)
+                if (tracemap.selected)
                 {
                     if (dragMoveMode)
                     {
                         int offsetX = (int)mouse.x%gridSpacing;
                         int offsetY = (int)mouse.y%gridSpacing;
 
-                        tracemapRec.x = prevPosition.x + (mouse.x - panOffset.x);
-                        tracemapRec.y = prevPosition.y + (mouse.y - panOffset.y);
+                        tracemap.rec.x = prevPosition.x + (mouse.x - panOffset.x);
+                        tracemap.rec.y = prevPosition.y + (mouse.y - panOffset.y);
 
                         if (mainToolbarState.snapModeActive)
                         {
@@ -1871,14 +1886,14 @@ int main(int argc, char *argv[])
                             if (offsetY >= gridSpacing/2) mouse.y += (gridSpacing - offsetY);
                             else mouse.y -= offsetY;
 
-                            offsetX = (int)tracemapRec.x%gridSpacing;
-                            offsetY = (int)tracemapRec.y%gridSpacing;
+                            offsetX = (int)tracemap.rec.x%gridSpacing;
+                            offsetY = (int)tracemap.rec.y%gridSpacing;
 
-                            if (offsetX >= gridSpacing/2) tracemapRec.x += (gridSpacing - offsetX);
-                            else tracemapRec.x -= offsetX;
+                            if (offsetX >= gridSpacing/2) tracemap.rec.x += (gridSpacing - offsetX);
+                            else tracemap.rec.x -= offsetX;
 
-                            if (offsetY >= gridSpacing/2) tracemapRec.y += (gridSpacing - offsetY);
-                            else tracemapRec.y -= offsetY;
+                            if (offsetY >= gridSpacing/2) tracemap.rec.y += (gridSpacing - offsetY);
+                            else tracemap.rec.y -= offsetY;
                         }
 
                         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) dragMoveMode = false;
@@ -1892,13 +1907,13 @@ int main(int argc, char *argv[])
                             {
                                 if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_DOWN))
                                 {
-                                    tracemapRec.height += gridSnapDelta;
-                                    tracemapRec.width += gridSnapDelta;
+                                    tracemap.rec.height += gridSnapDelta;
+                                    tracemap.rec.width += gridSnapDelta;
                                 }
                                 else if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_UP))
                                 {
-                                    tracemapRec.height -= gridSnapDelta;
-                                    tracemapRec.width -= gridSnapDelta;
+                                    tracemap.rec.height -= gridSnapDelta;
+                                    tracemap.rec.width -= gridSnapDelta;
                                 }
 
                                 moveFrameCounter = 0;
@@ -1911,42 +1926,42 @@ int main(int argc, char *argv[])
                                 {
                                     if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_DOWN))
                                     {
-                                        tracemapRec.height += gridSnapDelta;
-                                        tracemapRec.width += gridSnapDelta;
+                                        tracemap.rec.height += gridSnapDelta;
+                                        tracemap.rec.width += gridSnapDelta;
                                     }
                                     else if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_UP))
                                     {
-                                        tracemapRec.height -= gridSnapDelta;
-                                        tracemapRec.width -= gridSnapDelta;
+                                        tracemap.rec.height -= gridSnapDelta;
+                                        tracemap.rec.width -= gridSnapDelta;
                                     }
 
                                     moveFrameCounter = 0;
                                 }
                             }
 
-                            //tracemap.height = tracemapRec.height;
-                            //tracemap.width = tracemapRec.width;
+                            //tracemap.height = tracemap.rec.height;
+                            //tracemap.width = tracemap.rec.width;
                         }
                         else
                         {
                             // Move map with arrows
-                            int offsetX = (int)tracemapRec.x%gridSnapDelta;
-                            int offsetY = (int)tracemapRec.y%gridSnapDelta;
+                            int offsetX = (int)tracemap.rec.x%gridSnapDelta;
+                            int offsetY = (int)tracemap.rec.y%gridSnapDelta;
 
                             if (precisionEditMode)
                             {
-                                if (IsKeyPressed(KEY_RIGHT))  tracemapRec.x += (gridSnapDelta - offsetX);
+                                if (IsKeyPressed(KEY_RIGHT))  tracemap.rec.x += (gridSnapDelta - offsetX);
                                 else if (IsKeyPressed(KEY_LEFT))
                                 {
                                     if (offsetX == 0) offsetX = gridSnapDelta;
-                                    tracemapRec.x -= offsetX;
+                                    tracemap.rec.x -= offsetX;
                                 }
 
-                                if (IsKeyPressed(KEY_DOWN)) tracemapRec.y += (gridSnapDelta - offsetY);
+                                if (IsKeyPressed(KEY_DOWN)) tracemap.rec.y += (gridSnapDelta - offsetY);
                                 else if (IsKeyPressed(KEY_UP))
                                 {
                                     if (offsetY == 0) offsetY = gridSnapDelta;
-                                    tracemapRec.y -= offsetY;
+                                    tracemap.rec.y -= offsetY;
                                 }
 
                                 moveFrameCounter = 0;
@@ -1957,18 +1972,18 @@ int main(int argc, char *argv[])
 
                                 if ((moveFrameCounter%moveFrameSpeed) == 0)
                                 {
-                                    if (IsKeyDown(KEY_RIGHT)) tracemapRec.x += (gridSnapDelta - offsetX);
+                                    if (IsKeyDown(KEY_RIGHT)) tracemap.rec.x += (gridSnapDelta - offsetX);
                                     else if (IsKeyDown(KEY_LEFT))
                                     {
                                         if (offsetX == 0) offsetX = gridSnapDelta;
-                                        tracemapRec.x -= offsetX;
+                                        tracemap.rec.x -= offsetX;
                                     }
 
-                                    if (IsKeyDown(KEY_DOWN)) tracemapRec.y += (gridSnapDelta - offsetY);
+                                    if (IsKeyDown(KEY_DOWN)) tracemap.rec.y += (gridSnapDelta - offsetY);
                                     else if (IsKeyDown(KEY_UP))
                                     {
                                         if (offsetY == 0) offsetY = gridSnapDelta;
-                                        tracemapRec.y -= offsetY;
+                                        tracemap.rec.y -= offsetY;
                                     }
 
                                     moveFrameCounter = 0;
@@ -1979,29 +1994,29 @@ int main(int argc, char *argv[])
                             // Change alpha NOTE: Mover fuera, que sea un control global.
                             if (precisionEditMode)
                             {
-                                if (IsKeyPressed(KEY_KP_ADD)) tracemapAlpha += 0.05f;
-                                else if (IsKeyPressed(KEY_KP_SUBTRACT) || IsKeyPressed(KEY_MINUS)) tracemapAlpha -= 0.05f;
+                                if (IsKeyPressed(KEY_KP_ADD)) tracemap.alpha += 0.05f;
+                                else if (IsKeyPressed(KEY_KP_SUBTRACT) || IsKeyPressed(KEY_MINUS)) tracemap.alpha -= 0.05f;
                             }
                             else
                             {
-                                if (IsKeyDown(KEY_KP_ADD)) tracemapAlpha += 0.01f;
-                                else if (IsKeyDown(KEY_KP_SUBTRACT) || IsKeyDown(KEY_MINUS)) tracemapAlpha -= 0.01f;
+                                if (IsKeyDown(KEY_KP_ADD)) tracemap.alpha += 0.01f;
+                                else if (IsKeyDown(KEY_KP_SUBTRACT) || IsKeyDown(KEY_MINUS)) tracemap.alpha -= 0.01f;
                             }
 
-                            if (tracemapAlpha < 0) tracemapAlpha = 0;
-                            else if (tracemapAlpha > 1) tracemapAlpha = 1;
+                            if (tracemap.alpha < 0) tracemap.alpha = 0;
+                            else if (tracemap.alpha > 1) tracemap.alpha = 1;
 
                             // Delete tracemap
                             if (IsKeyPressed(KEY_DELETE))
                             {
-                                UnloadTexture(tracemap);
-                                tracemap.id = 0;
-                                tracemapRec.x = 0;
-                                tracemapRec.y = 0;
+                                UnloadTexture(tracemap.texture);
+                                tracemap.texture.id = 0;
+                                tracemap.rec.x = 0;
+                                tracemap.rec.y = 0;
 
-                                tracemapLocked = false;
-                                tracemapFocused = false;
-                                tracemapSelected = false;
+                                tracemap.locked = false;
+                                tracemap.focused = false;
+                                tracemap.selected = false;
                                 
                                 mainToolbarState.tracemapLoaded = false;
                             }
@@ -2010,7 +2025,7 @@ int main(int argc, char *argv[])
                             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                             {
                                 panOffset = mouse;
-                                prevPosition = (Vector2){ tracemapRec.x, tracemapRec.y };
+                                prevPosition = (Vector2){ tracemap.rec.x, tracemap.rec.y };
 
                                 dragMoveMode = true;
                             }
@@ -2020,8 +2035,8 @@ int main(int argc, char *argv[])
             }
             else
             {
-                tracemapFocused = false;
-                tracemapSelected = false;
+                tracemap.focused = false;
+                tracemap.selected = false;
             }
             //----------------------------------------------------------------------------------------------
         }
@@ -2091,37 +2106,37 @@ int main(int argc, char *argv[])
 
             // Draw tracemap
             //---------------------------------------------------------------------------------
-            if (tracemapVisible && (tracemap.id > 0))
+            if (tracemap.visible && (tracemap.texture.id > 0))
             {
-                DrawTexturePro(tracemap, (Rectangle){ 0, 0, tracemap.width, tracemap.height }, tracemapRec, (Vector2){ 0, 0 }, 0.0f, Fade(WHITE, tracemapAlpha));
+                DrawTexturePro(tracemap.texture, (Rectangle){ 0, 0, tracemap.texture.width, tracemap.texture.height }, tracemap.rec, (Vector2){ 0, 0 }, 0.0f, Fade(WHITE, tracemap.alpha));
 
-                if (tracemapLocked)
+                if (tracemap.locked)
                 {
-                    if (tracemapFocused) DrawRectangleLinesEx(tracemapRec, 1, MAROON);
-                    else DrawRectangleLinesEx(tracemapRec, 1, GRAY);
+                    if (tracemap.focused) DrawRectangleLinesEx(tracemap.rec, 1, MAROON);
+                    else DrawRectangleLinesEx(tracemap.rec, 1, GRAY);
                 }
                 else
                 {
-                    if (tracemapFocused)
+                    if (tracemap.focused)
                     {
-                        DrawRectangleRec(tracemapRec, Fade(RED, 0.1f));
-                        DrawRectangleLinesEx(tracemapRec, 1, MAROON);
+                        DrawRectangleRec(tracemap.rec, Fade(RED, 0.1f));
+                        DrawRectangleLinesEx(tracemap.rec, 1, MAROON);
                     }
-                    if (tracemapSelected)
+                    if (tracemap.selected)
                     {
                         tracemapColor = RED;
                         if (!dragMoveMode && resizeMode) tracemapColor = BLUE;
-                        DrawRectangleRec(tracemapRec, Fade(tracemapColor, 0.5f));
+                        DrawRectangleRec(tracemap.rec, Fade(tracemapColor, 0.5f));
 
                         positionColor = MAROON;
                         if (showGlobalPosition) positionColor = RED;
                         if (mainToolbarState.snapModeActive) positionColor = LIME;
                         if (!dragMoveMode && precisionEditMode) positionColor = BLUE;
                         DrawText(TextFormat("[%i, %i, %i, %i]",
-                                            (int)tracemapRec.x - (int)workArea.x,
-                                            (int)tracemapRec.y - (int)workArea.y,
-                                            (int)tracemapRec.width,
-                                            (int)tracemapRec.height), tracemapRec.x, tracemapRec.y - 20, 20, positionColor);
+                                            (int)tracemap.rec.x - (int)workArea.x,
+                                            (int)tracemap.rec.y - (int)workArea.y,
+                                            (int)tracemap.rec.width,
+                                            (int)tracemap.rec.height), tracemap.rec.x, tracemap.rec.y - 20, 20, positionColor);
                     }
                 }
             }
@@ -2270,11 +2285,11 @@ int main(int argc, char *argv[])
                 if (CheckCollisionPointRec(mouse, workArea) &&
                     !CheckCollisionPointRec(mouse, windowControlsPaletteState.windowBounds))
                 {
-                    if ((focusedAnchor == -1) && (focusedControl == -1) && !tracemapFocused && !refWindowEditMode)
+                    if ((focusedAnchor == -1) && (focusedControl == -1) && !tracemap.focused && !refWindowEditMode)
                     {
                         if (!anchorEditMode)
                         {
-                            if (!anchorLinkMode && (selectedAnchor == -1) && (selectedControl == -1) && !tracemapSelected)
+                            if (!anchorLinkMode && (selectedAnchor == -1) && (selectedControl == -1) && !tracemap.selected)
                             {
                                 // Draw the default rectangle of the control selected
                                 GuiLock();
@@ -2327,56 +2342,6 @@ int main(int argc, char *argv[])
                                     (int)defaultRec[selectedType].width, 
                                     (int)defaultRec[selectedType].height),
                                     (int)defaultRec[selectedType].x, ((int)defaultRec[selectedType].y < ((int)workArea.y + 8))? (int)defaultRec[selectedType].y + 30 : (int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
-
-                                // Draw controls name
-                                if (IsKeyPressed(KEY_N)) mainToolbarState.showControlNamesActive = !mainToolbarState.showControlNamesActive;
-
-                                if (mainToolbarState.showControlNamesActive)
-                                {
-                                    GuiLock();
-                                    for (int i = 0; i < layout->controlCount; i++)
-                                    {
-                                        Rectangle textboxRec = layout->controls[i].rec;
-                                        int type = layout->controls[i].type;
-
-                                        // NOTE: Depending on control type, name is drawn in different position
-                                        if ((type == GUI_CHECKBOX) || (type == GUI_LABEL) || (type == GUI_SLIDER) || (type == GUI_SLIDERBAR))
-                                        {
-                                            int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
-                                            int textWidth = MeasureText(layout->controls[i].name, fontSize);
-                                            if (textboxRec.width < textWidth + 20) textboxRec.width = textWidth + 20;
-                                            if (textboxRec.height < fontSize) textboxRec.height += fontSize;
-                                        }
-
-                                        if (type == GUI_WINDOWBOX) textboxRec.height = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT;  // Defined inside raygui.h!
-                                        else if (type == GUI_GROUPBOX)
-                                        {
-                                            textboxRec.y -= 10;
-                                            textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE)*2;
-                                        }
-
-                                        if (layout->controls[i].ap->id > 0)
-                                        {
-                                            textboxRec.x += layout->controls[i].ap->x;
-                                            textboxRec.y += layout->controls[i].ap->y;
-                                        }
-
-                                        DrawRectangleRec(textboxRec, WHITE);
-                                        GuiTextBox(textboxRec, layout->controls[i].name, MAX_CONTROL_NAME_LENGTH, false);
-                                    }
-
-                                    for (int i = 0; i < layout->anchorCount; i++)
-                                    {
-                                        Rectangle textboxRec = (Rectangle){ layout->anchors[i].x, layout->anchors[i].y,
-                                                                            MeasureText(layout->anchors[i].name, GuiGetStyle(DEFAULT, TEXT_SIZE)) + 10, GuiGetStyle(DEFAULT, TEXT_SIZE) + 5 };
-
-                                        DrawRectangleRec(textboxRec, WHITE);
-                                        DrawRectangleRec(textboxRec, Fade(ORANGE, 0.1f));
-                                        GuiTextBox(textboxRec, layout->anchors[i].name, MAX_ANCHOR_NAME_LENGTH, false);
-                                    }
-
-                                    GuiUnlock();
-                                }
                             }
                         }
                         else
@@ -2387,6 +2352,54 @@ int main(int argc, char *argv[])
                             DrawRectangle(mouse.x, mouse.y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, RED);
                         }
                     }
+                }
+
+                // Draw controls name if required
+                if (mainToolbarState.showControlNamesActive)
+                {
+                    GuiLock();
+                    for (int i = 0; i < layout->controlCount; i++)
+                    {
+                        Rectangle textboxRec = layout->controls[i].rec;
+                        int type = layout->controls[i].type;
+
+                        // NOTE: Depending on control type, name is drawn in different position
+                        if ((type == GUI_CHECKBOX) || (type == GUI_LABEL) || (type == GUI_SLIDER) || (type == GUI_SLIDERBAR))
+                        {
+                            int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
+                            int textWidth = MeasureText(layout->controls[i].name, fontSize);
+                            if (textboxRec.width < textWidth + 20) textboxRec.width = textWidth + 20;
+                            if (textboxRec.height < fontSize) textboxRec.height += fontSize;
+                        }
+
+                        if (type == GUI_WINDOWBOX) textboxRec.height = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT;  // Defined inside raygui.h!
+                        else if (type == GUI_GROUPBOX)
+                        {
+                            textboxRec.y -= 10;
+                            textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE)*2;
+                        }
+
+                        if (layout->controls[i].ap->id > 0)
+                        {
+                            textboxRec.x += layout->controls[i].ap->x;
+                            textboxRec.y += layout->controls[i].ap->y;
+                        }
+
+                        DrawRectangleRec(textboxRec, WHITE);
+                        GuiTextBox(textboxRec, layout->controls[i].name, MAX_CONTROL_NAME_LENGTH, false);
+                    }
+
+                    for (int i = 0; i < layout->anchorCount; i++)
+                    {
+                        Rectangle textboxRec = (Rectangle){ layout->anchors[i].x, layout->anchors[i].y,
+                            MeasureText(layout->anchors[i].name, GuiGetStyle(DEFAULT, TEXT_SIZE)) + 10, GuiGetStyle(DEFAULT, TEXT_SIZE) + 5 };
+
+                        DrawRectangleRec(textboxRec, WHITE);
+                        DrawRectangleRec(textboxRec, Fade(ORANGE, 0.1f));
+                        GuiTextBox(textboxRec, layout->anchors[i].name, MAX_ANCHOR_NAME_LENGTH, false);
+                    }
+
+                    GuiUnlock();
                 }
 
                 // Draw focused anchor selector
@@ -2628,17 +2641,23 @@ int main(int argc, char *argv[])
                 //else //selectedControl == 1
                 {
                     // Draw controls IDs for layout order edition
-                    if (orderEditMode)
+                    if (orderLayerMode)
                     {
                         for (int i = layout->controlCount - 1; i >= 0; i--)
                         {
                             if (layout->controls[i].ap->id > 0)
                             {
-                                DrawText(TextFormat("[%i]", layout->controls[i].id),
-                                    layout->controls[i].rec.x + layout->controls[i].ap->x + layout->controls[i].rec.width,
-                                    layout->controls[i].rec.y + layout->controls[i].ap->y - 10, 10, BLUE);
+                                DrawTextEx(GuiGetFont(), TextFormat("[%i]", layout->controls[i].id),
+                                    (Vector2){ layout->controls[i].rec.x + layout->controls[i].ap->x + layout->controls[i].rec.width,
+                                               layout->controls[i].rec.y + layout->controls[i].ap->y - GuiGetStyle(DEFAULT, TEXT_SIZE) }, 
+                                    GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetColor(GuiGetStyle(LABEL, TEXT_COLOR_PRESSED)));
                             }
-                            else DrawText(TextFormat("[%i]", layout->controls[i].id), layout->controls[i].rec.x + layout->controls[i].rec.width, layout->controls[i].rec.y - 10, 10, BLUE);
+                            else
+                            {
+                                DrawTextEx(GuiGetFont(), TextFormat("[%i]", layout->controls[i].id),
+                                    (Vector2){ layout->controls[i].rec.x + layout->controls[i].rec.width, layout->controls[i].rec.y - GuiGetStyle(DEFAULT, TEXT_SIZE) }, 
+                                    GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetColor(GuiGetStyle(LABEL, TEXT_COLOR_PRESSED)));
+                            }
                         }
                     }
                 }
@@ -2707,11 +2726,24 @@ int main(int argc, char *argv[])
             mainToolbarState.controlSelected = selectedControl;
             mainToolbarState.anchorSelected = selectedAnchor;
             mainToolbarState.hideAnchorControlsActive = layout->anchors[selectedAnchor].hidding;
-            mainToolbarState.hideTracemapActive = !tracemapVisible;
-            mainToolbarState.lockTracemapActive = tracemapLocked;
-            mainToolbarState.tracemapAlphaValue = tracemapAlpha;
-
+            mainToolbarState.hideTracemapActive = !tracemap.visible;
+            mainToolbarState.lockTracemapActive = tracemap.locked;
+            mainToolbarState.tracemapAlphaValue = tracemap.alpha;
+            mainToolbarState.showControlOrderActive = orderLayerMode;
+            
             GuiMainToolbar(&mainToolbarState);
+
+            // Snap mode setup
+            if (mainToolbarState.snapModeActive)
+            {
+                gridSnapDelta = gridSpacing;
+                moveFrameSpeed = MOVEMENT_FRAME_SPEED;
+            }
+            else
+            {
+                gridSnapDelta = 1;      // 1 pixel variation
+                moveFrameSpeed = 1;
+            }
 
             // Control: Enable text edit mode if required
             if (mainToolbarState.btnEditTextPressed)
@@ -2837,27 +2869,30 @@ int main(int argc, char *argv[])
             // Tracemap: Load new tracemap -> Already processed on Keyboard shortcuts files logic
             
             // Tracemap: Setup selected properties
-            tracemapVisible = !mainToolbarState.hideTracemapActive;
-            tracemapLocked = mainToolbarState.lockTracemapActive;
-            tracemapAlpha = mainToolbarState.tracemapAlphaValue;
+            tracemap.visible = !mainToolbarState.hideTracemapActive;
+            tracemap.locked = mainToolbarState.lockTracemapActive;
+            tracemap.alpha = mainToolbarState.tracemapAlphaValue;
 
-            if (!tracemapVisible) tracemapSelected = false;
+            if (!tracemap.visible) tracemap.selected = false;
 
             // Tracemap: Delete current tracemap
             if (mainToolbarState.btnDeleteTracemapPressed)
             {
-                UnloadTexture(tracemap);
-                tracemap.id = 0;
-                tracemapRec.x = 0;
-                tracemapRec.y = 0;
+                UnloadTexture(tracemap.texture);
+                tracemap.texture.id = 0;
+                tracemap.rec.x = 0;
+                tracemap.rec.y = 0;
 
-                tracemapLocked = false;
-                tracemapFocused = false;
-                tracemapSelected = false;
-                tracemapVisible = false;
+                tracemap.locked = false;
+                tracemap.focused = false;
+                tracemap.selected = false;
+                tracemap.visible = false;
 
                 mainToolbarState.tracemapLoaded = false;
             }
+
+            // Visuals: Show order mode
+            orderLayerMode = mainToolbarState.showControlOrderActive;
             //----------------------------------------------------------------------------------
 
             // GUI: Status bar
@@ -2870,9 +2905,9 @@ int main(int argc, char *argv[])
             if (textEditMode) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: TEXT");
             else if (nameEditMode) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: NAME");
             else if (anchorEditMode) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: ANCHOR");
-            else if (orderEditMode) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: LAYER");
+            else if (orderLayerMode) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: LAYER");
             else if (selectedControl != -1) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: CONTROL");
-            else if (tracemapSelected)  GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: TRACEMAP");
+            else if (tracemap.selected)  GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: TRACEMAP");
             else GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: LAYOUT");
 
             // Selected control info
@@ -2898,12 +2933,12 @@ int main(int argc, char *argv[])
                         (int)layout->anchors[selectedAnchor].x - (int)workArea.x, (int)layout->anchors[selectedAnchor].y - (int)workArea.y, count, 
                         (int)layout->anchors[selectedAnchor].hidding? "HIDDEN MODE" : "VISIBLE"));
             }
-            else if (tracemapSelected)
+            else if (tracemap.selected)
             {
                 GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 },
                     TextFormat("SELECTED TRACEMAP: (%i, %i, %i, %i) | OPACITY: %i %% | %s",
-                        (int)tracemapRec.x - (int)workArea.x, (int)tracemapRec.y - (int)workArea.y, (int)tracemapRec.width, (int)tracemapRec.height,
-                        (int)(tracemapAlpha*100.0f), tracemapLocked? "LOCKED" : "UNLOCKED"));
+                        (int)tracemap.rec.x - (int)workArea.x, (int)tracemap.rec.y - (int)workArea.y, (int)tracemap.rec.width, (int)tracemap.rec.height,
+                        (int)(tracemap.alpha*100.0f), tracemap.locked? "LOCKED" : "UNLOCKED"));
             }
             else GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 }, "NO CONTROL | ANCHOR | TRACEMAP SELECTED");
 
@@ -3120,13 +3155,13 @@ int main(int argc, char *argv[])
                 if (result == 1)
                 {
                     // Load layout file
-                    Texture2D tempTracemap = LoadTexture(inFileName);
+                    Texture2D texture = LoadTexture(inFileName);
 
-                    if (tempTracemap.id > 0)
+                    if (texture.id > 0)
                     {
-                        if (tracemap.id > 0) UnloadTexture(tracemap);
-                        tracemap = tempTracemap;
-                        tracemapRec = (Rectangle){ 30, 30, tracemap.width, tracemap.height };
+                        if (tracemap.texture.id > 0) UnloadTexture(tracemap.texture);
+                        tracemap.texture = texture;
+                        tracemap.rec = (Rectangle){ 30, 30, tracemap.texture.width, tracemap.texture.height };
 
                         mainToolbarState.tracemapLoaded = true;
                     }
@@ -3143,11 +3178,11 @@ int main(int argc, char *argv[])
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
-    UnloadLayout(layout);       // Unload raygui layout
-    UnloadTexture(tracemap);    // Unload tracemap texture (if loaded)
+    UnloadLayout(layout);                   // Unload raygui layout
+    UnloadTexture(tracemap.texture);        // Unload tracemap texture (if loaded)
 
-    RL_FREE(undoLayouts);       // Free undo layouts array (allocated with RL_CALLOC)
-    RL_FREE(windowCodegenState.codeText);  // Free loaded codeText memory
+    RL_FREE(undoLayouts);                   // Free undo layouts array (allocated with RL_CALLOC)
+    RL_FREE(windowCodegenState.codeText);   // Free loaded codeText memory
 
     CloseWindow();              // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
