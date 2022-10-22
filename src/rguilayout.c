@@ -392,7 +392,7 @@ int main(int argc, char *argv[])
     // Init default layout
     //-------------------------------------------------------------------------
     GuiLayout *layout = NULL;
-    
+
     if (inFileName[0] != '\0')          // Load dropped file if provided
     {
         layout = LoadLayout(inFileName);
@@ -469,7 +469,7 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------------------------------
     GuiWindowAboutState windowAboutState = InitGuiWindowAbout();
     //-----------------------------------------------------------------------------------
-    
+
     // GUI: Sponsor Window
     //-----------------------------------------------------------------------------------
     GuiWindowSponsorState windowSponsorState = InitGuiWindowSponsor();
@@ -726,7 +726,7 @@ int main(int argc, char *argv[])
 #endif
             }
         }
-        
+
         // Check for any blocking mode (window or text/name edition)
         if (!showWindowActive && !textEditMode && !nameEditMode)
         {
@@ -770,7 +770,7 @@ int main(int argc, char *argv[])
             precisionEditMode = IsKeyDown(KEY_LEFT_SHIFT);
 
             // Toggle control resize mode
-            resizeMode = IsKeyDown(KEY_LEFT_CONTROL);       
+            resizeMode = IsKeyDown(KEY_LEFT_CONTROL);
 
             // Toggle tracemap lock mode
             if ((tracemap.texture.id > 0) && IsKeyPressed(KEY_SPACE))
@@ -818,11 +818,11 @@ int main(int argc, char *argv[])
             }
             */
         }
-        
+
         // Main toolbar logic
         //----------------------------------------------------------------------------------
         windowControlsPaletteState.windowActive = mainToolbarState.showControlPanelActive;
-        
+
         // Visual options logic
         if (mainToolbarState.visualStyleActive != mainToolbarState.prevVisualStyleActive)
         {
@@ -994,10 +994,10 @@ int main(int argc, char *argv[])
                 // On focused control
                 if (focusedControl == -1)
                 {
-                    if ((focusedAnchor == -1) && 
-                        (selectedAnchor == -1) && 
-                        (selectedControl == -1) && 
-                        !tracemap.focused && 
+                    if ((focusedAnchor == -1) &&
+                        (selectedAnchor == -1) &&
+                        (selectedControl == -1) &&
+                        !tracemap.focused &&
                         !tracemap.selected)
                     {
                         // Create new control
@@ -1571,9 +1571,9 @@ int main(int argc, char *argv[])
             if ((focusedControl == -1) && (focusedAnchor == -1))
             {
                 // Conditions to check
-                if (anchorEditMode && 
-                    !anchorLinkMode && 
-                    !tracemap.focused && 
+                if (anchorEditMode &&
+                    !anchorLinkMode &&
+                    !tracemap.focused &&
                     !tracemap.selected &&
                     (layout->anchorCount < MAX_ANCHOR_POINTS))
                 {
@@ -2017,7 +2017,7 @@ int main(int argc, char *argv[])
                                 tracemap.locked = false;
                                 tracemap.focused = false;
                                 tracemap.selected = false;
-                                
+
                                 mainToolbarState.tracemapLoaded = false;
                             }
 
@@ -2068,7 +2068,7 @@ int main(int argc, char *argv[])
 
             resetLayout = false;
         }
-        
+
         // WARNING: If any window is shown, cancel any edition mode
         if (windowAboutState.windowActive ||
             windowSponsorState.windowActive ||
@@ -2163,7 +2163,7 @@ int main(int argc, char *argv[])
                             GuiFade(1.0f);
                         } break;
                         case GUI_GROUPBOX: GuiGroupBox(rec, layout->controls[i].text); break;
-                        case GUI_LINE: 
+                        case GUI_LINE:
                         {
                             if (layout->controls[i].text[0] == '\0') GuiLine(rec, NULL);
                             else GuiLine(rec, layout->controls[i].text);
@@ -2190,7 +2190,7 @@ int main(int argc, char *argv[])
                         case GUI_SLIDERBAR: GuiSliderBar(rec, layout->controls[i].text, NULL, 40, 0, 100); break;
                         case GUI_PROGRESSBAR: GuiProgressBar(rec, layout->controls[i].text, NULL, 40, 0, 100); break;
                         case GUI_STATUSBAR: GuiStatusBar(rec, layout->controls[i].text); break;
-                        case GUI_SCROLLPANEL: 
+                        case GUI_SCROLLPANEL:
                         {
                             GuiFade(0.7f);
                             GuiScrollPanel(rec, (layout->controls[i].text[0] == '\0') ? NULL : layout->controls[i].text, rec, NULL);
@@ -2281,7 +2281,7 @@ int main(int argc, char *argv[])
 
             if (!GuiIsLocked())
             {
-                // Layout controls drawing 
+                // Layout controls drawing
                 if (CheckCollisionPointRec(mouse, workArea) &&
                     !CheckCollisionPointRec(mouse, windowControlsPaletteState.windowBounds))
                 {
@@ -2336,10 +2336,10 @@ int main(int argc, char *argv[])
                                 // Draw cursor position
                                 positionColor = MAROON;
                                 if (mainToolbarState.snapModeActive) positionColor = LIME;
-                                DrawText(TextFormat("[%i, %i, %i, %i]", 
-                                    (int)defaultRec[selectedType].x - (int)workArea.x, 
+                                DrawText(TextFormat("[%i, %i, %i, %i]",
+                                    (int)defaultRec[selectedType].x - (int)workArea.x,
                                     (int)defaultRec[selectedType].y - (int)workArea.y,
-                                    (int)defaultRec[selectedType].width, 
+                                    (int)defaultRec[selectedType].width,
                                     (int)defaultRec[selectedType].height),
                                     (int)defaultRec[selectedType].x, ((int)defaultRec[selectedType].y < ((int)workArea.y + 8))? (int)defaultRec[selectedType].y + 30 : (int)defaultRec[selectedType].y - 30, 20, Fade(positionColor, 0.5f));
                             }
@@ -2448,10 +2448,10 @@ int main(int argc, char *argv[])
                                 layout->anchors[selectedAnchor].x + ANCHOR_RADIUS,
                                 layout->anchors[selectedAnchor].y - 38, 20, positionColor);
                         }
-                        else DrawText(TextFormat("[%i, %i]", 
-                                (int)(layout->refWindow.x), 
-                                (int)(layout->refWindow.y)), 
-                                layout->anchors[selectedAnchor].x + ANCHOR_RADIUS, 
+                        else DrawText(TextFormat("[%i, %i]",
+                                (int)(layout->refWindow.x),
+                                (int)(layout->refWindow.y)),
+                                layout->anchors[selectedAnchor].x + ANCHOR_RADIUS,
                                 layout->anchors[selectedAnchor].y - 38, 20, positionColor);
                     }
 
@@ -2649,13 +2649,13 @@ int main(int argc, char *argv[])
                             {
                                 DrawTextEx(GuiGetFont(), TextFormat("[%i]", layout->controls[i].id),
                                     (Vector2){ layout->controls[i].rec.x + layout->controls[i].ap->x + layout->controls[i].rec.width,
-                                               layout->controls[i].rec.y + layout->controls[i].ap->y - GuiGetStyle(DEFAULT, TEXT_SIZE) }, 
+                                               layout->controls[i].rec.y + layout->controls[i].ap->y - GuiGetStyle(DEFAULT, TEXT_SIZE) },
                                     GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetColor(GuiGetStyle(LABEL, TEXT_COLOR_PRESSED)));
                             }
                             else
                             {
                                 DrawTextEx(GuiGetFont(), TextFormat("[%i]", layout->controls[i].id),
-                                    (Vector2){ layout->controls[i].rec.x + layout->controls[i].rec.width, layout->controls[i].rec.y - GuiGetStyle(DEFAULT, TEXT_SIZE) }, 
+                                    (Vector2){ layout->controls[i].rec.x + layout->controls[i].rec.width, layout->controls[i].rec.y - GuiGetStyle(DEFAULT, TEXT_SIZE) },
                                     GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetColor(GuiGetStyle(LABEL, TEXT_COLOR_PRESSED)));
                             }
                         }
@@ -2730,7 +2730,7 @@ int main(int argc, char *argv[])
             mainToolbarState.lockTracemapActive = tracemap.locked;
             mainToolbarState.tracemapAlphaValue = tracemap.alpha;
             mainToolbarState.showControlOrderActive = orderLayerMode;
-            
+
             GuiMainToolbar(&mainToolbarState);
 
             // Snap mode setup
@@ -2867,7 +2867,7 @@ int main(int argc, char *argv[])
             }
 
             // Tracemap: Load new tracemap -> Already processed on Keyboard shortcuts files logic
-            
+
             // Tracemap: Setup selected properties
             tracemap.visible = !mainToolbarState.hideTracemapActive;
             tracemap.locked = mainToolbarState.lockTracemapActive;
@@ -2916,7 +2916,7 @@ int main(int argc, char *argv[])
             if (selectedControl != -1)
             {
                 GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 },
-                    TextFormat("SELECTED CONTROL: %03i  (%i, %i, %i, %i)  | TYPE: %s | NAME: %s", selectedControl, 
+                    TextFormat("SELECTED CONTROL: %03i  (%i, %i, %i, %i)  | TYPE: %s | NAME: %s", selectedControl,
                         (int)layout->controls[selectedControl].rec.x, (int)layout->controls[selectedControl].rec.y,
                         (int)layout->controls[selectedControl].rec.width, (int)layout->controls[selectedControl].rec.height,
                         TextToUpper(controlTypeName[layout->controls[selectedControl].type]),
@@ -2929,8 +2929,8 @@ int main(int argc, char *argv[])
                 for (int i = 0; i < layout->controlCount; i++) if (layout->controls[i].ap->id == layout->anchors[selectedAnchor].id) count++;
 
                 GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 },
-                    TextFormat("SELECTED ANCHOR: %02i  (%i, %i) | CONTROLS: %03i | %s", selectedAnchor, 
-                        (int)layout->anchors[selectedAnchor].x - (int)workArea.x, (int)layout->anchors[selectedAnchor].y - (int)workArea.y, count, 
+                    TextFormat("SELECTED ANCHOR: %02i  (%i, %i) | CONTROLS: %03i | %s", selectedAnchor,
+                        (int)layout->anchors[selectedAnchor].x - (int)workArea.x, (int)layout->anchors[selectedAnchor].y - (int)workArea.y, count,
                         (int)layout->anchors[selectedAnchor].hidding? "HIDDEN MODE" : "VISIBLE"));
             }
             else if (tracemap.selected)
@@ -2951,7 +2951,7 @@ int main(int argc, char *argv[])
             GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
             GuiSetStyle(STATUSBAR, TEXT_PADDING, 8);
             //----------------------------------------------------------------------------------------
-            
+
             // NOTE: If some overlap window is open and main window is locked, we draw a background rectangle
             //if (GuiIsLocked())    // WARNING: It takes one extra frame to process, so we just check required conditions
             if (windowAboutState.windowActive ||
@@ -2970,12 +2970,12 @@ int main(int argc, char *argv[])
 
             // WARNING: Before drawing the windows, we unlock them
             GuiUnlock();
-            
+
             // GUI: About Window
             //----------------------------------------------------------------------------------------
             GuiWindowAbout(&windowAboutState);
             //----------------------------------------------------------------------------------------
-            
+
             // GUI: Sponsor Window
             //----------------------------------------------------------------------------------------
             GuiWindowSponsor(&windowSponsorState);
@@ -3124,7 +3124,7 @@ int main(int argc, char *argv[])
                 if (result == 1)
                 {
                     // Check for valid extension and make sure it is
-                    if ((GetFileExtension(outFileName) == NULL) || 
+                    if ((GetFileExtension(outFileName) == NULL) ||
                         (!IsFileExtension(outFileName, ".c") && !IsFileExtension(outFileName, ".h"))) strcat(outFileName, ".h\0");
 
                     // Write code string to file
