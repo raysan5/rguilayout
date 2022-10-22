@@ -407,7 +407,8 @@ int main(int argc, char *argv[])
     bool tracemapLocked = false;
     bool tracemapFocused = false;
     bool tracemapSelected = false;
-    float tracemapFade = 0.5f;
+    bool tracemapVisible = true;
+    float tracemapAlpha = 0.5f;
     Color tracemapColor = RED;
 
     // Controls temp variables (default values)
@@ -625,6 +626,8 @@ int main(int argc, char *argv[])
                 if (tracemap.id > 0) UnloadTexture(tracemap);
                 tracemap = LoadTexture(droppedFiles.paths[0]);
                 tracemapRec = (Rectangle){30, 30, tracemap.width, tracemap.height};
+
+                mainToolbarState.tracemapLoaded = true;
             }
             else if (IsFileExtension(droppedFiles.paths[0], ".rgs")) GuiLoadStyle(droppedFiles.paths[0]);
 
@@ -976,7 +979,11 @@ int main(int argc, char *argv[])
                 // On focused control
                 if (focusedControl == -1)
                 {
-                    if ((focusedAnchor == -1) && (selectedAnchor == -1) && (selectedControl == -1) && !tracemapFocused && !tracemapSelected)
+                    if ((focusedAnchor == -1) && 
+                        (selectedAnchor == -1) && 
+                        (selectedControl == -1) && 
+                        !tracemapFocused && 
+                        !tracemapSelected)
                     {
                         // Create new control
                         if (!anchorEditMode && !anchorLinkMode)
@@ -1355,7 +1362,7 @@ int main(int argc, char *argv[])
                                 //---------------------------------------------------------------------
 
                                 // Unlinks the control selected from its current anchor
-                                if (layout->controls[selectedControl].ap->id != 0 && IsKeyPressed(KEY_U))
+                                if ((layout->controls[selectedControl].ap->id != 0) && IsKeyPressed(KEY_U))
                                 {
 
                                     layout->controls[selectedControl].rec.x += layout->controls[selectedControl].ap->x;
@@ -1839,12 +1846,12 @@ int main(int argc, char *argv[])
 
             // Tracemap edition logic
             //----------------------------------------------------------------------------------------------
-            if (!tracemapLocked)
+            if (tracemapVisible && !tracemapLocked)
             {
                 tracemapFocused = false;
-                if (CheckCollisionPointRec(mouse, tracemapRec) && focusedControl == -1 && focusedAnchor == -1) tracemapFocused = true;
+                if (CheckCollisionPointRec(mouse, tracemapRec) && (focusedControl == -1) && (focusedAnchor == -1)) tracemapFocused = true;
 
-                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) tracemapSelected = tracemapFocused;
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, workArea))  tracemapSelected = tracemapFocused;
 
                 if (tracemapSelected)
                 {
@@ -1972,19 +1979,19 @@ int main(int argc, char *argv[])
                             // Change alpha NOTE: Mover fuera, que sea un control global.
                             if (precisionEditMode)
                             {
-                                if (IsKeyPressed(KEY_KP_ADD)) tracemapFade += 0.05f;
-                                else if (IsKeyPressed(KEY_KP_SUBTRACT) || IsKeyPressed(KEY_MINUS)) tracemapFade -= 0.05f;
+                                if (IsKeyPressed(KEY_KP_ADD)) tracemapAlpha += 0.05f;
+                                else if (IsKeyPressed(KEY_KP_SUBTRACT) || IsKeyPressed(KEY_MINUS)) tracemapAlpha -= 0.05f;
                             }
                             else
                             {
-                                if (IsKeyDown(KEY_KP_ADD)) tracemapFade += 0.01f;
-                                else if (IsKeyDown(KEY_KP_SUBTRACT) || IsKeyDown(KEY_MINUS)) tracemapFade -= 0.01f;
+                                if (IsKeyDown(KEY_KP_ADD)) tracemapAlpha += 0.01f;
+                                else if (IsKeyDown(KEY_KP_SUBTRACT) || IsKeyDown(KEY_MINUS)) tracemapAlpha -= 0.01f;
                             }
 
-                            if (tracemapFade < 0) tracemapFade = 0;
-                            else if (tracemapFade > 1) tracemapFade = 1;
+                            if (tracemapAlpha < 0) tracemapAlpha = 0;
+                            else if (tracemapAlpha > 1) tracemapAlpha = 1;
 
-                            // Delete map
+                            // Delete tracemap
                             if (IsKeyPressed(KEY_DELETE))
                             {
                                 UnloadTexture(tracemap);
@@ -1992,9 +1999,11 @@ int main(int argc, char *argv[])
                                 tracemapRec.x = 0;
                                 tracemapRec.y = 0;
 
-                                //tracemapLocked = false;
+                                tracemapLocked = false;
                                 tracemapFocused = false;
                                 tracemapSelected = false;
+                                
+                                mainToolbarState.tracemapLoaded = false;
                             }
 
                             // Enable dragMoveMode mode
@@ -2082,9 +2091,9 @@ int main(int argc, char *argv[])
 
             // Draw tracemap
             //---------------------------------------------------------------------------------
-            if (tracemap.id > 0)
+            if (tracemapVisible && (tracemap.id > 0))
             {
-                DrawTexturePro(tracemap, (Rectangle){ 0, 0, tracemap.width, tracemap.height }, tracemapRec, (Vector2){ 0, 0 }, 0.0f, Fade(WHITE, tracemapFade));
+                DrawTexturePro(tracemap, (Rectangle){ 0, 0, tracemap.width, tracemap.height }, tracemapRec, (Vector2){ 0, 0 }, 0.0f, Fade(WHITE, tracemapAlpha));
 
                 if (tracemapLocked)
                 {
@@ -2694,29 +2703,60 @@ int main(int argc, char *argv[])
 
             // GUI: Main toolbar panel + control/anchor buttons logic
             //----------------------------------------------------------------------------------
+            // Get requires properties from main program
             mainToolbarState.controlSelected = selectedControl;
             mainToolbarState.anchorSelected = selectedAnchor;
-            mainToolbarState.tracemapSelected = tracemapSelected;
-
             mainToolbarState.hideAnchorControlsActive = layout->anchors[selectedAnchor].hidding;
+            mainToolbarState.hideTracemapActive = !tracemapVisible;
+            mainToolbarState.lockTracemapActive = tracemapLocked;
+            mainToolbarState.tracemapAlphaValue = tracemapAlpha;
 
             GuiMainToolbar(&mainToolbarState);
 
-            // Enable control text edit mode if required
+            // Control: Enable text edit mode if required
             if (mainToolbarState.btnEditTextPressed)
             {
                 strcpy(prevText, layout->controls[selectedControl].text);
                 textEditMode = true;
             }
 
-            // Enable control name edit mode if required
+            // Control: Enable name edit mode if required
             if (mainToolbarState.btnEditNamePressed)
             {
                 strcpy(prevName, layout->controls[selectedControl].name);
                 nameEditMode = true;
             }
 
-            // Delete selected control if required
+            // Control: Duplicate selected control if required
+            if (mainToolbarState.btnDuplicateControlPressed)
+            {
+                layout->controls[layout->controlCount].id = layout->controlCount;
+                layout->controls[layout->controlCount].type = layout->controls[selectedControl].type;
+                layout->controls[layout->controlCount].rec = layout->controls[selectedControl].rec;
+                layout->controls[layout->controlCount].rec.x += 10;
+                layout->controls[layout->controlCount].rec.y += 10;
+                strcpy(layout->controls[layout->controlCount].text, layout->controls[selectedControl].text);
+                strcpy(layout->controls[layout->controlCount].name, TextFormat("%s%03i", controlTypeName[layout->controls[layout->controlCount].type], layout->controlCount));
+                layout->controls[layout->controlCount].ap = layout->controls[selectedControl].ap;            // Default anchor point (0, 0)
+
+                layout->controlCount++;
+
+                selectedControl = layout->controlCount - 1;
+            }
+
+            // Control: Unlink from anchor
+            if (mainToolbarState.btnUnlinkControlPressed)
+            {
+                if (layout->controls[selectedControl].ap->id != 0)
+                {
+
+                    layout->controls[selectedControl].rec.x += layout->controls[selectedControl].ap->x;
+                    layout->controls[selectedControl].rec.y += layout->controls[selectedControl].ap->y;
+                    layout->controls[selectedControl].ap = &layout->anchors[0];  // Link to default work area anchor
+                }
+            }
+
+            // Control: Delete if required
             if (mainToolbarState.btnDeleteControlPressed)
             {
                 mouseScaleReady = false;
@@ -2737,24 +2777,87 @@ int main(int argc, char *argv[])
                 selectedControl = -1;
             }
 
-            // Duplicate control if required
-            if (mainToolbarState.btnDuplicateControlPressed)
+            // Anchor: Enable name edit mode if required
+            if (mainToolbarState.btnEditAnchorNamePressed)
             {
-                layout->controls[layout->controlCount].id = layout->controlCount;
-                layout->controls[layout->controlCount].type = layout->controls[selectedControl].type;
-                layout->controls[layout->controlCount].rec = layout->controls[selectedControl].rec;
-                layout->controls[layout->controlCount].rec.x += 10;
-                layout->controls[layout->controlCount].rec.y += 10;
-                strcpy(layout->controls[layout->controlCount].text, layout->controls[selectedControl].text);
-                strcpy(layout->controls[layout->controlCount].name, TextFormat("%s%03i", controlTypeName[layout->controls[layout->controlCount].type], layout->controlCount));
-                layout->controls[layout->controlCount].ap = layout->controls[selectedControl].ap;            // Default anchor point (0, 0)
-
-                layout->controlCount++;
-
-                selectedControl = layout->controlCount - 1;
+                strcpy(prevName, layout->anchors[selectedAnchor].name);
+                nameEditMode = true;
             }
 
+            // Anchor: Set current view mode
             if (selectedAnchor != -1) layout->anchors[selectedAnchor].hidding = mainToolbarState.hideAnchorControlsActive;
+
+            // Anchor: Unlink all linked controls
+            if (mainToolbarState.btnUnlinkAnchorControlsPressed)
+            {
+                for (int i = 0; i < layout->controlCount; i++)
+                {
+                    if (layout->controls[i].ap->id == selectedAnchor)
+                    {
+                        layout->controls[i].rec.x += layout->controls[i].ap->x;
+                        layout->controls[i].rec.y += layout->controls[i].ap->y;
+                        layout->controls[i].ap = &layout->anchors[0];
+                    }
+                }
+            }
+
+            // Anchor: Delete if required
+            if (mainToolbarState.btnDeleteAnchorPressed)
+            {
+                if (selectedAnchor == 0)
+                {
+                    layout->anchors[selectedAnchor].x = 0;
+                    layout->anchors[selectedAnchor].y = 0;
+                    layout->refWindow = (Rectangle){ 0, 0, -1, -1 };
+                }
+                else
+                {
+                    for (int i = 0; i < layout->controlCount; i++)
+                    {
+                        if (layout->controls[i].ap->id == selectedAnchor)
+                        {
+                            layout->controls[i].rec.x += layout->controls[i].ap->x;
+                            layout->controls[i].rec.y += layout->controls[i].ap->y;
+                            layout->controls[i].ap = &layout->anchors[0];
+                        }
+                    }
+
+                    layout->anchors[selectedAnchor].x = 0;
+                    layout->anchors[selectedAnchor].y = 0;
+                    layout->anchors[selectedAnchor].enabled = false;
+                    layout->anchors[selectedAnchor].hidding = false;
+
+                    layout->anchorCount--;
+                }
+
+                selectedAnchor = -1;
+                focusedAnchor = -1;
+            }
+
+            // Tracemap: Load new tracemap -> Already processed on Keyboard shortcuts files logic
+            
+            // Tracemap: Setup selected properties
+            tracemapVisible = !mainToolbarState.hideTracemapActive;
+            tracemapLocked = mainToolbarState.lockTracemapActive;
+            tracemapAlpha = mainToolbarState.tracemapAlphaValue;
+
+            if (!tracemapVisible) tracemapSelected = false;
+
+            // Tracemap: Delete current tracemap
+            if (mainToolbarState.btnDeleteTracemapPressed)
+            {
+                UnloadTexture(tracemap);
+                tracemap.id = 0;
+                tracemapRec.x = 0;
+                tracemapRec.y = 0;
+
+                tracemapLocked = false;
+                tracemapFocused = false;
+                tracemapSelected = false;
+                tracemapVisible = false;
+
+                mainToolbarState.tracemapLoaded = false;
+            }
             //----------------------------------------------------------------------------------
 
             // GUI: Status bar
@@ -2792,15 +2895,15 @@ int main(int argc, char *argv[])
 
                 GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 },
                     TextFormat("SELECTED ANCHOR: %02i  (%i, %i) | CONTROLS: %03i | %s", selectedAnchor, 
-                        (int)layout->anchors[selectedAnchor].x, (int)layout->anchors[selectedAnchor].y, count, 
+                        (int)layout->anchors[selectedAnchor].x - (int)workArea.x, (int)layout->anchors[selectedAnchor].y - (int)workArea.y, count, 
                         (int)layout->anchors[selectedAnchor].hidding? "HIDDEN MODE" : "VISIBLE"));
             }
             else if (tracemapSelected)
             {
                 GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 },
                     TextFormat("SELECTED TRACEMAP: (%i, %i, %i, %i) | OPACITY: %i %% | %s",
-                        (int)tracemapRec.x, (int)tracemapRec.y, (int)tracemapRec.width, (int)tracemapRec.height, 
-                        (int)(tracemapFade*100.0f), tracemapLocked? "LOCKED" : "UNLOCKED"));
+                        (int)tracemapRec.x - (int)workArea.x, (int)tracemapRec.y - (int)workArea.y, (int)tracemapRec.width, (int)tracemapRec.height,
+                        (int)(tracemapAlpha*100.0f), tracemapLocked? "LOCKED" : "UNLOCKED"));
             }
             else GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 }, "NO CONTROL | ANCHOR | TRACEMAP SELECTED");
 
@@ -3024,6 +3127,8 @@ int main(int argc, char *argv[])
                         if (tracemap.id > 0) UnloadTexture(tracemap);
                         tracemap = tempTracemap;
                         tracemapRec = (Rectangle){ 30, 30, tracemap.width, tracemap.height };
+
+                        mainToolbarState.tracemapLoaded = true;
                     }
                     else inFileName[0] = '\0';
                 }
