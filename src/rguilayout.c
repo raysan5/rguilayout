@@ -1035,7 +1035,7 @@ int main(int argc, char *argv[])
                         !tracemap.focused &&
                         !tracemap.selected)
                     {
-                        // Create new control
+                        // Create control
                         if (!anchorEditMode && !anchorLinkMode)
                         {
                             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
