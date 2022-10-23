@@ -95,14 +95,11 @@ static char *GetControlNameParam(char *controlName, const char *preText);
 //----------------------------------------------------------------------------------
 
 // Generate layout code string
+// TODO: WARNING: layout is passed as value, probably not a good idea considering the size of the object
 unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, GuiLayoutConfig config)
 {
-    #define MAX_CODE_SIZE            1024*512
-    #define MAX_VARIABLE_NAME_SIZE   64
-
-#if !defined(VERSION_ONE)
-    if (layout.controlCount > 16) layout.controlCount = 16;
-#endif
+    #define MAX_CODE_SIZE            1024*1024       // Max code size: 1MB
+    #define MAX_VARIABLE_NAME_SIZE     64
 
     unsigned char *toolstr = (unsigned char *)RL_CALLOC(MAX_CODE_SIZE, sizeof(unsigned char));
     unsigned const char *substr = NULL;
@@ -111,6 +108,7 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, GuiL
     int codePos = 0;
     int bufferLen = (int)strlen(buffer);
 
+    // Offset all enabled anchors from reference window and offset
     for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
     {
         if (layout.anchors[a].enabled)
@@ -192,6 +190,7 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, GuiL
     substr = TextSubtext(buffer, bufferPos, i - bufferPos);
     strcpy(toolstr + codePos, substr);
 
+    // Restored all enabled anchors to reference window and offset
     for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
     {
         if (layout.anchors[a].enabled)
@@ -997,6 +996,8 @@ static char *GetControlRectangleText(int index, GuiLayoutControl control, bool d
 
     return text;
 }
+
+// Get scroll panel container rectangle text
 static char *GetScrollPanelContainerRecText(int index, GuiLayoutControl control, bool defineRecs, bool exportAnchors, const char *preText)
 {
     static char text[512];
