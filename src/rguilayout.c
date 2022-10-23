@@ -368,7 +368,7 @@ int main(int argc, char *argv[])
     // Anchors variables
     int selectedAnchor = -1;
     int focusedAnchor = -1;
-    GuiAnchorPoint auxAnchor = { MAX_ANCHOR_POINTS, 0, 0, 0 };  // Auxiliar anchor
+    GuiAnchorPoint auxAnchor = { MAX_ANCHOR_POINTS, 0, 0, 0 };  // Auxiliar anchor, required to move anchors without moving controls
 
     Vector2 panOffset = { 0 };
     Vector2 prevPosition = { 0 };
@@ -3416,6 +3416,7 @@ static GuiLayout *LoadLayout(const char *fileName)
     if (fileName != NULL)   // Try loading text layout file
     {
         FILE *rglFile = fopen(fileName, "rt");
+
         if (rglFile != NULL)
         {
             char buffer[256] = { 0 };
@@ -3507,6 +3508,10 @@ static void ResetLayout(GuiLayout *layout)
         if (i == 0) strcpy(layout->anchors[i].name, "anchorMain");
         else strcpy(layout->anchors[i].name, TextFormat("anchor%02i", i));
     }
+
+    // TODO: TEST: REVIEW
+    layout->anchors[0].x = 0;
+    layout->anchors[0].y = -40;
 
     // Initialize layout controls data
     for (int i = 0; i < MAX_GUI_CONTROLS; i++)
