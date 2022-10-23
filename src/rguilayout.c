@@ -324,6 +324,7 @@ int main(int argc, char *argv[])
 
     // Work area to place components (full screen by default)
     Rectangle workArea = { 0, 40, GetScreenWidth(), GetScreenHeight() - 40 - 24 };
+    
     bool showWindowActive = false;          // Check for any blocking window active
 
     // Grid control variables
@@ -685,7 +686,11 @@ int main(int argc, char *argv[])
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_S)) showSaveFileDialog = true;   // SaveAs dialog
         else if ((IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) || mainToolbarState.btnSaveFilePressed)
         {
-            if (inFileName[0] == '\0') showSaveFileDialog = true;
+            if (inFileName[0] == '\0')
+            {
+                strcpy(outFileName, "layout_name.rgl");
+                showSaveFileDialog = true;
+            }
             else
             {
                 SaveLayout(layout, inFileName);
@@ -920,6 +925,7 @@ int main(int argc, char *argv[])
                 //else if (windowCodegenState.codeTemplateActive == 2) template = LoadFileText(/*custom_template*/);
                 currentCodeTemplate = windowCodegenState.codeTemplateActive;
 
+                // Clear current codeText and generate new layout code
                 RL_FREE(windowCodegenState.codeText);
                 windowCodegenState.codeText = GenLayoutCode(template, *layout, config);
                 memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
@@ -1034,12 +1040,19 @@ int main(int argc, char *argv[])
                         {
                             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                             {
-                                // Config new control
+                                // Control basic configuration
                                 layout->controls[layout->controlCount].id = layout->controlCount;
                                 layout->controls[layout->controlCount].type = selectedType;
-                                layout->controls[layout->controlCount].rec = (Rectangle){ defaultRec[selectedType].x, defaultRec[selectedType].y,
-                                                                            defaultRec[selectedType].width, defaultRec[selectedType].height };
+                                layout->controls[layout->controlCount].rec = defaultRec[selectedType];  // Use default rectangle for control creation
+                                    
+                                // NOTE: HACK: GuiToggleGroup() considers width per element instead of full control
+                                if (layout->controls[layout->controlCount].type == GUI_TOGGLEGROUP)
+                                {
+                                    layout->controls[layout->controlCount].rec = (Rectangle){ defaultRec[selectedType].x, defaultRec[selectedType].y,
+                                                                                              defaultRec[selectedType].width/3.0f, defaultRec[selectedType].height };
+                                }
 
+                                // Control text definition: default label
                                 if ((layout->controls[layout->controlCount].type == GUI_LABEL)
                                     || (layout->controls[layout->controlCount].type == GUI_TEXTBOX)
                                     || (layout->controls[layout->controlCount].type == GUI_TEXTBOXMULTI)
@@ -1057,6 +1070,7 @@ int main(int argc, char *argv[])
                                     strcpy(layout->controls[layout->controlCount].text, "SAMPLE TEXT");
                                 }
 
+                                // Control text definition: control options
                                 if ((layout->controls[layout->controlCount].type == GUI_TOGGLEGROUP)
                                     || (layout->controls[layout->controlCount].type == GUI_COMBOBOX)
                                     || (layout->controls[layout->controlCount].type == GUI_DROPDOWNBOX)
@@ -1065,12 +1079,15 @@ int main(int argc, char *argv[])
                                     strcpy(layout->controls[layout->controlCount].text, "ONE;TWO;THREE");
                                 }
 
+                                // Control name definition (type + count)
                                 strcpy(layout->controls[layout->controlCount].name,
                                        TextFormat("%s%03i", controlTypeName[layout->controls[layout->controlCount].type], layout->controlCount));
 
-                                layout->controls[layout->controlCount].ap = &layout->anchors[0];        // Default anchor point (0, 0)
+                                // Control anchor point definition: Default to anchor[0] = (0, 0)
+                                layout->controls[layout->controlCount].ap = &layout->anchors[0];
 
-                                // If we create new control inside a windowbox, then anchor the new control to the windowbox anchor
+                                // Control anchor point redefinition if created inside a GuiWindowBox(),
+                                // anchor the new control to the GuiWindowBox() anchor
                                 for (int i = layout->controlCount; i >= 0; i--)
                                 {
                                     if ((layout->controls[i].type == GUI_WINDOWBOX) || (layout->controls[i].type == GUI_GROUPBOX))
@@ -1085,9 +1102,10 @@ int main(int argc, char *argv[])
                                     }
                                 }
 
-                                // Create anchor for windowbox control if we can
+                                // Create anchor for GuiWindowBox() or GuiGroupBox() controls
                                 if ((layout->anchorCount < MAX_ANCHOR_POINTS) &&
-                                    ((layout->controls[layout->controlCount].type == GUI_WINDOWBOX) || (layout->controls[layout->controlCount].type == GUI_GROUPBOX)))
+                                    ((layout->controls[layout->controlCount].type == GUI_WINDOWBOX) || 
+                                     (layout->controls[layout->controlCount].type == GUI_GROUPBOX)))
                                 {
                                     for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
                                     {
@@ -1125,6 +1143,7 @@ int main(int argc, char *argv[])
                                     layout->controls[layout->controlCount].rec.x -= layout->controls[layout->controlCount].ap->x;
                                     layout->controls[layout->controlCount].rec.y -= layout->controls[layout->controlCount].ap->y;
                                 }
+
                                 layout->controlCount++;
 
                                 focusedControl = layout->controlCount - 1;
@@ -1254,9 +1273,9 @@ int main(int argc, char *argv[])
                         }
                         else
                         {
-                            if (resizeMode)
+                            if (resizeMode)     // TODO: What's that?
                             {
-                                if (IsKeyPressed(KEY_R) && layout->controls[selectedControl].type == GUI_WINDOWBOX)
+                                if (IsKeyPressed(KEY_R) && (layout->controls[selectedControl].type == GUI_WINDOWBOX))
                                 {
                                     Rectangle rec = layout->controls[selectedControl].rec;
 
@@ -1266,6 +1285,7 @@ int main(int argc, char *argv[])
                                         rec.y += layout->controls[selectedControl].ap->y;
                                     }
 
+                                    // What happens when we set a ref window?
                                     layout->anchors[0].x = rec.x;
                                     layout->anchors[0].y = rec.y;
                                     layout->refWindow = (Rectangle){layout->anchors[0].x, layout->anchors[0].y, rec.width, rec.height};
@@ -2315,7 +2335,8 @@ int main(int argc, char *argv[])
 
             if (!GuiIsLocked())
             {
-                // Layout controls drawing
+                // Control selected from panel drawing
+                // NOTE: It uses default control rectangle for selected type
                 if (CheckCollisionPointRec(mouse, workArea) &&
                     !CheckCollisionPointRec(mouse, windowControlsPaletteState.windowBounds))
                 {
@@ -2341,8 +2362,10 @@ int main(int argc, char *argv[])
                                     case GUI_CHECKBOX: GuiCheckBox(defaultRec[selectedType], "CHECK BOX", false); break;
                                     case GUI_TOGGLE: GuiToggle(defaultRec[selectedType], "TOGGLE", false); break;
                                     // WARNING: Selection rectangle for GuiToggleGroup() considers all the control while the function expects only one piece!
-                                    // TODO: Review the rectangle defined for ToggleGroup() or review the control itself to receive the complete bounds with (?)
-                                    case GUI_TOGGLEGROUP: GuiToggleGroup((Rectangle){ defaultRec[selectedType].x, defaultRec[selectedType].y, defaultRec[selectedType].width/3, defaultRec[selectedType].height }, "ONE;TWO;THREE", 1); break;
+                                    case GUI_TOGGLEGROUP: 
+                                    {
+                                        GuiToggleGroup((Rectangle){ defaultRec[selectedType].x, defaultRec[selectedType].y, defaultRec[selectedType].width/3.0f, defaultRec[selectedType].height }, "ONE;TWO;THREE", 1);
+                                    } break;
                                     case GUI_COMBOBOX: GuiComboBox(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
                                     case GUI_DROPDOWNBOX: GuiDropdownBox(defaultRec[selectedType], "ONE;TWO;THREE", &dropdownBoxActive, false); break;
                                     case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedType], "TEXT BOX", 7, false); break;
@@ -2940,9 +2963,9 @@ int main(int argc, char *argv[])
             // Show edit mode depending on the element/property being edited
             if (textEditMode) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: TEXT");
             else if (nameEditMode) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: NAME");
-            else if (anchorEditMode) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: ANCHOR");
             else if (orderLayerMode) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: LAYER");
             else if (selectedControl != -1) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: CONTROL");
+            else if (anchorEditMode || (selectedAnchor != -1)) GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: ANCHOR");
             else if (tracemap.selected)  GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: TRACEMAP");
             else GuiStatusBar((Rectangle){ 160 - 1, GetScreenHeight() - 24, 168, 24 }, "EDIT MODE: LAYOUT");
 
@@ -3029,6 +3052,8 @@ int main(int argc, char *argv[])
 
             if (windowCodegenState.btnGenerateCodePressed)
             {
+                strcpy(outFileName, TextFormat("%s.c", config.name));
+
                 showExportFileDialog = true;
                 windowCodegenState.windowActive = false;
                 windowCodegenState.btnGenerateCodePressed = false;
@@ -3044,14 +3069,15 @@ int main(int argc, char *argv[])
                 if (message == 0) windowResetActive = false;
                 else if (message == 1)  // Yes
                 {
+                    strcpy(outFileName, "layout_name.rgl");
                     showSaveFileDialog = true;
-                    resetLayout = true;
                     windowResetActive = false;
+                    resetLayout = true;
                 }
                 else if (message == 2)  // No
                 {
-                    resetLayout = true;
                     windowResetActive = false;
+                    resetLayout = true;
                 }
             }
             //----------------------------------------------------------------------------------------
@@ -3066,6 +3092,7 @@ int main(int argc, char *argv[])
                 else if (result == 1) closeWindow = true;
                 else if (result == 2)
                 {
+                    strcpy(outFileName, "layout_name.rgl");
                     showSaveFileDialog = true;
                     windowExitActive = false;
                 }
