@@ -289,8 +289,8 @@ void UpdateControlsPaletteRecs(GuiWindowControlsPaletteState *state)
     state->controlRecs[GUI_LABEL] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 184, 120, 24 };
     state->controlRecs[GUI_BUTTON] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 216, 120, 24 };
     state->controlRecs[GUI_LABELBUTTON] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 248, 120, 24 };
-    state->controlRecs[GUI_CHECKBOX] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 284, 16, 16 };      // Same line
-    state->controlRecs[GUI_TOGGLE] = (Rectangle){ state->windowBounds.x + 44, state->windowBounds.y + state->containerScrollOffset.y + 24 + 280, 96, 24 };        // Same line
+    state->controlRecs[GUI_CHECKBOX] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 280, 24, 24 };      // Same line
+    state->controlRecs[GUI_TOGGLE] = (Rectangle){ state->windowBounds.x + 52, state->windowBounds.y + state->containerScrollOffset.y + 24 + 280, 88, 24 };        // Same line
     state->controlRecs[GUI_TOGGLEGROUP] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 312, 120, 24 };
     state->controlRecs[GUI_COMBOBOX] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 344, 120, 24 };
     state->controlRecs[GUI_DROPDOWNBOX] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 376, 120, 24 };
