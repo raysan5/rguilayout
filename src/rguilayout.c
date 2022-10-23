@@ -158,7 +158,7 @@ bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib
 
 #define ANCHOR_RADIUS               20      // Default anchor radius
 #define MIN_CONTROL_SIZE            10      // Minimum control size
-#define SCALE_BOX_CORNER_SIZE        8      // Scale box bottom-right corner square size
+#define SCALE_BOX_CORNER_SIZE       10      // Scale box bottom-right corner square size
 
 #define MOVEMENT_FRAME_SPEED         2      // Controls movement speed in pixels per frame: TODO: Review
 
