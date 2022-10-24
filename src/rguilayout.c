@@ -208,7 +208,7 @@ static const char *toolDescription = TOOL_DESCRIPTION;
 
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
 
-#define HELP_LINES_COUNT    37
+#define HELP_LINES_COUNT    38
 
 // Tool help info
 static const char *helpLines[HELP_LINES_COUNT] = {
@@ -254,7 +254,7 @@ static const char *helpLines[HELP_LINES_COUNT] = {
 
     "-Visual Options",
     "G - Toggle grid mode",
-    "R - Toggle control rectangles view"
+    "R - Toggle control rectangles view",
     "N - Toggle control names view",
     "L - Toggle control layer view "
 };
@@ -389,7 +389,7 @@ int main(int argc, char *argv[])
     //int multiSelectControls[20] = { -1 };
     //int multiSelectCount = 0;
 
-    // Define default colors for the different modes and states
+    // TODO: Define default colors for the different modes and states, align with style
     //Color colorModes[30] = { };
     Color colEditNameOverlay = GREEN;       // Fade: 0.2f
     Color colEditTextOverlay = SKYBLUE;     // Fade: 0.2f
@@ -426,7 +426,7 @@ int main(int argc, char *argv[])
     Color colTracemapLines = GRAY;
     Color colTracemapResize = BLUE;
 
-    Color colShowControlRecs = BLUE;    // Fade: 0.2f, line 0.7f
+    Color colShowControlRecs = BLUE;        // Fade: 0.2f, line 0.7f
 
 
     // Init default layout
@@ -515,12 +515,12 @@ int main(int argc, char *argv[])
     strcpy(config.version, toolVersion);
     strcpy(config.company, "raylib technologies");
     strcpy(config.description, "tool description");
+    config.currentTemplate = 0;
     config.exportAnchors = false;
     config.defineRecs = false;
     config.defineTexts = false;
     config.fullComments = false;
     config.exportButtonFunctions = false;
-    int currentCodeTemplate = 0;
 
     GuiLayoutConfig prevConfig = { 0 };
     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
@@ -784,7 +784,69 @@ int main(int argc, char *argv[])
         }
 
         // Show dialog: export layout as code
-        if ((IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) || mainToolbarState.btnExportFilePressed) windowCodegenState.windowActive = true;
+        if ((IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) || mainToolbarState.btnExportFilePressed)
+        {
+            // Setup code generation config parameters
+            strcpy(config.name, windowCodegenState.toolNameText);
+            strcpy(config.version, windowCodegenState.toolVersionText);
+            strcpy(config.company, windowCodegenState.companyText);
+            strcpy(config.description, windowCodegenState.toolDescriptionText);
+            config.currentTemplate = windowCodegenState.codeTemplateActive;
+            config.exportAnchors = windowCodegenState.exportAnchorsChecked;
+            config.defineRecs = windowCodegenState.defineRecsChecked;
+            config.defineTexts = windowCodegenState.defineTextsChecked;
+            config.fullComments = windowCodegenState.fullCommentsChecked;
+            config.exportButtonFunctions = windowCodegenState.genButtonFuncsChecked;
+
+            // Select desired code template for generation
+            const unsigned char *template = NULL;
+            if (config.currentTemplate == 0) template = guiTemplateStandardCode;
+            else if (config.currentTemplate >= 1) template = guiTemplateHeaderOnly;
+            //else if (windowCodegenState.codeTemplateActive == 2) template = LoadFileText(/*custom_template*/);
+
+            // Clear current codeText and generate new layout code
+            RL_FREE(windowCodegenState.codeText);
+            windowCodegenState.codeText = GenLayoutCode(template, layout, (Vector2){ workArea.x, workArea.y }, config);
+            windowCodegenState.codePanelScrollOffset = (Vector2){ 0, 0 };
+
+            // Store current config as prevConfig
+            memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
+
+            // Activate code generation export window
+            windowCodegenState.windowActive = true;
+        }
+
+        if (windowCodegenState.windowActive)
+        {
+            // Setup code generation config parameters
+            strcpy(config.name, windowCodegenState.toolNameText);
+            strcpy(config.version, windowCodegenState.toolVersionText);
+            strcpy(config.company, windowCodegenState.companyText);
+            strcpy(config.description, windowCodegenState.toolDescriptionText);
+            config.currentTemplate = windowCodegenState.codeTemplateActive;
+            config.exportAnchors = windowCodegenState.exportAnchorsChecked;
+            config.defineRecs = windowCodegenState.defineRecsChecked;
+            config.defineTexts = windowCodegenState.defineTextsChecked;
+            config.fullComments = windowCodegenState.fullCommentsChecked;
+            config.exportButtonFunctions = windowCodegenState.genButtonFuncsChecked;
+
+            // Check if config parameter have changed while codegen window is open to regenerate code
+            if (memcmp(&prevConfig, &config, sizeof(GuiLayoutConfig)) != 0)
+            {
+                // Select desired code template for generation
+                const unsigned char *template = NULL;
+                if (config.currentTemplate == 0) template = guiTemplateStandardCode;
+                else if (config.currentTemplate >= 1) template = guiTemplateHeaderOnly;
+                // TODO: Support custom code template
+                //else if (windowCodegenState.codeTemplateActive == 2) template = LoadFileText(/*custom_template*/);
+
+                // Clear current codeText and generate new layout code
+                RL_FREE(windowCodegenState.codeText);
+                windowCodegenState.codeText = GenLayoutCode(template, layout, (Vector2){ workArea.x, workArea.y }, config);
+
+                memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
+            }
+        }
 
         // Show dialog: load tracemap image
         if ((IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_O)) || mainToolbarState.btnLoadTracemapPressed) showLoadTracemapDialog = true;
@@ -906,29 +968,9 @@ int main(int argc, char *argv[])
             {
                 // Open reset window
                 if (IsKeyPressed(KEY_N)) windowResetActive = true;
-
-                // Activate code generation export window
-                if (IsKeyPressed(KEY_ENTER))
-                {
-                    strcpy(config.name, windowCodegenState.toolNameText);
-                    strcpy(config.version, windowCodegenState.toolVersionText);
-                    strcpy(config.company, windowCodegenState.companyText);
-                    strcpy(config.description, windowCodegenState.toolDescriptionText);
-                    config.exportAnchors = windowCodegenState.exportAnchorsChecked;
-                    config.defineRecs = windowCodegenState.defineRecsChecked;
-                    config.defineTexts = windowCodegenState.defineTextsChecked;
-                    config.fullComments = windowCodegenState.fullCommentsChecked;
-                    config.exportButtonFunctions = windowCodegenState.genButtonFuncsChecked;
-
-                    memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
-
-                    RL_FREE(windowCodegenState.codeText);
-                    windowCodegenState.codeText = GenLayoutCode(guiTemplateStandardCode, layout, (Vector2){ workArea.x, workArea.y },  config);
-                    windowCodegenState.windowActive = true;
-                }
             }
 
-            // TODO: Change grid spacing -> Look for a better solution
+            // TODO: Support grid spacing customization
             /*
             if (IsKeyDown(KEY_RIGHT_ALT))
             {
@@ -988,39 +1030,6 @@ int main(int argc, char *argv[])
             windowControlsPaletteState.windowBounds.y = 40;
             windowControlsPaletteState.windowBounds.height = workArea.height;
         }
-
-        // Code generation window logic
-        //----------------------------------------------------------------------------------
-        if (windowCodegenState.windowActive)
-        {
-            strcpy(config.name, windowCodegenState.toolNameText);
-            strcpy(config.version, windowCodegenState.toolVersionText);
-            strcpy(config.company, windowCodegenState.companyText);
-            strcpy(config.description, windowCodegenState.toolDescriptionText);
-            config.exportAnchors = windowCodegenState.exportAnchorsChecked;
-            config.defineRecs = windowCodegenState.defineRecsChecked;
-            config.defineTexts = windowCodegenState.defineTextsChecked;
-            config.fullComments = windowCodegenState.fullCommentsChecked;
-            config.exportButtonFunctions = windowCodegenState.genButtonFuncsChecked;
-
-            if ((currentCodeTemplate != windowCodegenState.codeTemplateActive) ||
-                (memcmp(&config, &prevConfig, sizeof(GuiLayoutConfig)) != 0))
-            {
-                const unsigned char *template = NULL;
-                if (windowCodegenState.codeTemplateActive == 0) template = guiTemplateStandardCode;
-                else if (windowCodegenState.codeTemplateActive >= 1) template = guiTemplateHeaderOnly;
-                //else if (windowCodegenState.codeTemplateActive == 2) template = LoadFileText(/*custom_template*/);
-                currentCodeTemplate = windowCodegenState.codeTemplateActive;
-
-                // Clear current codeText and generate new layout code
-                RL_FREE(windowCodegenState.codeText);
-                windowCodegenState.codeText = GenLayoutCode(template, layout, (Vector2){ workArea.x, workArea.y }, config);
-                memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
-
-                windowCodegenState.codePanelScrollOffset = (Vector2){ 0, 0 };
-            }
-        }
-        //----------------------------------------------------------------------------------
 
         // Layout edition logic
         //----------------------------------------------------------------------------------------------
@@ -2351,6 +2360,7 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
 
             // Draw reference window
+            // TODO: Review refWindow use case, really required?
             //----------------------------------------------------------------------------------------
             // Reference window edit mode lines
             if ((layout->refWindow.width > 0) && (layout->refWindow.height > 0))
@@ -2369,10 +2379,10 @@ int main(int argc, char *argv[])
                 }
             }
 
-            // TODO: Review this colors mess
             Color colAnchor = colAnchorDisabled;
             Color colAnchorCircle = colAnchorDisabled;
 
+            // NOTE: anchor[0] is reserved and assigned to refWindow
             if (selectedAnchor == 0)
             {
                 if (anchorEditMode) { colAnchor = colAnchorSelected; colAnchorCircle = colAnchorSelected;}
@@ -3495,7 +3505,7 @@ static void ProcessCommandLine(int argc, char *argv[])
             else LOG("WARNING: No template file provided\n");
         }
 
-        // TODO: Support CLI codegen options: exportAnchors, defineRecs, fullComments...
+        // TODO: CLI: Support codegen options: exportAnchors, defineRecs, fullComments...
     }
 
     // Process input file
@@ -3751,29 +3761,41 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
 // Draw help window with the provided lines
 static int GuiWindowHelp(Rectangle bounds, const char *title, const char **helpLines, int helpLinesCount)
 {
+    #define GUIHELPWINDOW_LINE_HEIGHT           24
+    #define GUIHELPWINDOW_LINE_EMPTY_HEIGHT     12 
+
     static Vector2 scrollPanelOffset = { 0, 0 };
+    int contentHeight = 0;
     int nextLineY = 0;
 
     // Calculate window height if not externally provided a desired height
     if (bounds.height == 0) bounds.height = (float)(helpLinesCount*24 + 24);
 
     int windowHelpActive = !GuiWindowBox(bounds, title);
-    nextLineY += (24 + 2);
+    nextLineY += (GUIHELPWINDOW_LINE_HEIGHT + 2);
 
-    // TODO: Avoid hardcoded height, calculate it from lines provided
-    Rectangle scissor = GuiScrollPanel((Rectangle){ bounds.x, bounds.y + 24 - 1, bounds.width, bounds.height }, NULL,
-                                       (Rectangle){ bounds.x, bounds.y + 24, bounds.width - 16, 900 }, &scrollPanelOffset);
+    // Calculate content height
+    for (int i = 0; i < helpLinesCount; i++)
+    {
+        if (helpLines[i] == NULL) contentHeight += GUIHELPWINDOW_LINE_EMPTY_HEIGHT;
+        else contentHeight += GUIHELPWINDOW_LINE_HEIGHT;
+    }
+    contentHeight += 12;    // Marging at the end
+
+    // Draw scroll panel considering window bounds and content size
+    Rectangle scissor = GuiScrollPanel((Rectangle){ bounds.x, bounds.y + GUIHELPWINDOW_LINE_HEIGHT - 1, bounds.width, bounds.height }, NULL,
+                                       (Rectangle){ bounds.x, bounds.y + GUIHELPWINDOW_LINE_HEIGHT, bounds.width - 16, contentHeight }, &scrollPanelOffset);
 
     BeginScissorMode(scissor.x, scissor.y, scissor.width + 2, scissor.height);
 
         for (int i = 0; i < helpLinesCount; i++)
         {
-            if (helpLines[i] == NULL) GuiLine((Rectangle){ bounds.x, bounds.y + nextLineY + scrollPanelOffset.y, bounds.width, 12 }, helpLines[i]);
-            else if (helpLines[i][0] == '-') GuiLine((Rectangle){ bounds.x, bounds.y + nextLineY + scrollPanelOffset.y, bounds.width, 24 }, helpLines[i] + 1);
-            else GuiLabel((Rectangle){ bounds.x + 12, bounds.y + nextLineY + scrollPanelOffset.y, bounds.width, 24 }, helpLines[i]);
+            if (helpLines[i] == NULL) GuiLine((Rectangle){ bounds.x, bounds.y + nextLineY + scrollPanelOffset.y, bounds.width, GUIHELPWINDOW_LINE_EMPTY_HEIGHT }, helpLines[i]);
+            else if (helpLines[i][0] == '-') GuiLine((Rectangle){ bounds.x, bounds.y + nextLineY + scrollPanelOffset.y, bounds.width, GUIHELPWINDOW_LINE_HEIGHT }, helpLines[i] + 1);
+            else GuiLabel((Rectangle){ bounds.x + 12, bounds.y + nextLineY + scrollPanelOffset.y, bounds.width, GUIHELPWINDOW_LINE_HEIGHT }, helpLines[i]);
 
-            if (helpLines[i] == NULL) nextLineY += 12;
-            else nextLineY += 24;
+            if (helpLines[i] == NULL) nextLineY += GUIHELPWINDOW_LINE_EMPTY_HEIGHT;
+            else nextLineY += GUIHELPWINDOW_LINE_HEIGHT;
         }
 
     EndScissorMode();
