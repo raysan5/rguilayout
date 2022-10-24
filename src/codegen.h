@@ -126,6 +126,8 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout *layout, Vec
     #define MAX_CODE_SIZE            1024*1024       // Max code size: 1MB
     #define MAX_VARIABLE_NAME_SIZE     64
 
+    if (buffer == NULL) return NULL;
+
     unsigned char *toolstr = (unsigned char *)RL_CALLOC(MAX_CODE_SIZE, sizeof(unsigned char));
     unsigned const char *substr = NULL;
 
@@ -222,8 +224,8 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout *layout, Vec
         }
     }
 
-    substr = TextSubtext(buffer, bufferPos, i - bufferPos);
-    strcpy(toolstr + codePos, substr);
+    // Copy remaining text into toolstr
+    strcpy(toolstr + codePos, buffer + bufferPos);
 
     // In case of controls with no anchor, offset must be applied to control position
     for (int i = 0; i < layout->controlCount; i++)

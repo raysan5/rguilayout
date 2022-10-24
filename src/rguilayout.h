@@ -108,7 +108,7 @@ typedef struct {
     unsigned char version[32];
     unsigned char company[128];
     unsigned char description[256];
-    int currentTemplate;                // 0-StandardCFile, 1-HeaderOnly, 2-Custom
+    char *template;                     // Code template
     bool exportAnchors;
     bool defineRecs;
     bool defineTexts;

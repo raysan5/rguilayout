@@ -9,7 +9,9 @@
 *       NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   VERSIONS HISTORY:
-*       3.0  (xx-Oct-2022)  ADDED: Main toolbar, consistent with other tools
+*       3.0  (24-Oct-2022)  ADDED: Main toolbar, consistent with other tools, many options!
+*                           ADDED: View options: Control recs, names, layers order
+*                           ADDED: Support custom code templates on code generation
 *                           ADDED: Sponsor window for tools support
 *                           ADDED: Multiple UI styles selection
 *                           REVIEWED: Codegen window font and templates
@@ -515,7 +517,7 @@ int main(int argc, char *argv[])
     strcpy(config.version, toolVersion);
     strcpy(config.company, "raylib technologies");
     strcpy(config.description, "tool description");
-    config.currentTemplate = 0;
+    config.template = NULL;
     config.exportAnchors = false;
     config.defineRecs = false;
     config.defineTexts = false;
@@ -583,6 +585,7 @@ int main(int argc, char *argv[])
     bool showSaveFileDialog = false;
     bool showExportFileDialog = false;
     bool showLoadTracemapDialog = false;
+    bool showLoadTemplateDialog = false;
     //-----------------------------------------------------------------------------------
 
     SetTargetFPS(60);       // Set our game desired framerate
@@ -791,7 +794,6 @@ int main(int argc, char *argv[])
             strcpy(config.version, windowCodegenState.toolVersionText);
             strcpy(config.company, windowCodegenState.companyText);
             strcpy(config.description, windowCodegenState.toolDescriptionText);
-            config.currentTemplate = windowCodegenState.codeTemplateActive;
             config.exportAnchors = windowCodegenState.exportAnchorsChecked;
             config.defineRecs = windowCodegenState.defineRecsChecked;
             config.defineTexts = windowCodegenState.defineTextsChecked;
@@ -799,20 +801,19 @@ int main(int argc, char *argv[])
             config.exportButtonFunctions = windowCodegenState.genButtonFuncsChecked;
 
             // Select desired code template for generation
-            const unsigned char *template = NULL;
-            if (config.currentTemplate == 0) template = guiTemplateStandardCode;
-            else if (config.currentTemplate >= 1) template = guiTemplateHeaderOnly;
-            //else if (windowCodegenState.codeTemplateActive == 2) template = LoadFileText(/*custom_template*/);
+            if (windowCodegenState.codeTemplateActive == 0) config.template = guiTemplateStandardCode;
+            else if (windowCodegenState.codeTemplateActive == 1) config.template = guiTemplateHeaderOnly;
+            else if (windowCodegenState.codeTemplateActive == 2) config.template = windowCodegenState.customTemplate;
 
             // Clear current codeText and generate new layout code
             RL_FREE(windowCodegenState.codeText);
-            windowCodegenState.codeText = GenLayoutCode(template, layout, (Vector2){ workArea.x, workArea.y }, config);
-            windowCodegenState.codePanelScrollOffset = (Vector2){ 0, 0 };
+            if (config.template != NULL) windowCodegenState.codeText = GenLayoutCode(config.template, layout, (Vector2){ workArea.x, workArea.y }, config);
 
             // Store current config as prevConfig
             memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
             // Activate code generation export window
+            windowCodegenState.codePanelScrollOffset = (Vector2){ 0, 0 };
             windowCodegenState.windowActive = true;
         }
 
@@ -823,27 +824,25 @@ int main(int argc, char *argv[])
             strcpy(config.version, windowCodegenState.toolVersionText);
             strcpy(config.company, windowCodegenState.companyText);
             strcpy(config.description, windowCodegenState.toolDescriptionText);
-            config.currentTemplate = windowCodegenState.codeTemplateActive;
             config.exportAnchors = windowCodegenState.exportAnchorsChecked;
             config.defineRecs = windowCodegenState.defineRecsChecked;
             config.defineTexts = windowCodegenState.defineTextsChecked;
             config.fullComments = windowCodegenState.fullCommentsChecked;
             config.exportButtonFunctions = windowCodegenState.genButtonFuncsChecked;
 
+            // Select desired code template for generation
+            if (windowCodegenState.codeTemplateActive == 0) config.template = guiTemplateStandardCode;
+            else if (windowCodegenState.codeTemplateActive == 1) config.template = guiTemplateHeaderOnly;
+            else if (windowCodegenState.codeTemplateActive == 2) config.template = windowCodegenState.customTemplate;
+
             // Check if config parameter have changed while codegen window is open to regenerate code
             if (memcmp(&prevConfig, &config, sizeof(GuiLayoutConfig)) != 0)
             {
-                // Select desired code template for generation
-                const unsigned char *template = NULL;
-                if (config.currentTemplate == 0) template = guiTemplateStandardCode;
-                else if (config.currentTemplate >= 1) template = guiTemplateHeaderOnly;
-                // TODO: Support custom code template
-                //else if (windowCodegenState.codeTemplateActive == 2) template = LoadFileText(/*custom_template*/);
-
                 // Clear current codeText and generate new layout code
                 RL_FREE(windowCodegenState.codeText);
-                windowCodegenState.codeText = GenLayoutCode(template, layout, (Vector2){ workArea.x, workArea.y }, config);
-
+                windowCodegenState.codeText = GenLayoutCode(config.template, layout, (Vector2){ workArea.x, workArea.y }, config);
+                
+                // Store current config as prevConfig
                 memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
             }
         }
@@ -2225,7 +2224,8 @@ int main(int argc, char *argv[])
             showLoadFileDialog ||
             showSaveFileDialog ||
             showExportFileDialog ||
-            showLoadTracemapDialog)
+            showLoadTracemapDialog ||
+            showLoadTemplateDialog)
         {
             nameEditMode = false;
             textEditMode = false;
@@ -3125,7 +3125,8 @@ int main(int argc, char *argv[])
                 showLoadFileDialog ||
                 showSaveFileDialog ||
                 showExportFileDialog ||
-                showLoadTracemapDialog)
+                showLoadTracemapDialog ||
+                showLoadTemplateDialog)
             {
                 DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.8f));
             }
@@ -3153,13 +3154,24 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
             GuiWindowCodegen(&windowCodegenState);
 
-            if (windowCodegenState.btnGenerateCodePressed)
+            if (windowCodegenState.btnLoadCustomTemplatePressed)
+            {
+                if (windowCodegenState.customTemplateLoaded)
+                {
+                    UnloadFileText(windowCodegenState.customTemplate);
+                    windowCodegenState.customTemplate = NULL;
+                    windowCodegenState.customTemplateLoaded = false;
+                }
+                else showLoadTemplateDialog = true;
+            }
+
+            if (windowCodegenState.btnExportCodePressed)
             {
                 strcpy(outFileName, TextFormat("%s.c", config.name));
 
                 showExportFileDialog = true;
                 windowCodegenState.windowActive = false;
-                windowCodegenState.btnGenerateCodePressed = false;
+                windowCodegenState.btnExportCodePressed = false;
             }
             //----------------------------------------------------------------------------------------
 
@@ -3384,6 +3396,33 @@ int main(int argc, char *argv[])
                 }
 
                 if (result >= 0) showLoadTracemapDialog = false;
+            }
+            //----------------------------------------------------------------------------------------
+
+            // GUI: Load Custom Code Template File Dialog
+            //----------------------------------------------------------------------------------------
+            if (showLoadTemplateDialog)
+            {
+#if defined(CUSTOM_MODAL_DIALOGS)
+                int result = GuiFileDialog(DIALOG_MESSAGE, "#12#Load code template", inFileName, "Ok", "Custom code template\nonly available on desktop version");
+#else
+                int result = GuiFileDialog(DIALOG_OPEN_FILE, "Load code template", inFileName, "*.h;*.c", "Tracemap Image (*.h, *.c)");
+#endif
+                if (result == 1)
+                {
+                    // Load custom code template file
+                    windowCodegenState.customTemplate = LoadFileText(inFileName);
+
+                    if (windowCodegenState.customTemplate != NULL)
+                    {
+                        // TODO: Check if custom template contains required variables
+
+                        windowCodegenState.customTemplateLoaded = true;
+                    }
+                    else inFileName[0] = '\0';
+                }
+
+                if (result >= 0) showLoadTemplateDialog = false;
             }
             //----------------------------------------------------------------------------------------
 

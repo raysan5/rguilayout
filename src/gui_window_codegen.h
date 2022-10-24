@@ -61,11 +61,10 @@ typedef struct {
     bool defineTextsChecked;
     bool fullCommentsChecked;
     bool genButtonFuncsChecked;
-    //bool exportStyleChecked;
-    //bool embedFontChecked;
 
-    bool btnGenerateCodePressed;
+    bool btnExportCodePressed;
     //bool btnExecuteCodePressed;
+    bool btnLoadCustomTemplatePressed;
 
     Vector2 codePanelScrollOffset;
 
@@ -73,6 +72,9 @@ typedef struct {
     unsigned char *codeText;        // Generated code string
     unsigned int codeHeight;        // Maximum height of code block (computed at drawing)
     Font codeFont;                  // Font used for text drawing
+
+    unsigned char *customTemplate;  // Custom template loaded
+    bool customTemplateLoaded;      // Custom template loaded flag
 
 } GuiWindowCodegenState;
 
@@ -147,14 +149,18 @@ GuiWindowCodegenState InitGuiWindowCodegen(void)
     state.fullCommentsChecked = false;
     state.genButtonFuncsChecked = false;
 
-    state.btnGenerateCodePressed = false;
+    state.btnExportCodePressed = false;
+    state.btnLoadCustomTemplatePressed = false;
 
     state.codePanelScrollOffset = (Vector2){ 0, 0 };
 
     // Custom variables initialization
     state.codeText = NULL;
     state.codeHeight = 0;
-    state.codeFont = LoadFont_Gohufont();       // Font embedded (font_gohufont.h)
+    state.codeFont = LoadFont_Gohufont();   // Font embedded (font_gohufont.h)
+
+    state.customTemplate = NULL;            // Custom template loaded
+    state.customTemplateLoaded = false;     // Custom template loaded flag
 
     return state;
 }
@@ -176,26 +182,31 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         GuiLabel((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 144, 160, 24 }, "Short Description:");
         if (GuiTextBoxMulti((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 170, 228, 100 }, state->toolDescriptionText, 64, state->toolDescriptionEditMode)) state->toolDescriptionEditMode = !state->toolDescriptionEditMode;
         
-        GuiGroupBox((Rectangle){ state->windowBounds.x + 765, state->windowBounds.y + 300, 248, 184 }, "#142#Code Generation Options");
+        GuiGroupBox((Rectangle){ state->windowBounds.x + 765, state->windowBounds.y + 300, 248, 220 }, "#142#Code Generation Options");
         state->exportAnchorsChecked = GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 356, 16, 16 }, "Export anchors", state->exportAnchorsChecked);
         state->defineRecsChecked = GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 356 + 24, 16, 16 }, "Define Rectangles", state->defineRecsChecked);
         state->defineTextsChecked = GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 356 + 48, 16, 16 }, "Define text as const", state->defineTextsChecked);
         state->fullCommentsChecked = GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 356 + 72, 16, 16 }, "Include detailed comments", state->fullCommentsChecked);
         state->genButtonFuncsChecked = GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 356 + 96, 16, 16 }, "Generate button functions", state->genButtonFuncsChecked);
 
-        state->btnGenerateCodePressed = GuiButton((Rectangle){ state->windowBounds.x + 765, state->windowBounds.y + 300 + 184 + 16, 248, 28 }, "#7#Export Generated Code");
-
-        // TODO: Support custom code template --> Requires documentation
-        //if (GuiDropdownBox((Rectangle){ state->windowBounds.x + 675, state->windowBounds.y + 300, 200, 24 }, "STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h);CUSTOM CODE FILE", &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
-        if (GuiDropdownBox((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 319, 228, 24 }, "STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h)", &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
+        if (state->codeTemplateActive != 2) GuiDisable();
+        state->btnLoadCustomTemplatePressed = GuiButton((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 356 + 128, 228, 24 }, state->customTemplateLoaded? "#9#Unload Custom Template" : "#5#Load Custom Template");
         GuiEnable();
-        
+
+        // Export generated code button
+        state->btnExportCodePressed = GuiButton((Rectangle){ state->windowBounds.x + 765, state->windowBounds.y + 336 + 184 + 16, 248, 28 }, "#7#Export Generated Code");
+
+        // Select desired code template to fill
+        if (GuiDropdownBox((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 319, 228, 24 }, 
+                "STANDARD TEMPLATE (.c);PORTABLE TEMPLATE (.h); CUSTOM TEMPLATE (.c/.h)",
+                &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
+
         // Draw generated code
+        Rectangle codePanel = { state->windowBounds.x + 10, state->windowBounds.y + 35, 745, 595 };
+        Rectangle view = GuiScrollPanel(codePanel, NULL, (Rectangle){ codePanel.x, codePanel.y, codePanel.width*2, (float)state->codeHeight }, &state->codePanelScrollOffset);
+
         if (state->codeText != NULL)
         {
-            Rectangle codePanel = { state->windowBounds.x + 10, state->windowBounds.y + 35, 745, 595 };
-            Rectangle view = GuiScrollPanel(codePanel, NULL, (Rectangle){ codePanel.x, codePanel.y, codePanel.width*2, (float)state->codeHeight }, &state->codePanelScrollOffset);
-
             BeginScissorMode((int)view.x, (int)view.y, (int)view.width, (int)view.height);
                 unsigned int linesCounter = 0;
                 unsigned char *currentLine = state->codeText;
