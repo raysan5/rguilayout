@@ -57,6 +57,7 @@ typedef struct {
     bool btnUndoPressed;                // Undo last action recorded
     bool btnRedoPressed;                // Redo last action recorded
     bool snapModeActive;                // Toggle snap to grid mode
+    //bool editionModeActive;             // Toggle control creation/selection mode
 
     // Selected control options
     bool btnEditTextPressed;            // Edit control text

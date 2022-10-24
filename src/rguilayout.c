@@ -485,6 +485,8 @@ int main(int argc, char *argv[])
 
     // Tracemap (background image for reference) variables
     Tracemap tracemap = { 0 };
+    tracemap.visible = true;
+    tracemap.alpha = 0.7f;
 
     // Controls temp variables (default values)
     int dropdownBoxActive = 0;
@@ -724,7 +726,9 @@ int main(int argc, char *argv[])
             {
                 if (tracemap.texture.id > 0) UnloadTexture(tracemap.texture);
                 tracemap.texture = LoadTexture(droppedFiles.paths[0]);
-                tracemap.rec = (Rectangle){30, 30, tracemap.texture.width, tracemap.texture.height};
+                tracemap.rec = (Rectangle){ 48 + workArea.x, 48 + workArea.y, tracemap.texture.width, tracemap.texture.height };
+                tracemap.visible = true;
+                tracemap.alpha = 0.7f;
 
                 mainToolbarState.tracemapLoaded = true;
             }
@@ -1658,7 +1662,6 @@ int main(int argc, char *argv[])
             }
 
             // TODO: Multi selection move logic
-
             // Multi selection delete logic
             if ((multiSelectCount > 0) && IsKeyPressed(KEY_DELETE))
             {
@@ -3388,7 +3391,9 @@ int main(int argc, char *argv[])
                     {
                         if (tracemap.texture.id > 0) UnloadTexture(tracemap.texture);
                         tracemap.texture = texture;
-                        tracemap.rec = (Rectangle){ 30, 30, tracemap.texture.width, tracemap.texture.height };
+                        tracemap.rec = (Rectangle){ 48 + workArea.x, 48 + workArea.y, tracemap.texture.width, tracemap.texture.height };
+                        tracemap.visible = true;
+                        tracemap.alpha = 0.7f;
 
                         mainToolbarState.tracemapLoaded = true;
                     }
