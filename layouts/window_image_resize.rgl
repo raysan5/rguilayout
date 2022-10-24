@@ -1,5 +1,5 @@
 #
-# rgl layout text file (v2.5) - raygui layout file generated using rGuiLayout
+# rgl layout text file (v3.0) - raygui layout file generated using rGuiLayout
 #
 # Number of controls:     19
 #
@@ -16,10 +16,18 @@ a 004 anchor00 0 0 0
 a 005 anchor00 0 0 0
 a 006 anchor00 0 0 0
 a 007 anchor00 0 0 0
+a 008 anchor08 0 0 0
+a 009 anchor09 0 0 0
+a 010 anchor10 0 0 0
+a 011 anchor11 0 0 0
+a 012 anchor12 0 0 0
+a 013 anchor13 0 0 0
+a 014 anchor14 0 0 0
+a 015 anchor15 0 0 0
 c 000 0 resizeWindow 0 0 224 216 1 Image Resize Options
 c 001 4 lblResize 8 32 56 24 1 Resize:
 c 002 14 width 72 32 64 24 1 
-c 003 4 lblx 140 35 15 25 1 x
+c 003 4 lblx 136 32 16 24 1 x
 c 004 14 height 152 32 64 24 1 
 c 005 4 lblAlgorythm 8 72 64 24 1 Algorythm:
 c 006 11 algorythm 72 72 144 24 1 Nearest;Bilinear

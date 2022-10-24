@@ -1,37 +1,44 @@
 #
-# rgl text file (v2.0) - raygui layout text file generated using rGuiLayout
+# rgl layout text file (v3.0) - raygui layout file generated using rGuiLayout
 #
-# Total number of controls:     20
+# Number of controls:     18
+#
 # Ref. window:    r <x> <y> <width> <height>
 # Anchor info:    a <id> <name> <posx> <posy> <enabled>
 # Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
 r 0 0 -1 -1
 a 000 anchor00 0 0 1
-a 001 anchor01 50 50 1
-a 002 anchor02 50 50 1
+a 001 anchor01 0 0 0
+a 002 anchor02 48 48 1
 a 003 anchor03 0 0 0
 a 004 anchor04 0 0 0
 a 005 anchor05 0 0 0
 a 006 anchor06 0 0 0
 a 007 anchor07 0 0 0
-c 000 0 infoWindow 0 0 180 475 2 Image Info
-c 001 4 lblSize 10 30 80 20 2 Size:
-c 002 4 size 100 30 70 20 2 256 x 256
-c 003 4 lblPixelFormat 10 50 80 20 2 Pixel format:
-c 004 4 pixelFormat 100 50 65 20 2 R8G8B8A8
-c 005 4 lblDataSize 10 70 80 20 2 Data size:
-c 006 4 dataSize 100 70 70 20 2 262144 bytes
-c 007 4 lblMipmaps 10 90 80 20 2 Mipmap levels:
-c 008 4 mipmaps 100 90 70 20 2 01
-c 009 4 lblScaleFilter 10 110 80 20 2 Scale filter:
-c 010 4 scaleFilter 100 110 70 20 2 BILINEAR
-c 011 1 groupSelectedPixel 10 145 160 85 2 Selected Pixel
-c 012 23 pixelBox 20 155 65 65 2 <pixel>
-c 013 4 compR 100 155 50 20 2 R: 205
-c 014 4 compG 100 170 50 20 2 G: 150
-c 015 4 compB 100 185 50 20 2 B: 80
-c 016 4 compA 100 200 50 20 2 A: 255
-c 017 5 ExtractPalette 10 430 160 30 2 Extract Palette
-c 018 4 lblPalette 10 235 151 25 2 Colors Palette: XXXX colors
-c 019 23 palette 10 260 160 160 2 <palette>
+a 008 anchor08 0 0 0
+a 009 anchor09 0 0 0
+a 010 anchor10 0 0 0
+a 011 anchor11 0 0 0
+a 012 anchor12 0 0 0
+a 013 anchor13 0 0 0
+a 014 anchor14 0 0 0
+a 015 anchor15 0 0 0
+c 000 0 infoWindow 0 0 192 480 2 Image Info
+c 001 4 lblSize 8 32 80 24 2 Size:
+c 002 4 size 96 32 88 24 2 256 x 256
+c 003 4 lblPixelFormat 8 56 80 24 2 Pixel format:
+c 004 4 pixelFormat 96 56 88 24 2 R8G8B8A8
+c 005 4 lblDataSize 8 80 80 24 2 Data size:
+c 006 4 dataSize 96 80 88 24 2 262144 bytes
+c 007 4 lblMipmaps 8 104 80 24 2 Mipmap levels:
+c 008 4 mipmaps 96 104 88 24 2 01
+c 009 1 groupSelectedPixel 8 144 176 96 2 Selected Pixel
+c 010 23 pixelBox 16 160 72 72 2 <pixel>
+c 011 4 compR 96 160 72 16 2 R: 205
+c 012 4 compG 96 176 72 16 2 G: 150
+c 013 4 compB 96 192 72 16 2 B: 80
+c 014 4 compA 96 208 72 16 2 A: 255
+c 015 5 ExtractPalette 8 440 176 24 2 Extract Palette
+c 016 4 lblPalette 8 240 176 24 2 Colors Palette: XXXX colors
+c 017 23 palette 8 264 176 168 2 <palette>

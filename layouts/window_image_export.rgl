@@ -1,5 +1,5 @@
 #
-# rgl layout text file (v2.5) - raygui layout file generated using rGuiLayout
+# rgl layout text file (v3.0) - raygui layout file generated using rGuiLayout
 #
 # Number of controls:     8
 #
@@ -16,11 +16,19 @@ a 004 anchor04 0 0 0
 a 005 anchor05 0 0 0
 a 006 anchor06 0 0 0
 a 007 anchor07 0 0 0
+a 008 anchor08 0 0 0
+a 009 anchor09 0 0 0
+a 010 anchor10 0 0 0
+a 011 anchor11 0 0 0
+a 012 anchor12 0 0 0
+a 013 anchor13 0 0 0
+a 014 anchor14 0 0 0
+a 015 anchor15 0 0 0
 c 000 0 exportWindow 0 0 216 208 1 #7#Image Export Options
-c 001 4 lblFileFormat 8 32 72 24 1 File format:
-c 002 10 fileFormat 80 32 128 24 1 IMAGE (.png);DATA (.raw);CODE (.h)
-c 003 4 lblPixelFormat 8 64 72 24 1 Pixel format:
-c 004 10 pixelFormat 80 64 128 24 1 GRAYSCALE;R8G8B8;R8G8B8A8;R5G6B5;R4G4B4A4;R5G5B5A1
-c 005 7 exportAlpha 16 104 16 16 1 Export Alpha as Separate Image
-c 006 7 exportMipmaps 16 128 16 16 1 Export Mipmaps Data
-c 007 5 ExportImage 8 160 200 32 1 Export Image
+c 001 4 lblFileFormat 8 40 72 24 1 File format:
+c 002 10 fileFormat 80 40 128 24 1 IMAGE (.png);DATA (.raw);CODE (.h)
+c 003 4 lblPixelFormat 8 72 72 24 1 Pixel format:
+c 004 10 pixelFormat 80 72 128 24 1 GRAYSCALE;R8G8B8;R8G8B8A8;R5G6B5;R4G4B4A4;R5G5B5A1
+c 005 7 exportAlpha 16 112 16 16 1 Export Alpha as Separate Image
+c 006 7 exportMipmaps 16 136 16 16 1 Export Mipmaps Data
+c 007 5 ExportImage 8 168 200 28 1 #007#Export Image

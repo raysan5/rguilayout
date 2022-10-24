@@ -1,5 +1,5 @@
 #
-# rgl layout text file (v2.5) - raygui layout file generated using rGuiLayout
+# rgl layout text file (v3.0) - raygui layout file generated using rGuiLayout
 #
 # Number of controls:     19
 #
@@ -7,16 +7,24 @@
 # Anchor info:    a <id> <name> <posx> <posy> <enabled>
 # Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
-r 48 48 0 0
-a 000 anchor00 48 48 1
-a 001 anchor01 0 0 1
-a 002 anchor02 -48 -48 0
-a 003 anchor03 -48 -48 0
-a 004 anchor04 -48 -48 0
-a 005 anchor05 302 152 0
-a 006 anchor06 302 152 0
-a 007 anchor07 302 152 0
-c 000 0 WindowBox000 0 0 240 520 1 rStegano
+r 0 0 -1 -1
+a 000 anchor00 0 0 1
+a 001 anchor01 48 48 1
+a 002 anchor02 0 0 0
+a 003 anchor03 0 0 0
+a 004 anchor04 0 0 0
+a 005 anchor05 350 200 0
+a 006 anchor06 350 200 0
+a 007 anchor07 350 200 0
+a 008 anchor08 48 48 0
+a 009 anchor09 48 48 0
+a 010 anchor10 48 48 0
+a 011 anchor11 48 48 0
+a 012 anchor12 48 48 0
+a 013 anchor13 48 48 0
+a 014 anchor14 48 48 0
+a 015 anchor15 48 48 0
+c 000 0 WindowBox000 0 0 240 528 1 rStegano
 c 001 4 Label002 8 40 88 24 1 PADDING BYTES
 c 002 15 Spinner019 104 40 128 24 1 
 c 003 4 Label011 8 80 96 16 1 STEGANO BITS
@@ -32,6 +40,6 @@ c 012 4 Label012 8 104 91 25 1 CARRIER IMAGE:
 c 013 3 Panel013 8 128 224 168 1 
 c 014 4 Label014 8 304 61 25 1 MESSAGE:
 c 015 12 TextBox015 8 328 224 96 1 Message to be hidden in the image....
-c 016 2 Line017 0 424 235 25 1 
-c 017 5 Button016 8 448 224 32 1 STEGANO!
-c 018 19 StatusBar019 0 496 240 24 1 Status Info
+c 016 2 Line017 0 432 240 24 1 
+c 017 5 Button016 8 464 224 24 1 STEGANO!
+c 018 19 StatusBar019 0 504 240 24 1 Status Info

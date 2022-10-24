@@ -1,5 +1,5 @@
 #
-# rgl layout text file (v2.5) - raygui layout file generated using rGuiLayout
+# rgl layout text file (v3.0) - raygui layout file generated using rGuiLayout
 #
 # Number of controls:     24
 #
@@ -16,7 +16,15 @@ a 004 anchor04 0 0 0
 a 005 anchor05 0 0 0
 a 006 anchor06 0 0 0
 a 007 anchor07 0 0 0
-c 000 0 importWindow 0 0 200 472 1 Image RAW Import Options
+a 008 anchor08 0 0 0
+a 009 anchor09 0 0 0
+a 010 anchor10 0 0 0
+a 011 anchor11 0 0 0
+a 012 anchor12 0 0 0
+a 013 anchor13 0 0 0
+a 014 anchor14 0 0 0
+a 015 anchor15 0 0 0
+c 000 0 importWindow 0 0 200 456 1 Image RAW Import Options
 c 001 4 lblImportFile 8 32 64 24 1 Import file:
 c 002 4 fileName 80 32 112 24 1 Untitled.raw
 c 003 4 lblFileSize 8 56 64 24 1 File size:
@@ -28,7 +36,7 @@ c 008 4 lblPixels 144 104 40 24 1 pixels
 c 009 4 lblHeight 16 136 36 22 1 Height:
 c 010 14 height 56 136 80 24 1 
 c 011 4 lblPixels 144 136 40 24 1 pixels
-c 012 1 pixelFormatBox 8 184 183 154 1 Pixel Format
+c 012 1 pixelFormatBox 8 184 184 152 1 Pixel Format
 c 013 10 pixelFormat 16 200 168 24 1 GRAYSCALE;R8G8B8;R8G8B8A8;R5G6B5;R4G4B4A4;R5G5B5A1
 c 014 2 line 8 224 184 16 1 
 c 015 4 lblChannels 16 240 50 20 1 Channels:
@@ -37,6 +45,6 @@ c 017 4 lblBitDepth 16 288 50 20 1 Bit Depth:
 c 018 9 bitDepth 16 304 54 24 1 8;16;32
 c 019 1 headerBox 8 352 184 56 1 Header
 c 020 4 lblSize 16 368 40 24 1 Size:
-c 021 14 headerSize 48 368 96 24 1 
-c 022 4 lblBytes 152 368 40 24 1 bytes
-c 023 5 importRaw 8 424 184 32 1 Import RAW
+c 021 14 headerSize 56 368 88 24 1 
+c 022 4 lblBytes 144 368 40 24 1 bytes
+c 023 5 importRaw 8 416 184 24 1 Import RAW
