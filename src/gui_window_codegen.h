@@ -185,7 +185,7 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
 
         state->btnGenerateCodePressed = GuiButton((Rectangle){ state->windowBounds.x + 765, state->windowBounds.y + 300 + 184 + 16, 248, 28 }, "#7#Export Generated Code");
 
-        // TODO: Add required fields to support a custom code template --> Requires documentation
+        // TODO: Support custom code template --> Requires documentation
         //if (GuiDropdownBox((Rectangle){ state->windowBounds.x + 675, state->windowBounds.y + 300, 200, 24 }, "STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h);CUSTOM CODE FILE", &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
         if (GuiDropdownBox((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 319, 228, 24 }, "STANDARD CODE FILE (.c);PORTABLE CODE FILE (.h)", &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
         GuiEnable();
