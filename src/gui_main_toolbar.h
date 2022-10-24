@@ -168,7 +168,7 @@ GuiMainToolbarState InitGuiMainToolbar(void)
     // Editor options
     state.btnUndoPressed = false;               // Undo last action recorded
     state.btnRedoPressed = false;               // Redo last action recorded
-    state.snapModeActive = false;               // Toggle snap to grid mode
+    state.snapModeActive = true;                // Toggle snap to grid mode
 
     // Selected control edit options
     state.btnEditTextPressed = false;           // Edit control text
