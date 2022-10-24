@@ -79,9 +79,9 @@
 
 // NOTE: Some redefines are required to support icons panel drawing
 #define RAYGUI_GRID_ALPHA                 0.1f
-#define RAYGUI_TEXTSPLIT_MAX_ELEMENTS     256
+#define RAYGUI_TEXTSPLIT_MAX_ITEMS        256
 #define RAYGUI_TEXTSPLIT_MAX_TEXT_SIZE   4096
-#define RAYGUI_TOGGLEGROUP_MAX_ELEMENTS   256
+#define RAYGUI_TOGGLEGROUP_MAX_ITEMS      256
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"                         // Required for: IMGUI controls
 
@@ -163,6 +163,7 @@ bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib
 #define MOVEMENT_FRAME_SPEED         2      // Controls movement speed in pixels per frame: TODO: Review
 
 #define MAX_UNDO_LEVELS             32      // Undo levels supported for the ring buffer
+#define MAX_ICONS_AVAILABLE        217      // Max raygui icons displayed on icon selector
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -224,7 +225,7 @@ static const char *helpLines[HELP_LINES_COUNT] = {
     "-Edit Options",
     "LCTRL + Z - Undo Action",
     "LCTRL + Y - Redo Action",
-    "S - Toggle snap to grid mode",
+    "LALT + S - Toggle snap to grid mode",
 
     "-General Edition",
     "ARROWS - Move control/anchor/tracemap",
@@ -253,6 +254,7 @@ static const char *helpLines[HELP_LINES_COUNT] = {
 
     "-Visual Options",
     "G - Toggle grid mode",
+    "R - Toggle control rectangles view"
     "N - Toggle control names view",
     "L - Toggle control layer view "
 };
@@ -424,6 +426,8 @@ int main(int argc, char *argv[])
     Color colTracemapLines = GRAY;
     Color colTracemapResize = BLUE;
 
+    Color colShowControlRecs = BLUE;    // Fade: 0.2f, line 0.7f
+
 
     // Init default layout
     //-------------------------------------------------------------------------
@@ -492,14 +496,16 @@ int main(int argc, char *argv[])
     bool showIconPanel = false;             // Show icon panel for selection
 
     int selectedIcon = 0;                   // Current icon selected
-    char toggleIconsText[16*14*6] = { 0 };  // 14 lines with 16 icons per line -> TODO: Review if more icons are added!
-    for (int i = 0; i < 16*14; i++)
+    char toggleIconsText[MAX_ICONS_AVAILABLE*6] = { 0 };  // 16 icons per line
+
+    for (int i = 0; i < MAX_ICONS_AVAILABLE; i++)
     {
         // NOTE: Every icon requires 6 text characters: "#001#;"
         if ((i + 1)%16 == 0) strncpy(toggleIconsText + 6*i, TextFormat("#%03i#\n", i), 6);
         else strncpy(toggleIconsText + 6*i, TextFormat("#%03i#;", i), 6);
     }
-    toggleIconsText[16*14*6 - 1] = '\0';
+
+    toggleIconsText[MAX_ICONS_AVAILABLE*6 - 1] = '\0';
     //-------------------------------------------------------------------------
 
     // Layout code generation configuration
@@ -770,7 +776,7 @@ int main(int argc, char *argv[])
                 }
                 //-----------------------------------------------------------------------------------
 
-                SaveLayout(layout, inFileName);
+                SaveLayout(&outLayout, inFileName);
 
                 SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
                 saveChangesRequired = false;
@@ -846,7 +852,7 @@ int main(int argc, char *argv[])
             if (IsKeyPressed(KEY_G)) mainToolbarState.showGridActive = !mainToolbarState.showGridActive;
 
             // Toggle Snap to grid mode
-            if (IsKeyPressed(KEY_S))
+            if (IsKeyDown(KEY_LEFT_ALT) && IsKeyPressed(KEY_S))
             {
                 mainToolbarState.snapModeActive = !mainToolbarState.snapModeActive;
                 if (mainToolbarState.snapModeActive)
@@ -860,6 +866,9 @@ int main(int argc, char *argv[])
                     moveFrameSpeed = 1;
                 }
             }
+
+            // Toggle controls rectangles view
+            if (IsKeyPressed(KEY_R)) mainToolbarState.showControlRecsActive = !mainToolbarState.showControlRecsActive;
 
             // Toggle controls name view
             if (IsKeyPressed(KEY_N)) mainToolbarState.showControlNamesActive = !mainToolbarState.showControlNamesActive;
@@ -886,7 +895,7 @@ int main(int argc, char *argv[])
             resizeMode = IsKeyDown(KEY_LEFT_CONTROL);
 
             // Toggle tracemap lock mode
-            if ((tracemap.texture.id > 0) && IsKeyPressed(KEY_SPACE))
+            if (IsKeyPressed(KEY_SPACE) && mainToolbarState.tracemapLoaded)
             {
                 if (tracemap.selected) tracemap.locked = true;
                 else if (tracemap.locked) tracemap.locked = false;
@@ -1349,10 +1358,12 @@ int main(int argc, char *argv[])
                         }
                         else
                         {
-                            if (resizeMode)     // TODO: Review resizeMode conditions
+                            if (resizeMode)     
                             {
                                 if (IsKeyPressed(KEY_R) && (layout->controls[selectedControl].type == GUI_WINDOWBOX))
                                 {
+                                    // TODO: Review resWindow setup functionality --> Use case?
+                                    /*
                                     Rectangle rec = layout->controls[selectedControl].rec;
 
                                     if (layout->controls[selectedControl].ap->id > 0)
@@ -1365,6 +1376,7 @@ int main(int argc, char *argv[])
                                     layout->anchors[0].x = rec.x;
                                     layout->anchors[0].y = rec.y;
                                     layout->refWindow = (Rectangle){layout->anchors[0].x, layout->anchors[0].y, rec.width, rec.height};
+                                    */
                                 }
 
                                 // Duplicate control
@@ -2326,6 +2338,13 @@ int main(int argc, char *argv[])
                         case GUI_DUMMYREC: GuiDummyRec(rec, layout->controls[i].text); break;
                         default: break;
                     }
+                
+                    // View control rectangles mode (avoid containers)
+                    if (mainToolbarState.showControlRecsActive && (layout->controls[i].type != GUI_WINDOWBOX) && (layout->controls[i].type != GUI_PANEL) && (layout->controls[i].type != GUI_GROUPBOX))
+                    {
+                        DrawRectangleRec(rec, Fade(colShowControlRecs, 0.2f));
+                        DrawRectangleLinesEx(rec, 1.0f, Fade(colShowControlRecs, 0.7f));
+                    }
                 }
             }
             if (!showWindowActive) GuiUnlock();
@@ -2724,7 +2743,6 @@ int main(int argc, char *argv[])
                         else if (GuiTextBox(textboxRec, layout->controls[selectedControl].text, MAX_CONTROL_TEXT_LENGTH, textEditMode)) textEditMode = !textEditMode;
 
                         // Check if icon panel must be shown
-                        // TODO: Icons panel behaviour should be reviewed
                         if ((strlen(layout->controls[selectedControl].text) == 1) && (layout->controls[selectedControl].text[0] == '#'))
                         {
                             showIconPanel = true;

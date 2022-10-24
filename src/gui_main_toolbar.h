@@ -80,6 +80,7 @@ typedef struct {
     float tracemapAlphaValue;           // Adjust tracemap opacity
 
     // Visual options
+    bool showControlRecsActive;         // Toggle all controls rectangles drawing
     bool showControlNamesActive;        // Toggle all controls names
     bool showControlOrderActive;        // Toggle all control drawing order (layers)
     bool showControlPanelActive;        // Toggle control panel window
@@ -191,6 +192,7 @@ GuiMainToolbarState InitGuiMainToolbar(void)
     state.btnDeleteTracemapPressed = false;     // Unload tracemap image
 
     // Visuals options
+    state.showControlRecsActive = false;        // Show control rectangles
     state.showControlNamesActive = false;       // Show controls names
     state.showControlOrderActive = false;       // Show controls drawing order
     state.showControlPanelActive = true;        // Toggle control panel window
@@ -277,17 +279,18 @@ void GuiMainToolbar(GuiMainToolbarState *state)
 
     // Visuals options
     if (state->controlSelected >= 0) GuiDisable();
-    state->showControlNamesActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 , state->anchorVisuals.y + 8, 24, 24 }, "#214#", state->showControlNamesActive);
-    state->showControlOrderActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 24 + 4, state->anchorVisuals.y + 8, 24, 24 }, "#197#", state->showControlOrderActive);
+    state->showControlRecsActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 , state->anchorVisuals.y + 8, 24, 24 }, "#98#", state->showControlRecsActive);
+    state->showControlNamesActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 24 + 4 , state->anchorVisuals.y + 8, 24, 24 }, "#214#", state->showControlNamesActive);
+    state->showControlOrderActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 48 + 8, state->anchorVisuals.y + 8, 24, 24 }, "#197#", state->showControlOrderActive);
     GuiEnable();
-    state->showControlPanelActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 48 + 8, state->anchorVisuals.y + 8, 24, 24 }, "#101#", state->showControlPanelActive);
-    state->showGridActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 72 + 12 + 12, state->anchorVisuals.y + 8, 24, 24 }, "#97#", state->showGridActive);
+    state->showControlPanelActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 72 + 12, state->anchorVisuals.y + 8, 24, 24 }, "#101#", state->showControlPanelActive);
+    state->showGridActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 96 + 16, state->anchorVisuals.y + 8, 24, 24 }, "#97#", state->showGridActive);
     
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_RIGHT);
-    GuiLabel((Rectangle){ state->anchorVisuals.x + 124, state->anchorVisuals.y + 8, 60, 24 }, "Style:");
+    GuiLabel((Rectangle){ state->anchorVisuals.x + 134, state->anchorVisuals.y + 8, 60, 24 }, "Style:");
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     GuiSetStyle(COMBOBOX, COMBO_BUTTON_WIDTH, 40);
-    state->visualStyleActive = GuiComboBox((Rectangle){ state->anchorVisuals.x + 140 + 48, state->anchorVisuals.y + 8, 120, 24 }, "Light;Jungle;Candy;Lavanda;Cyber;Terminal;Ashes;Bluish;Dark;Cherry;Sunny;Enefete", state->visualStyleActive);
+    state->visualStyleActive = GuiComboBox((Rectangle){ state->anchorVisuals.x + 148 + 48, state->anchorVisuals.y + 8, 120, 24 }, "Light;Jungle;Candy;Lavanda;Cyber;Terminal;Ashes;Bluish;Dark;Cherry;Sunny;Enefete", state->visualStyleActive);
     GuiSetStyle(COMBOBOX, COMBO_BUTTON_WIDTH, 32);
 
     // Info options
