@@ -1,4 +1,57 @@
+/*******************************************************************************************
+*
+*   rGuiLayout - Layout Code Generator Templates
+*
+*   DESCRIPTION:
+*       Templates used to generate layout code files (.c/.h) replacing some variables
+* 
+*   CODEGEN SUPPORTED VARIABLES:
+* 
+*       > Layout general description variables
+*           $(GUILAYOUT_NAME)
+*               $(GUILAYOUT_NAME_PASCALCASE)
+*               $(GUILAYOUT_NAME_UPPERCASE)
+*               $(GUILAYOUT_NAME_LOWERCASE)
+*           $(GUILAYOUT_VERSION)
+*           $(GUILAYOUT_DESCRIPTION)
+*           $(GUILAYOUT_COMPANY)
+*           $(GUILAYOUT_WINDOW_WIDTH)
+*           $(GUILAYOUT_WINDOW_HEIGHT)
+*
+*       > Layout C file (.c) data generation variables:
+*           $(GUILAYOUT_FUNCTION_DECLARATION_C)
+*           $(GUILAYOUT_FUNCTION_DEFINITION_C)
+*           $(GUILAYOUT_INITIALIZATION_C)
+*           $(GUILAYOUT_DRAWING_C)
+*
+*       > Layout Header file (.h) data generation variables:
+*           $(GUILAYOUT_STRUCT_TYPE)
+*           $(GUILAYOUT_FUNCTIONS_DECLARATION_H)
+*           $(GUILAYOUT_FUNCTION_INITIALIZE_H)
+*           $(GUILAYOUT_FUNCTION_DRAWING_H)
+*
+*   LICENSE: zlib/libpng
+*
+*   Copyright (c) 2018-2022 raylib technologies (@raylibtech) / Ramon Santamaria (@raysan5)
+*
+*   This software is provided "as-is", without any express or implied warranty. In no event
+*   will the authors be held liable for any damages arising from the use of this software.
+*
+*   Permission is granted to anyone to use this software for any purpose, including commercial
+*   applications, and to alter it and redistribute it freely, subject to the following restrictions:
+*
+*     1. The origin of this software must not be misrepresented; you must not claim that you
+*     wrote the original software. If you use this software in a product, an acknowledgment
+*     in the product documentation would be appreciated but is not required.
+*
+*     2. Altered source versions must be plainly marked as such, and must not be misrepresented
+*     as being the original software.
+*
+*     3. This notice may not be removed or altered from any source distribution.
+*
+**********************************************************************************************/
 
+// Standard C file template
 static const unsigned char *guiTemplateStandardCode = "\
 /*******************************************************************************************\n\
 *\n\
@@ -81,6 +134,7 @@ int main()\n\
 $(GUILAYOUT_FUNCTION_DEFINITION_C)\n\
 ";
 
+// Header-only code file template
 static const unsigned char *guiTemplateHeaderOnly = "\
 /*******************************************************************************************\n\
 *\n\

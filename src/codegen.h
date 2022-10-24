@@ -1,6 +1,31 @@
 /**********************************************************************************************
 *
 *   rGuiLayout - Code Generator
+* 
+*   CODEGEN SUPPORTED VARIABLES:
+* 
+*       > Layout general description variables
+*           $(GUILAYOUT_NAME)
+*               $(GUILAYOUT_NAME_PASCALCASE)
+*               $(GUILAYOUT_NAME_UPPERCASE)
+*               $(GUILAYOUT_NAME_LOWERCASE)
+*           $(GUILAYOUT_VERSION)
+*           $(GUILAYOUT_DESCRIPTION)
+*           $(GUILAYOUT_COMPANY)
+*           $(GUILAYOUT_WINDOW_WIDTH)
+*           $(GUILAYOUT_WINDOW_HEIGHT)
+*
+*       > Layout C file (.c) data generation variables:
+*           $(GUILAYOUT_FUNCTION_DECLARATION_C)
+*           $(GUILAYOUT_FUNCTION_DEFINITION_C)
+*           $(GUILAYOUT_INITIALIZATION_C)
+*           $(GUILAYOUT_DRAWING_C)
+*
+*       > Layout Header file (.h) data generation variables:
+*           $(GUILAYOUT_STRUCT_TYPE)
+*           $(GUILAYOUT_FUNCTIONS_DECLARATION_H)
+*           $(GUILAYOUT_FUNCTION_INITIALIZE_H)
+*           $(GUILAYOUT_FUNCTION_DRAWING_H)
 *
 *   NOTE: Code generated requires raygui 3.5-dev
 *
@@ -131,7 +156,7 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout *layout, Vec
     int i = 0;
     for (i = 0; i < bufferLen; i++)
     {
-        if ((buffer[i] == '$') && (buffer[i + 1] == '('))
+        if ((buffer[i] == '$') && (buffer[i + 1] == '('))       // Detect variable to be replaced!
         {
             int spaceWidth = 0;
             for (int j = i-1; j >= 0; j--)
