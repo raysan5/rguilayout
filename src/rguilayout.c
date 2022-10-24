@@ -207,45 +207,54 @@ static const char *toolDescription = TOOL_DESCRIPTION;
 
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
 
-#define HELP_LINES_COUNT    36
+#define HELP_LINES_COUNT    37
 
 // Tool help info
 static const char *helpLines[HELP_LINES_COUNT] = {
     "F1 - Show Help window",
     "F2 - Show About window",
     "F3 - Show Sponsor window",
+
     "-File Options",
     "LCTRL + N - New layout file (.rgl)",
     "LCTRL + O - Open layout file (.rgl)",
     "LCTRL + S - Save layout file (.rgl)",
     "LCTRL + E - Export layout to code",
-    "-Control Edition",
-    "LSHIFT + ARROWS - Smooth edit position",
-    "LCTRL + ARROWS - Edit control scale",
-    "LCTRL + LSHIFT + ARROWS - Smooth edit scale",
-    "LCTRL + R - Resize control to closest snap",
-    "ARROWS - Edit control position (No Snap)",
-    "LCTRL + D - Duplicate selected control",
-    "DEL - Delete selected control",
+
+    "-Edit Options",
     "LCTRL + Z - Undo Action",
     "LCTRL + Y - Redo Action",
-    "-Control Edition Ex",
+    "S - Toggle snap to grid mode",
+
+    "-General Edition",
+    "ARROWS - Move control/anchor/tracemap",
+    "LSHIFT + ARROWS - Move control/anchor/tr. smooth",
+    "LCTRL + ARROWS - Scale control",
+    "LCTRL + LSHIFT + ARROWS - Scale control smooth",
+    "U - Unlink control from anchor",
+    "LCTRL + D - Duplicate control",
+    "DEL - Delete control/anchor/tracemap",
+
+    "-Control Edition",
     "T - Control text editing",
     "N - Control name editing",
     "ESC - Exit text/name editing mode",
     "ENTER - Validate text/name edition",
     "LALT + UP/DOWN - Control layer order",
+
     "-Anchor Edition",
-    "A - Anchor editing mode",
-    "RMB - Link anchor to control",
-    "U - Unlink control from anchor",
-    "H - Hide/Unhide controls for selected anchor",
+    "A (down) - Anchor editing mode",
+    "U - Unlink all controls from anchor",
+    "H - Hide/Unhide controls from anchor",
+
+    "-Tracemap Edition",
+    "H - Hide/Unhide tracemap",
+    "SPACE - Lock/Unlock tracemap",
+
     "-Visual Options",
-    "LCTRL + G - Toggle grid mode",
-    "LALT + S - Toggle snap to grid mode",
-    //"RALT + UP/DOWN - Grid spacing + snap",
-    "LCTRL + F - Toggle control position info (global/anchor)",     // TODO: Really?
-    "SPACE - Toggle tracemap Lock/Unlock",
+    "G - Toggle grid mode",
+    "N - Toggle control names view",
+    "L - Toggle control layer view "
 };
 
 //----------------------------------------------------------------------------------
@@ -3108,7 +3117,7 @@ int main(int argc, char *argv[])
 
             // GUI: Help Window
             //----------------------------------------------------------------------------------------
-            Rectangle helpWindowBounds = { (float)GetScreenWidth()/2 - 330/2, (float)GetScreenHeight()/2 - 700.0f/2, 330, 0 };
+            Rectangle helpWindowBounds = { (float)GetScreenWidth()/2 - 330/2, (float)GetScreenHeight()/2 - 612.0f/2, 330, 612 };
             if (windowHelpActive) windowHelpActive = GuiWindowHelp(helpWindowBounds, GuiIconText(ICON_HELP, TextFormat("%s Shortcuts", TOOL_NAME)), helpLines, HELP_LINES_COUNT);
             //----------------------------------------------------------------------------------------
 
@@ -3724,6 +3733,7 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
 // Draw help window with the provided lines
 static int GuiWindowHelp(Rectangle bounds, const char *title, const char **helpLines, int helpLinesCount)
 {
+    static Vector2 scrollPanelOffset = { 0, 0 };
     int nextLineY = 0;
 
     // Calculate window height if not externally provided a desired height
@@ -3732,15 +3742,23 @@ static int GuiWindowHelp(Rectangle bounds, const char *title, const char **helpL
     int windowHelpActive = !GuiWindowBox(bounds, title);
     nextLineY += (24 + 2);
 
-    for (int i = 0; i < helpLinesCount; i++)
-    {
-        if (helpLines[i] == NULL) GuiLine((Rectangle){ bounds.x, bounds.y + nextLineY, 330, 12 }, helpLines[i]);
-        else if (helpLines[i][0] == '-') GuiLine((Rectangle){ bounds.x, bounds.y + nextLineY, 330, 24 }, helpLines[i] + 1);
-        else GuiLabel((Rectangle){ bounds.x + 12, bounds.y + nextLineY, bounds.width, 24 }, helpLines[i]);
+    // TODO: Avoid hardcoded height, calculate it from lines provided
+    Rectangle scissor = GuiScrollPanel((Rectangle){ bounds.x, bounds.y + 24 - 1, bounds.width, bounds.height }, NULL,
+                                       (Rectangle){ bounds.x, bounds.y + 24, bounds.width - 16, 900 }, &scrollPanelOffset);
 
-        if (helpLines[i] == NULL) nextLineY += 12;
-        else nextLineY += 24;
-    }
+    BeginScissorMode(scissor.x, scissor.y, scissor.width + 2, scissor.height);
+
+        for (int i = 0; i < helpLinesCount; i++)
+        {
+            if (helpLines[i] == NULL) GuiLine((Rectangle){ bounds.x, bounds.y + nextLineY + scrollPanelOffset.y, bounds.width, 12 }, helpLines[i]);
+            else if (helpLines[i][0] == '-') GuiLine((Rectangle){ bounds.x, bounds.y + nextLineY + scrollPanelOffset.y, bounds.width, 24 }, helpLines[i] + 1);
+            else GuiLabel((Rectangle){ bounds.x + 12, bounds.y + nextLineY + scrollPanelOffset.y, bounds.width, 24 }, helpLines[i]);
+
+            if (helpLines[i] == NULL) nextLineY += 12;
+            else nextLineY += 24;
+        }
+
+    EndScissorMode();
 
     return windowHelpActive;
 }
