@@ -37,7 +37,7 @@ extern "C" {            // Prevents name mangling of functions
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
-unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, GuiLayoutConfig config);
+unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, Vector2 offset, GuiLayoutConfig config);
 
 #ifdef __cplusplus
 }
@@ -96,7 +96,7 @@ static char *GetControlNameParam(char *controlName, const char *preText);
 
 // Generate layout code string
 // TODO: WARNING: layout is passed as value, probably not a good idea considering the size of the object
-unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, GuiLayoutConfig config)
+unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, Vector2 offset, GuiLayoutConfig config)
 {
     #define MAX_CODE_SIZE            1024*1024       // Max code size: 1MB
     #define MAX_VARIABLE_NAME_SIZE     64
@@ -113,8 +113,18 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, GuiL
     {
         if (layout.anchors[a].enabled)
         {
-            layout.anchors[a].x -= (int)layout.refWindow.x;
-            layout.anchors[a].y -= (int)layout.refWindow.y;
+            layout.anchors[a].x -= (int)(layout.refWindow.x + offset.x);
+            layout.anchors[a].y -= (int)(layout.refWindow.y + offset.y);
+        }
+    }
+
+    // In case of no anchor exported, offset must be applied to individual controls positions
+    if (!config.exportAnchors)
+    {
+        for (int i = 0; i < layout.controlCount; i++)
+        {
+            layout.controls[i].rec.x -= offset.x;
+            layout.controls[i].rec.y -= offset.y;
         }
     }
 
@@ -190,13 +200,23 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, GuiL
     substr = TextSubtext(buffer, bufferPos, i - bufferPos);
     strcpy(toolstr + codePos, substr);
 
+    // In case of no anchor exported, restore individual controls positions
+    if (!config.exportAnchors)
+    {
+        for (int i = 0; i < layout.controlCount; i++)
+        {
+            layout.controls[i].rec.x += offset.x;
+            layout.controls[i].rec.y += offset.y;
+        }
+    }
+
     // Restored all enabled anchors to reference window and offset
     for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
     {
         if (layout.anchors[a].enabled)
         {
-            layout.anchors[a].x += (int)layout.refWindow.x;
-            layout.anchors[a].y += (int)layout.refWindow.y;
+            layout.anchors[a].x += (int)(layout.refWindow.x + offset.x);
+            layout.anchors[a].y += (int)(layout.refWindow.y + offset.y);
         }
     }
 

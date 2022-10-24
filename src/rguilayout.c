@@ -357,9 +357,6 @@ int main(int argc, char *argv[])
     // NOTE: It could be useful at some moment (but not usual)
     bool showGlobalPosition = false;        // Control global position mode
 
-    // TODO: Check exclusive modes (work on its own) and combinable modes (can work in combination with other)
-    // Replace all bool values by enumerator value, it should simplify code...
-
     // Controls variables
     int selectedControl = -1;               // Control selected on layout
     int focusedControl = -1;                // Control focused on layout
@@ -426,6 +423,30 @@ int main(int argc, char *argv[])
     if (inFileName[0] != '\0')          // Load dropped file if provided
     {
         layout = LoadLayout(inFileName);
+
+        // Add workArea offset to controls/anchors
+        //-----------------------------------------------------------------------------------
+        // Offset anchors with workArea offset
+        for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
+        {
+            if (layout->anchors[a].enabled)
+            {
+                layout->anchors[a].x += workArea.x;
+                layout->anchors[a].y += workArea.y;
+            }
+        }
+
+        // Offset controls with no anchor, workArea offset must be applied to control position
+        for (int i = 0; i < layout->controlCount; i++)
+        {
+            if (layout->controls[i].ap->id == 0)
+            {
+                layout->controls[i].rec.x += workArea.x;
+                layout->controls[i].rec.y += workArea.y;
+            }
+        }
+        //-----------------------------------------------------------------------------------
+
         SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
     }
     else layout = LoadLayout(NULL);     // Load empty layout
@@ -645,9 +666,30 @@ int main(int argc, char *argv[])
                 {
                     memcpy(layout, tempLayout, sizeof(GuiLayout));
 
-                    // HACK: When leaving scope, tempLayout internal pointer references are lost,
-                    // so we manually reset those references to layout internals
-                    // TODO: Probably this system should be designed in a diferent way...
+                    // Add workArea offset to controls/anchors
+                    //-----------------------------------------------------------------------------------
+                    // Offset anchors with workArea offset
+                    for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
+                    {
+                        if (layout->anchors[a].enabled)
+                        {
+                            layout->anchors[a].x += workArea.x;
+                            layout->anchors[a].y += workArea.y;
+                        }
+                    }
+
+                    // Offset controls with no anchor, workArea offset must be applied to control position
+                    for (int i = 0; i < layout->controlCount; i++)
+                    {
+                        if (layout->controls[i].ap->id == 0)
+                        {
+                            layout->controls[i].rec.x += workArea.x;
+                            layout->controls[i].rec.y += workArea.y;
+                        }
+                    }
+                    //-----------------------------------------------------------------------------------
+
+                    // WARNING: When layout is loaded, anchor object references are not set, they must be reset manually
                     for (int i = 0; i < layout->controlCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
 
                     strcpy(inFileName, droppedFiles.paths[0]);
@@ -693,7 +735,34 @@ int main(int argc, char *argv[])
             }
             else
             {
+                // Remove workArea offset from controls/anchors
+                //-----------------------------------------------------------------------------------
+                GuiLayout outLayout = { 0 };
+                memcpy(&outLayout, layout, sizeof(GuiLayout));
+
+                // Offset all enabled anchors from reference window and offset
+                for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
+                {
+                    if (outLayout.anchors[a].enabled)
+                    {
+                        outLayout.anchors[a].x -= (int)(outLayout.refWindow.x + workArea.x);
+                        outLayout.anchors[a].y -= (int)(outLayout.refWindow.y + workArea.y);
+                    }
+                }
+
+                // In case of controls with no anchor, offset must be applied to control position
+                for (int i = 0; i < outLayout.controlCount; i++)
+                {
+                    if (outLayout.controls[i].ap->id == 0)
+                    {
+                        outLayout.controls[i].rec.x -= workArea.x;
+                        outLayout.controls[i].rec.y -= workArea.y;
+                    }
+                }
+                //-----------------------------------------------------------------------------------
+
                 SaveLayout(layout, inFileName);
+
                 SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
                 saveChangesRequired = false;
             }
@@ -783,22 +852,23 @@ int main(int argc, char *argv[])
                 }
             }
 
-            // TODO: Toggle controls name drawing
-            //if (IsKeyPressed(KEY_N)) mainToolbarState.showControlNamesActive = !mainToolbarState.showControlNamesActive;
+            // Toggle controls name view
+            if (IsKeyPressed(KEY_N)) mainToolbarState.showControlNamesActive = !mainToolbarState.showControlNamesActive;
 
-            // Toggle global position info (anchor reference or global reference)
-            if (IsKeyPressed(KEY_F)) showGlobalPosition = !showGlobalPosition;
-
-            // Toggle anchor mode editing (on key down)
-            anchorEditMode = IsKeyDown(KEY_A);
-
-            // Toggle controls drawing order mode
-            // NOTE: In this mode controls can be re-organized for drawing order
-            if (IsKeyPressed(KEY_LEFT_ALT))
+            // Toggle controls order drawing view
+            if (IsKeyPressed(KEY_L))
             {
                 mainToolbarState.showControlOrderActive = !mainToolbarState.showControlOrderActive;
                 orderLayerMode = mainToolbarState.showControlOrderActive;
             }
+
+            // Toggle global position info (anchor reference or global reference)
+            if (IsKeyPressed(KEY_F)) showGlobalPosition = !showGlobalPosition;
+
+            if (IsKeyPressed(KEY_H) && tracemap.selected) mainToolbarState.hideTracemapActive = true;
+
+            // Toggle anchor mode editing (on key down)
+            anchorEditMode = IsKeyDown(KEY_A);
 
             // Toggle precision move/scale mode
             precisionEditMode = IsKeyDown(KEY_LEFT_SHIFT);
@@ -835,13 +905,12 @@ int main(int argc, char *argv[])
                     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
                     RL_FREE(windowCodegenState.codeText);
-                    windowCodegenState.codeText = GenLayoutCode(guiTemplateStandardCode, *layout, config);
+                    windowCodegenState.codeText = GenLayoutCode(guiTemplateStandardCode, *layout, (Vector2){ workArea.x, workArea.y },  config);
                     windowCodegenState.windowActive = true;
                 }
             }
 
-            // Change grid spacing
-            // TODO: Look for a better mechanism  --> Project config window
+            // TODO: Change grid spacing -> Look for a better solution
             /*
             if (IsKeyDown(KEY_RIGHT_ALT))
             {
@@ -927,7 +996,7 @@ int main(int argc, char *argv[])
 
                 // Clear current codeText and generate new layout code
                 RL_FREE(windowCodegenState.codeText);
-                windowCodegenState.codeText = GenLayoutCode(template, *layout, config);
+                windowCodegenState.codeText = GenLayoutCode(template, *layout, (Vector2){ workArea.x, workArea.y }, config);
                 memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
                 windowCodegenState.codePanelScrollOffset = (Vector2){ 0, 0 };
@@ -975,8 +1044,6 @@ int main(int argc, char *argv[])
 
             if (mainToolbarState.snapModeActive)
             {
-                // TODO: Review depending on the Grid size and position
-
                 int offsetX = (int)defaultRec[selectedType].x%gridSnapDelta;
                 int offsetY = (int)defaultRec[selectedType].y%gridSnapDelta;
 
@@ -1273,7 +1340,7 @@ int main(int argc, char *argv[])
                         }
                         else
                         {
-                            if (resizeMode)     // TODO: What's that?
+                            if (resizeMode)     // TODO: Review resizeMode conditions
                             {
                                 if (IsKeyPressed(KEY_R) && (layout->controls[selectedControl].type == GUI_WINDOWBOX))
                                 {
@@ -2193,7 +2260,6 @@ int main(int argc, char *argv[])
             //---------------------------------------------------------------------------------
 
             // Draw controls
-            // TODO: Support controls editMode vs playMode, just unlock controls and lock edit!
             //----------------------------------------------------------------------------------------
             GuiLock();
             for (int i = 0; i < layout->controlCount; i++)
@@ -2599,8 +2665,8 @@ int main(int argc, char *argv[])
                                 selectedRec.x, selectedRec.y - 30, 20, colPositionText);
                         }
                         else DrawText(TextFormat("[%i, %i, %i, %i]",
-                            (int)(selectedRec.x - layout->refWindow.x),
-                            (int)(selectedRec.y - layout->refWindow.y),
+                            (int)(selectedRec.x - layout->refWindow.x - workArea.x),
+                            (int)(selectedRec.y - layout->refWindow.y - workArea.y),
                             (int)layout->controls[selectedControl].rec.width,
                             (int)layout->controls[selectedControl].rec.height),
                             selectedRec.x, selectedRec.y - 30, 20, colPositionText);
@@ -2625,7 +2691,7 @@ int main(int argc, char *argv[])
                         // Make sure text could be written, no matter if overflows control
                         int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
                         int textWidth = MeasureText(layout->controls[selectedControl].text, fontSize);
-                        if (textboxRec.width < (textWidth + 40)) textboxRec.width = textWidth + 40;     // TODO: Why additional space required to work with GuiTextBox()?
+                        if (textboxRec.width < (textWidth + 40)) textboxRec.width = textWidth + 40;
                         if (textboxRec.height < fontSize) textboxRec.height += fontSize;
 
                         if (layout->controls[selectedControl].type == GUI_WINDOWBOX) textboxRec.height = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT;  // Defined inside raygui.h
@@ -3117,11 +3183,33 @@ int main(int argc, char *argv[])
                     {
                         memcpy(layout, tempLayout, sizeof(GuiLayout));
 
-                        // HACK: When leaving scope, tempLayout internal pointer references are lost,
-                        // so we manually reset those references to layout internals
-                        // TODO: Probably this system should be designed in a diferent way...
+                        // Add workArea offset to controls/anchors
+                        //-----------------------------------------------------------------------------------
+                        // Offset anchors with workArea offset
+                        for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
+                        {
+                            if (layout->anchors[a].enabled)
+                            {
+                                layout->anchors[a].x += workArea.x;
+                                layout->anchors[a].y += workArea.y;
+                            }
+                        }
+
+                        // Offset controls with no anchor, workArea offset must be applied to control position
+                        for (int i = 0; i < layout->controlCount; i++)
+                        {
+                            if (layout->controls[i].ap->id == 0)
+                            {
+                                layout->controls[i].rec.x += workArea.x;
+                                layout->controls[i].rec.y += workArea.y;
+                            }
+                        }
+                        //-----------------------------------------------------------------------------------
+
+                        // WARNING: When layout is loaded, anchor object references are not set, they must be reset manually
                         for (int i = 0; i < layout->controlCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
 
+                        // Reinit undo levels for new layout
                         for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
                         currentUndoIndex = 0;
                         firstUndoIndex = 0;
@@ -3154,8 +3242,35 @@ int main(int argc, char *argv[])
                     // Check for valid extension and make sure it is
                     if ((GetFileExtension(outFileName) == NULL) || !IsFileExtension(outFileName, ".rgl")) strcat(outFileName, ".rgl\0");
 
-                    // Save layout file
-                    SaveLayout(layout, outFileName);
+                    // Remove workArea offset from controls/anchors
+                    // TODO: Adding/removing workArea offset on load/save/export layout does not seem a good approach,
+                    // it should be considered internally by the tool... but it requires a complete redesign...
+                    //-----------------------------------------------------------------------------------
+                    GuiLayout outLayout = { 0 };
+                    memcpy(&outLayout, layout, sizeof(GuiLayout));
+
+                    // Offset all enabled anchors from reference window and offset
+                    for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
+                    {
+                        if (outLayout.anchors[a].enabled)
+                        {
+                            outLayout.anchors[a].x -= (int)(outLayout.refWindow.x + workArea.x);
+                            outLayout.anchors[a].y -= (int)(outLayout.refWindow.y + workArea.y);
+                        }
+                    }
+
+                    // In case of controls with no anchor, offset must be applied to control position
+                    for (int i = 0; i < outLayout.controlCount; i++)
+                    {
+                        if (outLayout.controls[i].ap->id == 0)
+                        {
+                            outLayout.controls[i].rec.x -= workArea.x;
+                            outLayout.controls[i].rec.y -= workArea.y;
+                        }
+                    }
+                    //-----------------------------------------------------------------------------------
+
+                    SaveLayout(&outLayout, outFileName);
 
                     strcpy(inFileName, outFileName);
                     SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
@@ -3353,7 +3468,7 @@ static void ProcessCommandLine(int argc, char *argv[])
             else LOG("WARNING: No template file provided\n");
         }
 
-        // TODO: Support codegen options: exportAnchors, defineRecs, fullComments...
+        // TODO: Support CLI codegen options: exportAnchors, defineRecs, fullComments...
     }
 
     // Process input file
@@ -3385,10 +3500,10 @@ static void ProcessCommandLine(int argc, char *argv[])
         unsigned char *toolstr = NULL;
         if (guiTemplateCustom != NULL)
         {
-            toolstr = GenLayoutCode(guiTemplateCustom, *layout, config);
+            toolstr = GenLayoutCode(guiTemplateCustom, *layout, (Vector2){ 0, 0 }, config);
             RL_FREE(guiTemplateCustom);
         }
-        else toolstr = GenLayoutCode(guiTemplateStandardCode, *layout, config);
+        else toolstr = GenLayoutCode(guiTemplateStandardCode, *layout, (Vector2){ 0, 0 }, config);
 
         FILE *ftool = fopen(outFileName, "wt");
         fprintf(ftool, toolstr);    // Write code string to file
@@ -3508,10 +3623,6 @@ static void ResetLayout(GuiLayout *layout)
         if (i == 0) strcpy(layout->anchors[i].name, "anchorMain");
         else strcpy(layout->anchors[i].name, TextFormat("anchor%02i", i));
     }
-
-    // TODO: TEST: REVIEW
-    layout->anchors[0].x = 0;
-    layout->anchors[0].y = -40;
 
     // Initialize layout controls data
     for (int i = 0; i < MAX_GUI_CONTROLS; i++)
