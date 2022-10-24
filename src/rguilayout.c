@@ -923,7 +923,7 @@ int main(int argc, char *argv[])
                     memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
                     RL_FREE(windowCodegenState.codeText);
-                    windowCodegenState.codeText = GenLayoutCode(guiTemplateStandardCode, *layout, (Vector2){ workArea.x, workArea.y },  config);
+                    windowCodegenState.codeText = GenLayoutCode(guiTemplateStandardCode, layout, (Vector2){ workArea.x, workArea.y },  config);
                     windowCodegenState.windowActive = true;
                 }
             }
@@ -1014,7 +1014,7 @@ int main(int argc, char *argv[])
 
                 // Clear current codeText and generate new layout code
                 RL_FREE(windowCodegenState.codeText);
-                windowCodegenState.codeText = GenLayoutCode(template, *layout, (Vector2){ workArea.x, workArea.y }, config);
+                windowCodegenState.codeText = GenLayoutCode(template, layout, (Vector2){ workArea.x, workArea.y }, config);
                 memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
 
                 windowCodegenState.codePanelScrollOffset = (Vector2){ 0, 0 };
@@ -3527,10 +3527,10 @@ static void ProcessCommandLine(int argc, char *argv[])
         unsigned char *toolstr = NULL;
         if (guiTemplateCustom != NULL)
         {
-            toolstr = GenLayoutCode(guiTemplateCustom, *layout, (Vector2){ 0, 0 }, config);
+            toolstr = GenLayoutCode(guiTemplateCustom, layout, (Vector2){ 0, 0 }, config);
             RL_FREE(guiTemplateCustom);
         }
-        else toolstr = GenLayoutCode(guiTemplateStandardCode, *layout, (Vector2){ 0, 0 }, config);
+        else toolstr = GenLayoutCode(guiTemplateStandardCode, layout, (Vector2){ 0, 0 }, config);
 
         FILE *ftool = fopen(outFileName, "wt");
         fprintf(ftool, toolstr);    // Write code string to file

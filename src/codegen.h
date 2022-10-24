@@ -37,7 +37,7 @@ extern "C" {            // Prevents name mangling of functions
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
-unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, Vector2 offset, GuiLayoutConfig config);
+unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout *layout, Vector2 offset, GuiLayoutConfig config);
 
 #ifdef __cplusplus
 }
@@ -65,23 +65,23 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, Vect
 //----------------------------------------------------------------------------------
 
 // .C Writting code functions (.c)
-static void WriteFunctionsDeclarationC(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
-static void WriteInitializationC(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
-static void WriteDrawingC(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
-static void WriteFunctionsDefinitionC(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
+static void WriteFunctionsDeclarationC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteInitializationC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteDrawingC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteFunctionsDefinitionC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
 
 // .H Writting code functions (.h)
-static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
-static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
-static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
-static void WriteFunctionDrawingH(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
+static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteFunctionDrawingH(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
 
 // Generic writting code functions (.c/.h)
 static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiLayoutControl control, bool exportAnchors, bool fullComments, const char *preText, int tabs, bool exportH);
-static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs);
-static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs);
-static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs);
-static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, const char *preText, int tabs);
+static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs);
+static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs);
+static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, const char *preText, int tabs);
 static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLayoutControl control, GuiLayoutConfig config, const char *preText);
 
 // Get controls specific texts functions
@@ -96,7 +96,7 @@ static char *GetControlNameParam(char *controlName, const char *preText);
 
 // Generate layout code string
 // TODO: WARNING: layout is passed as value, probably not a good idea considering the size of the object
-unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, Vector2 offset, GuiLayoutConfig config)
+unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout *layout, Vector2 offset, GuiLayoutConfig config)
 {
     #define MAX_CODE_SIZE            1024*1024       // Max code size: 1MB
     #define MAX_VARIABLE_NAME_SIZE     64
@@ -111,20 +111,20 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, Vect
     // Offset all enabled anchors from reference window and offset
     for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
     {
-        if (layout.anchors[a].enabled)
+        if (layout->anchors[a].enabled)
         {
-            layout.anchors[a].x -= (int)(layout.refWindow.x + offset.x);
-            layout.anchors[a].y -= (int)(layout.refWindow.y + offset.y);
+            layout->anchors[a].x -= (int)(layout->refWindow.x + offset.x);
+            layout->anchors[a].y -= (int)(layout->refWindow.y + offset.y);
         }
     }
 
-    // In case of no anchor exported, offset must be applied to individual controls positions
-    if (!config.exportAnchors)
+    // In case of controls with no anchor, offset must be applied to control position
+    for (int i = 0; i < layout->controlCount; i++)
     {
-        for (int i = 0; i < layout.controlCount; i++)
+        if (layout->controls[i].ap->id == 0)
         {
-            layout.controls[i].rec.x -= offset.x;
-            layout.controls[i].rec.y -= offset.y;
+            layout->controls[i].rec.x -= offset.x;
+            layout->controls[i].rec.y -= offset.y;
         }
     }
 
@@ -168,26 +168,26 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, Vect
                     else if (TextIsEqual(substr, "GUILAYOUT_COMPANY")) TextAppend(toolstr, config.company, &codePos);
                     else if (TextIsEqual(substr, "GUILAYOUT_WINDOW_WIDTH"))
                     {
-                       if (layout.refWindow.width > 0) TextAppend(toolstr, TextFormat("%i", (int)layout.refWindow.width), &codePos);
+                       if (layout->refWindow.width > 0) TextAppend(toolstr, TextFormat("%i", (int)layout->refWindow.width), &codePos);
                        else TextAppend(toolstr, TextFormat("%i", 800), &codePos);
                     }
                     else if (TextIsEqual(substr, "GUILAYOUT_WINDOW_HEIGHT"))
                     {
-                       if (layout.refWindow.height > 0) TextAppend(toolstr, TextFormat("%i", (int)layout.refWindow.height), &codePos);
+                       if (layout->refWindow.height > 0) TextAppend(toolstr, TextFormat("%i", (int)layout->refWindow.height), &codePos);
                        else TextAppend(toolstr, TextFormat("%i", 450), &codePos);
                     }
 
                     // C IMPLEMENTATION
                     else if (TextIsEqual(substr, "GUILAYOUT_FUNCTION_DECLARATION_C")) WriteFunctionsDeclarationC(toolstr, &codePos, layout, config, tabs);
                     else if (TextIsEqual(substr, "GUILAYOUT_INITIALIZATION_C")) WriteInitializationC(toolstr, &codePos, layout, config, tabs);
-                    else if (TextIsEqual(substr, "GUILAYOUT_DRAWING_C") && layout.controlCount > 0) WriteDrawingC(toolstr, &codePos, layout, config, tabs);
+                    else if (TextIsEqual(substr, "GUILAYOUT_DRAWING_C") && layout->controlCount > 0) WriteDrawingC(toolstr, &codePos, layout, config, tabs);
                     else if (TextIsEqual(substr, "GUILAYOUT_FUNCTION_DEFINITION_C")) WriteFunctionsDefinitionC(toolstr, &codePos, layout, config, tabs);
 
                     // H IMPLEMENTATION
                     else if (TextIsEqual(substr, "GUILAYOUT_STRUCT_TYPE")) WriteStruct(toolstr, &codePos, layout, config, tabs);
                     else if (TextIsEqual(substr, "GUILAYOUT_FUNCTIONS_DECLARATION_H")) WriteFunctionsDeclarationH(toolstr, &codePos, layout, config, tabs);
                     else if (TextIsEqual(substr, "GUILAYOUT_FUNCTION_INITIALIZE_H")) WriteFunctionInitializeH(toolstr, &codePos, layout, config, tabs);
-                    else if (TextIsEqual(substr, "GUILAYOUT_FUNCTION_DRAWING_H") && layout.controlCount > 0) WriteFunctionDrawingH(toolstr, &codePos, layout, config, tabs);
+                    else if (TextIsEqual(substr, "GUILAYOUT_FUNCTION_DRAWING_H") && layout->controlCount > 0) WriteFunctionDrawingH(toolstr, &codePos, layout, config, tabs);
 
                     bufferPos += (j + 1);
 
@@ -200,23 +200,23 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, Vect
     substr = TextSubtext(buffer, bufferPos, i - bufferPos);
     strcpy(toolstr + codePos, substr);
 
-    // In case of no anchor exported, restore individual controls positions
-    if (!config.exportAnchors)
+    // In case of controls with no anchor, offset must be applied to control position
+    for (int i = 0; i < layout->controlCount; i++)
     {
-        for (int i = 0; i < layout.controlCount; i++)
+        if (layout->controls[i].ap->id == 0)
         {
-            layout.controls[i].rec.x += offset.x;
-            layout.controls[i].rec.y += offset.y;
+            layout->controls[i].rec.x += offset.x;
+            layout->controls[i].rec.y += offset.y;
         }
     }
 
     // Restored all enabled anchors to reference window and offset
     for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
     {
-        if (layout.anchors[a].enabled)
+        if (layout->anchors[a].enabled)
         {
-            layout.anchors[a].x += (int)(layout.refWindow.x + offset.x);
-            layout.anchors[a].y += (int)(layout.refWindow.y + offset.y);
+            layout->anchors[a].x += (int)(layout->refWindow.x + offset.x);
+            layout->anchors[a].y += (int)(layout->refWindow.y + offset.y);
         }
     }
 
@@ -228,23 +228,23 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout layout, Vect
 //----------------------------------------------------------------------------------
 
 // Write functions declaration code (.c)
-static void WriteFunctionsDeclarationC(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs)
+static void WriteFunctionsDeclarationC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
     if(config.exportButtonFunctions)
     {
         // Define required functions for calling
         int buttonsCount = 0;
-        for (int i = 0; i < layout.controlCount; i++)
+        for (int i = 0; i < layout->controlCount; i++)
         {
-            int type = layout.controls[i].type;
+            int type = layout->controls[i].type;
             if (type == GUI_BUTTON || type == GUI_LABELBUTTON)
             {
                 buttonsCount++;
-                TextAppend(toolstr, TextFormat("static void %s();", TextToPascal(layout.controls[i].name)), pos);
+                TextAppend(toolstr, TextFormat("static void %s();", TextToPascal(layout->controls[i].name)), pos);
                 if (config.fullComments)
                 {
                     TABAPPEND(toolstr, pos, 4);
-                    TextAppend(toolstr, TextFormat("// %s: %s logic", controlTypeName[layout.controls[i].type], layout.controls[i].name), pos);
+                    TextAppend(toolstr, TextFormat("// %s: %s logic", controlTypeName[layout->controls[i].type], layout->controls[i].name), pos);
                 }
                 ENDLINEAPPEND(toolstr, pos);
                 TABAPPEND(toolstr, pos, tabs);
@@ -255,16 +255,16 @@ static void WriteFunctionsDeclarationC(unsigned char *toolstr, int *pos, GuiLayo
 }
 
 // Write variables initialization code (.c)
-static void WriteInitializationC(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs)
+static void WriteInitializationC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
     // Const text
     if (config.defineTexts) WriteConstText(toolstr, pos, layout, config, tabs);
 
     // Anchors
-    if (config.exportAnchors && (layout.anchorCount > 0)) WriteAnchors(toolstr, pos, layout, config, true, true, "", tabs);
+    if (config.exportAnchors && (layout->anchorCount > 0)) WriteAnchors(toolstr, pos, layout, config, true, true, "", tabs);
 
     // Control variables
-    if (layout.controlCount > 0) WriteControlsVariables(toolstr, pos, layout, config, true, true, "", tabs);
+    if (layout->controlCount > 0) WriteControlsVariables(toolstr, pos, layout, config, true, true, "", tabs);
 
     // Rectangles
     if (config.defineRecs)
@@ -279,13 +279,13 @@ static void WriteInitializationC(unsigned char *toolstr, int *pos, GuiLayout lay
             ENDLINEAPPEND(toolstr, pos);
             TABAPPEND(toolstr, pos, tabs);
         }
-        TextAppend(toolstr, TextFormat("Rectangle layoutRecs[%i] = {", layout.controlCount), pos);
+        TextAppend(toolstr, TextFormat("Rectangle layoutRecs[%i] = {", layout->controlCount), pos);
         ENDLINEAPPEND(toolstr, pos);
 
-        for (int k = 0; k < layout.controlCount; k++)
+        for (int k = 0; k < layout->controlCount; k++)
         {
             TABAPPEND(toolstr, pos, tabs + 1);
-            WriteRectangleVariables(toolstr, pos, layout.controls[k], config.exportAnchors, config.fullComments, "", tabs, false);
+            WriteRectangleVariables(toolstr, pos, layout->controls[k], config.exportAnchors, config.fullComments, "", tabs, false);
             ENDLINEAPPEND(toolstr, pos);
         }
         TABAPPEND(toolstr, pos, tabs);
@@ -294,29 +294,29 @@ static void WriteInitializationC(unsigned char *toolstr, int *pos, GuiLayout lay
 }
 
 // Write drawing code (.c)
-static void WriteDrawingC(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs)
+static void WriteDrawingC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
-    if (layout.controlCount > 0) WriteControlsDrawing(toolstr, pos, layout, config, "", tabs);
+    if (layout->controlCount > 0) WriteControlsDrawing(toolstr, pos, layout, config, "", tabs);
 }
 
 // Write functions definition code (.c)
-static void WriteFunctionsDefinitionC(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs)
+static void WriteFunctionsDefinitionC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
     if(config.exportButtonFunctions)
     {
-        for (int i = 0; i < layout.controlCount; i++)
+        for (int i = 0; i < layout->controlCount; i++)
         {
-            int type = layout.controls[i].type;
+            int type = layout->controls[i].type;
             if (type == GUI_BUTTON || type == GUI_LABELBUTTON)
             {
                 if (config.fullComments)
                 {
-                    TextAppend(toolstr, TextFormat("// %s: %s logic", controlTypeName[layout.controls[i].type], layout.controls[i].name), pos);
+                    TextAppend(toolstr, TextFormat("// %s: %s logic", controlTypeName[layout->controls[i].type], layout->controls[i].name), pos);
                     ENDLINEAPPEND(toolstr, pos);
                     TABAPPEND(toolstr, pos, tabs);
                 }
 
-                TextAppend(toolstr, TextFormat("static void %s()", TextToPascal(layout.controls[i].name)), pos);
+                TextAppend(toolstr, TextFormat("static void %s()", TextToPascal(layout->controls[i].name)), pos);
                 ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
                 TextAppend(toolstr, "{", pos);
                 ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs + 1);
@@ -334,17 +334,17 @@ static void WriteFunctionsDefinitionC(unsigned char *toolstr, int *pos, GuiLayou
 //----------------------------------------------------------------------------------
 
 // Write state structure code (.h)
-static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs)
+static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
     TABAPPEND(toolstr, pos, tabs);
     TextAppend(toolstr, "typedef struct {", pos);
     ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs + 1);
 
     // Write anchors variables (forced on .h)
-    if (config.exportAnchors && (layout.anchorCount > 0)) WriteAnchors(toolstr, pos, layout, config, true, false, "", tabs + 1);
+    if (config.exportAnchors && (layout->anchorCount > 0)) WriteAnchors(toolstr, pos, layout, config, true, false, "", tabs + 1);
 
     // Write controls variables
-    if (layout.controlCount > 0) WriteControlsVariables(toolstr, pos, layout, config, true, false, "", tabs + 1);
+    if (layout->controlCount > 0) WriteControlsVariables(toolstr, pos, layout, config, true, false, "", tabs + 1);
 
     // Export rectangles
     if (config.defineRecs)
@@ -358,7 +358,7 @@ static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayout layout, GuiL
             ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs + 1);
         }
 
-        TextAppend(toolstr, TextFormat("Rectangle layoutRecs[%i];", layout.controlCount), pos);
+        TextAppend(toolstr, TextFormat("Rectangle layoutRecs[%i];", layout->controlCount), pos);
     }
 
     ENDLINEAPPEND(toolstr, pos); ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs + 1);
@@ -371,7 +371,7 @@ static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayout layout, GuiL
 }
 
 // Write variables declaration code (.h)
-static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs)
+static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
     TextAppend(toolstr, TextFormat("Gui%sState InitGui%s(void);", TextToPascal(config.name), TextToPascal(config.name)), pos);
     ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
@@ -386,7 +386,7 @@ static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayo
 }
 
 // Write initialization function code (.h)
-static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs)
+static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
      // Export InitGuiLayout function definition
     TextAppend(toolstr, TextFormat("Gui%sState InitGui%s(void)", TextToPascal(config.name), TextToPascal(config.name)), pos);
@@ -400,10 +400,10 @@ static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayout
     TABAPPEND(toolstr, pos, tabs + 1);
 
     // Init anchors (forced on .h)
-    if (config.exportAnchors && (layout.anchorCount > 0)) WriteAnchors(toolstr, pos, layout, config, false, true, "state.", tabs + 1);
+    if (config.exportAnchors && (layout->anchorCount > 0)) WriteAnchors(toolstr, pos, layout, config, false, true, "state.", tabs + 1);
 
     // Init controls variables
-    if (layout.controlCount > 0)
+    if (layout->controlCount > 0)
     {
         WriteControlsVariables(toolstr, pos, layout, config, false, true, "state.", tabs + 1);
     }
@@ -423,10 +423,10 @@ static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayout
             TABAPPEND(toolstr, pos, tabs + 1);
         }
 
-        for (int k = 0; k < layout.controlCount; k++)
+        for (int k = 0; k < layout->controlCount; k++)
         {
             TextAppend(toolstr, TextFormat("state.layoutRecs[%i] = ", k), pos);
-            WriteRectangleVariables(toolstr, pos, layout.controls[k], config.exportAnchors, config.fullComments, "state.", tabs, true);
+            WriteRectangleVariables(toolstr, pos, layout->controls[k], config.exportAnchors, config.fullComments, "state.", tabs, true);
             ENDLINEAPPEND(toolstr, pos);
             TABAPPEND(toolstr, pos, tabs + 1);
         }
@@ -454,7 +454,7 @@ static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayout
 }
 
 // Write functions drawing code (.h)
-static void WriteFunctionDrawingH(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs)
+static void WriteFunctionDrawingH(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
     // Export GuiLayout draw function
     TextAppend(toolstr, TextFormat("void Gui%s(Gui%sState *state)", TextToPascal(config.name), TextToPascal(config.name)), pos);
@@ -467,7 +467,7 @@ static void WriteFunctionDrawingH(unsigned char *toolstr, int *pos, GuiLayout la
     if (config.defineTexts) WriteConstText(toolstr, pos, layout, config, tabs + 1);
 
     // Controls draw
-    if (layout.controlCount > 0) WriteControlsDrawing(toolstr, pos, layout, config, "state->", tabs + 1);
+    if (layout->controlCount > 0) WriteControlsDrawing(toolstr, pos, layout, config, "state->", tabs + 1);
 
     ENDLINEAPPEND(toolstr, pos);
     TextAppend(toolstr, "}", pos);
@@ -501,7 +501,7 @@ static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiLayoutC
 }
 
 // Write anchors code (.c/.h)
-static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs)
+static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs)
 {
     if (config.fullComments)
     {
@@ -513,7 +513,7 @@ static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout layout, Gui
 
     for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
     {
-        GuiAnchorPoint anchor = layout.anchors[i];
+        GuiAnchorPoint anchor = layout->anchors[i];
 
         if (anchor.enabled)
         {
@@ -524,7 +524,7 @@ static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout layout, Gui
             {
                 TextAppend(toolstr, " = ", pos);
                 if(!define) TextAppend(toolstr, "(Vector2)", pos);
-                TextAppend(toolstr, TextFormat("{ %i, %i }", (int)layout.anchors[i].x, (int)layout.anchors[i].y), pos);
+                TextAppend(toolstr, TextFormat("{ %i, %i }", (int)layout->anchors[i].x, (int)layout->anchors[i].y), pos);
             }
             TextAppend(toolstr, ";", pos);
 
@@ -541,7 +541,7 @@ static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout layout, Gui
 }
 
 // Write controls "text as const" code (.c/.h)
-static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, int tabs)
+static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
     // Const variables and define text
     if (config.fullComments)
@@ -551,9 +551,9 @@ static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout layout, G
     }
 
     bool drawConstText = false;
-    for (int i = 0; i < layout.controlCount; i++)
+    for (int i = 0; i < layout->controlCount; i++)
     {
-        int type = layout.controls[i].type;
+        int type = layout->controls[i].type;
 
         switch(type)
         {
@@ -574,11 +574,11 @@ static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout layout, G
             case GUI_DUMMYREC:
             case GUI_STATUSBAR:
             {
-                TextAppend(toolstr, TextFormat("const char *%sText = \"%s\";", layout.controls[i].name, layout.controls[i].text), pos);
+                TextAppend(toolstr, TextFormat("const char *%sText = \"%s\";", layout->controls[i].name, layout->controls[i].text), pos);
                 if (config.fullComments)
                 {
                     TABAPPEND(toolstr, pos, 1);
-                    TextAppend(toolstr, TextFormat("// %s: %s", TextToUpper(controlTypeName[layout.controls[i].type]), layout.controls[i].name), pos);
+                    TextAppend(toolstr, TextFormat("// %s: %s", TextToUpper(controlTypeName[layout->controls[i].type]), layout->controls[i].name), pos);
                 }
                 ENDLINEAPPEND(toolstr, pos);
                 TABAPPEND(toolstr, pos, tabs);
@@ -593,7 +593,7 @@ static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout layout, G
 }
 
 // Write controls variables code (.c/.h)
-static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs)
+static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs)
 {
     if (config.fullComments)
     {
@@ -602,10 +602,10 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
         ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
     }
 
-    for (int i = 0; i < layout.controlCount; i++)
+    for (int i = 0; i < layout->controlCount; i++)
     {
         bool drawVariables = true;
-        GuiLayoutControl control = layout.controls[i];
+        GuiLayoutControl control = layout->controls[i];
 
         switch (control.type)
         {
@@ -798,7 +798,7 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
             if (config.fullComments)
             {
                 TABAPPEND(toolstr, pos, 3);
-                TextAppend(toolstr, TextFormat("// %s: %s", controlTypeName[layout.controls[i].type], layout.controls[i].name), pos);
+                TextAppend(toolstr, TextFormat("// %s: %s", controlTypeName[layout->controls[i].type], layout->controls[i].name), pos);
             }
             ENDLINEAPPEND(toolstr, pos);
             TABAPPEND(toolstr, pos, tabs);
@@ -808,7 +808,7 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout l
 }
 
 // Write controls drawing code (full block) (.c/.h)
-static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout layout, GuiLayoutConfig config, const char *preText, int tabs)
+static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, const char *preText, int tabs)
 {
     if (config.fullComments)
     {
@@ -816,14 +816,14 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout lay
         ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
     }
 
-    bool *draw = (bool *)RL_CALLOC(layout.controlCount, sizeof(bool));
-    for (int i = 0; i < layout.controlCount; i++) draw[i] = false;
+    bool *draw = (bool *)RL_CALLOC(layout->controlCount, sizeof(bool));
+    for (int i = 0; i < layout->controlCount; i++) draw[i] = false;
 
     // If dropdown control exist, draw GuiLock condition
     bool dropDownExist = false;
-    for (int i = 0; i < layout.controlCount; i++)
+    for (int i = 0; i < layout->controlCount; i++)
     {
-        if (layout.controls[i].type == GUI_DROPDOWNBOX)
+        if (layout->controls[i].type == GUI_DROPDOWNBOX)
         {
             if (!dropDownExist)
             {
@@ -834,7 +834,7 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout lay
             {
                 TextAppend(toolstr, " || ", pos);
             }
-            TextAppend(toolstr, TextFormat("%sEditMode", GetControlNameParam(layout.controls[i].name, preText)), pos);
+            TextAppend(toolstr, TextFormat("%sEditMode", GetControlNameParam(layout->controls[i].name, preText)), pos);
         }
     }
 
@@ -845,53 +845,53 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout lay
     }
 
     // Draw GUI_WINDOWBOX
-    for (int i = 0; i < layout.controlCount; i++)
+    for (int i = 0; i < layout->controlCount; i++)
     {
         if (!draw[i])
         {
-            if (layout.controls[i].type == GUI_WINDOWBOX)
+            if (layout->controls[i].type == GUI_WINDOWBOX)
             {
                 draw[i] = true;
 
-                //char *rec = GetControlRectangleText(i, layout.controls[i], config.defineRecs, config.exportAnchors, preText);
+                //char *rec = GetControlRectangleText(i, layout->controls[i], config.defineRecs, config.exportAnchors, preText);
 
-                TextAppend(toolstr, TextFormat("if (%sActive)", GetControlNameParam(layout.controls[i].name, preText)), pos);
+                TextAppend(toolstr, TextFormat("if (%sActive)", GetControlNameParam(layout->controls[i].name, preText)), pos);
                 ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
                 TextAppend(toolstr, "{", pos);
 
                 ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs + 1);
-                WriteControlDraw(toolstr, pos, i, layout.controls[i], config, preText); // Draw GUI_WINDOWBOX
+                WriteControlDraw(toolstr, pos, i, layout->controls[i], config, preText); // Draw GUI_WINDOWBOX
                 ENDLINEAPPEND(toolstr, pos);
 
-                int windowAnchorID = layout.controls[i].ap->id;
+                int windowAnchorID = layout->controls[i].ap->id;
 
                 // Draw controls inside window
-                for (int j = 0; j < layout.controlCount; j++)
+                for (int j = 0; j < layout->controlCount; j++)
                 {
-                    if (!draw[j] && i != j && layout.controls[j].type != GUI_WINDOWBOX  && layout.controls[j].type != GUI_DROPDOWNBOX)
+                    if (!draw[j] && i != j && layout->controls[j].type != GUI_WINDOWBOX  && layout->controls[j].type != GUI_DROPDOWNBOX)
                     {
-                        if (windowAnchorID == layout.controls[j].ap->id)
+                        if (windowAnchorID == layout->controls[j].ap->id)
                         {
                             draw[j] = true;
 
                             TABAPPEND(toolstr, pos, tabs + 1);
-                            WriteControlDraw(toolstr, pos, j, layout.controls[j], config, preText);
+                            WriteControlDraw(toolstr, pos, j, layout->controls[j], config, preText);
                             ENDLINEAPPEND(toolstr, pos);
                         }
                     }
                 }
 
                 // Draw GUI_DROPDOWNBOX inside GUI_WINDOWBOX
-                for (int j = 0; j < layout.controlCount; j++)
+                for (int j = 0; j < layout->controlCount; j++)
                 {
-                    if (!draw[j] && i != j && layout.controls[j].type == GUI_DROPDOWNBOX)
+                    if (!draw[j] && i != j && layout->controls[j].type == GUI_DROPDOWNBOX)
                     {
-                        if (windowAnchorID == layout.controls[j].ap->id)
+                        if (windowAnchorID == layout->controls[j].ap->id)
                         {
                             draw[j] = true;
 
                             TABAPPEND(toolstr, pos, tabs + 1);
-                            WriteControlDraw(toolstr, pos, j, layout.controls[j], config, preText);
+                            WriteControlDraw(toolstr, pos, j, layout->controls[j], config, preText);
                             ENDLINEAPPEND(toolstr, pos);
                         }
                     }
@@ -904,28 +904,28 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout lay
     }
 
     // Draw the rest of controls except dropdownbox
-    for (int i = 0; i < layout.controlCount; i++)
+    for (int i = 0; i < layout->controlCount; i++)
     {
         if (!draw[i])
         {
-            if (layout.controls[i].type != GUI_DROPDOWNBOX)
+            if (layout->controls[i].type != GUI_DROPDOWNBOX)
             {
                 draw[i] = true;
-                WriteControlDraw(toolstr, pos, i, layout.controls[i], config, preText);
+                WriteControlDraw(toolstr, pos, i, layout->controls[i], config, preText);
                 ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
             }
         }
     }
 
     // Draw GUI_DROPDOWNBOX
-    for (int i = 0; i < layout.controlCount; i++)
+    for (int i = 0; i < layout->controlCount; i++)
     {
         if (!draw[i])
         {
-            if (layout.controls[i].type == GUI_DROPDOWNBOX)
+            if (layout->controls[i].type == GUI_DROPDOWNBOX)
             {
                 draw[i] = true;
-                WriteControlDraw(toolstr, pos, i, layout.controls[i], config, preText);
+                WriteControlDraw(toolstr, pos, i, layout->controls[i], config, preText);
                 ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
             }
         }
