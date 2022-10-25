@@ -163,6 +163,8 @@ static const unsigned char *guiTemplateHeaderOnly = "\
 #undef RAYGUI_IMPLEMENTATION\n\
 #include \"raygui.h\"\n\
 \n\
+#include <string.h>     // Required for: strcpy()\n\
+\n\
 #ifndef GUI_$(GUILAYOUT_NAME_UPPERCASE)_H\n\
 #define GUI_$(GUILAYOUT_NAME_UPPERCASE)_H\n\
 \n\
