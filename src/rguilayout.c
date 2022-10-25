@@ -391,45 +391,44 @@ int main(int argc, char *argv[])
     //int multiSelectControls[20] = { -1 };
     //int multiSelectCount = 0;
 
-    // TODO: Define default colors for the different modes and states, align with style
-    //Color colorModes[30] = { };
-    Color colEditNameOverlay = GREEN;       // Fade: 0.2f
-    Color colEditTextOverlay = SKYBLUE;     // Fade: 0.2f
-    Color colEditNameBackRec = WHITE;
+    // Colors used for the different modes, states and elements actions
+    Color colEditControlTextOverlay = SKYBLUE;  // Control text edit mode, screen overlay (Fade: 0.2f)
+    Color colEditControlNameOverlay = GREEN;    // Control name edit mode, screen overlay (Fade: 0.2f)
+    Color colEditControlNameBackRec = WHITE;    // Control name edit mode, back rectangle
+    Color colEditAnchorNameOverlay = ORANGE;    // Anchor name edit mode, screen overlay (Fade: 0.2f)
+    Color colShowControlRecs = BLUE;            // Control rectangles mode (Fade: 0.2f / Line: Fade: 0.7f)
 
-    Color colCursorCreation = RED;
+    Color colControlCreationCursor = RED;       // Control creation cursor (NOT USED)
+    Color colControlFocused = RED;              // Control focused (mouse over it)
+    Color colControlSelected = RED;             // Control selected
+    Color colControlSelectedResize = BLUE;      // Control resize mode (keyboard, RCTRL + ARROWS)
+    Color colControlRecTextDefault = RED;       // Control position text (no snap mode)
+    Color colControlRecTextSnap = LIME;         // Control position text (snap mode)
+    Color colControlRecTextGlobal = MAROON;     // Control position text (global pos)
+    Color colControlRecTextPrecision = BLUE;    // Control position text (precision mode - RSHIFT)
 
-    Color colControlFocused = RED;
-    Color colControlFocusedLines = MAROON;
-    Color colControlSelected = RED;
-    Color colControlSelectedResize = BLUE;
-    Color colControlRecTextDefault = RED;
-    Color colControlRecTextGlobal = MAROON;
-    Color colControlRecTextSnap = LIME;
-    Color colControlRecTextPrecision = BLUE;
-    Color colControlScaleSelector = RED;
+    Color colAnchorCreationCursor = RED;        // Anchor creation cursor (A)
+    Color colAnchorDefault = BLUE;              // Anchor default (not focused or selected)
+    Color colAnchorFocused = PURPLE;            // Anchor focused (not filling)
+    Color colAnchorSelected = RED;              // Anchor selected (with filling)
+    Color colAnchorEditMode = ORANGE;           // Anchor selected and edit mode (A over focused anchor)
+    Color colAnchorLinkLine = RED;              // Anchor link lines
 
-    Color colAnchorCursor = RED;
-    Color colAnchorDefault = BLUE;
-    Color colAnchorSelected = ORANGE;
-    Color colAnchorSelected2 = RED;
-    Color colAnchorDisabled = DARKGRAY;
-    Color colAnchorHidden = GRAY;
-    Color colAnchorCircleDefault = { 253, 86, 95, 255 }; // LIGHTRED
-    Color colAnchorLinkLine0 = LIGHTGRAY;
-    Color colAnchorLinkLine = RED;
-    Color colAnchorLinkLineHidden = GRAY;
+    Color colAnchor0 = DARKGRAY;                // Anchor 0 (refWindow)
+    Color colAnchorLinkLine0 = LIGHTGRAY;       // Anchor 0 link lines (refWindow)
+    
+    Color colAnchorHidden = GRAY;               // Anchor hidden controls mode
+    Color colAnchorLinkLineHidden = LIGHTGRAY;  // Anchor hidden control link lines
 
-    Color colRefWindow = BLACK;             // Fade: 0.1f
-    Color colRefWindowText = DARKGRAY;
+    Color colRefWindow = BLACK;                 // Ref Window rectangle (Fade: 0.1f)
+    Color colRefWindowText = DARKGRAY;          // Ref Window position text
 
-    Color colTracemapFocusedLines = MAROON;
-    Color colTracemapSelected = RED;
-    Color colTracemapLines = GRAY;
-    Color colTracemapResize = BLUE;
+    Color colTracemapFocused = MAROON;          // Tracemap focused (base + lines)
+    Color colTracemapSelected = RED;            // Tracemap selected (base + lines)
+    Color colTracemapLocked = BLACK;            // Tracemap locked (border lines)
+    Color colTracemapResize = BLUE;             // Tracemap resize mode (keyboard, RCTRL + ARROWS)
 
-    Color colShowControlRecs = BLUE;        // Fade: 0.2f, line 0.7f
-
+    // TODO: Define colors to be aligned with style selected
 
     // Init default layout
     //-------------------------------------------------------------------------
@@ -2165,6 +2164,7 @@ int main(int argc, char *argv[])
                                 tracemap.locked = false;
                                 tracemap.focused = false;
                                 tracemap.selected = false;
+                                tracemap.visible = false;
 
                                 mainToolbarState.tracemapLoaded = false;
                             }
@@ -2261,21 +2261,21 @@ int main(int argc, char *argv[])
 
                 if (tracemap.locked)
                 {
-                    if (tracemap.focused) DrawRectangleLinesEx(tracemap.rec, 1, colTracemapFocusedLines);
-                    else DrawRectangleLinesEx(tracemap.rec, 1, colTracemapLines);
+                    DrawRectangleLinesEx(tracemap.rec, 1, colTracemapLocked);
                 }
                 else
                 {
                     if (tracemap.focused)
                     {
-                        DrawRectangleRec(tracemap.rec, Fade(colTracemapSelected, 0.1f));
-                        DrawRectangleLinesEx(tracemap.rec, 1, colTracemapFocusedLines);
+                        DrawRectangleRec(tracemap.rec, Fade(colTracemapFocused, 0.1f));
+                        DrawRectangleLinesEx(tracemap.rec, 2, colTracemapFocused);
                     }
+
                     if (tracemap.selected)
                     {
                         Color colTracemap = colTracemapSelected;
                         if (!dragMoveMode && resizeMode) colTracemap = colTracemapResize;
-                        DrawRectangleRec(tracemap.rec, Fade(colTracemap, 0.5f));
+                        DrawRectangleRec(tracemap.rec, Fade(colTracemap, 0.3f));
 
                         Color colPositionText = colControlRecTextDefault;
                         if (showGlobalPosition) colPositionText = colControlRecTextGlobal;
@@ -2382,20 +2382,20 @@ int main(int argc, char *argv[])
                 }
             }
 
-            Color colAnchor = colAnchorDisabled;
-            Color colAnchorCircle = colAnchorDisabled;
+            Color colAnchor = colAnchor0;
+            Color colAnchorCircle = colAnchor0;
 
             // NOTE: anchor[0] is reserved and assigned to refWindow
             if (selectedAnchor == 0)
             {
-                if (anchorEditMode) { colAnchor = colAnchorSelected; colAnchorCircle = colAnchorSelected;}
+                if (anchorEditMode) { colAnchor = colAnchorEditMode; colAnchorCircle = colAnchorEditMode;}
                 DrawRectangle(layout->anchors[0].x - ANCHOR_RADIUS, layout->anchors[0].y - ANCHOR_RADIUS, ANCHOR_RADIUS*2, ANCHOR_RADIUS*2, Fade(colAnchor, 0.2f));
             }
 
             if (focusedAnchor == 0)
             {
-                colAnchorCircle = colAnchorDisabled;
-                if (anchorEditMode) colAnchorCircle = colAnchorSelected;
+                colAnchorCircle = colAnchor0;
+                if (anchorEditMode) colAnchorCircle = colAnchorEditMode;
             }
 
             DrawRectangleLines(layout->anchors[0].x - ANCHOR_RADIUS, layout->anchors[0].y - ANCHOR_RADIUS, ANCHOR_RADIUS*2, ANCHOR_RADIUS*2, Fade(colAnchorCircle, 0.5f));
@@ -2418,19 +2418,22 @@ int main(int argc, char *argv[])
                         }
                         else
                         {
-                            colAnchorCircle = colAnchorCircleDefault;
-                            colAnchor = colAnchorSelected2;
+                            colAnchorCircle = colAnchorSelected;
+                            colAnchor = colAnchorSelected;
                         }
-                        if (anchorMoveMode || (anchorEditMode && (focusedAnchor > 0) && (layout->anchors[i].id == focusedAnchor))) colAnchor = colAnchorSelected;
+                        
+                        if (anchorMoveMode || (anchorEditMode && (focusedAnchor > 0) && (layout->anchors[i].id == focusedAnchor))) colAnchor = colAnchorEditMode;
+                        
                         DrawCircle(layout->anchors[i].x, layout->anchors[i].y, ANCHOR_RADIUS, Fade(colAnchor, 0.2f));
                     }
                     else if (layout->anchors[i].hidding) colAnchorCircle = colAnchorHidden;
                     else colAnchorCircle = colAnchorDefault;
 
-                    if (focusedAnchor > 0 && layout->anchors[i].id == focusedAnchor)
+                    if ((focusedAnchor > 0) && (layout->anchors[i].id == focusedAnchor))
                     {
-                        if (anchorEditMode) colAnchorCircle = colAnchorSelected;
-                        else colAnchorCircle = colAnchorSelected2;
+                        if (anchorEditMode) colAnchorCircle = colAnchorEditMode;
+                        else if (selectedAnchor > 0) colAnchorCircle = colAnchorSelected;
+                        else colAnchorCircle = colAnchorFocused;
                     }
 
                     DrawCircleLines(layout->anchors[i].x, layout->anchors[i].y, ANCHOR_RADIUS, Fade(colAnchorCircle, 0.5f));
@@ -2494,8 +2497,8 @@ int main(int argc, char *argv[])
                                 GuiUnlock();
 
                                 // Draw default cursor
-                                DrawRectangle(mouse.x - 8, mouse.y, 17, 1, colCursorCreation);
-                                DrawRectangle(mouse.x, mouse.y - 8, 1, 17, colCursorCreation);
+                                //DrawRectangle(mouse.x - 8, mouse.y, 17, 1, colControlCreationCursor);
+                                //DrawRectangle(mouse.x, mouse.y - 8, 1, 17, colControlCreationCursor);
 
                                 // Draw cursor position
                                 Color colPositionText = colControlRecTextDefault;
@@ -2512,9 +2515,9 @@ int main(int argc, char *argv[])
                         else
                         {
                             // Draw anchor cursor
-                            DrawCircleLines(mouse.x, mouse.y, ANCHOR_RADIUS, Fade(colAnchorCursor, 0.5f));
-                            DrawRectangle(mouse.x - ANCHOR_RADIUS - 5, mouse.y, ANCHOR_RADIUS*2 + 10, 1, colAnchorCursor);
-                            DrawRectangle(mouse.x, mouse.y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, colAnchorCursor);
+                            DrawCircleLines(mouse.x, mouse.y, ANCHOR_RADIUS, Fade(colAnchorCreationCursor, 0.5f));
+                            DrawRectangle(mouse.x - ANCHOR_RADIUS - 5, mouse.y, ANCHOR_RADIUS*2 + 10, 1, colAnchorCreationCursor);
+                            DrawRectangle(mouse.x, mouse.y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, colAnchorCreationCursor);
                         }
                     }
                 }
@@ -2550,7 +2553,7 @@ int main(int argc, char *argv[])
                             textboxRec.y += layout->controls[i].ap->y;
                         }
 
-                        DrawRectangleRec(textboxRec, colEditNameBackRec);
+                        DrawRectangleRec(textboxRec, colEditControlNameBackRec);
                         GuiTextBox(textboxRec, layout->controls[i].name, MAX_CONTROL_NAME_LENGTH, false);
                     }
 
@@ -2559,8 +2562,8 @@ int main(int argc, char *argv[])
                         Rectangle textboxRec = (Rectangle){ layout->anchors[i].x, layout->anchors[i].y,
                             MeasureText(layout->anchors[i].name, GuiGetStyle(DEFAULT, TEXT_SIZE)) + 10, GuiGetStyle(DEFAULT, TEXT_SIZE) + 5 };
 
-                        DrawRectangleRec(textboxRec, colEditNameBackRec);
-                        DrawRectangleRec(textboxRec, Fade(colAnchorSelected, 0.1f));
+                        DrawRectangleRec(textboxRec, colEditControlNameBackRec);
+                        DrawRectangleRec(textboxRec, Fade(colAnchorEditMode, 0.1f));
                         GuiTextBox(textboxRec, layout->anchors[i].name, MAX_ANCHOR_NAME_LENGTH, false);
                     }
 
@@ -2646,7 +2649,7 @@ int main(int argc, char *argv[])
                     // Draw name edit mode
                     if (nameEditMode)
                     {
-                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(colAnchorSelected, 0.2f));
+                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(colEditAnchorNameOverlay, 0.2f));
 
                         int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
                         int textWidth = MeasureText(layout->anchors[selectedAnchor].name, fontSize);
@@ -2725,7 +2728,7 @@ int main(int argc, char *argv[])
                     // Text edit
                     if (textEditMode || showIconPanel)
                     {
-                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(colEditTextOverlay, 0.2f));
+                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(colEditControlTextOverlay, 0.2f));
 
                         Rectangle textboxRec = layout->controls[selectedControl].rec;
 
@@ -2775,7 +2778,7 @@ int main(int argc, char *argv[])
                     // Name edit
                     if (nameEditMode)
                     {
-                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(colEditNameOverlay, 0.2f));
+                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(colEditControlNameOverlay, 0.2f));
 
                         Rectangle textboxRec = layout->controls[selectedControl].rec;
 
@@ -2845,7 +2848,7 @@ int main(int argc, char *argv[])
 
                     if (focusedControl != selectedControl) DrawRectangleRec(focusRec, Fade(colControlFocused, 0.1f));
 
-                    DrawRectangleLinesEx(focusRec, 1, colControlFocusedLines);
+                    DrawRectangleLinesEx(focusRec, 1, colControlFocused);
 
                     if (layout->controls[focusedControl].ap->id > 0)
                     {
@@ -2864,10 +2867,10 @@ int main(int argc, char *argv[])
                         selectedRec.y += layout->controls[selectedControl].ap->y;
                     }
 
-                    DrawRectangleLinesEx(selectedRec, 2, colControlScaleSelector);
+                    DrawRectangleLinesEx(selectedRec, 2, colControlSelected);
                     DrawTriangle((Vector2) { selectedRec.x + selectedRec.width - SCALE_BOX_CORNER_SIZE, selectedRec.y + selectedRec.height },
                                  (Vector2) { selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height },
-                                 (Vector2) { selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height - SCALE_BOX_CORNER_SIZE }, colControlScaleSelector);
+                                 (Vector2) { selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height - SCALE_BOX_CORNER_SIZE }, colControlSelected);
                 }
 
                 // Draw reference window lines
