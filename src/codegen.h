@@ -1011,8 +1011,8 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLay
             char *containerRec = GetScrollPanelContainerRecText(index, control, config.defineRecs, config.exportAnchors, preText);
             TextAppend(toolstr, TextFormat("%sScrollView = GuiScrollPanel(%s, %s, %s, &%sScrollOffset);", name, containerRec, text, rec, name), pos); break;
         }
-        case GUI_LISTVIEW: TextAppend(toolstr, TextFormat("%sActive = GuiListView(%s, %s, &%sScrollIndex, %sActive);", name, rec, (text == NULL)? "null":text, name, name), pos); break;
-        case GUI_COLORPICKER: TextAppend(toolstr, TextFormat("%sValue = GuiColorPicker(%s, %s, %sValue);", name, text, rec, name), pos); break;
+        case GUI_LISTVIEW: TextAppend(toolstr, TextFormat("%sActive = GuiListView(%s, %s, &%sScrollIndex, %sActive);", name, rec, (text == NULL)? "null" : text, name, name), pos); break;
+        case GUI_COLORPICKER: TextAppend(toolstr, TextFormat("%sValue = GuiColorPicker(%s, %s, %sValue);", name, rec, text, name), pos); break;
         case GUI_DUMMYREC: TextAppend(toolstr, TextFormat("GuiDummyRec(%s, %s);", rec, text), pos); break;
         default: break;
     }
