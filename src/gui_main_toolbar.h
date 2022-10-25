@@ -279,11 +279,9 @@ void GuiMainToolbar(GuiMainToolbarState *state)
     DrawRectangle(state->anchorTools.x + 380 + 72 + 96 + 35, state->anchorTools.y, 1, 40, GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
 
     // Visuals options
-    if (state->controlSelected >= 0) GuiDisable();
     state->showControlRecsActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 , state->anchorVisuals.y + 8, 24, 24 }, "#98#", state->showControlRecsActive);
     state->showControlNamesActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 24 + 4 , state->anchorVisuals.y + 8, 24, 24 }, "#214#", state->showControlNamesActive);
     state->showControlOrderActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 48 + 8, state->anchorVisuals.y + 8, 24, 24 }, "#197#", state->showControlOrderActive);
-    GuiEnable();
     state->showControlPanelActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 72 + 12, state->anchorVisuals.y + 8, 24, 24 }, "#101#", state->showControlPanelActive);
     state->showGridActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 96 + 16, state->anchorVisuals.y + 8, 24, 24 }, "#97#", state->showGridActive);
     
