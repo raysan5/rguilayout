@@ -391,7 +391,8 @@ int main(int argc, char *argv[])
     //int multiSelectControls[20] = { -1 };
     //int multiSelectCount = 0;
 
-    // Colors used for the different modes, states and elements actions
+    /*
+    // Colors used for the different modes, states and elements actions (original design)
     Color colEditControlTextOverlay = SKYBLUE;  // Control text edit mode, screen overlay (Fade: 0.2f)
     Color colEditControlNameOverlay = GREEN;    // Control name edit mode, screen overlay (Fade: 0.2f)
     Color colEditControlNameBackRec = WHITE;    // Control name edit mode, back rectangle
@@ -427,8 +428,47 @@ int main(int argc, char *argv[])
     Color colTracemapSelected = RED;            // Tracemap selected (base + lines)
     Color colTracemapLocked = BLACK;            // Tracemap locked (border lines)
     Color colTracemapResize = BLUE;             // Tracemap resize mode (keyboard, RCTRL + ARROWS)
+    */
 
-    // TODO: Define colors to be aligned with style selected
+    // Define colors to be aligned with style selected
+    // Colors used for the different modes, states and elements actions
+    //-------------------------------------------------------------------------------------------------
+    Color colEditControlTextOverlay = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));  // Control text edit mode, screen overlay (Fade: 0.2f)
+    Color colEditControlNameOverlay = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));  // Control name edit mode, screen overlay (Fade: 0.2f)
+    Color colEditControlNameBackRec = WHITE;    // Control name edit mode, back rectangle
+    Color colEditAnchorNameOverlay = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));   // Anchor name edit mode, screen overlay (Fade: 0.2f)
+    Color colShowControlRecs = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));         // Control rectangles mode (Fade: 0.2f / Line: Fade: 0.7f)
+
+    Color colControlCreationCursor = RED;       // Control creation cursor (NOT USED)
+    Color colControlFocused = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));        // Control focused (mouse over it)
+    Color colControlSelected = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));       // Control selected
+    Color colControlSelectedResize = BLUE;      // Control resize mode (keyboard, RCTRL + ARROWS)
+    Color colControlRecTextDefault = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED)); // Control position text (no snap mode)
+    Color colControlRecTextSnap = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));    // Control position text (snap mode)
+    Color colControlRecTextGlobal = MAROON;     // Control position text (global pos)
+    Color colControlRecTextPrecision = BLUE;    // Control position text (precision mode - RSHIFT)
+
+    Color colAnchorCreationCursor = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));  // Anchor creation cursor (A)
+    Color colAnchorDefault = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));         // Anchor default (not focused or selected)
+    Color colAnchorFocused = GetColor(GuiGetStyle(BUTTON, BASE_COLOR_PRESSED));           // Anchor focused (not filling)
+    Color colAnchorSelected = GetColor(GuiGetStyle(BUTTON, TEXT_COLOR_PRESSED));;         // Anchor selected (with filling)
+    Color colAnchorEditMode = ORANGE;           // Anchor selected and edit mode (A over focused anchor)
+    Color colAnchorLinkLine = GetColor(GuiGetStyle(BUTTON, TEXT_COLOR_PRESSED));          // Anchor link lines
+
+    Color colAnchor0 = DARKGRAY;                // Anchor 0 (refWindow)
+    Color colAnchorLinkLine0 = GetColor(GuiGetStyle(BUTTON, TEXT_COLOR_DISABLED));        // Anchor 0 link lines (refWindow)
+
+    Color colAnchorHidden = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_DISABLED));         // Anchor hidden controls mode
+    Color colAnchorLinkLineHidden = GetColor(GuiGetStyle(BUTTON, TEXT_COLOR_DISABLED));   // Anchor hidden control link lines
+
+    Color colRefWindow = BLACK;                 // Ref Window rectangle (Fade: 0.1f)
+    Color colRefWindowText = DARKGRAY;          // Ref Window position text
+
+    Color colTracemapFocused = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));       // Tracemap focused (base + lines)
+    Color colTracemapSelected = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));      // Tracemap selected (base + lines)
+    Color colTracemapLocked = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_DISABLED));       // Tracemap locked (border lines)
+    Color colTracemapResize = BLUE;             // Tracemap resize mode (keyboard, RCTRL + ARROWS)
+    //-------------------------------------------------------------------------------------------------
 
     // Init default layout
     //-------------------------------------------------------------------------
@@ -935,7 +975,7 @@ int main(int argc, char *argv[])
             if (IsKeyPressed(KEY_R)) mainToolbarState.showControlRecsActive = !mainToolbarState.showControlRecsActive;
 
             // Toggle controls name view
-            if (IsKeyPressed(KEY_N)) mainToolbarState.showControlNamesActive = !mainToolbarState.showControlNamesActive;
+            if (IsKeyPressed(KEY_N) && (selectedControl == -1) && (selectedAnchor == -1)) mainToolbarState.showControlNamesActive = !mainToolbarState.showControlNamesActive;
 
             // Toggle controls order drawing view
             if (IsKeyPressed(KEY_L))
@@ -1011,13 +1051,53 @@ int main(int argc, char *argv[])
                 default: break;
             }
 
+            // Update colors for the style
+            // Colors used for the different modes, states and elements actions
+            //-------------------------------------------------------------------------------------------------
+            colEditControlTextOverlay = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));  // Control text edit mode, screen overlay (Fade: 0.2f)
+            colEditControlNameOverlay = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));  // Control name edit mode, screen overlay (Fade: 0.2f)
+            colEditControlNameBackRec = WHITE;    // Control name edit mode, back rectangle
+            colEditAnchorNameOverlay = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));   // Anchor name edit mode, screen overlay (Fade: 0.2f)
+            colShowControlRecs = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));         // Control rectangles mode (Fade: 0.2f / Line: Fade: 0.7f)
+
+            colControlCreationCursor = RED;       // Control creation cursor (NOT USED)
+            colControlFocused = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));        // Control focused (mouse over it)
+            colControlSelected = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));       // Control selected
+            colControlSelectedResize = BLUE;      // Control resize mode (keyboard, RCTRL + ARROWS)
+            colControlRecTextDefault = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED)); // Control position text (no snap mode)
+            colControlRecTextSnap = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));    // Control position text (snap mode)
+            colControlRecTextGlobal = MAROON;     // Control position text (global pos)
+            colControlRecTextPrecision = BLUE;    // Control position text (precision mode - RSHIFT)
+
+            colAnchorCreationCursor = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));  // Anchor creation cursor (A)
+            colAnchorDefault = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));         // Anchor default (not focused or selected)
+            colAnchorFocused = GetColor(GuiGetStyle(BUTTON, BASE_COLOR_PRESSED));           // Anchor focused (not filling)
+            colAnchorSelected = GetColor(GuiGetStyle(BUTTON, TEXT_COLOR_PRESSED));;         // Anchor selected (with filling)
+            colAnchorEditMode = ORANGE;           // Anchor selected and edit mode (A over focused anchor)
+            colAnchorLinkLine = GetColor(GuiGetStyle(BUTTON, TEXT_COLOR_PRESSED));          // Anchor link lines
+
+            colAnchor0 = DARKGRAY;                // Anchor 0 (refWindow)
+            colAnchorLinkLine0 = GetColor(GuiGetStyle(BUTTON, TEXT_COLOR_DISABLED));        // Anchor 0 link lines (refWindow)
+
+            colAnchorHidden = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_DISABLED));         // Anchor hidden controls mode
+            colAnchorLinkLineHidden = GetColor(GuiGetStyle(BUTTON, TEXT_COLOR_DISABLED));   // Anchor hidden control link lines
+
+            colRefWindow = BLACK;                 // Ref Window rectangle (Fade: 0.1f)
+            colRefWindowText = DARKGRAY;          // Ref Window position text
+
+            colTracemapFocused = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));       // Tracemap focused (base + lines)
+            colTracemapSelected = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));      // Tracemap selected (base + lines)
+            colTracemapLocked = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_DISABLED));       // Tracemap locked (border lines)
+            colTracemapResize = BLUE;             // Tracemap resize mode (keyboard, RCTRL + ARROWS)
+            //-------------------------------------------------------------------------------------------------
+
             mainToolbarState.prevVisualStyleActive = mainToolbarState.visualStyleActive;
         }
 
         // Help options logic
-        if (mainToolbarState.btnHelpPressed) windowHelpActive = true;                   // Help button logic
-        if (mainToolbarState.btnAboutPressed) windowAboutState.windowActive = true;     // About window button logic
-        if (mainToolbarState.btnSponsorPressed) windowSponsorState.windowActive = true; // User sponsor logic
+        if (mainToolbarState.btnHelpPressed) windowHelpActive = true;                       // Help button logic
+        if (mainToolbarState.btnAboutPressed) windowAboutState.windowActive = true;         // About window button logic
+        if (mainToolbarState.btnSponsorPressed) windowSponsorState.windowActive = true;     // User sponsor logic
         //----------------------------------------------------------------------------------
 
         // Basic program flow logic
@@ -2424,7 +2504,7 @@ int main(int argc, char *argv[])
                         
                         if (anchorMoveMode || (anchorEditMode && (focusedAnchor > 0) && (layout->anchors[i].id == focusedAnchor))) colAnchor = colAnchorEditMode;
                         
-                        DrawCircle(layout->anchors[i].x, layout->anchors[i].y, ANCHOR_RADIUS, Fade(colAnchor, 0.2f));
+                        DrawCircle(layout->anchors[i].x, layout->anchors[i].y, ANCHOR_RADIUS, Fade(colAnchor, 0.4f));
                     }
                     else if (layout->anchors[i].hidding) colAnchorCircle = colAnchorHidden;
                     else colAnchorCircle = colAnchorDefault;
@@ -2434,6 +2514,8 @@ int main(int argc, char *argv[])
                         if (anchorEditMode) colAnchorCircle = colAnchorEditMode;
                         else if (selectedAnchor > 0) colAnchorCircle = colAnchorSelected;
                         else colAnchorCircle = colAnchorFocused;
+
+                        DrawCircle(layout->anchors[i].x, layout->anchors[i].y, ANCHOR_RADIUS, Fade(colAnchorFocused, 0.4f));
                     }
 
                     DrawCircleLines(layout->anchors[i].x, layout->anchors[i].y, ANCHOR_RADIUS, Fade(colAnchorCircle, 0.5f));
