@@ -59,6 +59,15 @@ jobs:
         ls ${{ env.PROJECT_BUILD_PATH }}
         cp ${{ env.PROJECT_BUILD_PATH }}/${{ env.PROJECT_NAME }} ${{ env.PROJECT_RELEASE_PATH }}
         cp ${{ env.PROJECT_NAME }}/README.md ${{ env.PROJECT_RELEASE_PATH }}
+        cp ${{ env.PROJECT_NAME }}/USAGE.md ${{ env.PROJECT_RELEASE_PATH }}
+        mkdir ${{ env.PROJECT_RELEASE_PATH }}/layouts
+        cp ${{ env.PROJECT_NAME }}/layouts/audio_player.rgl ${{ env.PROJECT_RELEASE_PATH }}/layouts
+        cp ${{ env.PROJECT_NAME }}/layouts/file_dialog.rgl ${{ env.PROJECT_RELEASE_PATH }}/layouts
+        cp ${{ env.PROJECT_NAME }}/layouts/window_image_edit.rgl ${{ env.PROJECT_RELEASE_PATH }}/layouts
+        cp ${{ env.PROJECT_NAME }}/layouts/window_image_export.rgl ${{ env.PROJECT_RELEASE_PATH }}/layouts
+        cp ${{ env.PROJECT_NAME }}/layouts/window_image_import_raw.rgl ${{ env.PROJECT_RELEASE_PATH }}/layouts
+        cp ${{ env.PROJECT_NAME }}/layouts/window_image_resize.rgl ${{ env.PROJECT_RELEASE_PATH }}/layouts
+        cp ${{ env.PROJECT_NAME }}/layouts/window_messagebox.rgl ${{ env.PROJECT_RELEASE_PATH }}/layouts
         ls ${{ env.PROJECT_RELEASE_PATH }}
         7z a ./${{ env.PROJECT_RELEASE_PATH }}.zip ./${{ env.PROJECT_RELEASE_PATH }}
 
