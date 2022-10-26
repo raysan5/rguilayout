@@ -24,13 +24,13 @@ a 012 anchor12 0 0 0
 a 013 anchor13 0 0 0
 a 014 anchor14 0 0 0
 a 015 anchor15 0 0 0
-c 000 0 fileDialog 0 0 480 300 1 File Select Dialog
+c 000 0 fileDialog 0 0 480 300 1 #005#File Select Dialog
 c 001 5 dirBack 424 32 48 24 1 <
 c 002 13 path 8 32 408 24 1 C:\GitHub\raysan5\rguilayout\layouts\
 c 003 4 lblFileName 8 232 64 24 1 File name:
 c 004 13 fileName 72 232 280 24 1 file_dialog.rlg
-c 005 5 fileSelect 360 232 112 24 1 Select
-c 006 5 fileCancel 360 264 112 24 1 Cancel
+c 005 5 fileSelect 360 232 112 24 1 #005#Select
+c 006 5 fileCancel 360 264 112 24 1 #009#Cancel
 c 007 11 fileType 72 264 280 24 1 IMAGE (.png);STYLE (.rgs);CODE (.h)
 c 008 4 Label012 8 264 64 24 1 File filter:
 c 009 20 ScrollPanel009 8 64 464 160 1 

@@ -1,0 +1,37 @@
+#
+# rgl layout text file (v3.0) - raygui layout file generated using rGuiLayout
+#
+# Number of controls:     11
+#
+# Ref. window:    r <x> <y> <width> <height>
+# Anchor info:    a <id> <name> <posx> <posy> <enabled>
+# Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
+#
+r 0 0 -1 -1
+a 000 anchor00 0 0 1
+a 001 anchor01 48 48 1
+a 002 anchor02 0 0 0
+a 003 anchor03 0 0 0
+a 004 anchor04 0 0 0
+a 005 anchor05 0 0 0
+a 006 anchor06 0 0 0
+a 007 anchor07 0 0 0
+a 008 anchor08 0 0 0
+a 009 anchor09 0 0 0
+a 010 anchor10 0 0 0
+a 011 anchor11 0 0 0
+a 012 anchor12 0 0 0
+a 013 anchor13 0 0 0
+a 014 anchor14 0 0 0
+a 015 anchor15 0 0 0
+c 000 0 fileDialog 0 0 480 272 1 File Dialog - Choose a file
+c 001 5 dirBack 8 40 40 24 1 <
+c 002 13 dirPath 64 40 408 24 1 C:\GitHub\raysan5\rguilayout\layouts\
+c 003 4 lblFileName 8 232 56 24 1 File name:
+c 004 13 fileName 64 232 195 25 1 file_dialog.rlg
+c 005 5 SelectFile 384 232 88 24 1 Select
+c 006 9 dirUnitC 8 72 40 24 1 C:\
+c 007 9 dirUnitD 8 104 40 24 1 D:\
+c 008 9 dirUnitE 8 136 40 24 1 E:\
+c 009 11 fileType 264 232 112 24 1 IMAGE (.png);STYLE (.rgs);CODE (.h)
+c 010 20 ScrollPanel010 64 72 408 152 1 

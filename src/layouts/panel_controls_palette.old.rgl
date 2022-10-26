@@ -1,0 +1,47 @@
+#
+# rgl layout text file (v3.0) - raygui layout file generated using rGuiLayout
+#
+# Number of controls:     21
+#
+# Ref. window:    r <x> <y> <width> <height>
+# Anchor info:    a <id> <name> <posx> <posy> <enabled>
+# Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
+#
+r 0 0 -1 -1
+a 000 anchor00 0 0 1
+a 001 anchor01 48 24 1
+a 002 anchor02 0 0 0
+a 003 anchor03 0 0 0
+a 004 anchor04 0 0 0
+a 005 anchor05 0 0 0
+a 006 anchor06 0 0 0
+a 007 anchor07 0 0 0
+a 008 anchor08 0 0 0
+a 009 anchor09 0 0 0
+a 010 anchor10 0 0 0
+a 011 anchor11 0 0 0
+a 012 anchor12 0 0 0
+a 013 anchor13 0 0 0
+a 014 anchor14 0 0 0
+a 015 anchor15 0 0 0
+c 000 3 controlsPanel 0 0 168 808 1 
+c 001 0 WindowBox 16 16 136 48 1 WindowBox
+c 002 1 GroupBox 16 80 136 32 1 GroupBox
+c 003 2 Line 16 112 136 24 1 
+c 004 3 Panel 16 136 136 40 1 
+c 005 4 Label 16 184 136 32 1 Label (SAMPLE TEXT)
+c 006 5 Button 16 216 136 32 1 Button
+c 007 9 Toggle 16 256 90 25 1 Toggle
+c 008 8 CheckBox 120 256 23 21 1 
+c 009 10 ToggleGroup 16 288 136 24 1 ONE;TWO;THREE
+c 010 11 ComboBox 16 320 136 24 1 ONE;TWO;THREE
+c 011 12 DropdownBox 16 352 136 24 1 ONE;TWO;THREE
+c 012 16 Spinner 16 384 136 16 1 
+c 013 15 ValueBox 16 408 136 24 1 
+c 014 13 TextBox 16 440 136 24 1 TextBox
+c 015 17 Slider 16 472 136 16 1 
+c 016 18 SliderBar 16 496 136 16 1 
+c 017 19 ProgressBar 16 520 136 16 1 
+c 018 22 ListView 16 640 112 104 1 
+c 019 23 ColorPicker 16 760 136 24 1 
+c 020 20 ScrollPanel020 64 576 136 72 0 

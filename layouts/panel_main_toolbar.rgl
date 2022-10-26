@@ -1,5 +1,5 @@
 #
-# rgl layout text file (v2.5) - raygui layout file generated using rGuiLayout
+# rgl layout text file (v3.0) - raygui layout file generated using rGuiLayout
 #
 # Number of controls:     26
 #
@@ -7,15 +7,23 @@
 # Anchor info:    a <id> <name> <posx> <posy> <enabled>
 # Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
-r 48 72 1288 40
-a 000 anchor00 48 72 1
-a 001 anchorFullscreen 1248 0 1
-a 002 anchorZoom 328 0 1
-a 003 anchorBack 720 0 1
-a 004 anchorChannels 880 0 1
-a 005 anchorHelpers 1080 0 1
-a 006 anchorMain 0 0 1
-a 007 anchor07 -8 128 0
+r 0 0 -1 -1
+a 000 anchor00 0 0 1
+a 001 anchorFullscreen 1296 48 1
+a 002 anchorZoom 376 48 1
+a 003 anchorBack 768 48 1
+a 004 anchorChannels 928 48 1
+a 005 anchorHelpers 1128 48 1
+a 006 anchorMain 48 48 1
+a 007 anchor07 40 200 0
+a 008 anchor08 48 72 0
+a 009 anchor09 48 72 0
+a 010 anchor10 48 72 0
+a 011 anchor11 48 72 0
+a 012 anchor12 48 72 0
+a 013 anchor13 48 72 0
+a 014 anchor14 48 72 0
+a 015 anchor15 48 72 0
 c 000 3 panelEmpty 0 0 328 40 6 
 c 001 5 btnOpen 16 8 24 24 6 #1#
 c 002 5 btnExport 48 8 24 24 6 #7#

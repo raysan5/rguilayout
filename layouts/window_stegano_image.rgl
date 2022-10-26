@@ -24,7 +24,7 @@ a 012 anchor12 48 48 0
 a 013 anchor13 48 48 0
 a 014 anchor14 48 48 0
 a 015 anchor15 48 48 0
-c 000 0 WindowBox000 0 0 240 528 1 rStegano
+c 000 0 WindowBox000 0 0 240 528 1 #094#Stegano Image
 c 001 4 Label002 8 40 88 24 1 PADDING BYTES
 c 002 15 Spinner019 104 40 128 24 1 
 c 003 4 Label011 8 80 96 16 1 STEGANO BITS
@@ -41,5 +41,5 @@ c 013 3 Panel013 8 128 224 168 1
 c 014 4 Label014 8 304 61 25 1 MESSAGE:
 c 015 12 TextBox015 8 328 224 96 1 Message to be hidden in the image....
 c 016 2 Line017 0 432 240 24 1 
-c 017 5 Button016 8 464 224 24 1 STEGANO!
+c 017 5 Button016 8 456 224 32 1 STEGANO!
 c 018 19 StatusBar019 0 504 240 24 1 Status Info
