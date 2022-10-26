@@ -1,12 +1,24 @@
 # rGuiLayout Usage
 
-rGuiLayout support multiple edit modes depending on the element to edit, from the full layout mode to controls and anchors.
+rGuiLayout is a tool to create `raygui` layouts visually.
 
-Here it is a detailed list of the possible edit modes available and how to use them.
+Layouts basically consist of **controls** and those controls could be linked to **anchors** for convenience.
 
-## Layout
+rGuiLayout supports several edit modes depending on the element to edit, basically 3 edition elements are available:
 
-### Grid and snap mode
+ - [Controls](#controls)
+ - [Anchors](#anchors)
+ - [Tracemap](#tracemap)
+
+Once a layout is build it can be saved as a `.rgl` file for further loading or exported as code, as a `.c`/`.h` file. 
+
+Code is generated from the layout and multiple configuration options are available. Check [Code Generation](#code-generation)
+
+There are also multiple layout configuration options available to help on that task.
+
+## Layout Edit Options
+
+### Grid and Snap mode
  
 There is a grid to place layout elements (controls, anchors, tracemap). 
 Grid size and subdivisions can be configured with a shortcut: 
@@ -17,6 +29,10 @@ Grid size and subdivisions can be configured with a shortcut:
 Snap mode can be activated to snap elements placement to grid subdivisions:
 
   > `LEFT_ALT + S`: Toggle snap mode
+
+### Undo/Redo
+
+Multiple levels of Undo/Redo are supported for the edited layout, the current implementation takes a snapshot of current state every 2 seconds and a new undo state is saved if the layout changed.
   
 ### Control rectangles view
  
@@ -26,14 +42,16 @@ The rectangle overlay is not applied over two special container controls: `Windo
   > Shortcut: `R`
  
 ### Control names view
- 
-All control names can be viewed for convenience, to detect possible duplicates or inconsistencies.
+
+All control have names assigned that will be used on code generation. It's possible to see all controls names at onece for convenience, to detect possible duplicates or inconsistencies.
+
+  > Shortcut: `N` (with no control/anchor selected)
 
 ### Layers view
- 
 
-### Undo/Redo
- 
+Controls follow a drawing order. It's possible to change that order focusing the controls and using the mouse wheel up/down if the layer view mode is activated.
+
+  > Shortcut: `L`
 
 ## Controls
 
@@ -78,11 +96,11 @@ To link a control to an anchor just focus/select the cotrol and drag a line with
 Most controls contain a text label. That text can be edited directly in the tool.
 To enable text editing mode, select a control and press `T` key, a text box will appear to introduce new text. `ESCAPE` key cancels text editing, returning to previous text and `ENTER` key validates introduced text.
 
-NOTE 1: Some controls support up to two text labels (`Slider`, `SliderBar`, `ProgressBar`), only left label text editing is supported in those controls.
+ > NOTE 1: Some controls support up to two text labels (`Slider`, `SliderBar`, `ProgressBar`), only left label text editing is supported in those controls.
 
-NOTE 2: Some controls do not support text labels but text define control selection options (`ToggleGroup`, `ComboBox`, `DropdownBox`, `ListView`), in those cases instroduced text represent those control options, the different options must be separated by `;` character to be properly processed.
+ > NOTE 2: Some controls do not support text labels but text define control selection options (`ToggleGroup`, `ComboBox`, `DropdownBox`, `ListView`), in those cases instroduced text represent those control options, the different options must be separated by `;` character to be properly processed.
 
-NOTE 3: raygui support icons at the beggining of text. If the first text character introduced on text editing is `#`, a icons selector panel will show up to choose an icon from the raygui available ones.
+ > NOTE 3: raygui support icons at the beggining of text. If the first text character introduced on text editing is `#`, a icons selector panel will show up to choose an icon from the raygui available ones.
 
 ### Edition: Property: `name`
 
@@ -116,7 +134,7 @@ Here it is a table showing the default names at creation and the code generated 
 | COLORPICKER |   ColorPicker001 |    `Color {name}Value`         |
 | DUMMYREC    |   DummyRec001    |    -
 
-NOTE: The number at the end of the default name represents the layout drawing order for the control.
+ > NOTE: The number at the end of the default name represents the layout drawing order for the control.
 
 Depending on the code generation options, additional variables can be created:
 
