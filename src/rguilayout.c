@@ -9,7 +9,7 @@
 *       NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   VERSIONS HISTORY:
-*       3.0  (24-Oct-2022)  ADDED: Main toolbar, consistent with other tools, many options!
+*       3.0  (26-Oct-2022)  ADDED: Main toolbar, consistent with other tools, many options!
 *                           ADDED: View options: Control recs, names, layers order
 *                           ADDED: Support custom code templates on code generation
 *                           ADDED: Sponsor window for tools support
@@ -172,25 +172,6 @@ bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
-// Layout editing mode enabled
-typedef enum {
-    NONE = 0,
-
-    CONTROL_TESTING,
-    CONTROL_EDIT_MOVE,
-    CONTROL_EDIT_RESIZE,
-    CONTROL_EDIT_RESIZE_MOUSE,
-    CONTROL_EDIT_TEXT,
-    CONTROL_EDIT_NAME,
-    //CONTROL_MULTISELECTION,
-
-    ANCHOR_MODE,
-    ANCHOR_EDIT_MOVE,
-    ANCHOR_EDIT_LINK,
-
-    TRACEMAP_EDIT,
-} LayoutEditMode;
-
 // Tracemap type
 typedef struct {
     Texture2D texture;
