@@ -210,7 +210,7 @@ static const char *toolDescription = TOOL_DESCRIPTION;
 
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
 
-#define HELP_LINES_COUNT    38
+#define HELP_LINES_COUNT    41
 
 // Tool help info
 static const char *helpLines[HELP_LINES_COUNT] = {
@@ -228,13 +228,13 @@ static const char *helpLines[HELP_LINES_COUNT] = {
     "LCTRL + Z - Undo Action",
     "LCTRL + Y - Redo Action",
     "LALT + S - Toggle snap to grid mode",
+    "RALT + ARROWS - Setup grid spacing",
 
     "-General Edition",
     "ARROWS - Move control/anchor/tracemap",
     "LSHIFT + ARROWS - Move control/anchor/tr. smooth",
     "LCTRL + ARROWS - Scale control",
     "LCTRL + LSHIFT + ARROWS - Scale control smooth",
-    "U - Unlink control from anchor",
     "LCTRL + D - Duplicate control",
     "DEL - Delete control/anchor/tracemap",
 
@@ -243,22 +243,25 @@ static const char *helpLines[HELP_LINES_COUNT] = {
     "N - Control name editing",
     "ESC - Exit text/name editing mode",
     "ENTER - Validate text/name edition",
-    "LALT + UP/DOWN - Control layer order",
+    "U - Unlink control from anchor",
+    "LALT + UP/DOWN - Edit control layer order",
 
     "-Anchor Edition",
     "A (down) - Anchor editing mode",
+    "N - Anchor name editing",
     "U - Unlink all controls from anchor",
     "H - Hide/Unhide controls from anchor",
 
     "-Tracemap Edition",
     "H - Hide/Unhide tracemap",
     "SPACE - Lock/Unlock tracemap",
+    "RALT + O/P - Set tracemap alpha",
 
     "-Visual Options",
     "G - Toggle grid mode",
     "R - Toggle control rectangles view",
     "N - Toggle control names view",
-    "L - Toggle control layer view "
+    "L - Toggle control layer view"
 };
 
 //----------------------------------------------------------------------------------
