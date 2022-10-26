@@ -162,9 +162,11 @@ bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib
 #define MIN_CONTROL_SIZE            10      // Minimum control size
 #define SCALE_BOX_CORNER_SIZE       10      // Scale box bottom-right corner square size
 
-#define MOVEMENT_FRAME_SPEED         2      // Controls movement speed in pixels per frame: TODO: Review
+#define MOVEMENT_FRAME_SPEED         2      // Controls movement speed in pixels per frame
 
 #define MAX_UNDO_LEVELS             32      // Undo levels supported for the ring buffer
+#define UNDO_SNAPSHOT_FRAMERATE    120      // Framerate to define when a new snapshot is taken (if changes in layout)
+
 #define MAX_ICONS_AVAILABLE        217      // Max raygui icons displayed on icon selector
 
 //----------------------------------------------------------------------------------
@@ -650,7 +652,7 @@ int main(int argc, char *argv[])
         {
             undoFrameCounter++;
 
-            if (undoFrameCounter >= 120)
+            if (undoFrameCounter >= UNDO_SNAPSHOT_FRAMERATE)
             {
                 if (memcmp(&undoLayouts[currentUndoIndex], layout, sizeof(GuiLayout)) != 0)
                 {
