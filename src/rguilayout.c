@@ -984,8 +984,8 @@ int main(int argc, char *argv[])
                 orderLayerMode = mainToolbarState.showControlOrderActive;
             }
 
-            // Toggle global position info (anchor reference or global reference)
-            if (IsKeyPressed(KEY_F)) showGlobalPosition = !showGlobalPosition;
+            // TODO: Toggle global position info (anchor reference or global reference)
+            //if (IsKeyPressed(KEY_F)) showGlobalPosition = !showGlobalPosition;
 
             if (IsKeyPressed(KEY_H) && tracemap.selected) mainToolbarState.hideTracemapActive = true;
 
@@ -1012,16 +1012,18 @@ int main(int argc, char *argv[])
                 if (IsKeyPressed(KEY_N)) windowResetActive = true;
             }
 
-            // TODO: Support grid spacing customization
-            /*
+            // Grid spacing customization
+            // TODO: Expose grid spacing config in a visual way
             if (IsKeyDown(KEY_RIGHT_ALT))
             {
+                if (IsKeyPressed(KEY_RIGHT)) gridSubdivisions++;
+                else if (IsKeyPressed(KEY_LEFT)) gridSubdivisions--;
+
                 if (IsKeyPressed(KEY_UP)) gridSpacing++;
                 else if (IsKeyPressed(KEY_DOWN)) gridSpacing--;
 
                 gridSnapDelta = gridSpacing;
             }
-            */
         }
 
         // Main toolbar logic
@@ -2218,20 +2220,13 @@ int main(int argc, char *argv[])
                             }
                             //------------------------------------------------------------------
 
-                            // Change alpha NOTE: Mover fuera, que sea un control global.
-                            if (precisionEditMode)
+                            // Change tracemap alpha
+                            // TODO: Expose tracemap alpha config in a visual way
+                            if (IsKeyDown(KEY_RIGHT_ALT))
                             {
-                                if (IsKeyPressed(KEY_KP_ADD)) tracemap.alpha += 0.05f;
-                                else if (IsKeyPressed(KEY_KP_SUBTRACT) || IsKeyPressed(KEY_MINUS)) tracemap.alpha -= 0.05f;
+                                if (IsKeyDown(KEY_O)) tracemap.alpha += 0.05f;
+                                else if (IsKeyDown(KEY_P)) tracemap.alpha -= 0.05f;
                             }
-                            else
-                            {
-                                if (IsKeyDown(KEY_KP_ADD)) tracemap.alpha += 0.01f;
-                                else if (IsKeyDown(KEY_KP_SUBTRACT) || IsKeyDown(KEY_MINUS)) tracemap.alpha -= 0.01f;
-                            }
-
-                            if (tracemap.alpha < 0) tracemap.alpha = 0;
-                            else if (tracemap.alpha > 1) tracemap.alpha = 1;
 
                             // Delete tracemap
                             if (IsKeyPressed(KEY_DELETE))
