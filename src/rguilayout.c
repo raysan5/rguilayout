@@ -222,7 +222,7 @@ static const char *helpLines[HELP_LINES_COUNT] = {
     "LCTRL + N - New layout file (.rgl)",
     "LCTRL + O - Open layout file (.rgl)",
     "LCTRL + S - Save layout file (.rgl)",
-    "LCTRL + E - Export layout to code",
+    "LCTRL + E - Export layout to code (.c/.h)",
 
     "-Edit Options",
     "LCTRL + Z - Undo Action",
@@ -233,9 +233,9 @@ static const char *helpLines[HELP_LINES_COUNT] = {
     "-General Edition",
     "ARROWS - Move control/anchor/tracemap",
     "LSHIFT + ARROWS - Move control/anchor/tr. smooth",
-    "LCTRL + ARROWS - Scale control",
+    "LCTRL + ARROWS - Scale control/tracemap",
     "LCTRL + LSHIFT + ARROWS - Scale control smooth",
-    "LCTRL + D - Duplicate control",
+    "LCTRL + D - Duplicate control/anchor",
     "DEL - Delete control/anchor/tracemap",
 
     "-Control Edition",
@@ -2731,7 +2731,7 @@ int main(int argc, char *argv[])
                     {
                         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(colEditAnchorNameOverlay, 0.2f));
 
-                        int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
+                        int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE)*2;
                         int textWidth = MeasureText(layout->anchors[selectedAnchor].name, fontSize);
                         Rectangle textboxRec = (Rectangle){ layout->anchors[selectedAnchor].x, layout->anchors[selectedAnchor].y, textWidth + 40, fontSize + 5 };
 
