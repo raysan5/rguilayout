@@ -25,7 +25,7 @@ _NOTE: This tool is itended to be used with [**raygui 3.5-dev**](https://github.
  - Support for **custom code templates** to generate your controls code
  - **Export layout directly as plain C code, ready to edit and compile**
  - Multiple GUI styles available with support for custom ones (`.rgs`)
- - Completely free and open-source
+ - **Free and open-source**
 
 ### rGuiLayout Standalone Additional Features
 
