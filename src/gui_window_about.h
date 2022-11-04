@@ -233,7 +233,7 @@ void GuiWindowAbout(GuiWindowAboutState *state)
 
         // Draw window and controls
         //----------------------------------------------------------------------------------------
-        state->windowActive = !GuiWindowBox(state->windowBounds, TextFormat("#191#About %s", TOOL_NAME));
+        state->windowActive = !GuiWindowBox(state->windowBounds, TextFormat("#191#%s About", TOOL_NAME));
 
         // Draw a background rectangle for convenience
         DrawRectangle((int)state->windowBounds.x + 1, (int)state->windowBounds.y + 4 + 20, state->windowBounds.width - 2, 90 - 4, Fade(GetColor(GuiGetStyle(DEFAULT, BASE_COLOR_NORMAL)), 0.5f));
