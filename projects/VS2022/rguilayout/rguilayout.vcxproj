@@ -349,6 +349,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\gui_window_help.h" />
     <ClInclude Include="..\..\..\src\rguilayout.h" />
     <ClInclude Include="..\..\..\src\gui_window_about.h" />
     <ClInclude Include="..\..\..\src\gui_file_dialogs.h" />

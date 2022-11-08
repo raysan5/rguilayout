@@ -92,6 +92,9 @@
 #define GUI_MAIN_TOOLBAR_IMPLEMENTATION
 #include "gui_main_toolbar.h"               // GUI: Main toolbar
 
+#define GUI_WINDOW_HELP_IMPLEMENTATION
+#include "gui_window_help.h"                // GUI: Help Window
+
 #define GUI_WINDOW_ABOUT_IMPLEMENTATION
 #include "gui_window_about.h"               // GUI: About Window
 
@@ -193,60 +196,6 @@ static const char *toolDescription = TOOL_DESCRIPTION;
 
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
 
-#define HELP_LINES_COUNT    41
-
-// Tool help info
-static const char *helpLines[HELP_LINES_COUNT] = {
-    "F1 - Show Help window",
-    "F2 - Show About window",
-    "F3 - Show Sponsor window",
-
-    "-File Options",
-    "LCTRL + N - New layout file (.rgl)",
-    "LCTRL + O - Open layout file (.rgl)",
-    "LCTRL + S - Save layout file (.rgl)",
-    "LCTRL + E - Export layout to code (.c/.h)",
-
-    "-Edit Options",
-    "LCTRL + Z - Undo Action",
-    "LCTRL + Y - Redo Action",
-    "LALT + S - Toggle snap to grid mode",
-    "RALT + ARROWS - Setup grid spacing",
-
-    "-General Edition",
-    "ARROWS - Move control/anchor/tracemap",
-    "LSHIFT + ARROWS - Move control/anchor/tr. smooth",
-    "LCTRL + ARROWS - Scale control/tracemap",
-    "LCTRL + LSHIFT + ARROWS - Scale control smooth",
-    "LCTRL + D - Duplicate control/anchor",
-    "DEL - Delete control/anchor/tracemap",
-
-    "-Control Edition",
-    "T - Control text editing",
-    "N - Control name editing",
-    "ESC - Exit text/name editing mode",
-    "ENTER - Validate text/name edition",
-    "U - Unlink control from anchor",
-    "LALT + UP/DOWN - Edit control layer order",
-
-    "-Anchor Edition",
-    "A (down) - Anchor editing mode",
-    "N - Anchor name editing",
-    "U - Unlink all controls from anchor",
-    "H - Hide/Unhide controls from anchor",
-
-    "-Tracemap Edition",
-    "H - Hide/Unhide tracemap",
-    "SPACE - Lock/Unlock tracemap",
-    "RALT + O/P - Set tracemap alpha",
-
-    "-Visual Options",
-    "G - Toggle grid mode",
-    "R - Toggle control rectangles view",
-    "N - Toggle control names view",
-    "L - Toggle control layer view"
-};
-
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
@@ -261,8 +210,6 @@ static void UnloadLayout(GuiLayout *layout);                // Unload raygui lay
 static void ResetLayout(GuiLayout *layout);                 // Reset layout to default values
 static void SaveLayout(GuiLayout *layout, const char *fileName);     // Save raygui layout as text file (.rgl)
 
-// Auxiliar functions
-static int GuiWindowHelp(Rectangle bounds, const char *title, const char **helpLines, int helpLinesCount); // Draw help window with the provided lines
 
 //----------------------------------------------------------------------------------
 // Program main entry point
@@ -560,6 +507,11 @@ int main(int argc, char *argv[])
     GuiMainToolbarState mainToolbarState = InitGuiMainToolbar();
     //-----------------------------------------------------------------------------------
 
+    // GUI: Help panel
+    //-----------------------------------------------------------------------------------
+    GuiWindowHelpState windowHelpState = InitGuiWindowHelp();
+    //-----------------------------------------------------------------------------------
+
     // GUI: About Window
     //-----------------------------------------------------------------------------------
     GuiWindowAboutState windowAboutState = InitGuiWindowAbout();
@@ -587,11 +539,6 @@ int main(int argc, char *argv[])
     // GUI: Layout Code Generation Window
     //-----------------------------------------------------------------------------------
     GuiWindowCodegenState windowCodegenState = InitGuiWindowCodegen();
-    //-----------------------------------------------------------------------------------
-
-    // GUI: Help panel
-    //-----------------------------------------------------------------------------------
-    bool windowHelpActive = false;
     //-----------------------------------------------------------------------------------
 
     // GUI: Exit Window
@@ -880,7 +827,7 @@ int main(int argc, char *argv[])
         if ((IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_O)) || mainToolbarState.btnLoadTracemapPressed) showLoadTracemapDialog = true;
 
         // Toggle window: help
-        if (IsKeyPressed(KEY_F1)) windowHelpActive = !windowHelpActive;
+        if (IsKeyPressed(KEY_F1)) windowHelpState.windowActive = !windowHelpState.windowActive;
 
         // Toggle window: about
         if (IsKeyPressed(KEY_F2)) windowAboutState.windowActive = !windowAboutState.windowActive;
@@ -1083,7 +1030,7 @@ int main(int argc, char *argv[])
         }
 
         // Help options logic
-        if (mainToolbarState.btnHelpPressed) windowHelpActive = true;                       // Help button logic
+        if (mainToolbarState.btnHelpPressed) windowHelpState.windowActive = true;           // Help button logic
         if (mainToolbarState.btnAboutPressed) windowAboutState.windowActive = true;         // About window button logic
         if (mainToolbarState.btnSponsorPressed) windowSponsorState.windowActive = true;     // User sponsor logic
         //----------------------------------------------------------------------------------
@@ -2279,10 +2226,10 @@ int main(int argc, char *argv[])
         }
 
         // WARNING: If any window is shown, cancel any edition mode
-        if (windowAboutState.windowActive ||
+        if (windowHelpState.windowActive ||
+            windowAboutState.windowActive ||
             windowSponsorState.windowActive ||
             windowCodegenState.windowActive ||
-            windowHelpActive ||
             windowExitActive ||
             windowResetActive ||
             showLoadFileDialog ||
@@ -2557,7 +2504,7 @@ int main(int argc, char *argv[])
                                 }
 
                                 GuiFade(1.0f);
-                                GuiUnlock();
+                                if (!showWindowActive) GuiUnlock();
 
                                 // Draw default cursor
                                 //DrawRectangle(mouse.x - 8, mouse.y, 17, 1, colControlCreationCursor);
@@ -2630,7 +2577,7 @@ int main(int argc, char *argv[])
                         GuiTextBox(textboxRec, layout->anchors[i].name, MAX_ANCHOR_NAME_LENGTH, false);
                     }
 
-                    GuiUnlock();
+                    if (!showWindowActive) GuiUnlock();
                 }
 
                 // Draw focused anchor selector
@@ -2949,6 +2896,9 @@ int main(int argc, char *argv[])
 
             // Update ScrollPanel bounds in case window is resized
             windowControlsPaletteState.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 170, workArea.y, 170, GetScreenHeight() - workArea.y - 24 };
+            
+            if (showWindowActive) GuiLock();
+            else GuiUnlock();
             //----------------------------------------------------------------------------------------
 
             // GUI: Main toolbar panel + control/anchor buttons logic
@@ -3185,10 +3135,10 @@ int main(int argc, char *argv[])
 
             // NOTE: If some overlap window is open and main window is locked, we draw a background rectangle
             //if (GuiIsLocked())    // WARNING: It takes one extra frame to process, so we just check required conditions
-            if (windowAboutState.windowActive ||
+            if (windowHelpState.windowActive ||
+                windowAboutState.windowActive ||
                 windowSponsorState.windowActive ||
                 windowCodegenState.windowActive ||
-                windowHelpActive ||
                 windowExitActive ||
                 windowResetActive ||
                 showLoadFileDialog ||
@@ -3202,6 +3152,12 @@ int main(int argc, char *argv[])
 
             // WARNING: Before drawing the windows, we unlock them
             GuiUnlock();
+            
+            // GUI: Help Window
+            //----------------------------------------------------------------------------------------
+            windowHelpState.windowBounds.height = GetScreenHeight() - 100;
+            GuiWindowHelp(&windowHelpState);
+            //----------------------------------------------------------------------------------------
 
             // GUI: About Window
             //----------------------------------------------------------------------------------------
@@ -3211,12 +3167,6 @@ int main(int argc, char *argv[])
             // GUI: Sponsor Window
             //----------------------------------------------------------------------------------------
             GuiWindowSponsor(&windowSponsorState);
-            //----------------------------------------------------------------------------------------
-
-            // GUI: Help Window
-            //----------------------------------------------------------------------------------------
-            Rectangle helpWindowBounds = { (float)GetScreenWidth()/2 - 330/2, (float)GetScreenHeight()/2 - 612.0f/2, 330, 612 };
-            if (windowHelpActive) windowHelpActive = GuiWindowHelp(helpWindowBounds, GuiIconText(ICON_HELP, TextFormat("%s Shortcuts", TOOL_NAME)), helpLines, HELP_LINES_COUNT);
             //----------------------------------------------------------------------------------------
 
             // GUI: Layout Code Generation Window
@@ -3866,49 +3816,4 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
         }
     }
 */
-}
-
-// Draw help window with the provided lines
-static int GuiWindowHelp(Rectangle bounds, const char *title, const char **helpLines, int helpLinesCount)
-{
-    #define GUIHELPWINDOW_LINE_HEIGHT           24
-    #define GUIHELPWINDOW_LINE_EMPTY_HEIGHT     12 
-
-    static Vector2 scrollPanelOffset = { 0, 0 };
-    int contentHeight = 0;
-    int nextLineY = 0;
-
-    // Calculate window height if not externally provided a desired height
-    if (bounds.height == 0) bounds.height = (float)(helpLinesCount*24 + 24);
-
-    int windowHelpActive = !GuiWindowBox(bounds, title);
-    nextLineY += (GUIHELPWINDOW_LINE_HEIGHT + 2);
-
-    // Calculate content height
-    for (int i = 0; i < helpLinesCount; i++)
-    {
-        if (helpLines[i] == NULL) contentHeight += GUIHELPWINDOW_LINE_EMPTY_HEIGHT;
-        else contentHeight += GUIHELPWINDOW_LINE_HEIGHT;
-    }
-    contentHeight += 12;    // Marging at the end
-
-    // Draw scroll panel considering window bounds and content size
-    Rectangle scissor = GuiScrollPanel((Rectangle){ bounds.x, bounds.y + GUIHELPWINDOW_LINE_HEIGHT - 1, bounds.width, bounds.height }, NULL,
-                                       (Rectangle){ bounds.x, bounds.y + GUIHELPWINDOW_LINE_HEIGHT, bounds.width - 16, contentHeight }, &scrollPanelOffset);
-
-    BeginScissorMode(scissor.x, scissor.y, scissor.width + 2, scissor.height);
-
-        for (int i = 0; i < helpLinesCount; i++)
-        {
-            if (helpLines[i] == NULL) GuiLine((Rectangle){ bounds.x, bounds.y + nextLineY + scrollPanelOffset.y, bounds.width, GUIHELPWINDOW_LINE_EMPTY_HEIGHT }, helpLines[i]);
-            else if (helpLines[i][0] == '-') GuiLine((Rectangle){ bounds.x, bounds.y + nextLineY + scrollPanelOffset.y, bounds.width, GUIHELPWINDOW_LINE_HEIGHT }, helpLines[i] + 1);
-            else GuiLabel((Rectangle){ bounds.x + 12, bounds.y + nextLineY + scrollPanelOffset.y, bounds.width, GUIHELPWINDOW_LINE_HEIGHT }, helpLines[i]);
-
-            if (helpLines[i] == NULL) nextLineY += GUIHELPWINDOW_LINE_EMPTY_HEIGHT;
-            else nextLineY += GUIHELPWINDOW_LINE_HEIGHT;
-        }
-
-    EndScissorMode();
-
-    return windowHelpActive;
 }
