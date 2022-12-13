@@ -156,7 +156,7 @@ static const char *helpLines[] = {
     "G - Toggle grid mode",
     "R - Toggle control rectangles view",
     "N - Toggle control names view",
-    "L - Toggle control layer view",
+    "L - Toggle control layer order view",
     "-",
     "ESCAPE - Close Window/Exit",
     NULL
