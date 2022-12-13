@@ -1,6 +1,6 @@
 /*******************************************************************************************
 *
-*   rGuiLayout v3.0 - A simple and easy-to-use raygui layouts editor
+*   rGuiLayout v3.2 - A simple and easy-to-use raygui layouts editor
 *
 *   CONFIGURATION:
 *
@@ -9,6 +9,9 @@
 *       NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   VERSIONS HISTORY:
+*       3.1  (13-Dec-2022)  ADDED: Welcome window with sponsors info
+*                           REDESIGNED: Main toolbar to add tooltips
+*                           REVIEWED: Help window implementation
 *       3.0  (26-Oct-2022)  ADDED: Main toolbar, consistent with other tools, many options!
 *                           ADDED: View options: Control recs, names, layers order
 *                           ADDED: Support custom code templates on code generation
