@@ -94,7 +94,7 @@ void GuiWindowHelp(GuiWindowHelpState *state);
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
-#define GUIHELPWINDOW_LINES_COUNT           41
+#define GUIHELPWINDOW_MAX_LINES            128
 
 #define GUIHELPWINDOW_LINE_HEIGHT           24
 #define GUIHELPWINDOW_LINE_EMPTY_HEIGHT     12
@@ -108,11 +108,11 @@ void GuiWindowHelp(GuiWindowHelpState *state);
 // Global Variables Definition
 //----------------------------------------------------------------------------------
 // Tool help info
-static const char *helpLines[GUIHELPWINDOW_LINES_COUNT] = {
+static const char *helpLines[] = {
     "F1 - Show Help window",
     "F2 - Show About window",
     "F3 - Show Sponsor window",
-
+    //"F4 - Show User window",
     "-File Options",
     "LCTRL + N - New layout file (.rgl)",
     "LCTRL + O - Open layout file (.rgl)",
@@ -156,7 +156,10 @@ static const char *helpLines[GUIHELPWINDOW_LINES_COUNT] = {
     "G - Toggle grid mode",
     "R - Toggle control rectangles view",
     "N - Toggle control names view",
-    "L - Toggle control layer view"
+    "L - Toggle control layer view",
+    "-",
+    "ESCAPE - Close Window/Exit",
+    NULL
 };
 
 //----------------------------------------------------------------------------------
@@ -170,22 +173,30 @@ GuiWindowHelpState InitGuiWindowHelp(void)
     state.windowActive = false;
     state.supportDrag = false;
 
-    state.windowBounds = (Rectangle){ GetScreenWidth()/2 - 360/2, 100/2, 360, GetScreenHeight() - 100 };
+    state.windowBounds = (Rectangle){ GetScreenWidth()/2 - 360/2, 0, 360, 0 };
     state.panOffset = (Vector2){ 0, 0 };
     state.dragMode = false;
 
     // Calculate content height
     state.contentHeight = 0;
-    for (int i = 0; i < GUIHELPWINDOW_LINES_COUNT; i++)
+    for (int i = 0; i < GUIHELPWINDOW_MAX_LINES; i++)
     {
-        if (helpLines[i] == NULL) state.contentHeight += GUIHELPWINDOW_LINE_EMPTY_HEIGHT;
+        if (helpLines[i] == NULL) break;
+        else if ((helpLines[i][0] == '-') && (helpLines[i][1] == '\0'))  state.contentHeight += GUIHELPWINDOW_LINE_EMPTY_HEIGHT;
         else state.contentHeight += GUIHELPWINDOW_LINE_HEIGHT;
     }
-    state.contentHeight += 12;    // Marging at the end
+    state.contentHeight += 8;    // Marging at the end
 
     // Calculate window height if not specifically defined
     if (state.windowBounds.height == 0) state.windowBounds.height = (float)(state.contentHeight + 24 + 4);
     state.windowBounds.y = GetScreenHeight()/2 - state.windowBounds.height/2;
+
+    // Review size if it does not fit on the screen
+    if (state.windowBounds.height > (GetScreenHeight() - 80))
+    {
+        state.windowBounds.height = GetScreenHeight() - 80;
+        state.windowBounds.y = GetScreenHeight()/2 - state.windowBounds.height/2;
+    }
    
     // Init scroll offset
     state.scrollPanelOffset = (Vector2){ 0, 0 };
@@ -247,13 +258,14 @@ void GuiWindowHelp(GuiWindowHelpState *state)
         // WARNING: We only scissor if scrolling is required, scissor mode forces a new draw call
         if (state->contentHeight > (state->windowBounds.height - 24)) BeginScissorMode(scissor.x, scissor.y, scissor.width + 2, scissor.height);
 
-            for (int i = 0; i < GUIHELPWINDOW_LINES_COUNT; i++)
+            for (int i = 0; i < GUIHELPWINDOW_MAX_LINES; i++)
             {
-                if (helpLines[i] == NULL) GuiLine((Rectangle){ state->windowBounds.x, state->windowBounds.y + nextLineY + state->scrollPanelOffset.y, state->windowBounds.width, GUIHELPWINDOW_LINE_EMPTY_HEIGHT }, helpLines[i]);
+                if (helpLines[i] == NULL) break;
+                else if ((helpLines[i][0] == '-') && (helpLines[i][1] == '\0')) GuiLine((Rectangle){ state->windowBounds.x, state->windowBounds.y + nextLineY + state->scrollPanelOffset.y, state->windowBounds.width, GUIHELPWINDOW_LINE_EMPTY_HEIGHT }, NULL);
                 else if (helpLines[i][0] == '-') GuiLine((Rectangle){ state->windowBounds.x, state->windowBounds.y + nextLineY + state->scrollPanelOffset.y, state->windowBounds.width, GUIHELPWINDOW_LINE_HEIGHT }, helpLines[i] + 1);
                 else GuiLabel((Rectangle){ state->windowBounds.x + 12, state->windowBounds.y + nextLineY + state->scrollPanelOffset.y, state->windowBounds.width, GUIHELPWINDOW_LINE_HEIGHT }, helpLines[i]);
 
-                if (helpLines[i] == NULL) nextLineY += GUIHELPWINDOW_LINE_EMPTY_HEIGHT;
+                if ((helpLines[i][0] == '-') && (helpLines[i][1] == '\0')) nextLineY += GUIHELPWINDOW_LINE_EMPTY_HEIGHT;
                 else nextLineY += GUIHELPWINDOW_LINE_HEIGHT;
             }
 
