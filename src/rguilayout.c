@@ -1,6 +1,6 @@
 /*******************************************************************************************
 *
-*   rGuiLayout v3.2 - A simple and easy-to-use raygui layouts editor
+*   rGuiLayout v3.1 - A simple and easy-to-use raygui layouts editor
 *
 *   CONFIGURATION:
 *
