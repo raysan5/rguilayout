@@ -91,7 +91,7 @@ typedef struct {
     int prevVisualStyleActive;
     int languageActive;
 
-    // Help options
+    // Info options
     bool btnHelpPressed;
     bool btnAboutPressed;
     bool btnSponsorPressed;
@@ -213,6 +213,9 @@ GuiMainToolbarState InitGuiMainToolbar(void)
     state.anchorSelected = -1;
     state.tracemapLoaded = false;
 
+    // Enable tooltips by default
+    GuiEnableTooltip();
+
     return state;
 }
 
@@ -229,15 +232,23 @@ void GuiMainToolbar(GuiMainToolbarState *state)
     GuiPanel((Rectangle){ state->anchorRight.x, state->anchorRight.y, 104, 40 }, NULL);
 
     // Project/File options
+    GuiSetTooltip("Create new layout file (LCTRL+N)");
     state->btnNewFilePressed = GuiButton((Rectangle){ state->anchorFile.x + 12, state->anchorFile.y + 8, 24, 24 }, "#8#");
+    GuiSetTooltip("Load .rgl layout file (LCTRL+O)");
     state->btnLoadFilePressed = GuiButton((Rectangle){ state->anchorFile.x + 12 + 24 + 4, state->anchorFile.y + 8, 24, 24 }, "#5#");
+    GuiSetTooltip("Save .rgl layout file (LCTRL+S)");
     state->btnSaveFilePressed = GuiButton((Rectangle){ state->anchorFile.x + 12 + 48 + 8, state->anchorFile.y + 8, 24, 24 }, "#6#");
+    GuiSetTooltip("Export current layout as code (LCTRL+E)");
     state->btnExportFilePressed = GuiButton((Rectangle){ state->anchorFile.x + 12 + 72 + 12, state->anchorFile.y + 8, 24, 24 }, "#7#");
+    GuiSetTooltip("Close current layout");
     state->btnCloseFilePressed = GuiButton((Rectangle){ state->anchorFile.x + 12 + 96 + 16, state->anchorFile.y + 8, 24, 24 }, "#9#");
 
-    // Editor options
+    // Edit options
+    GuiSetTooltip("Undo last edit action recorded (LCTRL+Z)");
     state->btnUndoPressed = GuiButton((Rectangle){ state->anchorEdit.x + 12, state->anchorEdit.y + 8, 24, 24 }, "#72#");  
+    GuiSetTooltip("Redo last edit action recorded (LCTRL+Y)");
     state->btnRedoPressed = GuiButton((Rectangle){ state->anchorEdit.x + 12 + 24 + 4, state->anchorEdit.y + 8, 24, 24 }, "#73#");
+    GuiSetTooltip("Toggle snap to grid controls mode (LALT + S)");
     state->snapModeActive = GuiToggle((Rectangle){ state->anchorEdit.x + 12 + 48 + 16, state->anchorEdit.y + 8, 24, 24 }, "#50#", state->snapModeActive);
 
     // Selected control options
@@ -245,10 +256,15 @@ void GuiMainToolbar(GuiMainToolbarState *state)
     GuiLabel((Rectangle){ state->anchorTools.x, state->anchorTools.y + 8, 64, 24 }, "Control:");
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     if (state->controlSelected == -1) GuiDisable();
+    GuiSetTooltip("Edit selected control text (T)");
     state->btnEditTextPressed = GuiButton((Rectangle){ state->anchorTools.x + 68, state->anchorTools.y + 8, 24, 24 }, "#30#");
+    GuiSetTooltip("Edit selected control name (N)");
     state->btnEditNamePressed = GuiButton((Rectangle){ state->anchorTools.x + 92 + 4, state->anchorTools.y + 8, 24, 24 }, "#31#");
+    GuiSetTooltip("Duplicate selected control (LCTRL + D)");
     state->btnDuplicateControlPressed = GuiButton((Rectangle){ state->anchorTools.x + 116 + 8, state->anchorTools.y + 8, 24, 24 }, "#16#");
+    GuiSetTooltip("Unlink selected control from anchor (U)");
     state->btnUnlinkControlPressed = GuiButton((Rectangle){ state->anchorTools.x + 140 + 12, state->anchorTools.y + 8, 24, 24 }, "#175#");
+    GuiSetTooltip("Delete selected control (DEL)");
     state->btnDeleteControlPressed = GuiButton((Rectangle){ state->anchorTools.x + 164 + 16, state->anchorTools.y + 8, 24, 24 }, "#143#");
     GuiEnable();
 
@@ -257,9 +273,13 @@ void GuiMainToolbar(GuiMainToolbarState *state)
     GuiLabel((Rectangle){ state->anchorTools.x + 202, state->anchorTools.y + 8, 64, 24 }, "Anchor:");
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     if (state->anchorSelected == -1) GuiDisable();
+    GuiSetTooltip("Edit selected anchor name (N)");
     state->btnEditAnchorNamePressed = GuiButton((Rectangle){ state->anchorTools.x + 198 + 72, state->anchorTools.y + 8, 24, 24 }, "#31#");
+    GuiSetTooltip("Hide all controls for selected anchor (H)");
     state->hideAnchorControlsActive = GuiToggle((Rectangle){ state->anchorTools.x + 198 + 72 + 24 + 4, state->anchorTools.y + 8, 24, 24 }, state->hideAnchorControlsActive? "#45#" : "#44#", state->hideAnchorControlsActive);
+    GuiSetTooltip("Unlink all controls for selected anchor (U)");
     state->btnUnlinkAnchorControlsPressed = GuiButton((Rectangle){ state->anchorTools.x + 198 + 72 + 48 + 8, state->anchorTools.y + 8, 24, 24 }, "#175#");
+    GuiSetTooltip("Delete selected anchor (DEL)");
     state->btnDeleteAnchorPressed = GuiButton((Rectangle){ state->anchorTools.x + 198 + 72 + 72 + 12, state->anchorTools.y + 8, 24, 24 }, "#143#");
     GuiEnable();
     
@@ -267,10 +287,14 @@ void GuiMainToolbar(GuiMainToolbarState *state)
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_RIGHT);
     GuiLabel((Rectangle){ state->anchorTools.x + 390, state->anchorTools.y + 8, 64, 24 }, "Tracemap:");
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
+    GuiSetTooltip("Load tracemap image");
     state->btnLoadTracemapPressed = GuiButton((Rectangle){ state->anchorTools.x + 390 + 70, state->anchorTools.y + 8, 24, 24 }, "#12#");
     if (!state->tracemapLoaded) GuiDisable();
+    GuiSetTooltip("Hide/show selected tracemap (H)");
     state->hideTracemapActive =  GuiToggle((Rectangle){ state->anchorTools.x + 390 + 70 + 24 + 4, state->anchorTools.y + 8, 24, 24 }, state->hideTracemapActive? "#45#" : "#44#", state->hideTracemapActive);
+    GuiSetTooltip("Toggle lock selected tracemap (SPACE)");
     state->lockTracemapActive =  GuiToggle((Rectangle){ state->anchorTools.x + 390 + 70 + 48 + 8, state->anchorTools.y + 8, 24, 24 }, state->lockTracemapActive? "#137#" : "#138#", state->lockTracemapActive);
+    GuiSetTooltip("Delete selected tracemap (DEL)");
     state->btnDeleteTracemapPressed = GuiButton((Rectangle){ state->anchorTools.x + 390 + 70 + 72 + 12, state->anchorTools.y + 8, 24, 24 }, "#143#");
     //state->tracemapAlphaValue = 0.8f;            // TODO: Adjust tracemap opacity
     GuiEnable();
@@ -279,23 +303,34 @@ void GuiMainToolbar(GuiMainToolbarState *state)
     DrawRectangle(state->anchorTools.x + 380 + 72 + 96 + 35, state->anchorTools.y, 1, 40, GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
 
     // Visuals options
+    GuiSetTooltip("Toggle control rectangles view (R)");
     state->showControlRecsActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 , state->anchorVisuals.y + 8, 24, 24 }, "#98#", state->showControlRecsActive);
+    GuiSetTooltip("Toggle control names view (N)");
     state->showControlNamesActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 24 + 4 , state->anchorVisuals.y + 8, 24, 24 }, "#214#", state->showControlNamesActive);
+    GuiSetTooltip("Toggle control layer order view (L)");
     state->showControlOrderActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 48 + 8, state->anchorVisuals.y + 8, 24, 24 }, "#197#", state->showControlOrderActive);
+    GuiSetTooltip("Toggle control panel window");
     state->showControlPanelActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 72 + 12, state->anchorVisuals.y + 8, 24, 24 }, "#101#", state->showControlPanelActive);
+    GuiSetTooltip("Toggle grid view (G)");
     state->showGridActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 96 + 16, state->anchorVisuals.y + 8, 24, 24 }, "#97#", state->showGridActive);
     
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_RIGHT);
     GuiLabel((Rectangle){ state->anchorVisuals.x + 134, state->anchorVisuals.y + 8, 60, 24 }, "Style:");
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     GuiSetStyle(COMBOBOX, COMBO_BUTTON_WIDTH, 40);
+    GuiSetTooltip("Select visual UI style");
     state->visualStyleActive = GuiComboBox((Rectangle){ state->anchorVisuals.x + 148 + 48, state->anchorVisuals.y + 8, 120, 24 }, "Light;Jungle;Candy;Lavanda;Cyber;Terminal;Ashes;Bluish;Dark;Cherry;Sunny;Enefete", state->visualStyleActive);
     GuiSetStyle(COMBOBOX, COMBO_BUTTON_WIDTH, 32);
 
     // Info options
+    GuiSetTooltip("Show help window (F1)");
     state->btnHelpPressed = GuiButton((Rectangle){ state->anchorRight.x + (GetScreenWidth() - state->anchorRight.x) - 12 - 72 - 8, state->anchorRight.y + 8, 24, 24 }, "#193#");
+    GuiSetTooltip("Show info window (F2)");
     state->btnAboutPressed = GuiButton((Rectangle){ state->anchorRight.x + (GetScreenWidth() - state->anchorRight.x) - 12 - 48 - 4, state->anchorRight.y + 8, 24, 24 }, "#191#");
+    GuiSetTooltip("Show sponsors window (F3)");
     state->btnSponsorPressed = GuiButton((Rectangle){ state->anchorRight.x + (GetScreenWidth() - state->anchorRight.x) - 12 - 24, state->anchorRight.y + 8, 24, 24 }, "#186#");
+
+    GuiSetTooltip(NULL);
 }
 
 #endif // GUI_MAIN_TOOLBAR_IMPLEMENTATION
