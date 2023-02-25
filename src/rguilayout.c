@@ -3810,10 +3810,10 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
             short reserved = 0;
 
             fwrite(signature, 1, 4, rglFile);
-            fwrite(&version, 1, sizeof(short), rglFile);
-            fwrite(&reserved, 1, sizeof(short), rglFile);
+            fwrite(&version, sizeof(short), 1, rglFile);
+            fwrite(&reserved, sizeof(short), 1, rglFile);
 
-            fwrite(layout, 1, sizeof(GuiLayout), rglFile);
+            fwrite(layout, sizeof(GuiLayout), 1, rglFile);
 
             fclose(rglFile);
         }
