@@ -25,7 +25,7 @@
 *       1.0  (14-May-2018)  First release
 *
 *   DEPENDENCIES:
-*       raylib 4.5-dev          - Windowing/input management and drawing
+*       raylib 4.5          - Windowing/input management and drawing
 *       raygui 3.5-dev          - Immediate-mode GUI controls with custom styling and icons
 *       rpng 1.0                - PNG chunks management
 *       tinyfiledialogs 3.9.0   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
 
     // Work area to place components (full screen by default)
     Rectangle workArea = { 0, 40, GetScreenWidth(), GetScreenHeight() - 40 - 24 };
-    
+
     bool showWindowActive = false;          // Check for any blocking window active
 
     // Grid control variables
@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
 
     Color colAnchor0 = DARKGRAY;                // Anchor 0 (refWindow)
     Color colAnchorLinkLine0 = LIGHTGRAY;       // Anchor 0 link lines (refWindow)
-    
+
     Color colAnchorHidden = GRAY;               // Anchor hidden controls mode
     Color colAnchorLinkLineHidden = LIGHTGRAY;  // Anchor hidden control link lines
 
@@ -820,7 +820,7 @@ int main(int argc, char *argv[])
                 // Clear current codeText and generate new layout code
                 RL_FREE(windowCodegenState.codeText);
                 windowCodegenState.codeText = GenLayoutCode(config.template, layout, (Vector2){ workArea.x, workArea.y }, config);
-                
+
                 // Store current config as prevConfig
                 memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
             }
@@ -1158,7 +1158,7 @@ int main(int argc, char *argv[])
                                 layout->controls[layout->controlCount].id = layout->controlCount;
                                 layout->controls[layout->controlCount].type = selectedType;
                                 layout->controls[layout->controlCount].rec = defaultRec[selectedType];  // Use default rectangle for control creation
-                                    
+
                                 // NOTE: HACK: GuiToggleGroup() considers width per element instead of full control
                                 if (layout->controls[layout->controlCount].type == GUI_TOGGLEGROUP)
                                 {
@@ -1218,7 +1218,7 @@ int main(int argc, char *argv[])
 
                                 // Create anchor for GuiWindowBox() or GuiGroupBox() controls
                                 if ((layout->anchorCount < MAX_ANCHOR_POINTS) &&
-                                    ((layout->controls[layout->controlCount].type == GUI_WINDOWBOX) || 
+                                    ((layout->controls[layout->controlCount].type == GUI_WINDOWBOX) ||
                                      (layout->controls[layout->controlCount].type == GUI_GROUPBOX)))
                                 {
                                     for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
@@ -1387,7 +1387,7 @@ int main(int argc, char *argv[])
                         }
                         else
                         {
-                            if (resizeMode)     
+                            if (resizeMode)
                             {
                                 if (IsKeyPressed(KEY_R) && (layout->controls[selectedControl].type == GUI_WINDOWBOX))
                                 {
@@ -2361,7 +2361,7 @@ int main(int argc, char *argv[])
                         case GUI_DUMMYREC: GuiDummyRec(rec, layout->controls[i].text); break;
                         default: break;
                     }
-                
+
                     // View control rectangles mode (avoid containers)
                     if (mainToolbarState.showControlRecsActive && (layout->controls[i].type != GUI_WINDOWBOX) && (layout->controls[i].type != GUI_PANEL) && (layout->controls[i].type != GUI_GROUPBOX))
                     {
@@ -2432,9 +2432,9 @@ int main(int argc, char *argv[])
                             colAnchorCircle = colAnchorSelected;
                             colAnchor = colAnchorSelected;
                         }
-                        
+
                         if (anchorMoveMode || (anchorEditMode && (focusedAnchor > 0) && (layout->anchors[i].id == focusedAnchor))) colAnchor = colAnchorEditMode;
-                        
+
                         DrawCircle(layout->anchors[i].x, layout->anchors[i].y, ANCHOR_RADIUS, Fade(colAnchor, 0.4f));
                     }
                     else if (layout->anchors[i].hidding) colAnchorCircle = colAnchorHidden;
@@ -2485,7 +2485,7 @@ int main(int argc, char *argv[])
                                     case GUI_CHECKBOX: GuiCheckBox(defaultRec[selectedType], "CHECK BOX", false); break;
                                     case GUI_TOGGLE: GuiToggle(defaultRec[selectedType], "TOGGLE", false); break;
                                     // WARNING: Selection rectangle for GuiToggleGroup() considers all the control while the function expects only one piece!
-                                    case GUI_TOGGLEGROUP: 
+                                    case GUI_TOGGLEGROUP:
                                     {
                                         GuiToggleGroup((Rectangle){ defaultRec[selectedType].x, defaultRec[selectedType].y, defaultRec[selectedType].width/3.0f, defaultRec[selectedType].height }, "ONE;TWO;THREE", 1);
                                     } break;
@@ -2899,7 +2899,7 @@ int main(int argc, char *argv[])
 
             // Update ScrollPanel bounds in case window is resized
             windowControlsPaletteState.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 170, workArea.y, 170, GetScreenHeight() - workArea.y - 24 };
-            
+
             if (showWindowActive) GuiLock();
             else GuiUnlock();
             //----------------------------------------------------------------------------------------
@@ -3155,7 +3155,7 @@ int main(int argc, char *argv[])
 
             // WARNING: Before drawing the windows, we unlock them
             GuiUnlock();
-            
+
             // GUI: Help Window
             //----------------------------------------------------------------------------------------
             windowHelpState.windowBounds.height = GetScreenHeight() - 100;
