@@ -2,11 +2,34 @@
 *
 *   rGuiLayout v3.1 - A simple and easy-to-use raygui layouts editor
 *
-*   CONFIGURATION:
+*   FEATURES:
+*       - 25 gui controls to define your immmediate-mode gui layout
+*       - Place controls and move/scale them freely
+*       - Snap to grid mode for maximum precission
+*       - Link controls to anchors for better organization
+*       - Edit controls text and code name (for exported variables)
+*       - Icon selection panel on control text edition
+*       - Load/Save your layouts as .rgl text files
+*       - Supports .png image loading to be used as tracemap
+*       - Support for custom code templates to generate your controls code
+*       - Export layout directly as plain C code, ready to edit and compile
+*       - Multiple GUI styles available with support for custom ones (.rgs)
 *
-*   #define CUSTOM_MODAL_DIALOGS
-*       Use custom raygui generated modal dialogs instead of native OS ones
-*       NOTE: Avoids including tinyfiledialogs depencency library
+*   POSSIBLE IMPROVEMENTS:
+*       - Support multiple controls selection -> Requires changing from creation <--> select mode
+*       - ISSUE: Adding/removing workArea offset on load/save/export layout does not seem a good approach
+*       - ISSUE: Review refWindow use case, really required?
+*       - EXPORT: Layout as an image, including layout info as PNG chunk
+*       - CLI: Support codegen options: exportAnchors, defineRecs, fullComments...
+*
+*   LIMITATIONS:
+*       - Limitation 01
+*       - Limitation 02
+*
+*   CONFIGURATION:
+*       #define CUSTOM_MODAL_DIALOGS
+*           Use custom raygui generated modal dialogs instead of native OS ones
+*           NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   VERSIONS HISTORY:
 *       3.1  (13-Dec-2022)  ADDED: Welcome window with sponsors info
@@ -30,15 +53,17 @@
 *       rpng 1.0                - PNG chunks management
 *       tinyfiledialogs 3.9.0   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
 *
-*   COMPILATION (Windows - MinGW):
+*   BUILDING: 
+*     - Windows (MinGW-w64):
 *       gcc -o rguilayout.exe rguilayout.c external/tinyfiledialogs.c -s -Iexternal /
 *           -lraylib -lopengl32 -lgdi32 -lcomdlg32 -lole32 -std=c99
 *
-*   COMPILATION (Linux - GCC):
+*     - Linux (GCC):
 *       gcc -o rguilayout rguilayout.c external/tinyfiledialogs.c -s -Iexternal -no-pie -D_DEFAULT_SOURCE /
 *           -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 *
-*   NOTE: On PLATFORM_ANDROID and PLATFORM_WEB file dialogs are not available
+*   ADDITIONAL NOTES: 
+*       On PLATFORM_ANDROID and PLATFORM_WEB file dialogs are not available
 *
 *   DEVELOPERS:
 *       Ramon Santamaria (@raysan5):    Supervision, review, redesign, update and maintenance.
