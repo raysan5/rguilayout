@@ -49,7 +49,7 @@
 *
 *   DEPENDENCIES:
 *       raylib 4.5          - Windowing/input management and drawing
-*       raygui 3.5-dev          - Immediate-mode GUI controls with custom styling and icons
+*       raygui 3.5              - Immediate-mode GUI controls with custom styling and icons
 *       rpng 1.0                - PNG chunks management
 *       tinyfiledialogs 3.9.0   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
 *
@@ -2368,7 +2368,7 @@ int main(int argc, char *argv[])
                         case GUI_COMBOBOX: GuiComboBox(rec, layout->controls[i].text, 1); break;
                         case GUI_DROPDOWNBOX: GuiDropdownBox(rec, layout->controls[i].text, &dropdownBoxActive, false); break;
                         case GUI_TEXTBOX: GuiTextBox(rec, layout->controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
-                        case GUI_TEXTBOXMULTI: GuiTextBoxMulti(rec, layout->controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
+                        //case GUI_TEXTBOXMULTI: GuiTextBoxMulti(rec, layout->controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
                         case GUI_VALUEBOX: GuiValueBox(rec, layout->controls[i].text, &valueBoxValue, 42, 100, false); break;
                         case GUI_SPINNER: GuiSpinner(rec, layout->controls[i].text, &spinnerValue, 42, 3, false); break;
                         case GUI_SLIDER: GuiSlider(rec, layout->controls[i].text, NULL, 42, 0, 100); break;
@@ -2517,7 +2517,7 @@ int main(int argc, char *argv[])
                                     case GUI_COMBOBOX: GuiComboBox(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
                                     case GUI_DROPDOWNBOX: GuiDropdownBox(defaultRec[selectedType], "ONE;TWO;THREE", &dropdownBoxActive, false); break;
                                     case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedType], "TEXT BOX", 7, false); break;
-                                    case GUI_TEXTBOXMULTI: GuiTextBoxMulti(defaultRec[selectedType], "TEXT BOX MULTI", 7, false); break;
+                                    //case GUI_TEXTBOXMULTI: GuiTextBoxMulti(defaultRec[selectedType], "TEXT BOX MULTI", 7, false); break;
                                     case GUI_VALUEBOX: GuiValueBox(defaultRec[selectedType], "VALUE BOX", &valueBoxValue, 42, 100, false); break;
                                     case GUI_SPINNER: GuiSpinner(defaultRec[selectedType], "SPINNER", &spinnerValue, 42, 3, false); break;
                                     case GUI_SLIDER: GuiSlider(defaultRec[selectedType], "SLIDER", NULL, 42, 0, 100); break;
@@ -2789,10 +2789,10 @@ int main(int argc, char *argv[])
                             textboxRec.y += layout->controls[selectedControl].ap->y;
                         }
 
-                        // Draw a GuiTextBox()/GuiTextBoxMulti() for text edition
+                        // Draw a GuiTextBox() for text edition
                         if (layout->controls[selectedControl].type == GUI_TEXTBOXMULTI)
                         {
-                            if (GuiTextBoxMulti(textboxRec, layout->controls[selectedControl].text, MAX_CONTROL_TEXT_LENGTH, textEditMode)) textEditMode = !textEditMode;
+                            //if (GuiTextBoxMulti(textboxRec, layout->controls[selectedControl].text, MAX_CONTROL_TEXT_LENGTH, textEditMode)) textEditMode = !textEditMode;
                         }
                         else if (GuiTextBox(textboxRec, layout->controls[selectedControl].text, MAX_CONTROL_TEXT_LENGTH, textEditMode)) textEditMode = !textEditMode;
 
