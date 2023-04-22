@@ -23,7 +23,7 @@
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2018-2022 raylib technologies (@raylibtech) / Ramon Santamaria (@raysan5)
+*   Copyright (c) 2018-2023 raylib technologies (@raylibtech) / Ramon Santamaria (@raysan5)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -125,6 +125,12 @@ void GuiWindowAbout(GuiWindowAboutState *state);
     #define TOOL_LOGO_COLOR      0x000000ff
 #endif
 
+#if defined(NO_ALPHA_BLENDING)
+    #define FADE(c,a)   c
+#else
+    #define FADE(c,a)   Fade(c,a)
+#endif
+
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
@@ -137,7 +143,7 @@ static const char *lblUsedLibsText = "Powered by:";
 static const char *linkraylibText = "www.raylib.com";
 static const char *linkGitraylibText = "github.com/raysan5/raylib";
 static const char *linkGitrayguiText = "github.com/raysan5/raygui";
-static const char *lblCopyrightText = "Copyright (c) 2022 raylib technologies.";
+static const char *lblCopyrightText = "Copyright (c) 2023 raylib technologies.";
 static const char *linkraylibtechText = "[@raylibtech]";
 static const char *lblMoreInfoText = "More info:";
 static const char *linkMailText = "ray@raylibtech.com";
@@ -233,18 +239,18 @@ void GuiWindowAbout(GuiWindowAboutState *state)
 
         // Draw window and controls
         //----------------------------------------------------------------------------------------
-        state->windowActive = !GuiWindowBox(state->windowBounds, TextFormat("#191#%s About", TOOL_NAME));
-
-        // Draw a background rectangle for convenience
-        DrawRectangle((int)state->windowBounds.x + 1, (int)state->windowBounds.y + 4 + 20, state->windowBounds.width - 2, 90 - 4, Fade(GetColor(GuiGetStyle(DEFAULT, BASE_COLOR_NORMAL)), 0.5f));
+        state->windowActive = !GuiWindowBox(state->windowBounds, TextFormat("#191#About %s", TOOL_NAME));
 
         int labelTextAlign = GuiGetStyle(LABEL, TEXT_ALIGNMENT);
         GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
         DrawTechIcon((int)state->windowBounds.x + 10, (int)state->windowBounds.y + 35, 64, TOOL_SHORT_NAME, 20, true, GetColor(TOOL_LOGO_COLOR));
         
-        bool singleLine = true;
+        bool singleLine = false;
         GuiLabel((Rectangle){ state->windowBounds.x + 85, state->windowBounds.y + (singleLine? 55 : 35), 200, 30 }, TextFormat("%s %s (%s)", TOOL_NAME, TOOL_VERSION, TOOL_RELEASE_DATE));
-        GuiLabel((Rectangle){ state->windowBounds.x + 85, state->windowBounds.y + (singleLine? 78 : 60), (float)state->windowBounds.width, 20 }, TOOL_DESCRIPTION);
+        GuiLabel((Rectangle){ state->windowBounds.x + 85, state->windowBounds.y + (singleLine? 78 : 64), (float)state->windowBounds.width, 40 }, singleLine? TOOL_DESCRIPTION : TOOL_DESCRIPTION_BREAK);
+
+        // Draw a background rectangle for convenience
+        DrawRectangle((int)state->windowBounds.x + 1, (int)state->windowBounds.y + 110, state->windowBounds.width - 2, 100, FADE(GetColor(GuiGetStyle(DEFAULT, BASE_COLOR_NORMAL)), 0.5f));
 
         GuiLine((Rectangle){ state->windowBounds.x, state->windowBounds.y + 100, (float)state->windowBounds.width, 20 }, NULL);
         GuiLabel((Rectangle){ state->windowBounds.x + 8, state->windowBounds.y + 112, 126, 24 }, lblUsedLibsText);
@@ -253,8 +259,8 @@ void GuiWindowAbout(GuiWindowAboutState *state)
         DrawTechIcon((int)state->windowBounds.x + 80, (int)state->windowBounds.y + 135, 64, "raygui", 10, false, GRAY);
 
         if (GuiLabelButton((Rectangle){ state->windowBounds.x + 155, state->windowBounds.y + 135, 80, 16 }, linkraylibText)) { OpenURL("https://www.raylib.com/"); }
-        if (GuiLabelButton((Rectangle){ state->windowBounds.x + 155, state->windowBounds.y + 160, 150, 16 }, linkGitraylibText)) { OpenURL("https://github.com/raysan5/raylib"); }
-        if (GuiLabelButton((Rectangle){ state->windowBounds.x + 155, state->windowBounds.y + 180, 150, 16 }, linkGitrayguiText)) { OpenURL("https://github.com/raysan5/raygui"); }
+        if (GuiLabelButton((Rectangle){ state->windowBounds.x + 155, state->windowBounds.y + 160, 180, 16 }, linkGitraylibText)) { OpenURL("https://github.com/raysan5/raylib"); }
+        if (GuiLabelButton((Rectangle){ state->windowBounds.x + 155, state->windowBounds.y + 180, 180, 16 }, linkGitrayguiText)) { OpenURL("https://github.com/raysan5/raygui"); }
 
         GuiLine((Rectangle){ state->windowBounds.x, state->windowBounds.y + 200, (float)state->windowBounds.width, 20 }, NULL);
 
@@ -270,7 +276,7 @@ void GuiWindowAbout(GuiWindowAboutState *state)
         GuiLine((Rectangle){ state->windowBounds.x, state->windowBounds.y + 285, (float)state->windowBounds.width, 20 }, NULL);
         GuiSetStyle(LABEL, TEXT_ALIGNMENT, labelTextAlign);
 
-        DrawRectangle((int)state->windowBounds.x + 1, (int)state->windowBounds.y + 285 + 11, state->windowBounds.width - 2, 43, Fade(GetColor(GuiGetStyle(DEFAULT, BASE_COLOR_NORMAL)), 0.5f));
+        DrawRectangle((int)state->windowBounds.x + 1, (int)state->windowBounds.y + 285 + 11, (int)state->windowBounds.width - 2, 43, FADE(GetColor(GuiGetStyle(DEFAULT, BASE_COLOR_NORMAL)), 0.5f));
 
         int buttonTextAlign = GuiGetStyle(BUTTON, TEXT_ALIGNMENT);
         GuiSetStyle(BUTTON, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
