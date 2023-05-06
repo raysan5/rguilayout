@@ -1,6 +1,6 @@
 /*******************************************************************************************
 *
-*   rGuiLayout v3.1 - A simple and easy-to-use raygui layouts editor
+*   rGuiLayout v3.2 - A simple and easy-to-use raygui layouts editor
 *
 *   FEATURES:
 *       - 25 gui controls to define your immmediate-mode gui layout
@@ -32,9 +32,13 @@
 *           NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   VERSIONS HISTORY:
+*       3.2  (xx-May-2023)  REVIEWED: Regenerated tool imagery
+*                           Updated to raylib 4.5 and raygui 3.6-dev
+*
 *       3.1  (13-Dec-2022)  ADDED: Welcome window with sponsors info
 *                           REDESIGNED: Main toolbar to add tooltips
 *                           REVIEWED: Help window implementation
+*
 *       3.0  (26-Oct-2022)  ADDED: Main toolbar, consistent with other tools, many options!
 *                           ADDED: View options: Control recs, names, layers order
 *                           ADDED: Support custom code templates on code generation
@@ -43,15 +47,16 @@
 *                           REVIEWED: Codegen window font and templates
 *                           Updated to raylib 4.5-dev and raygui 3.5-dev
 *                           Source code re-licensed as open-source
+*
 *       2.5  (05-Jan-2022)  Updated to raylib 4.0 and raygui 3.1
 *       2.0  (15-Sep-2019)  Rewriten from scratch
 *       1.0  (14-May-2018)  First release
 *
 *   DEPENDENCIES:
-*       raylib 4.5          - Windowing/input management and drawing
-*       raygui 3.5              - Immediate-mode GUI controls with custom styling and icons
+*       raylib 4.6-dev          - Windowing/input management and drawing
+*       raygui 3.6-dev          - Immediate-mode GUI controls with custom styling and icons
 *       rpng 1.0                - PNG chunks management
-*       tinyfiledialogs 3.9.0   - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
+*       tinyfiledialogs 3.12.0  - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
 *
 *   BUILDING:
 *     - Windows (MinGW-w64):
@@ -95,9 +100,9 @@
 
 #define TOOL_NAME               "rGuiLayout"
 #define TOOL_SHORT_NAME         "rGL"
-#define TOOL_VERSION            "3.0"
+#define TOOL_VERSION            "3.2"
 #define TOOL_DESCRIPTION        "A simple and easy-to-use raygui layouts editor"
-#define TOOL_RELEASE_DATE       "Oct.2022"
+#define TOOL_RELEASE_DATE       "May.2023"
 #define TOOL_LOGO_COLOR         0x7da9b9ff
 
 #include "raylib.h"
