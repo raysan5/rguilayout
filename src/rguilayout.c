@@ -33,7 +33,7 @@
 *
 *   VERSIONS HISTORY:
 *       3.2  (xx-May-2023)  REVIEWED: Regenerated tool imagery
-*                           Updated to raylib 4.5 and raygui 3.6-dev
+*                           Updated to raylib 4.5 and raygui 3.6
 *
 *       3.1  (13-Dec-2022)  ADDED: Welcome window with sponsors info
 *                           REDESIGNED: Main toolbar to add tooltips
@@ -54,7 +54,7 @@
 *
 *   DEPENDENCIES:
 *       raylib 4.6-dev          - Windowing/input management and drawing
-*       raygui 3.6-dev          - Immediate-mode GUI controls with custom styling and icons
+*       raygui 3.6              - Immediate-mode GUI controls with custom styling and icons
 *       rpng 1.0                - PNG chunks management
 *       tinyfiledialogs 3.12.0  - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
 *
