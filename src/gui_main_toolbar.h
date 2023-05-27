@@ -249,7 +249,7 @@ void GuiMainToolbar(GuiMainToolbarState *state)
     GuiSetTooltip("Redo last edit action recorded (LCTRL+Y)");
     state->btnRedoPressed = GuiButton((Rectangle){ state->anchorEdit.x + 12 + 24 + 4, state->anchorEdit.y + 8, 24, 24 }, "#73#");
     GuiSetTooltip("Toggle snap to grid controls mode (LALT + S)");
-    state->snapModeActive = GuiToggle((Rectangle){ state->anchorEdit.x + 12 + 48 + 16, state->anchorEdit.y + 8, 24, 24 }, "#50#", state->snapModeActive);
+    GuiToggle((Rectangle){ state->anchorEdit.x + 12 + 48 + 16, state->anchorEdit.y + 8, 24, 24 }, "#50#", &state->snapModeActive);
 
     // Selected control options
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_RIGHT);
@@ -276,7 +276,7 @@ void GuiMainToolbar(GuiMainToolbarState *state)
     GuiSetTooltip("Edit selected anchor name (N)");
     state->btnEditAnchorNamePressed = GuiButton((Rectangle){ state->anchorTools.x + 198 + 72, state->anchorTools.y + 8, 24, 24 }, "#31#");
     GuiSetTooltip("Hide all controls for selected anchor (H)");
-    state->hideAnchorControlsActive = GuiToggle((Rectangle){ state->anchorTools.x + 198 + 72 + 24 + 4, state->anchorTools.y + 8, 24, 24 }, state->hideAnchorControlsActive? "#45#" : "#44#", state->hideAnchorControlsActive);
+    GuiToggle((Rectangle){ state->anchorTools.x + 198 + 72 + 24 + 4, state->anchorTools.y + 8, 24, 24 }, state->hideAnchorControlsActive? "#45#" : "#44#", &state->hideAnchorControlsActive);
     GuiSetTooltip("Unlink all controls for selected anchor (U)");
     state->btnUnlinkAnchorControlsPressed = GuiButton((Rectangle){ state->anchorTools.x + 198 + 72 + 48 + 8, state->anchorTools.y + 8, 24, 24 }, "#175#");
     GuiSetTooltip("Delete selected anchor (DEL)");
@@ -291,9 +291,9 @@ void GuiMainToolbar(GuiMainToolbarState *state)
     state->btnLoadTracemapPressed = GuiButton((Rectangle){ state->anchorTools.x + 390 + 70, state->anchorTools.y + 8, 24, 24 }, "#12#");
     if (!state->tracemapLoaded) GuiDisable();
     GuiSetTooltip("Hide/show selected tracemap (H)");
-    state->hideTracemapActive =  GuiToggle((Rectangle){ state->anchorTools.x + 390 + 70 + 24 + 4, state->anchorTools.y + 8, 24, 24 }, state->hideTracemapActive? "#45#" : "#44#", state->hideTracemapActive);
+    GuiToggle((Rectangle){ state->anchorTools.x + 390 + 70 + 24 + 4, state->anchorTools.y + 8, 24, 24 }, state->hideTracemapActive? "#45#" : "#44#", &state->hideTracemapActive);
     GuiSetTooltip("Toggle lock selected tracemap (SPACE)");
-    state->lockTracemapActive =  GuiToggle((Rectangle){ state->anchorTools.x + 390 + 70 + 48 + 8, state->anchorTools.y + 8, 24, 24 }, state->lockTracemapActive? "#137#" : "#138#", state->lockTracemapActive);
+    GuiToggle((Rectangle){ state->anchorTools.x + 390 + 70 + 48 + 8, state->anchorTools.y + 8, 24, 24 }, state->lockTracemapActive? "#137#" : "#138#", &state->lockTracemapActive);
     GuiSetTooltip("Delete selected tracemap (DEL)");
     state->btnDeleteTracemapPressed = GuiButton((Rectangle){ state->anchorTools.x + 390 + 70 + 72 + 12, state->anchorTools.y + 8, 24, 24 }, "#143#");
     //state->tracemapAlphaValue = 0.8f;            // TODO: Adjust tracemap opacity
@@ -304,22 +304,22 @@ void GuiMainToolbar(GuiMainToolbarState *state)
 
     // Visuals options
     GuiSetTooltip("Toggle control rectangles view (R)");
-    state->showControlRecsActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 , state->anchorVisuals.y + 8, 24, 24 }, "#98#", state->showControlRecsActive);
+    GuiToggle((Rectangle){ state->anchorVisuals.x + 12 , state->anchorVisuals.y + 8, 24, 24 }, "#98#", &state->showControlRecsActive);
     GuiSetTooltip("Toggle control names view (N)");
-    state->showControlNamesActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 24 + 4 , state->anchorVisuals.y + 8, 24, 24 }, "#214#", state->showControlNamesActive);
+    GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 24 + 4 , state->anchorVisuals.y + 8, 24, 24 }, "#214#", &state->showControlNamesActive);
     GuiSetTooltip("Toggle control layer order view (L)");
-    state->showControlOrderActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 48 + 8, state->anchorVisuals.y + 8, 24, 24 }, "#197#", state->showControlOrderActive);
+    GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 48 + 8, state->anchorVisuals.y + 8, 24, 24 }, "#197#", &state->showControlOrderActive);
     GuiSetTooltip("Toggle control panel window");
-    state->showControlPanelActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 72 + 12, state->anchorVisuals.y + 8, 24, 24 }, "#101#", state->showControlPanelActive);
+    GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 72 + 12, state->anchorVisuals.y + 8, 24, 24 }, "#101#", &state->showControlPanelActive);
     GuiSetTooltip("Toggle grid view (G)");
-    state->showGridActive = GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 96 + 16, state->anchorVisuals.y + 8, 24, 24 }, "#97#", state->showGridActive);
+    GuiToggle((Rectangle){ state->anchorVisuals.x + 12 + 96 + 16, state->anchorVisuals.y + 8, 24, 24 }, "#97#", &state->showGridActive);
     
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_RIGHT);
     GuiLabel((Rectangle){ state->anchorVisuals.x + 134, state->anchorVisuals.y + 8, 60, 24 }, "Style:");
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     GuiSetStyle(COMBOBOX, COMBO_BUTTON_WIDTH, 40);
     GuiSetTooltip("Select visual UI style");
-    state->visualStyleActive = GuiComboBox((Rectangle){ state->anchorVisuals.x + 148 + 48, state->anchorVisuals.y + 8, 120, 24 }, "Light;Jungle;Candy;Lavanda;Cyber;Terminal;Ashes;Bluish;Dark;Cherry;Sunny;Enefete", state->visualStyleActive);
+    GuiComboBox((Rectangle){ state->anchorVisuals.x + 148 + 48, state->anchorVisuals.y + 8, 120, 24 }, "Light;Jungle;Candy;Lavanda;Cyber;Terminal;Ashes;Bluish;Dark;Cherry;Sunny;Enefete", &state->visualStyleActive);
     GuiSetStyle(COMBOBOX, COMBO_BUTTON_WIDTH, 32);
 
     // Info options

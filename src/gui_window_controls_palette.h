@@ -74,6 +74,7 @@ typedef struct GuiWindowControlsPaletteState {
     float sliderBarValue;                   // GuiSliderbar()
     float progressBarValue;                 // GuiProgressBar()
     Vector2 scrollPanelScrollOffset;        // GuiScrollPanel()
+    Vector2 scrollPanelView;
     Vector2 scrollPanelBoundsOffset;
     int listViewScrollIndex;                // GuiListView()
     int listViewActive;
@@ -236,7 +237,8 @@ void GuiWindowControlsPalette(GuiWindowControlsPaletteState *state)
         state->windowActive = !GuiWindowBox(state->windowBounds, "#101#Controls Palette");
 
         state->scrollPanelBounds = (Rectangle){ state->windowBounds.x, state->windowBounds.y + 24 - 1, state->windowBounds.width, state->windowBounds.height - 24 };
-        Rectangle scissorRec = GuiScrollPanel(state->scrollPanelBounds, NULL, (Rectangle){ state->windowBounds.x, state->windowBounds.y, state->windowBounds.width - 12, 984 + 12 }, &state->containerScrollOffset);
+        Rectangle scissorRec = { 0 };
+        GuiScrollPanel(state->scrollPanelBounds, NULL, (Rectangle){ state->windowBounds.x, state->windowBounds.y, state->windowBounds.width - 12, 984 + 12 }, &state->containerScrollOffset, &scissorRec);
 
         // Limit drawing to scroll panel bounds
         // WARNING: It requires a batch processing and restart
@@ -251,21 +253,21 @@ void GuiWindowControlsPalette(GuiWindowControlsPaletteState *state)
             GuiLabel(state->controlRecs[GUI_LABEL], "Label");
             state->buttonPressed = GuiButton(state->controlRecs[GUI_BUTTON], "Button");
             state->labelBtnPressed = GuiLabelButton(state->controlRecs[GUI_LABELBUTTON], "LabelButton");
-            state->checkBoxChecked = GuiCheckBox(state->controlRecs[GUI_CHECKBOX], "", state->checkBoxChecked);
-            state->toggleActive = GuiToggle(state->controlRecs[GUI_TOGGLE], "Toggle", state->toggleActive);
-            state->toggleGroupActive = GuiToggleGroup((Rectangle) { state->controlRecs[GUI_TOGGLEGROUP].x, state->controlRecs[GUI_TOGGLEGROUP].y, (state->controlRecs[GUI_TOGGLEGROUP].width - GuiGetStyle(TOGGLE, GROUP_PADDING)*2.0f)/3.0f, state->controlRecs[GUI_TOGGLEGROUP].height }, "ONE;TWO;THREE", state->toggleGroupActive);
-            state->comboBoxActive = GuiComboBox(state->controlRecs[GUI_COMBOBOX], "ONE;TWO;THREE", state->comboBoxActive);
+            GuiCheckBox(state->controlRecs[GUI_CHECKBOX], "", &state->checkBoxChecked);
+            GuiToggle(state->controlRecs[GUI_TOGGLE], "Toggle", &state->toggleActive);
+            GuiToggleGroup((Rectangle) { state->controlRecs[GUI_TOGGLEGROUP].x, state->controlRecs[GUI_TOGGLEGROUP].y, (state->controlRecs[GUI_TOGGLEGROUP].width - GuiGetStyle(TOGGLE, GROUP_PADDING)*2.0f)/3.0f, state->controlRecs[GUI_TOGGLEGROUP].height }, "ONE;TWO;THREE", &state->toggleGroupActive);
+            GuiComboBox(state->controlRecs[GUI_COMBOBOX], "ONE;TWO;THREE", &state->comboBoxActive);
             if (GuiTextBox(state->controlRecs[GUI_TEXTBOX], state->textBoxText, 64, state->textBoxEditMode)) state->textBoxEditMode = !state->textBoxEditMode;
-            if (GuiTextBoxMulti(state->controlRecs[GUI_TEXTBOXMULTI], state->multitextBoxText, 64, state->multitextBoxEditMode)) state->multitextBoxEditMode = !state->multitextBoxEditMode;
+            //if (GuiTextBoxMulti(state->controlRecs[GUI_TEXTBOXMULTI], state->multitextBoxText, 64, state->multitextBoxEditMode)) state->multitextBoxEditMode = !state->multitextBoxEditMode;
             if (GuiValueBox(state->controlRecs[GUI_VALUEBOX], NULL, &state->valueBoxValue, 0, 100, state->valueBoxEditMode)) state->valueBoxEditMode = !state->valueBoxEditMode;
             if (GuiSpinner(state->controlRecs[GUI_SPINNER], NULL, &state->spinnerValue, 0, 100, state->spinnerEditMode)) state->spinnerEditMode = !state->spinnerEditMode;
-            state->sliderValue = GuiSlider(state->controlRecs[GUI_SLIDER], NULL, NULL, state->sliderValue, 0, 100);
-            state->sliderBarValue = GuiSliderBar(state->controlRecs[GUI_SLIDERBAR], NULL, NULL, state->sliderBarValue, 0, 100);
-            state->progressBarValue = GuiProgressBar(state->controlRecs[GUI_PROGRESSBAR], NULL, NULL, state->progressBarValue, 0, 100);
+            GuiSlider(state->controlRecs[GUI_SLIDER], NULL, NULL, &state->sliderValue, 0, 100);
+            GuiSliderBar(state->controlRecs[GUI_SLIDERBAR], NULL, NULL, &state->sliderBarValue, 0, 100);
+            GuiProgressBar(state->controlRecs[GUI_PROGRESSBAR], NULL, NULL, &state->progressBarValue, 0, 100);
             GuiStatusBar(state->controlRecs[GUI_STATUSBAR], "StatusBar");
-            GuiScrollPanel((Rectangle){ state->controlRecs[GUI_SCROLLPANEL].x, state->controlRecs[GUI_SCROLLPANEL].y, state->controlRecs[GUI_SCROLLPANEL].width - state->scrollPanelBoundsOffset.x, state->controlRecs[GUI_SCROLLPANEL].height - state->scrollPanelBoundsOffset.y }, NULL, state->controlRecs[GUI_SCROLLPANEL], &state->scrollPanelScrollOffset);
-            state->listViewActive = GuiListView(state->controlRecs[GUI_LISTVIEW], "ONE;TWO", &state->listViewScrollIndex, state->listViewActive);
-            state->colorPickerValue = GuiColorPicker(state->controlRecs[GUI_COLORPICKER], NULL, state->colorPickerValue);
+            GuiScrollPanel((Rectangle){ state->controlRecs[GUI_SCROLLPANEL].x, state->controlRecs[GUI_SCROLLPANEL].y, state->controlRecs[GUI_SCROLLPANEL].width - state->scrollPanelBoundsOffset.x, state->controlRecs[GUI_SCROLLPANEL].height - state->scrollPanelBoundsOffset.y }, NULL, state->controlRecs[GUI_SCROLLPANEL], &state->scrollPanelScrollOffset, &state->scrollPanelView);
+            GuiListView(state->controlRecs[GUI_LISTVIEW], "ONE;TWO", &state->listViewScrollIndex, &state->listViewActive);
+            GuiColorPicker(state->controlRecs[GUI_COLORPICKER], NULL, &state->colorPickerValue);
             GuiDummyRec(state->controlRecs[GUI_DUMMYREC], "DummyRec");
             if (GuiDropdownBox(state->controlRecs[GUI_DROPDOWNBOX], "ONE;TWO;THREE", &state->dropdownBoxActive, state->dropdownBoxEditMode)) state->dropdownBoxEditMode = !state->dropdownBoxEditMode;
 

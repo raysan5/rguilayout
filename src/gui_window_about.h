@@ -118,6 +118,9 @@ void GuiWindowAbout(GuiWindowAboutState *state);
 #if !defined(TOOL_DESCRIPTION)
     #define TOOL_DESCRIPTION    "A simple and easy-to-use tool to do something"
 #endif
+#if !defined(TOOL_DESCRIPTION_BREAK)
+    #define TOOL_DESCRIPTION_BREAK    "A simple and easy-to-use\ntool to do something"
+#endif
 #if !defined(TOOL_RELEASE_DATE)
     #define TOOL_RELEASE_DATE   "Dec.2021"
 #endif

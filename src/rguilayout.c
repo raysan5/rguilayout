@@ -1,6 +1,6 @@
 /*******************************************************************************************
 *
-*   rGuiLayout v3.2 - A simple and easy-to-use raygui layouts editor
+*   rGuiLayout v4.0 - A simple and easy-to-use raygui layouts editor
 *
 *   FEATURES:
 *       - 25 gui controls to define your immmediate-mode gui layout
@@ -32,8 +32,9 @@
 *           NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   VERSIONS HISTORY:
-*       3.2  (xx-May-2023)  REVIEWED: Regenerated tool imagery
-*                           Updated to raylib 4.5 and raygui 3.6
+*       4.0  (xx-May-2023)  ADDED: Support macOS builds (x86_64 + arm64)
+*                           REDESIGNED: Using raygui 4.0-dev
+*                           REVIEWED: Regenerated tool imagery
 *
 *       3.1  (13-Dec-2022)  ADDED: Welcome window with sponsors info
 *                           REDESIGNED: Main toolbar to add tooltips
@@ -54,9 +55,9 @@
 *
 *   DEPENDENCIES:
 *       raylib 4.6-dev          - Windowing/input management and drawing
-*       raygui 3.6              - Immediate-mode GUI controls with custom styling and icons
+*       raygui 4.0-dev          - Immediate-mode GUI controls with custom styling and icons
 *       rpng 1.0                - PNG chunks management
-*       tinyfiledialogs 3.12.0  - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
+*       tinyfiledialogs 3.13.1  - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
 *
 *   BUILDING:
 *     - Windows (MinGW-w64):
@@ -100,8 +101,9 @@
 
 #define TOOL_NAME               "rGuiLayout"
 #define TOOL_SHORT_NAME         "rGL"
-#define TOOL_VERSION            "3.2"
+#define TOOL_VERSION            "4.0"
 #define TOOL_DESCRIPTION        "A simple and easy-to-use raygui layouts editor"
+#define TOOL_DESCRIPTION_BREAK  "A simple and easy-to-use\nraygui layouts editor"
 #define TOOL_RELEASE_DATE       "May.2023"
 #define TOOL_LOGO_COLOR         0x7da9b9ff
 
@@ -2292,7 +2294,8 @@ int main(int argc, char *argv[])
             ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
             // Draw background grid
-            if (mainToolbarState.showGridActive) GuiGrid(workArea, NULL, gridSpacing*gridSubdivisions, gridSubdivisions);
+            Vector2 mouseCell = { 0 };
+            if (mainToolbarState.showGridActive) GuiGrid(workArea, NULL, gridSpacing*gridSubdivisions, gridSubdivisions, &mouseCell);
 
             // Draw tracemap
             //---------------------------------------------------------------------------------
@@ -2367,8 +2370,8 @@ int main(int argc, char *argv[])
                         case GUI_LABEL: GuiLabel(rec, layout->controls[i].text); break;
                         case GUI_BUTTON: GuiButton(rec, layout->controls[i].text); break;
                         case GUI_LABELBUTTON: GuiLabelButton(rec, layout->controls[i].text); break;
-                        case GUI_CHECKBOX: GuiCheckBox(rec, layout->controls[i].text, false); break;
-                        case GUI_TOGGLE: GuiToggle(rec, layout->controls[i].text, false); break;
+                        case GUI_CHECKBOX: GuiCheckBox(rec, layout->controls[i].text, NULL); break;
+                        case GUI_TOGGLE: GuiToggle(rec, layout->controls[i].text, NULL); break;
                         case GUI_TOGGLEGROUP: GuiToggleGroup(rec, layout->controls[i].text, 1); break;
                         case GUI_COMBOBOX: GuiComboBox(rec, layout->controls[i].text, 1); break;
                         case GUI_DROPDOWNBOX: GuiDropdownBox(rec, layout->controls[i].text, &dropdownBoxActive, false); break;
@@ -2376,18 +2379,18 @@ int main(int argc, char *argv[])
                         //case GUI_TEXTBOXMULTI: GuiTextBoxMulti(rec, layout->controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
                         case GUI_VALUEBOX: GuiValueBox(rec, layout->controls[i].text, &valueBoxValue, 42, 100, false); break;
                         case GUI_SPINNER: GuiSpinner(rec, layout->controls[i].text, &spinnerValue, 42, 3, false); break;
-                        case GUI_SLIDER: GuiSlider(rec, layout->controls[i].text, NULL, 42, 0, 100); break;
-                        case GUI_SLIDERBAR: GuiSliderBar(rec, layout->controls[i].text, NULL, 40, 0, 100); break;
-                        case GUI_PROGRESSBAR: GuiProgressBar(rec, layout->controls[i].text, NULL, 40, 0, 100); break;
+                        case GUI_SLIDER: GuiSlider(rec, layout->controls[i].text, NULL, NULL, 0, 100); break;
+                        case GUI_SLIDERBAR: GuiSliderBar(rec, layout->controls[i].text, NULL, NULL, 0, 100); break;
+                        case GUI_PROGRESSBAR: GuiProgressBar(rec, layout->controls[i].text, NULL, NULL, 0, 100); break;
                         case GUI_STATUSBAR: GuiStatusBar(rec, layout->controls[i].text); break;
                         case GUI_SCROLLPANEL:
                         {
                             GuiFade(0.7f);
-                            GuiScrollPanel(rec, (layout->controls[i].text[0] == '\0') ? NULL : layout->controls[i].text, rec, NULL);
+                            GuiScrollPanel(rec, (layout->controls[i].text[0] == '\0') ? NULL : layout->controls[i].text, rec, NULL, NULL);
                             GuiFade(1.0f);
                         } break;
-                        case GUI_LISTVIEW: GuiListView(rec, layout->controls[i].text, &listViewScrollIndex, listViewActive); break;
-                        case GUI_COLORPICKER: GuiColorPicker(rec, (layout->controls[i].text[0] == '\0') ? NULL : layout->controls[i].text, RED); break;
+                        case GUI_LISTVIEW: GuiListView(rec, layout->controls[i].text, &listViewScrollIndex, &listViewActive); break;
+                        case GUI_COLORPICKER: GuiColorPicker(rec, (layout->controls[i].text[0] == '\0') ? NULL : layout->controls[i].text, NULL); break;
                         case GUI_DUMMYREC: GuiDummyRec(rec, layout->controls[i].text); break;
                         default: break;
                     }
@@ -2512,26 +2515,26 @@ int main(int argc, char *argv[])
                                     case GUI_LABEL: GuiLabel(defaultRec[selectedType], "LABEL TEXT"); break;
                                     case GUI_BUTTON: GuiButton(defaultRec[selectedType], "BUTTON"); break;
                                     case GUI_LABELBUTTON: GuiLabelButton(defaultRec[selectedType], "LABEL_BUTTON"); break;
-                                    case GUI_CHECKBOX: GuiCheckBox(defaultRec[selectedType], "CHECK BOX", false); break;
-                                    case GUI_TOGGLE: GuiToggle(defaultRec[selectedType], "TOGGLE", false); break;
+                                    case GUI_CHECKBOX: GuiCheckBox(defaultRec[selectedType], "CHECK BOX", NULL); break;
+                                    case GUI_TOGGLE: GuiToggle(defaultRec[selectedType], "TOGGLE", NULL); break;
                                     // WARNING: Selection rectangle for GuiToggleGroup() considers all the control while the function expects only one piece!
                                     case GUI_TOGGLEGROUP:
                                     {
-                                        GuiToggleGroup((Rectangle){ defaultRec[selectedType].x, defaultRec[selectedType].y, defaultRec[selectedType].width/3.0f, defaultRec[selectedType].height }, "ONE;TWO;THREE", 1);
+                                        GuiToggleGroup((Rectangle){ defaultRec[selectedType].x, defaultRec[selectedType].y, defaultRec[selectedType].width/3.0f, defaultRec[selectedType].height }, "ONE;TWO;THREE", NULL);
                                     } break;
-                                    case GUI_COMBOBOX: GuiComboBox(defaultRec[selectedType], "ONE;TWO;THREE", 1); break;
+                                    case GUI_COMBOBOX: GuiComboBox(defaultRec[selectedType], "ONE;TWO;THREE", NULL); break;
                                     case GUI_DROPDOWNBOX: GuiDropdownBox(defaultRec[selectedType], "ONE;TWO;THREE", &dropdownBoxActive, false); break;
                                     case GUI_TEXTBOX: GuiTextBox(defaultRec[selectedType], "TEXT BOX", 7, false); break;
                                     //case GUI_TEXTBOXMULTI: GuiTextBoxMulti(defaultRec[selectedType], "TEXT BOX MULTI", 7, false); break;
                                     case GUI_VALUEBOX: GuiValueBox(defaultRec[selectedType], "VALUE BOX", &valueBoxValue, 42, 100, false); break;
                                     case GUI_SPINNER: GuiSpinner(defaultRec[selectedType], "SPINNER", &spinnerValue, 42, 3, false); break;
-                                    case GUI_SLIDER: GuiSlider(defaultRec[selectedType], "SLIDER", NULL, 42, 0, 100); break;
-                                    case GUI_SLIDERBAR: GuiSliderBar(defaultRec[selectedType], "SLIDER BAR", NULL, 40, 0, 100); break;
-                                    case GUI_PROGRESSBAR: GuiProgressBar(defaultRec[selectedType], "PROGRESS BAR", NULL, 40, 0, 100); break;
+                                    case GUI_SLIDER: GuiSlider(defaultRec[selectedType], "SLIDER", NULL, NULL, 0, 100); break;
+                                    case GUI_SLIDERBAR: GuiSliderBar(defaultRec[selectedType], "SLIDER BAR", NULL, NULL, 0, 100); break;
+                                    case GUI_PROGRESSBAR: GuiProgressBar(defaultRec[selectedType], "PROGRESS BAR", NULL, NULL, 0, 100); break;
                                     case GUI_STATUSBAR: GuiStatusBar(defaultRec[selectedType], "STATUS BAR"); break;
-                                    case GUI_SCROLLPANEL: GuiScrollPanel(defaultRec[selectedType], NULL, defaultRec[selectedType], NULL); break;
-                                    case GUI_LISTVIEW: GuiListView(defaultRec[selectedType], "ONE;TWO;THREE;FOUR", &listViewScrollIndex, listViewActive); break;
-                                    case GUI_COLORPICKER: GuiColorPicker(defaultRec[selectedType], NULL, RED); break;
+                                    case GUI_SCROLLPANEL: GuiScrollPanel(defaultRec[selectedType], NULL, defaultRec[selectedType], NULL, NULL); break;
+                                    case GUI_LISTVIEW: GuiListView(defaultRec[selectedType], "ONE;TWO;THREE;FOUR", &listViewScrollIndex, &listViewActive); break;
+                                    case GUI_COLORPICKER: GuiColorPicker(defaultRec[selectedType], NULL, NULL); break;
                                     case GUI_DUMMYREC: GuiDummyRec(defaultRec[selectedType], "DUMMY REC"); break;
                                     default: break;
                                 }

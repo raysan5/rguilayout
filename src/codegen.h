@@ -993,26 +993,26 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLay
             if(!config.exportButtonFunctions) TextAppend(toolstr, TextFormat("%sPressed = GuiLabelButton(%s, %s);", name, rec, text), pos);
             else TextAppend(toolstr, TextFormat("if (GuiLabelButton(%s, %s)) %s(); ", rec, text, TextToPascal(control.name)), pos); 
             break;
-        case GUI_CHECKBOX: TextAppend(toolstr, TextFormat("%sChecked = GuiCheckBox(%s, %s, %sChecked);", name, rec, text, name), pos); break;
-        case GUI_TOGGLE: TextAppend(toolstr, TextFormat("%sActive = GuiToggle(%s, %s, %sActive);", name, rec, text, name), pos); break;
-        case GUI_TOGGLEGROUP:TextAppend(toolstr, TextFormat("%sActive = GuiToggleGroup(%s, %s, %sActive);", name, rec, text, name), pos); break;
-        case GUI_COMBOBOX: TextAppend(toolstr, TextFormat("%sActive = GuiComboBox(%s, %s, %sActive);", name, rec, text, name), pos); break;
+        case GUI_CHECKBOX: TextAppend(toolstr, TextFormat("GuiCheckBox(%s, %s, &%sChecked);", name, rec, text, name), pos); break;
+        case GUI_TOGGLE: TextAppend(toolstr, TextFormat("GuiToggle(%s, %s, &%sActive);", name, rec, text, name), pos); break;
+        case GUI_TOGGLEGROUP:TextAppend(toolstr, TextFormat("GuiToggleGroup(%s, %s, &%sActive);", name, rec, text, name), pos); break;
+        case GUI_COMBOBOX: TextAppend(toolstr, TextFormat("GuiComboBox(%s, %s, &%sActive);", name, rec, text, name), pos); break;
         case GUI_DROPDOWNBOX: TextAppend(toolstr, TextFormat("if (GuiDropdownBox(%s, %s, &%sActive, %sEditMode)) %sEditMode = !%sEditMode;", rec, text, name, name, name, name), pos); break;
         case GUI_TEXTBOX: TextAppend(toolstr, TextFormat("if (GuiTextBox(%s, %sText, %i, %sEditMode)) %sEditMode = !%sEditMode;", rec, name, MAX_CONTROL_TEXT_LENGTH, name, name, name), pos); break;
         case GUI_TEXTBOXMULTI: TextAppend(toolstr, TextFormat("if (GuiTextBoxMulti(%s, %sText, %i, %sEditMode)) %sEditMode = !%sEditMode;", rec, name, MAX_CONTROL_TEXT_LENGTH, name, name, name), pos); break;
         case GUI_VALUEBOX: TextAppend(toolstr, TextFormat("if (GuiValueBox(%s, %s, &%sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;", rec, text, name, name, name, name), pos); break;
         case GUI_SPINNER: TextAppend(toolstr, TextFormat("if (GuiSpinner(%s, %s, &%sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;", rec, text, name, name, name, name), pos); break;
-        case GUI_SLIDER: TextAppend(toolstr, TextFormat("%sValue = GuiSlider(%s, %s, NULL, %sValue, 0, 100);", name, rec, text, name), pos); break;
-        case GUI_SLIDERBAR: TextAppend(toolstr, TextFormat("%sValue = GuiSliderBar(%s, %s, NULL, %sValue, 0, 100);", name, rec, text, name), pos); break;
-        case GUI_PROGRESSBAR: TextAppend(toolstr, TextFormat("%sValue = GuiProgressBar(%s, %s, NULL, %sValue, 0, 1);", name, rec, text, name), pos); break;
+        case GUI_SLIDER: TextAppend(toolstr, TextFormat("GuiSlider(%s, %s, NULL, &%sValue, 0, 100);", name, rec, text, name), pos); break;
+        case GUI_SLIDERBAR: TextAppend(toolstr, TextFormat("GuiSliderBar(%s, %s, NULL, &%sValue, 0, 100);", name, rec, text, name), pos); break;
+        case GUI_PROGRESSBAR: TextAppend(toolstr, TextFormat("GuiProgressBar(%s, %s, NULL, &%sValue, 0, 1);", name, rec, text, name), pos); break;
         case GUI_STATUSBAR: TextAppend(toolstr, TextFormat("GuiStatusBar(%s, %s);", rec, text), pos); break;
         case GUI_SCROLLPANEL:
         {
             char *containerRec = GetScrollPanelContainerRecText(index, control, config.defineRecs, config.exportAnchors, preText);
-            TextAppend(toolstr, TextFormat("%sScrollView = GuiScrollPanel(%s, %s, %s, &%sScrollOffset);", name, containerRec, text, rec, name), pos); break;
+            TextAppend(toolstr, TextFormat("GuiScrollPanel(%s, %s, %s, &%sScrollOffset, &%sScrollView);", name, containerRec, text, rec, name), pos); break;
         }
-        case GUI_LISTVIEW: TextAppend(toolstr, TextFormat("%sActive = GuiListView(%s, %s, &%sScrollIndex, %sActive);", name, rec, (text == NULL)? "null" : text, name, name), pos); break;
-        case GUI_COLORPICKER: TextAppend(toolstr, TextFormat("%sValue = GuiColorPicker(%s, %s, %sValue);", name, rec, text, name), pos); break;
+        case GUI_LISTVIEW: TextAppend(toolstr, TextFormat("GuiListView(%s, %s, &%sScrollIndex, &%sActive);", name, rec, (text == NULL)? "null" : text, name, name), pos); break;
+        case GUI_COLORPICKER: TextAppend(toolstr, TextFormat("GuiColorPicker(%s, %s, &%sValue);", name, rec, text, name), pos); break;
         case GUI_DUMMYREC: TextAppend(toolstr, TextFormat("GuiDummyRec(%s, %s);", rec, text), pos); break;
         default: break;
     }
