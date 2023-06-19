@@ -15,16 +15,16 @@
 *       - Export layout directly as plain C code, ready to edit and compile
 *       - Multiple GUI styles available with support for custom ones (.rgs)
 *
+*   LIMITATIONS:
+*       - Limitation 01
+*       - Limitation 02
+*
 *   POSSIBLE IMPROVEMENTS:
 *       - Support multiple controls selection -> Requires changing from creation <--> select mode
 *       - ISSUE: Adding/removing workArea offset on load/save/export layout does not seem a good approach
 *       - ISSUE: Review refWindow use case, really required?
 *       - EXPORT: Layout as an image, including layout info as PNG chunk
 *       - CLI: Support codegen options: exportAnchors, defineRecs, fullComments...
-*
-*   LIMITATIONS:
-*       - Limitation 01
-*       - Limitation 02
 *
 *   CONFIGURATION:
 *       #define CUSTOM_MODAL_DIALOGS
