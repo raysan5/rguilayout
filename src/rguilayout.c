@@ -46,10 +46,10 @@
 *                           ADDED: Sponsor window for tools support
 *                           ADDED: Multiple UI styles selection
 *                           REVIEWED: Codegen window font and templates
-*                           Updated to raylib 4.5-dev and raygui 3.5-dev
+*                           UPDATED: Using 4.5-dev and raygui 3.5-dev
 *                           Source code re-licensed as open-source
 *
-*       2.5  (05-Jan-2022)  Updated to raylib 4.0 and raygui 3.1
+*       2.5  (05-Jan-2022)  UPDATED: Using 4.0 and raygui 3.1
 *       2.0  (15-Sep-2019)  Rewriten from scratch
 *       1.0  (14-May-2018)  First release
 *
@@ -1625,11 +1625,13 @@ int main(int argc, char *argv[])
                                 else if (IsKeyReleased(KEY_T))      // Enable text edit mode
                                 {
                                     strcpy(prevText, layout->controls[selectedControl].text);
+                                    textBoxCursorIndex = (int)strlen(layout->controls[selectedControl].text);
                                     textEditMode = true;
                                 }
                                 else if (IsKeyReleased(KEY_N))      // Enable name edit mode
                                 {
                                     strcpy(prevName, layout->controls[selectedControl].name);
+                                    textBoxCursorIndex = (int)strlen(layout->controls[selectedControl].name);
                                     nameEditMode = true;
                                 }
                             }
@@ -2814,6 +2816,7 @@ int main(int argc, char *argv[])
                             if (selectedIcon > 0)
                             {
                                 strcpy(layout->controls[selectedControl].text, TextFormat("#%03i#\0", selectedIcon));
+                                textBoxCursorIndex = (int)strlen(layout->controls[selectedControl].text);
                                 showIconPanel = false;
                                 textEditMode = true;
                                 selectedIcon = 0;
@@ -2966,6 +2969,7 @@ int main(int argc, char *argv[])
             if (mainToolbarState.btnEditTextPressed)
             {
                 strcpy(prevText, layout->controls[selectedControl].text);
+                textBoxCursorIndex = (int)strlen(layout->controls[selectedControl].text);
                 textEditMode = true;
             }
 
@@ -2973,6 +2977,7 @@ int main(int argc, char *argv[])
             if (mainToolbarState.btnEditNamePressed)
             {
                 strcpy(prevName, layout->controls[selectedControl].name);
+                textBoxCursorIndex = (int)strlen(layout->controls[selectedControl].name);
                 nameEditMode = true;
             }
 
