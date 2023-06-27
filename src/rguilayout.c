@@ -46,10 +46,10 @@
 *                           ADDED: Sponsor window for tools support
 *                           ADDED: Multiple UI styles selection
 *                           REVIEWED: Codegen window font and templates
-*                           UPDATED: Using 4.5-dev and raygui 3.5-dev
+*                           UPDATED: Using raylib 4.5-dev and raygui 3.5-dev
 *                           Source code re-licensed as open-source
 *
-*       2.5  (05-Jan-2022)  UPDATED: Using 4.0 and raygui 3.1
+*       2.5  (05-Jan-2022)  UPDATED: Using raylib 4.0 and raygui 3.1
 *       2.0  (15-Sep-2019)  Rewriten from scratch
 *       1.0  (14-May-2018)  First release
 *
