@@ -2824,6 +2824,7 @@ int GuiProgressBar(Rectangle bounds, const char *textLeft, const char *textRight
     float temp = (maxValue - minValue)/2.0f;
     if (value == NULL) value = &temp;
 
+    // Progress bar
     Rectangle progress = { bounds.x + GuiGetStyle(PROGRESSBAR, BORDER_WIDTH),
                            bounds.y + GuiGetStyle(PROGRESSBAR, BORDER_WIDTH) + GuiGetStyle(PROGRESSBAR, PROGRESS_PADDING), 0,
                            bounds.height - 2*GuiGetStyle(PROGRESSBAR, BORDER_WIDTH) - 2*GuiGetStyle(PROGRESSBAR, PROGRESS_PADDING) };
@@ -2832,16 +2833,32 @@ int GuiProgressBar(Rectangle bounds, const char *textLeft, const char *textRight
     //--------------------------------------------------------------------
     if (*value > maxValue) *value = maxValue;
 
-    if (state != STATE_DISABLED) progress.width = ((float)(*value/(maxValue - minValue))*(float)(bounds.width - 2*GuiGetStyle(PROGRESSBAR, BORDER_WIDTH)));
+    if (state != STATE_DISABLED) progress.width = ((float)(*value/(maxValue - minValue))*bounds.width) - 2*GuiGetStyle(PROGRESSBAR, BORDER_WIDTH);
     //--------------------------------------------------------------------
 
     // Draw control
     //--------------------------------------------------------------------
-    GuiDrawRectangle(bounds, GuiGetStyle(PROGRESSBAR, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(PROGRESSBAR, BORDER + (state*3))), guiAlpha), BLANK);
+    if (state == STATE_DISABLED)
+    {
+        GuiDrawRectangle(bounds, GuiGetStyle(PROGRESSBAR, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(PROGRESSBAR, BORDER + (state*3))), guiAlpha), BLANK);
+    }
+    else
+    {
+        // Border color aligned with progress bar, more visual
+        GuiDrawRectangle(RAYGUI_CLITERAL(Rectangle){ bounds.x, bounds.y, progress.width + (float)GuiGetStyle(PROGRESSBAR, BORDER_WIDTH), (float)GuiGetStyle(PROGRESSBAR, BORDER_WIDTH) }, 0, BLANK, Fade(GetColor(GuiGetStyle(PROGRESSBAR, BORDER_COLOR_FOCUSED)), guiAlpha));
+        GuiDrawRectangle(RAYGUI_CLITERAL(Rectangle){ bounds.x, bounds.y + 1, GuiGetStyle(PROGRESSBAR, BORDER_WIDTH), bounds.height - 2 }, 0, BLANK, Fade(GetColor(GuiGetStyle(PROGRESSBAR, BORDER_COLOR_FOCUSED)), guiAlpha));
+        GuiDrawRectangle(RAYGUI_CLITERAL(Rectangle){ bounds.x, bounds.y + bounds.height - 1, progress.width + (float)GuiGetStyle(PROGRESSBAR, BORDER_WIDTH), GuiGetStyle(PROGRESSBAR, BORDER_WIDTH) }, 0, BLANK, Fade(GetColor(GuiGetStyle(PROGRESSBAR, BORDER_COLOR_FOCUSED)), guiAlpha));
+        if (*value == maxValue) GuiDrawRectangle(RAYGUI_CLITERAL(Rectangle){ bounds.x + progress.width + 1, bounds.y, (float)GuiGetStyle(PROGRESSBAR, BORDER_WIDTH), bounds.height }, 0, BLANK, Fade(GetColor(GuiGetStyle(PROGRESSBAR, BORDER_COLOR_FOCUSED)), guiAlpha));
+        else
+        {
+            GuiDrawRectangle(RAYGUI_CLITERAL(Rectangle){ bounds.x + progress.width + 1, bounds.y, bounds.width - progress.width, (float)GuiGetStyle(PROGRESSBAR, BORDER_WIDTH) }, 0, BLANK, Fade(GetColor(GuiGetStyle(PROGRESSBAR, BORDER_COLOR_NORMAL)), guiAlpha));
+            GuiDrawRectangle(RAYGUI_CLITERAL(Rectangle){ bounds.x + progress.width + 1, bounds.y + bounds.height - 1, bounds.width - progress.width, (float)GuiGetStyle(PROGRESSBAR, BORDER_WIDTH) }, 0, BLANK, Fade(GetColor(GuiGetStyle(PROGRESSBAR, BORDER_COLOR_NORMAL)), guiAlpha));
+            GuiDrawRectangle(RAYGUI_CLITERAL(Rectangle){ bounds.x + bounds.width - 1, bounds.y + 1, (float)GuiGetStyle(PROGRESSBAR, BORDER_WIDTH), bounds.height - 2 }, 0, BLANK, Fade(GetColor(GuiGetStyle(PROGRESSBAR, BORDER_COLOR_NORMAL)), guiAlpha));
+        }
 
-    // Draw slider internal progress bar (depends on state)
-    if ((state == STATE_NORMAL) || (state == STATE_PRESSED)) GuiDrawRectangle(progress, 0, BLANK, Fade(GetColor(GuiGetStyle(PROGRESSBAR, BASE_COLOR_PRESSED)), guiAlpha));
-    else if (state == STATE_FOCUSED) GuiDrawRectangle(progress, 0, BLANK, Fade(GetColor(GuiGetStyle(PROGRESSBAR, TEXT_COLOR_FOCUSED)), guiAlpha));
+        // Draw slider internal progress bar (depends on state)
+        GuiDrawRectangle(progress, 0, BLANK, Fade(GetColor(GuiGetStyle(PROGRESSBAR, BASE_COLOR_PRESSED)), guiAlpha));
+    }
 
     // Draw left/right text if provided
     if (textLeft != NULL)
@@ -4086,7 +4103,6 @@ static void GuiLoadStyleFromMemory(const unsigned char *fileData, int dataSize)
         {
             Font font = { 0 };
             int fontType = 0;   // 0-Normal, 1-SDF
-            Rectangle whiteRec = { 0 };
 
             memcpy(&font.baseSize, fileDataPtr, sizeof(int));
             memcpy(&font.glyphCount, fileDataPtr + 4, sizeof(int));
@@ -4094,7 +4110,8 @@ static void GuiLoadStyleFromMemory(const unsigned char *fileData, int dataSize)
             fileDataPtr += 12;
 
             // Load font white rectangle
-            memcpy(&whiteRec, fileDataPtr, sizeof(Rectangle));
+            Rectangle fontWhiteRec = { 0 };
+            memcpy(&fontWhiteRec, fileDataPtr, sizeof(Rectangle));
             fileDataPtr += 16;
 
             // Load font image parameters
@@ -4162,8 +4179,11 @@ static void GuiLoadStyleFromMemory(const unsigned char *fileData, int dataSize)
             GuiSetFont(font);
 
             // Set font texture source rectangle to be used as white texture to draw shapes
-            // NOTE: This way, all gui can be draw using a single draw call
-            if ((whiteRec.width != 0) && (whiteRec.height != 0)) SetShapesTexture(font.texture, whiteRec);
+            // NOTE: It makes possible to draw shapes and text (full UI) in a single draw call
+            if ((fontWhiteRec.x > 0) && 
+                (fontWhiteRec.y > 0) && 
+                (fontWhiteRec.width > 0) && 
+                (fontWhiteRec.height > 0)) SetShapesTexture(font.texture, fontWhiteRec);
         }
 #endif
     }
