@@ -16,7 +16,7 @@
 *   POSSIBLE IMPROVEMENTS:
 *       - Support error return codes, not only errors logging
 *       - Support APNG chunks, added to PNG specs recently (draft)
-* 
+*
 *   CONFIGURATION:
 *       #define RPNG_IMPLEMENTATION
 *           Generates the implementation of the library into the included file.
@@ -29,7 +29,7 @@
 *       #define RPNG_NO_STDIO
 *           Do not include FILE I/O API, only read/write from memory buffers
 *
-* 
+*
 *   DEPENDENCIES: libc (C standard library)
 *       stdlib.h        Required for: malloc(), calloc(), free()
 *       string.h        Required for: memcmp(), memcpy()
@@ -148,7 +148,7 @@
     #define RPNG_MALLOC(sz)         malloc(sz)
 #endif
 #ifndef RPNG_CALLOC
-    #define RPNG_CALLOC(ptr,sz)     calloc(ptr,sz)
+    #define RPNG_CALLOC(n,sz)       calloc(n,sz)
 #endif
 #ifndef RPNG_REALLOC
     #define RPNG_REALLOC(ptr,sz)    realloc(ptr,sz)
@@ -170,7 +170,7 @@
     // Maximum number of chunks to read
     #define RPNG_MAX_CHUNKS_COUNT   64
 #endif
-#ifndef RPNG_MAX_OUTPUT_SIZE 
+#ifndef RPNG_MAX_OUTPUT_SIZE
     // Maximum size for temporal buffer on write/remove chunks,
     // buffer is scaled to required output file size before being returned
     #define RPNG_MAX_OUTPUT_SIZE    (32*1024*1024)
@@ -297,7 +297,7 @@ RPNGAPI char *rpng_chunk_split_image_data_from_memory(char *buffer, int split_si
 
 // Critical chunks (IHDR, PLTE, IDAT, IEND)
 //------------------------------------------------------------------------
-// IHDR: Image header 
+// IHDR: Image header
 // Mandatory chunk: image info (13 bytes)
 typedef struct {
     unsigned int width;         // Image width
@@ -312,7 +312,7 @@ typedef struct {
 
 // PLTE: Palette
 // Contains from 1 to 256 palette entries, each a three-byte series (RGB)
-// Chunk must appear for color type 3, and can appear for color types 2 and 6; it must not appear for color types 0 and 4. 
+// Chunk must appear for color type 3, and can appear for color types 2 and 6; it must not appear for color types 0 and 4.
 // If this chunk does appear, it must precede the first IDAT chunk. There must not be more than one PLTE chunk
 
 // IDAT: Image data
@@ -454,7 +454,7 @@ static bool file_exists(const char *filename);                      // Check if 
 
 #define SDEFL_MIN_MATCH 4
 #define SDEFL_BLK_MAX   (256*1024)
-#define SDEFL_SEQ_SIZ   ((SDEFL_BLK_MAX + SDEFL_MIN_MATCH)/SDEFL_MIN_MATCH)
+#define SDEFL_SEQ_SIZ   ((SDEFL_BLK_MAX+2)/3)
 
 #define SDEFL_SYM_MAX   (288)
 #define SDEFL_OFF_MAX   (32)
@@ -465,33 +465,33 @@ static bool file_exists(const char *filename);                      // Check if 
 #define SDEFL_LVL_MAX   8
 
 struct sdefl_freq {
-    unsigned lit[SDEFL_SYM_MAX];
-    unsigned off[SDEFL_OFF_MAX];
+  unsigned lit[SDEFL_SYM_MAX];
+  unsigned off[SDEFL_OFF_MAX];
 };
 struct sdefl_code_words {
-    unsigned lit[SDEFL_SYM_MAX];
-    unsigned off[SDEFL_OFF_MAX];
+  unsigned lit[SDEFL_SYM_MAX];
+  unsigned off[SDEFL_OFF_MAX];
 };
 struct sdefl_lens {
-    unsigned char lit[SDEFL_SYM_MAX];
-    unsigned char off[SDEFL_OFF_MAX];
+  unsigned char lit[SDEFL_SYM_MAX];
+  unsigned char off[SDEFL_OFF_MAX];
 };
 struct sdefl_codes {
-    struct sdefl_code_words word;
-    struct sdefl_lens len;
+  struct sdefl_code_words word;
+  struct sdefl_lens len;
 };
 struct sdefl_seqt {
-    int off, len;
+  int off, len;
 };
 struct sdefl {
-    int bits, bitcnt;
-    int tbl[SDEFL_HASH_SIZ];
-    int prv[SDEFL_WIN_SIZ];
+  int bits, bitcnt;
+  int tbl[SDEFL_HASH_SIZ];
+  int prv[SDEFL_WIN_SIZ];
 
-    int seq_cnt;
-    struct sdefl_seqt seq[SDEFL_SEQ_SIZ];
-    struct sdefl_freq freq;
-    struct sdefl_codes cod;
+  int seq_cnt;
+  struct sdefl_seqt seq[SDEFL_SEQ_SIZ];
+  struct sdefl_freq freq;
+  struct sdefl_codes cod;
 };
 extern int sdefl_bound(int in_len);
 extern int sdeflate(struct sdefl *s, void *o, const void *i, int n, int lvl);
@@ -506,38 +506,38 @@ extern int zsdeflate(struct sdefl *s, void *o, const void *i, int n, int lvl);
 #define SINFL_OFF_TBL_SIZE 402
 
 struct sinfl {
-    const unsigned char* bitptr;
-    unsigned long long bitbuf;
-    int bitcnt;
+  const unsigned char *bitptr;
+  unsigned long long bitbuf;
+  int bitcnt;
 
-    unsigned lits[SINFL_LIT_TBL_SIZE];
-    unsigned dsts[SINFL_OFF_TBL_SIZE];
+  unsigned lits[SINFL_LIT_TBL_SIZE];
+  unsigned dsts[SINFL_OFF_TBL_SIZE];
 };
 
-extern int sinflate(void* out, int cap, const void* in, int size);
-extern int zsinflate(void* out, int cap, const void* in, int size);
+extern int sinflate(void *out, int cap, const void *in, int size);
+extern int zsinflate(void *out, int cap, const void *in, int size);
 
 //----------------------------------------------------------------------------------
 // Module Functions Definition
 //----------------------------------------------------------------------------------
 
-// The Paeth filter function computes a simple linear function of the three neighbouring pixels (left, above, upper left), 
+// The Paeth filter function computes a simple linear function of the three neighbouring pixels (left, above, upper left),
 // then chooses as predictor the neighbouring pixel closest to the computed value. Ref: https://www.w3.org/TR/PNG/#9Filters
 // The algorithm used in this International Standard is an adaptation of the technique due to Alan W. Paeth.
 // NOTE: Paeth predictor calculations shall be performed exactly, without overflow.
 static unsigned char rpng_paeth_predictor(int a, int b, int c)
 {
     unsigned char pr = 0;
-    
+
     int p = a + b - c;
     int pa = abs(p - a);
     int pb = abs(p - b);
     int pc = abs(p - c);
-   
+
     if ((pa <= pb) && (pa <= pc)) pr = (unsigned char)a;
     else if (pb <= pc) pr = (unsigned char)b;
     else pr = (unsigned char)c;
-    
+
     return pr;
 }
 
@@ -548,14 +548,14 @@ static unsigned char rpng_paeth_predictor(int a, int b, int c)
 char *rpng_load_image(const char *filename, int *width, int *height, int *color_channels, int *bit_depth)
 {
     char *data = NULL;
-    
+
     int file_size = 0;
     char *file_data = load_file_to_buffer(filename, &file_size);
 
     data = rpng_load_image_from_memory(file_data, width, height, color_channels, bit_depth);
-    
+
     RPNG_FREE(file_data);
-    
+
     return data;
 }
 
@@ -567,12 +567,12 @@ void rpng_save_image(const char *filename, const char *data, int width, int heig
 {
     char *file_output = NULL;
     int file_output_size = 0;
-    
+
     file_output = rpng_save_image_to_memory(data, width, height, color_channels, bit_depth, &file_output_size);
-    
+
     if ((file_output != NULL) && (file_output_size > 0)) save_file_from_buffer(filename, file_output, file_output_size);
     else RPNG_LOG("WARNING: PNG data saving failed");
-    
+
     RPNG_FREE(file_output);
 }
 
@@ -583,7 +583,7 @@ void rpng_save_image(const char *filename, const char *data, int width, int heig
 void rpng_save_image_indexed(const char *filename, const char *data, int width, int height, const char *palette, const char *palette_alpha, int palette_size)
 {
     // TODO: Support PLTE + tRNS
-    
+
     // Indexed color data uses image prefilter 0 by default
 }
 
@@ -622,7 +622,7 @@ rpng_chunk *rpng_chunk_read_all(const char *filename, int *count)
 
     int counter = 0;
     rpng_chunk *chunks = NULL;
-    
+
     if (file_data != NULL)
     {
         chunks = rpng_chunk_read_all_from_memory(file_data, &counter);
@@ -706,7 +706,7 @@ void rpng_chunk_write_text(const char *filename, char *keyword, char *text)
     char *file_data = load_file_to_buffer(filename, &file_size);
 
     rpng_chunk chunk = { 0 };
-    
+
     int keyword_len = (int)strlen(keyword);
     int text_len = (int)strlen(text);
 
@@ -751,7 +751,7 @@ void rpng_chunk_write_comp_text(const char *filename, char *keyword, char *text)
     struct sdefl *sde = RPNG_CALLOC(sizeof(struct sdefl), 1);
     int bounds = sdefl_bound(text_len);
     unsigned char *comp_text = (unsigned char *)RPNG_CALLOC(bounds, 1);
-    int comp_text_size = zsdeflate(sde, comp_text, (unsigned char *)text, text_len, 8);   // Compression level 8, same as stbwi
+    int comp_text_size = zsdeflate(sde, comp_text, (unsigned char *)text, text_len, 8);   // Compression level 8, same as stbiw
     RPNG_FREE(sde);
 
     // Fill chunk with required data
@@ -761,7 +761,7 @@ void rpng_chunk_write_comp_text(const char *filename, char *keyword, char *text)
     chunk.data = (unsigned char *)RPNG_CALLOC(chunk.length, 1);
     memcpy(chunk.data, keyword, keyword_len);
     memcpy(chunk.data + keyword_len + 2, comp_text, comp_text_size);
-    
+
     int file_output_size = 0;
     char *file_output = rpng_chunk_write_from_memory(file_data, chunk, &file_output_size);
 
@@ -783,7 +783,7 @@ void rpng_chunk_write_gamma(const char *filename, float gamma)
     char *file_data = load_file_to_buffer(filename, &file_size);
 
     rpng_chunk chunk = { 0 };
-    
+
     int gamma_value = (int)(gamma*100000);
 
     // Fill chunk with required data
@@ -794,7 +794,7 @@ void rpng_chunk_write_gamma(const char *filename, float gamma)
     gamma_value = swap_endian(gamma_value);
     memcpy(((unsigned char*)chunk.data), &gamma_value, 4);
     chunk.crc = 0;  // Computed by rpng_chunk_write_from_memory()
-    
+
     int file_output_size = 0;
     char *file_output = rpng_chunk_write_from_memory(file_data, chunk, &file_output_size);
 
@@ -819,9 +819,9 @@ void rpng_chunk_write_srgb(const char *filename, char srgb_type)
     char *file_data = load_file_to_buffer(filename, &file_size);
 
     rpng_chunk chunk = { 0 };
-    
+
     if ((srgb_type < 0) || (srgb_type > 3)) srgb_type = 0;
-    
+
     // Fill chunk with required data
     // NOTE: CRC can be left to 0, it's calculated internally on writing
     memcpy(chunk.type, "sRGB", 4);
@@ -829,7 +829,7 @@ void rpng_chunk_write_srgb(const char *filename, char srgb_type)
     chunk.data = RPNG_CALLOC(chunk.length, 1);
     memcpy(((unsigned char*)chunk.data), &srgb_type, 1);
     chunk.crc = 0;  // Computed by rpng_chunk_write_from_memory()
-    
+
     int file_output_size = 0;
     char *file_output = rpng_chunk_write_from_memory(file_data, chunk, &file_output_size);
 
@@ -869,7 +869,7 @@ void rpng_chunk_write_time(const char *filename, short year, char month, char da
     memcpy(((unsigned char*)chunk.data) + 5, &min, 1);
     memcpy(((unsigned char*)chunk.data) + 6, &sec, 1);
     chunk.crc = 0;  // Computed by rpng_chunk_write_from_memory()
-    
+
     int file_output_size = 0;
     char *file_output = rpng_chunk_write_from_memory(file_data, chunk, &file_output_size);
 
@@ -893,7 +893,7 @@ void rpng_chunk_write_physical_size(const char *filename, int pixels_unit_x, int
     char *file_data = load_file_to_buffer(filename, &file_size);
 
     rpng_chunk chunk = { 0 };
-    
+
     // Fill chunk with required data
     // NOTE: CRC can be left to 0, it's calculated internally on writing
     memcpy(chunk.type, "pHYs", 4);
@@ -906,7 +906,7 @@ void rpng_chunk_write_physical_size(const char *filename, int pixels_unit_x, int
     char meters_value = (meters)? 1 : 0;
     memcpy(((unsigned char*)chunk.data) + 8, &meters_value, 1);
     chunk.crc = 0;  // Computed by rpng_chunk_write_from_memory()
-    
+
     int file_output_size = 0;
     char *file_output = rpng_chunk_write_from_memory(file_data, chunk, &file_output_size);
 
@@ -936,7 +936,7 @@ void rpng_chunk_write_chroma(const char *filename, float white_x, float white_y,
     char *file_data = load_file_to_buffer(filename, &file_size);
 
     rpng_chunk chunk = { 0 };
-    
+
     // Fill chunk with required data
     // NOTE: CRC can be left to 0, it's calculated internally on writing
     memcpy(chunk.type, "pHYs", 4);
@@ -959,7 +959,7 @@ void rpng_chunk_write_chroma(const char *filename, float white_x, float white_y,
     int blue_y_value = swap_endian((int)(blue_y*100000));
     memcpy(((unsigned char*)chunk.data) + 28, &blue_y_value, 4);
     chunk.crc = 0;  // Computed by rpng_chunk_write_from_memory()
-    
+
     int file_output_size = 0;
     char *file_output = rpng_chunk_write_from_memory(file_data, chunk, &file_output_size);
 
@@ -1006,14 +1006,14 @@ void rpng_chunk_print_info(const char *filename)
 bool rpng_chunk_check_all_valid(const char *filename)
 {
     bool result = true;
-    
+
     int count = 0;
     rpng_chunk *chunks = rpng_chunk_read_all(filename, &count);
     if (chunks == NULL) return false;
-    
+
     unsigned int crc = 0;
     char *chunk_type_data = RPNG_CALLOC(RPNG_MAX_OUTPUT_SIZE, 1);
-    
+
     if (chunk_type_data != NULL)
     {
         for (int i = 0; i < count; i++)
@@ -1035,7 +1035,7 @@ bool rpng_chunk_check_all_valid(const char *filename)
     // Free chunks memory
     for (int i = 0; i < count; i++) RPNG_FREE(chunks[i].data);
     RPNG_FREE(chunks);
-    
+
     return result;
 }
 
@@ -1080,11 +1080,11 @@ char *rpng_load_image_from_memory(const char *buffer, int *width, int *height, i
     void *data_piece[RPNG_MAX_CHUNKS_COUNT] = { 0 };
     int data_piece_size[RPNG_MAX_CHUNKS_COUNT] = { 0 };
     unsigned int dataChunkCounter = 0;
-    
+
     // Read all chunks
     int count = 0;
     rpng_chunk *chunks = rpng_chunk_read_all_from_memory(buffer, &count);
-    
+
     if (chunks == NULL) return data;
 
     // First chunk is always IHDR, we can check image data info
@@ -1104,7 +1104,7 @@ char *rpng_load_image_from_memory(const char *buffer, int *width, int *height, i
         case 3: *color_channels = 0; break;     // Pixel format: 3-Indexed  (Not supported)
         default: break;
     }
-    
+
     if ((*color_channels == 1) && (*bit_depth != 8) && (*bit_depth != 16)) return data;  // Bit depth 1/2/4 not supported
 
     // Additional info provided by IHDR (in case it was required)
@@ -1146,7 +1146,7 @@ char *rpng_load_image_from_memory(const char *buffer, int *width, int *height, i
                         break;
                     }
 
-                    // Now we have the data decompressed but every scanline of the image was originally filtered for 
+                    // Now we have the data decompressed but every scanline of the image was originally filtered for
                     // maximum compression and one extra byte with the filter type was added to every scanline
                     // We must undo that image prefiltering for every scanline
 
@@ -1231,7 +1231,7 @@ char *rpng_load_image_from_memory(const char *buffer, int *width, int *height, i
 
         for (unsigned int i = 0; i < dataChunkCounter; i++) RPNG_FREE(data_piece[i]);
     }
-    
+
     return data;
 }
 
@@ -1240,7 +1240,7 @@ char *rpng_save_image_to_memory(const char *data, int width, int height, int col
 {
     char *output_buffer = NULL;
     int output_buffer_size = 0;
-    
+
     if ((bit_depth != 8) && (bit_depth != 16)) return output_buffer;  // Bit depth 1/2/4 not supported
 
     int color_type = -1;
@@ -1248,7 +1248,7 @@ char *rpng_save_image_to_memory(const char *data, int width, int height, int col
     else if (color_channels == 2) color_type = 4;   // Gray + Alpha
     else if (color_channels == 3) color_type = 2;   // RGB
     else if (color_channels == 4) color_type = 6;   // RGBA
-    
+
     if (color_type == -1) return output_buffer;   // Number of channels not supported
 
     rpng_chunk_IHDR image_info = { 0 };
@@ -1256,17 +1256,17 @@ char *rpng_save_image_to_memory(const char *data, int width, int height, int col
     image_info.height = swap_endian(height);
     image_info.bit_depth = (unsigned char)bit_depth;
     image_info.color_type = (unsigned char)color_type;
-    
+
     // Image data pre-processing to append filter type byte to every scanline
     int pixel_size = color_channels*(bit_depth/8);
     int scanline_size = width*pixel_size;
     unsigned int data_filtered_size = (scanline_size + 1)*height;   // Adding 1 byte per scanline filter
     unsigned char *data_filtered = (unsigned char *)RPNG_CALLOC(data_filtered_size, 1);
-    
+
     int out = 0, x = 0, a = 0, b = 0, c = 0;
     int sum_value[5] = { 0 };
     int best_filter = 0;
-    
+
     for (int y = 0; y < height; y++)
     {
         // Choose the best filter type for every scanline
@@ -1281,7 +1281,7 @@ char *rpng_save_image_to_memory(const char *data, int width, int height, int col
             a = (p >= pixel_size) ? (int)((unsigned char *)data)[scanline_size*y + p - pixel_size] : 0;
             b = (y > 0) ? (int)((unsigned char *)data)[scanline_size*(y - 1) + p] : 0;
             c = (y > 0) ? ((p >= pixel_size) ? (int)((unsigned char *)data)[scanline_size*(y - 1) + p - pixel_size] : 0) : 0;
-            
+
             // Heuristic: Compute the output scanline using all five filters
             // REF: https://www.w3.org/TR/PNG/#9Filters
             for (int filter = 0; filter < 5; filter++)
@@ -1295,12 +1295,12 @@ char *rpng_save_image_to_memory(const char *data, int width, int height, int col
                     case 4: out = x - rpng_paeth_predictor(a, b, c); break;
                     default: break;
                 }
-            
+
                 sum_value[filter] += abs((signed char)out);
             }
         }
-        
-        // Select the filter that gives the smallest sum of absolute values of outputs. 
+
+        // Select the filter that gives the smallest sum of absolute values of outputs.
         // NOTE: Considering the output bytes as signed differences for the test.
         best_filter = 0;
         int best_value = sum_value[0];
@@ -1316,7 +1316,7 @@ char *rpng_save_image_to_memory(const char *data, int width, int height, int col
 
         // Register scanline filter byte
         data_filtered[(scanline_size + 1)*y] = best_filter;
-        
+
         // Apply the best_filter to scanline
         for (int p = 0; p < scanline_size; p++)
         {
@@ -1324,7 +1324,7 @@ char *rpng_save_image_to_memory(const char *data, int width, int height, int col
             a = (p >= pixel_size)? (int)((unsigned char *)data)[scanline_size*y + p - pixel_size] : 0;
             b = (y > 0)? (int)((unsigned char *)data)[scanline_size*(y - 1) + p] : 0;
             c = (y > 0)? ((p >= pixel_size) ? (int)((unsigned char *)data)[scanline_size*(y - 1) + p - pixel_size] : 0) : 0;
-            
+
             switch (best_filter)
             {
                 case 0: out = x; break;
@@ -1334,7 +1334,7 @@ char *rpng_save_image_to_memory(const char *data, int width, int height, int col
                 case 4: out = x - rpng_paeth_predictor(a, b, c); break;
                 default: break;
             }
-            
+
             // Register scanline filtered values, byte by byte
             data_filtered[(scanline_size + 1)*y + 1 + p] = (unsigned char)out;
         }
@@ -1344,12 +1344,12 @@ char *rpng_save_image_to_memory(const char *data, int width, int height, int col
     struct sdefl *sde = RPNG_CALLOC(sizeof(struct sdefl), 1);
     int bounds = sdefl_bound(data_filtered_size);
     unsigned char *comp_data = (unsigned char *)RPNG_CALLOC(bounds, 1);
-    int comp_data_size = zsdeflate(sde, comp_data, data_filtered, data_filtered_size, 8);   // Compression level 8, same as stbwi
+    int comp_data_size = zsdeflate(sde, comp_data, data_filtered, data_filtered_size, 8);   // Compression level 8, same as stbiw
     RPNG_FREE(data_filtered);
     RPNG_FREE(sde);
-    
+
     RPNG_LOG("Data size: %i -> Comp data size: %i\n", data_filtered_size, comp_data_size);
-    
+
     // Security check to verify compression worked
     if (comp_data_size > 0)
     {
@@ -1357,7 +1357,7 @@ char *rpng_save_image_to_memory(const char *data, int width, int height, int col
 
         // Write PNG signature
         memcpy(output_buffer, png_signature, 8);
-        
+
         // Write PNG chunk IHDR
         unsigned int length_IHDR = 13;
         length_IHDR = swap_endian(length_IHDR);
@@ -1368,7 +1368,7 @@ char *rpng_save_image_to_memory(const char *data, int width, int height, int col
         crc = swap_endian(crc);
         memcpy(output_buffer + 8 + 8 + 13, &crc, 4);
         output_buffer_size += (8 + 12 + 13);
-        
+
         // Write PNG chunk IDAT
         unsigned int length_IDAT = comp_data_size;
         length_IDAT = swap_endian(length_IDAT);
@@ -1379,15 +1379,15 @@ char *rpng_save_image_to_memory(const char *data, int width, int height, int col
         crc = swap_endian(crc);
         memcpy(output_buffer + output_buffer_size + 8 + comp_data_size, &crc, 4);
         output_buffer_size += (comp_data_size + 12);
-        
+
         // Write PNG chunk IEND
         unsigned char chunk_IEND[12] = { 0, 0, 0, 0, 'I', 'E', 'N', 'D', 0xAE, 0x42, 0x60, 0x82 };
         memcpy(output_buffer + output_buffer_size, chunk_IEND, 12);
         output_buffer_size += 12;
     }
-    
+
     RPNG_FREE(comp_data);
-    
+
     *output_size = output_buffer_size;
     return output_buffer;
 }
@@ -1504,7 +1504,7 @@ rpng_chunk *rpng_chunk_read_all_from_memory(const char *buffer, int *count)
 }
 
 // Remove one chunk type from memory buffer
-// NOTE: returns output_data and output_size through parameter 
+// NOTE: returns output_data and output_size through parameter
 char *rpng_chunk_remove_from_memory(const char *buffer, const char *chunk_type, int *output_size)
 {
     char *buffer_ptr = (char *)buffer;
@@ -1514,10 +1514,10 @@ char *rpng_chunk_remove_from_memory(const char *buffer, const char *chunk_type, 
     if ((buffer_ptr != NULL) && (memcmp(buffer_ptr, png_signature, 8) == 0))  // Check valid PNG file
     {
         output_buffer = RPNG_CALLOC(RPNG_MAX_OUTPUT_SIZE, 1);  // Output buffer allocation
-        
+
         memcpy(output_buffer, png_signature, 8);        // Copy PNG signature
         output_buffer_size += 8;
-        
+
         buffer_ptr += 8;       // Move pointer after signature
 
         unsigned int chunk_size = swap_endian(((int *)buffer_ptr)[0]);
@@ -1538,7 +1538,7 @@ char *rpng_chunk_remove_from_memory(const char *buffer, const char *chunk_type, 
         // Write IEND chunk
         memcpy(output_buffer + output_buffer_size, buffer_ptr, 4 + 4 + 4);
         output_buffer_size += 12;
-        
+
         // Resize output buffer
         char *output_buffer_sized = RPNG_REALLOC(output_buffer, output_buffer_size);
         if (output_buffer_sized != NULL) output_buffer = output_buffer_sized;
@@ -1549,7 +1549,7 @@ char *rpng_chunk_remove_from_memory(const char *buffer, const char *chunk_type, 
 }
 
 // Remove all chunks from memory buffer except: IHDR-IDAT-IEND
-// NOTE: returns output_data and output_size through parameter 
+// NOTE: returns output_data and output_size through parameter
 char *rpng_chunk_remove_ancillary_from_memory(const char *buffer, int *output_size)
 {
     char *buffer_ptr = (char *)buffer;
@@ -1559,9 +1559,9 @@ char *rpng_chunk_remove_ancillary_from_memory(const char *buffer, int *output_si
     if ((buffer_ptr != NULL) && (memcmp(buffer_ptr, png_signature, 8) == 0))  // Check valid PNG file
     {
         bool preserve_palette_transparency = false;
-        
+
         output_buffer = RPNG_CALLOC(RPNG_MAX_OUTPUT_SIZE, 1);  // Output buffer allocation
-        
+
         memcpy(output_buffer, png_signature, 8);        // Copy PNG signature
         output_buffer_size += 8;
         buffer_ptr += 8;       // Move pointer after signature
@@ -1571,7 +1571,7 @@ char *rpng_chunk_remove_ancillary_from_memory(const char *buffer, int *output_si
         while (memcmp(buffer_ptr + 4, "IEND", 4) != 0) // While IEND chunk not reached
         {
             if (memcmp(buffer_ptr + 4, "PLTE", 4) == 0) preserve_palette_transparency = true;
-            
+
             // If chunk type is mandatory, just copy input data into output buffer
             if ((memcmp(buffer_ptr + 4, "IHDR", 4) == 0) ||
                 (memcmp(buffer_ptr + 4, "PLTE", 4) == 0) ||
@@ -1589,7 +1589,7 @@ char *rpng_chunk_remove_ancillary_from_memory(const char *buffer, int *output_si
         // Write IEND chunk
         memcpy(output_buffer + output_buffer_size, buffer_ptr, 4 + 4 + 4);
         output_buffer_size += 12;
-        
+
         // Resize output buffer
         char *output_buffer_sized = RPNG_REALLOC(output_buffer, output_buffer_size);
         if (output_buffer_sized != NULL) output_buffer = output_buffer_sized;
@@ -1610,7 +1610,7 @@ char *rpng_chunk_write_from_memory(const char *buffer, rpng_chunk chunk, int *ou
     if ((buffer_ptr != NULL) && (memcmp(buffer_ptr, png_signature, 8) == 0))  // Check valid PNG file
     {
         output_buffer = RPNG_CALLOC(RPNG_MAX_OUTPUT_SIZE, 1);
-        
+
         memcpy(output_buffer, png_signature, 8);        // Copy PNG signature
         output_buffer_size += 8;
         buffer_ptr += 8;       // Move pointer after signature
@@ -1636,7 +1636,7 @@ char *rpng_chunk_write_from_memory(const char *buffer, rpng_chunk chunk, int *ou
                 unsigned int crc = compute_crc32(type_data, 4 + chunk.length);
                 crc = swap_endian(crc);
                 memcpy(output_buffer + output_buffer_size + 4 + 4 + chunk.length, &crc, 4);   // Write CRC32 (computed over type + data)
-                
+
                 RPNG_FREE(type_data);
 
                 output_buffer_size += (4 + 4 + chunk.length + 4);  // Update output file file_size with new chunk
@@ -1649,7 +1649,7 @@ char *rpng_chunk_write_from_memory(const char *buffer, rpng_chunk chunk, int *ou
         // Write IEND chunk
         memcpy(output_buffer + output_buffer_size, buffer_ptr, 4 + 4 + 4);
         output_buffer_size += 12;
-        
+
         // Resize output buffer
         char *output_buffer_sized = RPNG_REALLOC(output_buffer, output_buffer_size);
         if (output_buffer_sized != NULL) output_buffer = output_buffer_sized;
@@ -1672,7 +1672,7 @@ char *rpng_chunk_combine_image_data_from_memory(char *buffer, int *output_size)
         memcpy(idata_buffer, "IDAT", 4);
         int idata_buffer_size = 0;
         output_buffer = (char *)RPNG_CALLOC(RPNG_MAX_OUTPUT_SIZE, 1);  // Output buffer allocation
-        
+
         memcpy(output_buffer, png_signature, 8);               // Copy PNG signature
         output_buffer_size += 8;
         buffer_ptr += 8;       // Move pointer after signature
@@ -1696,7 +1696,7 @@ char *rpng_chunk_combine_image_data_from_memory(char *buffer, int *output_size)
             buffer_ptr += (4 + 4 + chunk_size + 4);   // Move pointer to next chunk
             chunk_size = swap_endian(((int *)buffer_ptr)[0]);
         }
-        
+
         // Write IDAT combined chunk
         unsigned int idata_buffer_size_be = swap_endian(idata_buffer_size);
         memcpy(output_buffer + output_buffer_size, &idata_buffer_size_be, 4);
@@ -1705,13 +1705,13 @@ char *rpng_chunk_combine_image_data_from_memory(char *buffer, int *output_size)
         crc = swap_endian(crc);
         memcpy(output_buffer + output_buffer_size + 4 + 4 + idata_buffer_size, &crc, 4);
         RPNG_FREE(idata_buffer);
-        
+
         output_buffer_size += (idata_buffer_size + 12);
 
         // Write IEND chunk
         memcpy(output_buffer + output_buffer_size, buffer_ptr, 4 + 4 + 4);
         output_buffer_size += 12;
-        
+
         // Resize output buffer
         char *output_buffer_sized = (char *)RPNG_REALLOC(output_buffer, output_buffer_size);
         if (output_buffer_sized != NULL) output_buffer = output_buffer_sized;
@@ -1727,13 +1727,13 @@ char *rpng_chunk_split_image_data_from_memory(char *buffer, int split_size, int 
     char *buffer_ptr = (char *)buffer;
     char *output_buffer = NULL;
     int output_buffer_size = 0;
-    
+
     if ((buffer_ptr != NULL) && (memcmp(buffer_ptr, png_signature, 8) == 0))  // Check valid PNG file
     {
         char *idata_split_buffer = (char *)RPNG_CALLOC(split_size + 12, 1);    // Output buffer allocation
-        
+
         output_buffer = (char *)RPNG_CALLOC(RPNG_MAX_OUTPUT_SIZE, 1);  // Output buffer allocation
-        
+
         memcpy(output_buffer, png_signature, 8);    // Copy PNG signature
         output_buffer_size += 8;
         buffer_ptr += 8;       // Move pointer after signature
@@ -1748,7 +1748,7 @@ char *rpng_chunk_split_image_data_from_memory(char *buffer, int split_size, int 
                 // Split chunk into pieces!
                 unsigned int chunk_remain_size = chunk_size;
                 char *buffer_ptr_offset = buffer_ptr + 4 + 4;
-                
+
                 while (chunk_remain_size > (unsigned int)split_size)
                 {
                     unsigned int split_size_be = swap_endian(split_size);
@@ -1758,14 +1758,14 @@ char *rpng_chunk_split_image_data_from_memory(char *buffer, int split_size, int 
                     unsigned int crc = compute_crc32((unsigned char *)(idata_split_buffer + 4), 4 + split_size);
                     crc = swap_endian(crc);
                     memcpy(idata_split_buffer + 4 + 4 + split_size, &crc, 4);
-                    
+
                     chunk_remain_size -= split_size;
                     buffer_ptr_offset += split_size;
-                    
+
                     memcpy(output_buffer + output_buffer_size, idata_split_buffer, split_size + 12);
                     output_buffer_size += (split_size + 12);
                 }
-                
+
                 // Save last IDAT chunk piece
                 unsigned int chunk_remain_size_be = swap_endian(chunk_remain_size);
                 memcpy(idata_split_buffer, &chunk_remain_size_be, 4);
@@ -1774,7 +1774,7 @@ char *rpng_chunk_split_image_data_from_memory(char *buffer, int split_size, int 
                 unsigned int crc = compute_crc32((unsigned char *)(idata_split_buffer + 4), 4 + chunk_remain_size);
                 crc = swap_endian(crc);
                 memcpy(idata_split_buffer + 4 + 4 + chunk_remain_size, &crc, 4);
-                
+
                 memcpy(output_buffer + output_buffer_size, idata_split_buffer, chunk_remain_size + 12);
                 output_buffer_size += (chunk_remain_size + 12);
             }
@@ -1787,18 +1787,18 @@ char *rpng_chunk_split_image_data_from_memory(char *buffer, int split_size, int 
             buffer_ptr += (4 + 4 + chunk_size + 4);   // Move pointer to next chunk
             chunk_size = swap_endian(((int *)buffer_ptr)[0]);
         }
-        
+
         RPNG_FREE(idata_split_buffer);
 
         // Write IEND chunk
         memcpy(output_buffer + output_buffer_size, buffer_ptr, 4 + 4 + 4);
         output_buffer_size += 12;
-        
+
         // Resize output buffer
         char *output_buffer_sized = (char *)RPNG_REALLOC(output_buffer, output_buffer_size);
         if (output_buffer_sized != NULL) output_buffer = output_buffer_sized;
     }
-    
+
     *output_size = output_buffer_size;
     return output_buffer;
 }
@@ -1969,533 +1969,615 @@ static bool file_exists(const char *filename)
 #include <string.h> /* memcpy */
 #include <limits.h> /* CHAR_BIT */
 
-#define SDEFL_NIL                       (-1)
-#define SDEFL_MAX_MATCH                 258
-#define SDEFL_MAX_CODE_LEN              (15)
-#define SDEFL_SYM_BITS                  (10u)
-#define SDEFL_SYM_MSK                   ((1u << SDEFL_SYM_BITS)-1u)
-#define SDEFL_LIT_LEN_CODES             (14)
-#define SDEFL_OFF_CODES                 (15)
-#define SDEFL_PRE_CODES                 (7)
-#define SDEFL_CNT_NUM(n)                ((((n)+3u/4u)+3u)&~3u)
-#define SDEFL_EOB                       (256)
+#define SDEFL_NIL               (-1)
+#define SDEFL_MAX_MATCH         258
+#define SDEFL_MAX_CODE_LEN      (15)
+#define SDEFL_SYM_BITS          (10u)
+#define SDEFL_SYM_MSK           ((1u << SDEFL_SYM_BITS)-1u)
+#define SDEFL_RAW_BLK_SIZE      (65535)
+#define SDEFL_LIT_LEN_CODES     (14)
+#define SDEFL_OFF_CODES         (15)
+#define SDEFL_PRE_CODES         (7)
+#define SDEFL_CNT_NUM(n)        ((((n)+3u/4u)+3u)&~3u)
+#define SDEFL_EOB               (256)
 
 #define sdefl_npow2(n) (1 << (sdefl_ilog2((n)-1) + 1))
+#define sdefl_div_round_up(n,d) (((n)+((d)-1))/(d))
 
 static int
 sdefl_ilog2(int n) {
-    if (!n) return 0;
+  if (!n) return 0;
 #ifdef _MSC_VER
-    unsigned long msbp = 0;
-    _BitScanReverse(&msbp, (unsigned long)n);
-    return (int)msbp;
+  unsigned long msbp = 0;
+  _BitScanReverse(&msbp, (unsigned long)n);
+  return (int)msbp;
 #elif defined(__GNUC__) || defined(__clang__)
-    return (int)sizeof(unsigned long) * CHAR_BIT - 1 - __builtin_clzl((unsigned long)n);
+  return (int)sizeof(unsigned long) * CHAR_BIT - 1 - __builtin_clzl((unsigned long)n);
 #else
-    #define lt(n) n, n, n, n, n, n, n, n, n, n, n, n, n, n, n, n
-    static const char tbl[256] = {
-        0,0,1,1,2,2,2,2,3,3,3,3,3,3,3,3,lt(4), lt(5), lt(5), lt(6), lt(6), lt(6), lt(6),
-        lt(7), lt(7), lt(7), lt(7), lt(7), lt(7), lt(7), lt(7)};
-    int tt, t;
-    if ((tt = (n >> 16))) {
-        return (t = (tt >> 8)) ? 24 + tbl[t] : 16 + tbl[tt];
-    } else {
-        return (t = (n >> 8)) ? 8 + tbl[t] : tbl[n];
-    }
-    #undef lt
+  #define lt(n) n, n, n, n, n, n, n, n, n, n, n, n, n, n, n, n
+  static const char tbl[256] = {
+    0,0,1,1,2,2,2,2,3,3,3,3,3,3,3,3,lt(4), lt(5), lt(5), lt(6), lt(6), lt(6), lt(6),
+    lt(7), lt(7), lt(7), lt(7), lt(7), lt(7), lt(7), lt(7)};
+  int tt, t;
+  if ((tt = (n >> 16))) {
+    return (t = (tt >> 8)) ? 24 + tbl[t] : 16 + tbl[tt];
+  } else {
+    return (t = (n >> 8)) ? 8 + tbl[t] : tbl[n];
+  }
+  #undef lt
 #endif
 }
 static unsigned
 sdefl_uload32(const void *p) {
-    /* hopefully will be optimized to an unaligned read */
-    unsigned n = 0;
-    memcpy(&n, p, sizeof(n));
-    return n;
+  /* hopefully will be optimized to an unaligned read */
+  unsigned n = 0;
+  memcpy(&n, p, sizeof(n));
+  return n;
 }
 static unsigned
 sdefl_hash32(const void *p) {
-    unsigned n = sdefl_uload32(p);
-    return (n * 0x9E377989) >> (32 - SDEFL_HASH_BITS);
+  unsigned n = sdefl_uload32(p);
+  return (n * 0x9E377989) >> (32 - SDEFL_HASH_BITS);
 }
 static void
 sdefl_put(unsigned char **dst, struct sdefl *s, int code, int bitcnt) {
-    s->bits |= (code << s->bitcnt);
-    s->bitcnt += bitcnt;
-    while (s->bitcnt >= 8) {
-        unsigned char *tar = *dst;
-        *tar = (unsigned char)(s->bits & 0xFF);
-        s->bits >>= 8;
-        s->bitcnt -= 8;
-        *dst = *dst + 1;
-    }
+  s->bits |= (code << s->bitcnt);
+  s->bitcnt += bitcnt;
+  while (s->bitcnt >= 8) {
+    unsigned char *tar = *dst;
+    *tar = (unsigned char)(s->bits & 0xFF);
+    s->bits >>= 8;
+    s->bitcnt -= 8;
+    *dst = *dst + 1;
+  }
 }
 static void
 sdefl_heap_sub(unsigned A[], unsigned len, unsigned sub) {
-    unsigned c, p = sub;
-    unsigned v = A[sub];
-    while ((c = p << 1) <= len) {
-        if (c < len && A[c + 1] > A[c]) c++;
-        if (v >= A[c]) break;
-        A[p] = A[c], p = c;
-    }
-    A[p] = v;
+  unsigned c, p = sub;
+  unsigned v = A[sub];
+  while ((c = p << 1) <= len) {
+    if (c < len && A[c + 1] > A[c]) c++;
+    if (v >= A[c]) break;
+    A[p] = A[c], p = c;
+  }
+  A[p] = v;
 }
 static void
 sdefl_heap_array(unsigned *A, unsigned len) {
-    unsigned sub;
-    for (sub = len >> 1; sub >= 1; sub--)
-        sdefl_heap_sub(A, len, sub);
+  unsigned sub;
+  for (sub = len >> 1; sub >= 1; sub--)
+    sdefl_heap_sub(A, len, sub);
 }
 static void
 sdefl_heap_sort(unsigned *A, unsigned n) {
-    A--;
-    sdefl_heap_array(A, n);
-    while (n >= 2) {
-        unsigned tmp = A[n];
-        A[n--] = A[1];
-        A[1] = tmp;
-        sdefl_heap_sub(A, n, 1);
-    }
+  A--;
+  sdefl_heap_array(A, n);
+  while (n >= 2) {
+    unsigned tmp = A[n];
+    A[n--] = A[1];
+    A[1] = tmp;
+    sdefl_heap_sub(A, n, 1);
+  }
 }
 static unsigned
 sdefl_sort_sym(unsigned sym_cnt, unsigned *freqs,
-                             unsigned char *lens, unsigned *sym_out) {
-    unsigned cnts[SDEFL_CNT_NUM(SDEFL_SYM_MAX)] = {0};
-    unsigned cnt_num = SDEFL_CNT_NUM(sym_cnt);
-    unsigned used_sym = 0;
-    unsigned sym, i;
-    for (sym = 0; sym < sym_cnt; sym++)
-        cnts[freqs[sym] < cnt_num-1 ? freqs[sym]: cnt_num-1]++;
-    for (i = 1; i < cnt_num; i++) {
-        unsigned cnt = cnts[i];
-        cnts[i] = used_sym;
-        used_sym += cnt;
-    }
-    for (sym = 0; sym < sym_cnt; sym++) {
-        unsigned freq = freqs[sym];
-        if (freq) {
-                unsigned idx = freq < cnt_num-1 ? freq : cnt_num-1;
-                sym_out[cnts[idx]++] = sym | (freq << SDEFL_SYM_BITS);
-        } else lens[sym] = 0;
-    }
-    sdefl_heap_sort(sym_out + cnts[cnt_num-2], cnts[cnt_num-1] - cnts[cnt_num-2]);
-    return used_sym;
+               unsigned char *lens, unsigned *sym_out) {
+  unsigned cnts[SDEFL_CNT_NUM(SDEFL_SYM_MAX)] = {0};
+  unsigned cnt_num = SDEFL_CNT_NUM(sym_cnt);
+  unsigned used_sym = 0;
+  unsigned sym, i;
+  for (sym = 0; sym < sym_cnt; sym++)
+    cnts[freqs[sym] < cnt_num-1 ? freqs[sym]: cnt_num-1]++;
+  for (i = 1; i < cnt_num; i++) {
+    unsigned cnt = cnts[i];
+    cnts[i] = used_sym;
+    used_sym += cnt;
+  }
+  for (sym = 0; sym < sym_cnt; sym++) {
+    unsigned freq = freqs[sym];
+    if (freq) {
+        unsigned idx = freq < cnt_num-1 ? freq : cnt_num-1;
+        sym_out[cnts[idx]++] = sym | (freq << SDEFL_SYM_BITS);
+    } else lens[sym] = 0;
+  }
+  sdefl_heap_sort(sym_out + cnts[cnt_num-2], cnts[cnt_num-1] - cnts[cnt_num-2]);
+  return used_sym;
 }
 static void
 sdefl_build_tree(unsigned *A, unsigned sym_cnt) {
-    unsigned i = 0, b = 0, e = 0;
-    do {
-        unsigned m, n, freq_shift;
-        if (i != sym_cnt && (b == e || (A[i] >> SDEFL_SYM_BITS) <= (A[b] >> SDEFL_SYM_BITS)))
-            m = i++;
-        else m = b++;
-        if (i != sym_cnt && (b == e || (A[i] >> SDEFL_SYM_BITS) <= (A[b] >> SDEFL_SYM_BITS)))
-            n = i++;
-        else n = b++;
+  unsigned i = 0, b = 0, e = 0;
+  do {
+    unsigned m, n, freq_shift;
+    if (i != sym_cnt && (b == e || (A[i] >> SDEFL_SYM_BITS) <= (A[b] >> SDEFL_SYM_BITS)))
+      m = i++;
+    else m = b++;
+    if (i != sym_cnt && (b == e || (A[i] >> SDEFL_SYM_BITS) <= (A[b] >> SDEFL_SYM_BITS)))
+      n = i++;
+    else n = b++;
 
-        freq_shift = (A[m] & ~SDEFL_SYM_MSK) + (A[n] & ~SDEFL_SYM_MSK);
-        A[m] = (A[m] & SDEFL_SYM_MSK) | (e << SDEFL_SYM_BITS);
-        A[n] = (A[n] & SDEFL_SYM_MSK) | (e << SDEFL_SYM_BITS);
-        A[e] = (A[e] & SDEFL_SYM_MSK) | freq_shift;
-    } while (sym_cnt - ++e > 1);
+    freq_shift = (A[m] & ~SDEFL_SYM_MSK) + (A[n] & ~SDEFL_SYM_MSK);
+    A[m] = (A[m] & SDEFL_SYM_MSK) | (e << SDEFL_SYM_BITS);
+    A[n] = (A[n] & SDEFL_SYM_MSK) | (e << SDEFL_SYM_BITS);
+    A[e] = (A[e] & SDEFL_SYM_MSK) | freq_shift;
+  } while (sym_cnt - ++e > 1);
 }
 static void
 sdefl_gen_len_cnt(unsigned *A, unsigned root, unsigned *len_cnt,
-                                    unsigned max_code_len) {
-    int n;
-    unsigned i;
-    for (i = 0; i <= max_code_len; i++)
-        len_cnt[i] = 0;
-    len_cnt[1] = 2;
+                  unsigned max_code_len) {
+  int n;
+  unsigned i;
+  for (i = 0; i <= max_code_len; i++)
+    len_cnt[i] = 0;
+  len_cnt[1] = 2;
 
-    A[root] &= SDEFL_SYM_MSK;
-    for (n = (int)root - 1; n >= 0; n--) {
-        unsigned p = A[n] >> SDEFL_SYM_BITS;
-        unsigned pdepth = A[p] >> SDEFL_SYM_BITS;
-        unsigned depth = pdepth + 1;
-        unsigned len = depth;
+  A[root] &= SDEFL_SYM_MSK;
+  for (n = (int)root - 1; n >= 0; n--) {
+    unsigned p = A[n] >> SDEFL_SYM_BITS;
+    unsigned pdepth = A[p] >> SDEFL_SYM_BITS;
+    unsigned depth = pdepth + 1;
+    unsigned len = depth;
 
-        A[n] = (A[n] & SDEFL_SYM_MSK) | (depth << SDEFL_SYM_BITS);
-        if (len >= max_code_len) {
-            len = max_code_len;
-            do len--; while (!len_cnt[len]);
-        }
-        len_cnt[len]--;
-        len_cnt[len+1] += 2;
+    A[n] = (A[n] & SDEFL_SYM_MSK) | (depth << SDEFL_SYM_BITS);
+    if (len >= max_code_len) {
+      len = max_code_len;
+      do len--; while (!len_cnt[len]);
     }
+    len_cnt[len]--;
+    len_cnt[len+1] += 2;
+  }
 }
 static void
 sdefl_gen_codes(unsigned *A, unsigned char *lens, const unsigned *len_cnt,
-                                unsigned max_code_word_len, unsigned sym_cnt) {
-    unsigned i, sym, len, nxt[SDEFL_MAX_CODE_LEN + 1];
-    for (i = 0, len = max_code_word_len; len >= 1; len--) {
-        unsigned cnt = len_cnt[len];
-        while (cnt--) lens[A[i++] & SDEFL_SYM_MSK] = (unsigned char)len;
-    }
-    nxt[0] = nxt[1] = 0;
-    for (len = 2; len <= max_code_word_len; len++)
-        nxt[len] = (nxt[len-1] + len_cnt[len-1]) << 1;
-    for (sym = 0; sym < sym_cnt; sym++)
-        A[sym] = nxt[lens[sym]]++;
+                unsigned max_code_word_len, unsigned sym_cnt) {
+  unsigned i, sym, len, nxt[SDEFL_MAX_CODE_LEN + 1];
+  for (i = 0, len = max_code_word_len; len >= 1; len--) {
+    unsigned cnt = len_cnt[len];
+    while (cnt--) lens[A[i++] & SDEFL_SYM_MSK] = (unsigned char)len;
+  }
+  nxt[0] = nxt[1] = 0;
+  for (len = 2; len <= max_code_word_len; len++)
+    nxt[len] = (nxt[len-1] + len_cnt[len-1]) << 1;
+  for (sym = 0; sym < sym_cnt; sym++)
+    A[sym] = nxt[lens[sym]]++;
 }
 static unsigned
 sdefl_rev(unsigned c, unsigned char n) {
-    c = ((c & 0x5555) << 1) | ((c & 0xAAAA) >> 1);
-    c = ((c & 0x3333) << 2) | ((c & 0xCCCC) >> 2);
-    c = ((c & 0x0F0F) << 4) | ((c & 0xF0F0) >> 4);
-    c = ((c & 0x00FF) << 8) | ((c & 0xFF00) >> 8);
-    return c >> (16-n);
+  c = ((c & 0x5555) << 1) | ((c & 0xAAAA) >> 1);
+  c = ((c & 0x3333) << 2) | ((c & 0xCCCC) >> 2);
+  c = ((c & 0x0F0F) << 4) | ((c & 0xF0F0) >> 4);
+  c = ((c & 0x00FF) << 8) | ((c & 0xFF00) >> 8);
+  return c >> (16-n);
 }
 static void
 sdefl_huff(unsigned char *lens, unsigned *codes, unsigned *freqs,
-                     unsigned num_syms, unsigned max_code_len) {
-    unsigned c, *A = codes;
-    unsigned len_cnt[SDEFL_MAX_CODE_LEN + 1];
-    unsigned used_syms = sdefl_sort_sym(num_syms, freqs, lens, A);
-    if (!used_syms) return;
-    if (used_syms == 1) {
-        unsigned s = A[0] & SDEFL_SYM_MSK;
-        unsigned i = s ? s : 1;
-        codes[0] = 0, lens[0] = 1;
-        codes[i] = 1, lens[i] = 1;
-        return;
-    }
-    sdefl_build_tree(A, used_syms);
-    sdefl_gen_len_cnt(A, used_syms-2, len_cnt, max_code_len);
-    sdefl_gen_codes(A, lens, len_cnt, max_code_len, num_syms);
-    for (c = 0; c < num_syms; c++) {
-        codes[c] = sdefl_rev(codes[c], lens[c]);
-    }
+           unsigned num_syms, unsigned max_code_len) {
+  unsigned c, *A = codes;
+  unsigned len_cnt[SDEFL_MAX_CODE_LEN + 1];
+  unsigned used_syms = sdefl_sort_sym(num_syms, freqs, lens, A);
+  if (!used_syms) return;
+  if (used_syms == 1) {
+    unsigned s = A[0] & SDEFL_SYM_MSK;
+    unsigned i = s ? s : 1;
+    codes[0] = 0, lens[0] = 1;
+    codes[i] = 1, lens[i] = 1;
+    return;
+  }
+  sdefl_build_tree(A, used_syms);
+  sdefl_gen_len_cnt(A, used_syms-2, len_cnt, max_code_len);
+  sdefl_gen_codes(A, lens, len_cnt, max_code_len, num_syms);
+  for (c = 0; c < num_syms; c++) {
+    codes[c] = sdefl_rev(codes[c], lens[c]);
+  }
 }
 struct sdefl_symcnt {
-    int items;
-    int lit;
-    int off;
+  int items;
+  int lit;
+  int off;
 };
 static void
 sdefl_precode(struct sdefl_symcnt *cnt, unsigned *freqs, unsigned *items,
-                            const unsigned char *litlen, const unsigned char *offlen) {
-    unsigned *at = items;
-    unsigned run_start = 0;
+              const unsigned char *litlen, const unsigned char *offlen) {
+  unsigned *at = items;
+  unsigned run_start = 0;
 
-    unsigned total = 0;
-    unsigned char lens[SDEFL_SYM_MAX + SDEFL_OFF_MAX];
-    for (cnt->lit = SDEFL_SYM_MAX; cnt->lit > 257; cnt->lit--)
-        if (litlen[cnt->lit - 1]) break;
-    for (cnt->off = SDEFL_OFF_MAX; cnt->off > 1; cnt->off--)
-        if (offlen[cnt->off - 1]) break;
+  unsigned total = 0;
+  unsigned char lens[SDEFL_SYM_MAX + SDEFL_OFF_MAX];
+  for (cnt->lit = SDEFL_SYM_MAX; cnt->lit > 257; cnt->lit--)
+    if (litlen[cnt->lit - 1]) break;
+  for (cnt->off = SDEFL_OFF_MAX; cnt->off > 1; cnt->off--)
+    if (offlen[cnt->off - 1]) break;
 
-    total = (unsigned)(cnt->lit + cnt->off);
-    memcpy(lens, litlen, sizeof(unsigned char) * (size_t)cnt->lit);
-    memcpy(lens + cnt->lit, offlen, sizeof(unsigned char) * (size_t)cnt->off);
-    do {
-        unsigned len = lens[run_start];
-        unsigned run_end = run_start;
-        do run_end++; while (run_end != total && len == lens[run_end]);
-        if (!len) {
-            while ((run_end - run_start) >= 11) {
-                unsigned n = (run_end - run_start) - 11;
-                unsigned xbits =    n < 0x7f ? n : 0x7f;
-                freqs[18]++;
-                *at++ = 18u | (xbits << 5u);
-                run_start += 11 + xbits;
-            }
-            if ((run_end - run_start) >= 3) {
-                unsigned n = (run_end - run_start) - 3;
-                unsigned xbits =    n < 0x7 ? n : 0x7;
-                freqs[17]++;
-                *at++ = 17u | (xbits << 5u);
-                run_start += 3 + xbits;
-            }
-        } else if ((run_end - run_start) >= 4) {
-            freqs[len]++;
-            *at++ = len;
-            run_start++;
-            do {
-                unsigned xbits = (run_end - run_start) - 3;
-                xbits = xbits < 0x03 ? xbits : 0x03;
-                *at++ = 16 | (xbits << 5);
-                run_start += 3 + xbits;
-                freqs[16]++;
-            } while ((run_end - run_start) >= 3);
-        }
-        while (run_start != run_end) {
-            freqs[len]++;
-            *at++ = len;
-            run_start++;
-        }
-    } while (run_start != total);
-    cnt->items = (int)(at - items);
+  total = (unsigned)(cnt->lit + cnt->off);
+  memcpy(lens, litlen, sizeof(unsigned char) * (size_t)cnt->lit);
+  memcpy(lens + cnt->lit, offlen, sizeof(unsigned char) * (size_t)cnt->off);
+  do {
+    unsigned len = lens[run_start];
+    unsigned run_end = run_start;
+    do run_end++; while (run_end != total && len == lens[run_end]);
+    if (!len) {
+      while ((run_end - run_start) >= 11) {
+        unsigned n = (run_end - run_start) - 11;
+        unsigned xbits =  n < 0x7f ? n : 0x7f;
+        freqs[18]++;
+        *at++ = 18u | (xbits << 5u);
+        run_start += 11 + xbits;
+      }
+      if ((run_end - run_start) >= 3) {
+        unsigned n = (run_end - run_start) - 3;
+        unsigned xbits =  n < 0x7 ? n : 0x7;
+        freqs[17]++;
+        *at++ = 17u | (xbits << 5u);
+        run_start += 3 + xbits;
+      }
+    } else if ((run_end - run_start) >= 4) {
+      freqs[len]++;
+      *at++ = len;
+      run_start++;
+      do {
+        unsigned xbits = (run_end - run_start) - 3;
+        xbits = xbits < 0x03 ? xbits : 0x03;
+        *at++ = 16 | (xbits << 5);
+        run_start += 3 + xbits;
+        freqs[16]++;
+      } while ((run_end - run_start) >= 3);
+    }
+    while (run_start != run_end) {
+      freqs[len]++;
+      *at++ = len;
+      run_start++;
+    }
+  } while (run_start != total);
+  cnt->items = (int)(at - items);
 }
-struct sdefl_match_codes {
-    int ls, lc;
-    int dc, dx;
+struct sdefl_match_codest {
+  int ls, lc;
+  int dc, dx;
 };
 static void
-sdefl_match_codes(struct sdefl_match_codes *cod, int dist, int len) {
-    static const short dxmax[] = {0,6,12,24,48,96,192,384,768,1536,3072,6144,12288,24576};
-    static const unsigned char lslot[258+1] = {
-        0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 12,
-        12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 16,
-        16, 16, 16, 17, 17, 17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18,
-        18, 19, 19, 19, 19, 19, 19, 19, 19, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-        20, 20, 20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21,
-        21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22,
-        22, 22, 22, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-        23, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
-        24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 25, 25, 25,
-        25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
-        25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 26, 26, 26, 26, 26, 26, 26,
-        26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26,
-        26, 26, 26, 26, 26, 26, 26, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
-        27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
-        27, 27, 28
-    };
-    assert(len <= 258);
-    assert(dist <= 32768);
-    cod->ls = lslot[len];
-    cod->lc = 257 + cod->ls;
-    assert(cod->lc <= 285);
+sdefl_match_codes(struct sdefl_match_codest *cod, int dist, int len) {
+  static const short dxmax[] = {0,6,12,24,48,96,192,384,768,1536,3072,6144,12288,24576};
+  static const unsigned char lslot[258+1] = {
+    0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 12,
+    12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 16,
+    16, 16, 16, 17, 17, 17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18,
+    18, 19, 19, 19, 19, 19, 19, 19, 19, 20, 20, 20, 20, 20, 20, 20, 20, 20,
+    20, 20, 20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21,
+    21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22,
+    22, 22, 22, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+    23, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
+    24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 25, 25, 25,
+    25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+    25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 26, 26, 26, 26, 26, 26, 26,
+    26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26,
+    26, 26, 26, 26, 26, 26, 26, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+    27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+    27, 27, 28
+  };
+  assert(len <= 258);
+  assert(dist <= 32768);
+  cod->ls = lslot[len];
+  cod->lc = 257 + cod->ls;
+  assert(cod->lc <= 285);
 
-    cod->dx = sdefl_ilog2(sdefl_npow2(dist) >> 2);
-    cod->dc = cod->dx ? ((cod->dx + 1) << 1) + (dist > dxmax[cod->dx]) : dist-1;
+  cod->dx = sdefl_ilog2(sdefl_npow2(dist) >> 2);
+  cod->dc = cod->dx ? ((cod->dx + 1) << 1) + (dist > dxmax[cod->dx]) : dist-1;
+}
+enum sdefl_blk_type {
+  SDEFL_BLK_UCOMPR,
+  SDEFL_BLK_DYN
+};
+static enum sdefl_blk_type
+sdefl_blk_type(const struct sdefl *s, int blk_len, int pre_item_len,
+               const unsigned *pre_freq, const unsigned char *pre_len) {
+  static const unsigned char x_pre_bits[] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,3,7};
+  static const unsigned char x_len_bits[] = {0,0,0,0,0,0,0,0, 1,1,1,1,2,2,2,2,
+    3,3,3,3,4,4,4,4, 5,5,5,5,0};
+  static const unsigned char x_off_bits[] = {0,0,0,0,1,1,2,2, 3,3,4,4,5,5,6,6,
+    7,7,8,8,9,9,10,10, 11,11,12,12,13,13};
+
+  int dyn_cost = 0;
+  int fix_cost = 0;
+  int sym = 0;
+
+  dyn_cost += 5 + 5 + 4 + (3 * pre_item_len);
+  for (sym = 0; sym < SDEFL_PRE_MAX; sym++)
+    dyn_cost += pre_freq[sym] * (x_pre_bits[sym] + pre_len[sym]);
+  for (sym = 0; sym < 256; sym++)
+    dyn_cost += s->freq.lit[sym] * s->cod.len.lit[sym];
+  dyn_cost += s->cod.len.lit[SDEFL_EOB];
+  for (sym = 257; sym < 286; sym++)
+    dyn_cost += s->freq.lit[sym] * (x_len_bits[sym - 257] + s->cod.len.lit[sym]);
+  for (sym = 0; sym < 30; sym++)
+    dyn_cost += s->freq.off[sym] * (x_off_bits[sym] + s->cod.len.off[sym]);
+
+  fix_cost += 8*(5 * sdefl_div_round_up(blk_len, SDEFL_RAW_BLK_SIZE) + blk_len + 1 + 2);
+  return (dyn_cost < fix_cost) ? SDEFL_BLK_DYN : SDEFL_BLK_UCOMPR;
+}
+static void
+sdefl_put16(unsigned char **dst, unsigned short x) {
+  unsigned char *val = *dst;
+  val[0] = (unsigned char)(x & 0xff);
+  val[1] = (unsigned char)(x >> 8);
+  *dst = val + 2;
 }
 static void
 sdefl_match(unsigned char **dst, struct sdefl *s, int dist, int len) {
-    static const char lxn[] = {0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0};
-    static const short lmin[] = {3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,
-            51,59,67,83,99,115,131,163,195,227,258};
-    static const short dmin[] = {1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,
-            385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577};
+  static const char lxn[] = {0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0};
+  static const short lmin[] = {3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,
+      51,59,67,83,99,115,131,163,195,227,258};
+  static const short dmin[] = {1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,
+      385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577};
 
-    struct sdefl_match_codes cod;
-    sdefl_match_codes(&cod, dist, len);
-    sdefl_put(dst, s, (int)s->cod.word.lit[cod.lc], s->cod.len.lit[cod.lc]);
-    sdefl_put(dst, s, len - lmin[cod.ls], lxn[cod.ls]);
-    sdefl_put(dst, s, (int)s->cod.word.off[cod.dc], s->cod.len.off[cod.dc]);
-    sdefl_put(dst, s, dist - dmin[cod.dc], cod.dx);
+  struct sdefl_match_codest cod;
+  sdefl_match_codes(&cod, dist, len);
+  sdefl_put(dst, s, (int)s->cod.word.lit[cod.lc], s->cod.len.lit[cod.lc]);
+  sdefl_put(dst, s, len - lmin[cod.ls], lxn[cod.ls]);
+  sdefl_put(dst, s, (int)s->cod.word.off[cod.dc], s->cod.len.off[cod.dc]);
+  sdefl_put(dst, s, dist - dmin[cod.dc], cod.dx);
 }
 static void
 sdefl_flush(unsigned char **dst, struct sdefl *s, int is_last,
-                        const unsigned char *in) {
-    int j, i = 0, item_cnt = 0;
-    struct sdefl_symcnt symcnt = {0};
-    unsigned codes[SDEFL_PRE_MAX];
-    unsigned char lens[SDEFL_PRE_MAX];
-    unsigned freqs[SDEFL_PRE_MAX] = {0};
-    unsigned items[SDEFL_SYM_MAX + SDEFL_OFF_MAX];
-    static const unsigned char perm[SDEFL_PRE_MAX] = {16,17,18,0,8,7,9,6,10,5,11,
-            4,12,3,13,2,14,1,15};
+            const unsigned char *in, int blk_begin, int blk_end) {
+  int blk_len = blk_end - blk_begin;
+  int j, i = 0, item_cnt = 0;
+  struct sdefl_symcnt symcnt = {0};
+  unsigned codes[SDEFL_PRE_MAX];
+  unsigned char lens[SDEFL_PRE_MAX];
+  unsigned freqs[SDEFL_PRE_MAX] = {0};
+  unsigned items[SDEFL_SYM_MAX + SDEFL_OFF_MAX];
+  static const unsigned char perm[SDEFL_PRE_MAX] = {16,17,18,0,8,7,9,6,10,5,11,
+      4,12,3,13,2,14,1,15};
 
-    /* huffman codes */
-    s->freq.lit[SDEFL_EOB]++;
-    sdefl_huff(s->cod.len.lit, s->cod.word.lit, s->freq.lit, SDEFL_SYM_MAX, SDEFL_LIT_LEN_CODES);
-    sdefl_huff(s->cod.len.off, s->cod.word.off, s->freq.off, SDEFL_OFF_MAX, SDEFL_OFF_CODES);
-    sdefl_precode(&symcnt, freqs, items, s->cod.len.lit, s->cod.len.off);
-    sdefl_huff(lens, codes, freqs, SDEFL_PRE_MAX, SDEFL_PRE_CODES);
-    for (item_cnt = SDEFL_PRE_MAX; item_cnt > 4; item_cnt--) {
-        if (lens[perm[item_cnt - 1]]){
-            break;
-        }
+  /* calculate huffman codes */
+  s->freq.lit[SDEFL_EOB]++;
+  sdefl_huff(s->cod.len.lit, s->cod.word.lit, s->freq.lit, SDEFL_SYM_MAX, SDEFL_LIT_LEN_CODES);
+  sdefl_huff(s->cod.len.off, s->cod.word.off, s->freq.off, SDEFL_OFF_MAX, SDEFL_OFF_CODES);
+  sdefl_precode(&symcnt, freqs, items, s->cod.len.lit, s->cod.len.off);
+  sdefl_huff(lens, codes, freqs, SDEFL_PRE_MAX, SDEFL_PRE_CODES);
+  for (item_cnt = SDEFL_PRE_MAX; item_cnt > 4; item_cnt--) {
+    if (lens[perm[item_cnt - 1]]){
+      break;
     }
-    /* block header */
-    sdefl_put(dst, s, is_last ? 0x01 : 0x00, 1); /* block */
+  }
+  /* write block */
+  switch (sdefl_blk_type(s, blk_len, item_cnt, freqs, lens)) {
+  case SDEFL_BLK_UCOMPR: {
+    /* uncompressed blocks */
+    int n = sdefl_div_round_up(blk_len, SDEFL_RAW_BLK_SIZE);
+    for (i = 0; i < n; ++i) {
+      int fin = is_last && (i + 1 == n);
+      int amount = blk_len < SDEFL_RAW_BLK_SIZE ? blk_len : SDEFL_RAW_BLK_SIZE;
+      sdefl_put(dst, s, !!fin, 1); /* block */
+      sdefl_put(dst, s, 0x00, 2); /* stored block */
+      if (s->bitcnt) {
+        sdefl_put(dst, s, 0x00, 8 - s->bitcnt);
+      }
+      assert(s->bitcnt == 0);
+      sdefl_put16(dst, (unsigned short)amount);
+      sdefl_put16(dst, ~(unsigned short)amount);
+      memcpy(*dst, in + blk_begin + i * SDEFL_RAW_BLK_SIZE, amount);
+      *dst = *dst + amount;
+      blk_len -= amount;
+    }
+  } break;
+  case SDEFL_BLK_DYN: {
+    /* dynamic huffman block */
+    sdefl_put(dst, s, !!is_last, 1); /* block */
     sdefl_put(dst, s, 0x02, 2); /* dynamic huffman */
     sdefl_put(dst, s, symcnt.lit - 257, 5);
     sdefl_put(dst, s, symcnt.off - 1, 5);
     sdefl_put(dst, s, item_cnt - 4, 4);
     for (i = 0; i < item_cnt; ++i) {
-        sdefl_put(dst, s, lens[perm[i]], 3);
+      sdefl_put(dst, s, lens[perm[i]], 3);
     }
     for (i = 0; i < symcnt.items; ++i) {
-        unsigned sym = items[i] & 0x1F;
-        sdefl_put(dst, s, (int)codes[sym], lens[sym]);
-        if (sym < 16) continue;
-        if (sym == 16) sdefl_put(dst, s, items[i] >> 5, 2);
-        else if(sym == 17) sdefl_put(dst, s, items[i] >> 5, 3);
-        else sdefl_put(dst, s, items[i] >> 5, 7);
+      unsigned sym = items[i] & 0x1F;
+      sdefl_put(dst, s, (int)codes[sym], lens[sym]);
+      if (sym < 16) continue;
+      if (sym == 16) sdefl_put(dst, s, items[i] >> 5, 2);
+      else if(sym == 17) sdefl_put(dst, s, items[i] >> 5, 3);
+      else sdefl_put(dst, s, items[i] >> 5, 7);
     }
     /* block sequences */
     for (i = 0; i < s->seq_cnt; ++i) {
-        if (s->seq[i].off >= 0) {
-            for (j = 0; j < s->seq[i].len; ++j) {
-                int c = in[s->seq[i].off + j];
-                sdefl_put(dst, s, (int)s->cod.word.lit[c], s->cod.len.lit[c]);
-            }
-        } else {
-            sdefl_match(dst, s, -s->seq[i].off, s->seq[i].len);
+      if (s->seq[i].off >= 0) {
+        for (j = 0; j < s->seq[i].len; ++j) {
+          int c = in[s->seq[i].off + j];
+          sdefl_put(dst, s, (int)s->cod.word.lit[c], s->cod.len.lit[c]);
         }
+      } else {
+        sdefl_match(dst, s, -s->seq[i].off, s->seq[i].len);
+      }
     }
     sdefl_put(dst, s, (int)(s)->cod.word.lit[SDEFL_EOB], (s)->cod.len.lit[SDEFL_EOB]);
-    memset(&s->freq, 0, sizeof(s->freq));
-    s->seq_cnt = 0;
+  } break;}
+  memset(&s->freq, 0, sizeof(s->freq));
+  s->seq_cnt = 0;
 }
 static void
 sdefl_seq(struct sdefl *s, int off, int len) {
-    assert(s->seq_cnt + 2 < SDEFL_SEQ_SIZ);
-    s->seq[s->seq_cnt].off = off;
-    s->seq[s->seq_cnt].len = len;
-    s->seq_cnt++;
+  assert(s->seq_cnt + 2 < SDEFL_SEQ_SIZ);
+  s->seq[s->seq_cnt].off = off;
+  s->seq[s->seq_cnt].len = len;
+  s->seq_cnt++;
 }
 static void
 sdefl_reg_match(struct sdefl *s, int off, int len) {
-    struct sdefl_match_codes cod;
-    sdefl_match_codes(&cod, off, len);
-    s->freq.lit[cod.lc]++;
-    s->freq.off[cod.dc]++;
+  struct sdefl_match_codest cod;
+  sdefl_match_codes(&cod, off, len);
+
+  assert(cod.lc < SDEFL_SYM_MAX);
+  assert(cod.dc < SDEFL_OFF_MAX);
+
+  s->freq.lit[cod.lc]++;
+  s->freq.off[cod.dc]++;
 }
 struct sdefl_match {
-    int off;
-    int len;
+  int off;
+  int len;
 };
 static void
-sdefl_fnd(struct sdefl_match *m, const struct sdefl *s,
-                    int chain_len, int max_match, const unsigned char *in, int p) {
-    int i = s->tbl[sdefl_hash32(&in[p])];
-    int limit = ((p-SDEFL_WIN_SIZ)<SDEFL_NIL)?SDEFL_NIL:(p-SDEFL_WIN_SIZ);
-    while (i > limit) {
-        if (in[i+m->len] == in[p+m->len] &&
-                (sdefl_uload32(&in[i]) == sdefl_uload32(&in[p]))){
-            int n = SDEFL_MIN_MATCH;
-            while (n < max_match && in[i+n] == in[p+n]) n++;
-            if (n > m->len) {
-                m->len = n, m->off = p - i;
-                if (n == max_match) break;
-            }
-        }
-        if (!(--chain_len)) break;
-        i = s->prv[i&SDEFL_WIN_MSK];
+sdefl_fnd(struct sdefl_match *m, const struct sdefl *s, int chain_len,
+          int max_match, const unsigned char *in, int p, int e) {
+  int i = s->tbl[sdefl_hash32(in + p)];
+  int limit = ((p - SDEFL_WIN_SIZ) < SDEFL_NIL) ? SDEFL_NIL : (p-SDEFL_WIN_SIZ);
+
+  assert(p < e);
+  assert(p + max_match <= e);
+  while (i > limit) {
+    assert(i + m->len < e);
+    assert(p + m->len < e);
+    assert(i + SDEFL_MIN_MATCH < e);
+    assert(p + SDEFL_MIN_MATCH < e);
+
+    if (in[i + m->len] == in[p + m->len] &&
+      (sdefl_uload32(&in[i]) == sdefl_uload32(&in[p]))) {
+      int n = SDEFL_MIN_MATCH;
+      while (n < max_match && in[i + n] == in[p + n]) {
+        assert(i + n < e);
+        assert(p + n < e);
+        n++;
+      }
+      if (n > m->len) {
+        m->len = n, m->off = p - i;
+        if (n == max_match)
+          break;
+      }
     }
+    if (!(--chain_len)) break;
+    i = s->prv[i & SDEFL_WIN_MSK];
+  }
 }
 static int
 sdefl_compr(struct sdefl *s, unsigned char *out, const unsigned char *in,
-                        int in_len, int lvl) {
-    unsigned char *q = out;
-    static const unsigned char pref[] = {8,10,14,24,30,48,65,96,130};
-    int max_chain = (lvl < 8) ? (1 << (lvl + 1)): (1 << 13);
-    int n, i = 0, litlen = 0;
-    for (n = 0; n < SDEFL_HASH_SIZ; ++n) {
-        s->tbl[n] = SDEFL_NIL;
-    }
-    do {int blk_end = ((i + SDEFL_BLK_MAX) < in_len) ? (i + SDEFL_BLK_MAX) : in_len;
-        while (i < blk_end) {
-            struct sdefl_match m = {0};
-            int left = blk_end - i;
-            int max_match = (left >= SDEFL_MAX_MATCH) ? SDEFL_MAX_MATCH : left;
-            int nice_match = pref[lvl] < max_match ? pref[lvl] : max_match;
-            int run = 1, inc = 1, run_inc = 0;
-            if (max_match > SDEFL_MIN_MATCH) {
-                sdefl_fnd(&m, s, max_chain, max_match, in, i);
-            }
-            if (lvl >= 5 && m.len >= SDEFL_MIN_MATCH && m.len < nice_match){
-                struct sdefl_match m2 = {0};
-                sdefl_fnd(&m2, s, max_chain, m.len+1, in, i+1);
-                m.len = (m2.len > m.len) ? 0 : m.len;
-            }
-            if (m.len >= SDEFL_MIN_MATCH) {
-                if (litlen) {
-                    sdefl_seq(s, i - litlen, litlen);
-                    litlen = 0;
-                }
-                sdefl_seq(s, -m.off, m.len);
-                sdefl_reg_match(s, m.off, m.len);
-                if (lvl < 2 && m.len >= nice_match) {
-                    inc = m.len;
-                } else {
-                    run = m.len;
-                }
-            } else {
-                s->freq.lit[in[i]]++;
-                litlen++;
-            }
-            run_inc = run * inc;
-            if (in_len - (i + run_inc) > SDEFL_MIN_MATCH) {
-                while (run-- > 0) {
-                    unsigned h = sdefl_hash32(&in[i]);
-                    s->prv[i&SDEFL_WIN_MSK] = s->tbl[h];
-                    s->tbl[h] = i, i += inc;
-                    assert(i <= blk_end);
-                }
-            } else {
-                i += run_inc;
-                assert(i <= blk_end);
-            }
-        }
+            int in_len, int lvl) {
+  unsigned char *q = out;
+  static const unsigned char pref[] = {8,10,14,24,30,48,65,96,130};
+  int max_chain = (lvl < 8) ? (1 << (lvl + 1)): (1 << 13);
+  int n, i = 0, litlen = 0;
+  for (n = 0; n < SDEFL_HASH_SIZ; ++n) {
+    s->tbl[n] = SDEFL_NIL;
+  }
+  do {int blk_begin = i;
+    int blk_end = ((i + SDEFL_BLK_MAX) < in_len) ? (i + SDEFL_BLK_MAX) : in_len;
+    while (i < blk_end) {
+      struct sdefl_match m = {0};
+      int left = blk_end - i;
+      int max_match = (left > SDEFL_MAX_MATCH) ? SDEFL_MAX_MATCH : left;
+      int nice_match = pref[lvl] < max_match ? pref[lvl] : max_match;
+      int run = 1, inc = 1, run_inc = 0;
+      if (max_match > SDEFL_MIN_MATCH) {
+        sdefl_fnd(&m, s, max_chain, max_match, in, i, in_len);
+      }
+      if (lvl >= 5 && m.len >= SDEFL_MIN_MATCH && m.len + 1 < nice_match){
+        struct sdefl_match m2 = {0};
+        sdefl_fnd(&m2, s, max_chain, m.len + 1, in, i + 1, in_len);
+        m.len = (m2.len > m.len) ? 0 : m.len;
+      }
+      if (m.len >= SDEFL_MIN_MATCH) {
         if (litlen) {
-            sdefl_seq(s, i - litlen, litlen);
-            litlen = 0;
+          sdefl_seq(s, i - litlen, litlen);
+          litlen = 0;
         }
-        sdefl_flush(&q, s, blk_end == in_len, in);
-    } while (i < in_len);
-
-    if (s->bitcnt > 0)
-        sdefl_put(&q, s, 0x00, 8 - s->bitcnt);
-
-    return (int)(q - out);
+        sdefl_seq(s, -m.off, m.len);
+        sdefl_reg_match(s, m.off, m.len);
+        if (lvl < 2 && m.len >= nice_match) {
+          inc = m.len;
+        } else {
+          run = m.len;
+        }
+      } else {
+        s->freq.lit[in[i]]++;
+        litlen++;
+      }
+      run_inc = run * inc;
+      if (in_len - (i + run_inc) > SDEFL_MIN_MATCH) {
+        while (run-- > 0) {
+          unsigned h = sdefl_hash32(&in[i]);
+          s->prv[i&SDEFL_WIN_MSK] = s->tbl[h];
+          s->tbl[h] = i, i += inc;
+          assert(i <= blk_end);
+        }
+      } else {
+        i += run_inc;
+        assert(i <= blk_end);
+      }
+    }
+    if (litlen) {
+      sdefl_seq(s, i - litlen, litlen);
+      litlen = 0;
+    }
+    sdefl_flush(&q, s, blk_end == in_len, in, blk_begin, blk_end);
+  } while (i < in_len);
+  if (s->bitcnt) {
+    sdefl_put(&q, s, 0x00, 8 - s->bitcnt);
+  }
+  assert(s->bitcnt == 0);
+  return (int)(q - out);
 }
 extern int
 sdeflate(struct sdefl *s, void *out, const void *in, int n, int lvl) {
-    s->bits = s->bitcnt = 0;
-    return sdefl_compr(s, (unsigned char*)out, (const unsigned char*)in, n, lvl);
+  s->bits = s->bitcnt = 0;
+  return sdefl_compr(s, (unsigned char*)out, (const unsigned char*)in, n, lvl);
 }
 static unsigned
 sdefl_adler32(unsigned adler32, const unsigned char *in, int in_len) {
-    #define SDEFL_ADLER_INIT (1)
-    const unsigned ADLER_MOD = 65521;
-    unsigned s1 = adler32 & 0xffff;
-    unsigned s2 = adler32 >> 16;
-    unsigned blk_len, i;
+  #define SDEFL_ADLER_INIT (1)
+  const unsigned ADLER_MOD = 65521;
+  unsigned s1 = adler32 & 0xffff;
+  unsigned s2 = adler32 >> 16;
+  unsigned blk_len, i;
 
-    blk_len = in_len % 5552;
-    while (in_len) {
-        for (i = 0; i + 7 < blk_len; i += 8) {
-            s1 += in[0]; s2 += s1;
-            s1 += in[1]; s2 += s1;
-            s1 += in[2]; s2 += s1;
-            s1 += in[3]; s2 += s1;
-            s1 += in[4]; s2 += s1;
-            s1 += in[5]; s2 += s1;
-            s1 += in[6]; s2 += s1;
-            s1 += in[7]; s2 += s1;
-            in += 8;
-        }
-        for (; i < blk_len; ++i) {
-            s1 += *in++, s2 += s1;
-        }
-        s1 %= ADLER_MOD;
-        s2 %= ADLER_MOD;
-        in_len -= blk_len;
-        blk_len = 5552;
+  blk_len = in_len % 5552;
+  while (in_len) {
+    for (i = 0; i + 7 < blk_len; i += 8) {
+      s1 += in[0]; s2 += s1;
+      s1 += in[1]; s2 += s1;
+      s1 += in[2]; s2 += s1;
+      s1 += in[3]; s2 += s1;
+      s1 += in[4]; s2 += s1;
+      s1 += in[5]; s2 += s1;
+      s1 += in[6]; s2 += s1;
+      s1 += in[7]; s2 += s1;
+      in += 8;
     }
-    return (unsigned)(s2 << 16) + (unsigned)s1;
+    for (; i < blk_len; ++i) {
+      s1 += *in++, s2 += s1;
+    }
+    s1 %= ADLER_MOD;
+    s2 %= ADLER_MOD;
+    in_len -= blk_len;
+    blk_len = 5552;
+  }
+  return (unsigned)(s2 << 16) + (unsigned)s1;
 }
 extern int
 zsdeflate(struct sdefl *s, void *out, const void *in, int n, int lvl) {
-    int p = 0;
-    unsigned a = 0;
-    unsigned char *q = (unsigned char*)out;
+  int p = 0;
+  unsigned a = 0;
+  unsigned char *q = (unsigned char*)out;
 
-    s->bits = s->bitcnt = 0;
-    sdefl_put(&q, s, 0x78, 8); /* deflate, 32k window */
-    sdefl_put(&q, s, 0x01, 8); /* fast compression */
-    q += sdefl_compr(s, q, (const unsigned char*)in, n, lvl);
+  s->bits = s->bitcnt = 0;
+  sdefl_put(&q, s, 0x78, 8); /* deflate, 32k window */
+  sdefl_put(&q, s, 0x01, 8); /* fast compression */
+  q += sdefl_compr(s, q, (const unsigned char*)in, n, lvl);
 
-    /* append adler checksum */
-    a = sdefl_adler32(SDEFL_ADLER_INIT, (const unsigned char*)in, n);
-    for (p = 0; p < 4; ++p) {
-        sdefl_put(&q, s, (a >> 24) & 0xFF, 8);
-        a <<= 8;
-    }
-    return (int)(q - (unsigned char*)out);
+  /* append adler checksum */
+  a = sdefl_adler32(SDEFL_ADLER_INIT, (const unsigned char*)in, n);
+  for (p = 0; p < 4; ++p) {
+    sdefl_put(&q, s, (a >> 24) & 0xFF, 8);
+    a <<= 8;
+  }
+  return (int)(q - (unsigned char*)out);
 }
 extern int
 sdefl_bound(int len) {
-    int a = 128 + (len * 110) / 100;
-    int b = 128 + len + ((len / (31 * 1024)) + 1) * 5;
-    return (a > b) ? a : b;
+  int max_blocks = 1 + sdefl_div_round_up(len, SDEFL_RAW_BLK_SIZE);
+  int bound = 5 * max_blocks + len + 1 + 4 + 8;
+  return bound;
 }
-
 #endif /* SDEFL_IMPLEMENTATION */
+
 
 //=========================================================================
 //                           SINFL
@@ -2507,465 +2589,471 @@ sdefl_bound(int len) {
 #include <assert.h> /* assert */
 
 #if defined(__GNUC__) || defined(__clang__)
-#define sinfl_likely(x)         __builtin_expect((x),1)
-#define sinfl_unlikely(x)       __builtin_expect((x),0)
+#define sinfl_likely(x)       __builtin_expect((x),1)
+#define sinfl_unlikely(x)     __builtin_expect((x),0)
 #else
-#define sinfl_likely(x)         (x)
-#define sinfl_unlikely(x)       (x)
+#define sinfl_likely(x)       (x)
+#define sinfl_unlikely(x)     (x)
 #endif
 
 #ifndef SINFL_NO_SIMD
 #if defined(__x86_64__) || defined(_WIN32) || defined(_WIN64)
-    #include <emmintrin.h>
-    #define sinfl_char16 __m128i
-    #define sinfl_char16_ld(p) _mm_loadu_si128((const __m128i *)(void*)(p))
-    #define sinfl_char16_str(d,v)    _mm_storeu_si128((__m128i*)(void*)(d), v)
-    #define sinfl_char16_char(c) _mm_set1_epi8(c)
+  #include <emmintrin.h>
+  #define sinfl_char16 __m128i
+  #define sinfl_char16_ld(p) _mm_loadu_si128((const __m128i *)(void*)(p))
+  #define sinfl_char16_str(d,v)  _mm_storeu_si128((__m128i*)(void*)(d), v)
+  #define sinfl_char16_char(c) _mm_set1_epi8(c)
 #elif defined(__arm__) || defined(__aarch64__)
-    #include <arm_neon.h>
-    #define sinfl_char16 uint8x16_t
-    #define sinfl_char16_ld(p) vld1q_u8((const unsigned char*)(p))
-    #define sinfl_char16_str(d,v) vst1q_u8((unsigned char*)(d), v)
-    #define sinfl_char16_char(c) vdupq_n_u8(c)
+  #include <arm_neon.h>
+  #define sinfl_char16 uint8x16_t
+  #define sinfl_char16_ld(p) vld1q_u8((const unsigned char*)(p))
+  #define sinfl_char16_str(d,v) vst1q_u8((unsigned char*)(d), v)
+  #define sinfl_char16_char(c) vdupq_n_u8(c)
 #else
-    #define SINFL_NO_SIMD
+  #define SINFL_NO_SIMD
 #endif
 #endif
 
 static int
 sinfl_bsr(unsigned n) {
 #ifdef _MSC_VER
-    _BitScanReverse(&n, n);
-    return n;
+  _BitScanReverse(&n, n);
+  return n;
 #elif defined(__GNUC__) || defined(__clang__)
-    return 31 - __builtin_clz(n);
+  return 31 - __builtin_clz(n);
 #endif
 }
 static unsigned long long
 sinfl_read64(const void *p) {
-    unsigned long long n;
-    memcpy(&n, p, 8);
-    return n;
+  unsigned long long n;
+  memcpy(&n, p, 8);
+  return n;
 }
 static void
 sinfl_copy64(unsigned char **dst, unsigned char **src) {
-    unsigned long long n;
-    memcpy(&n, *src, 8);
-    memcpy(*dst, &n, 8);
-    *dst += 8, *src += 8;
+  unsigned long long n;
+  memcpy(&n, *src, 8);
+  memcpy(*dst, &n, 8);
+  *dst += 8, *src += 8;
 }
 static unsigned char*
 sinfl_write64(unsigned char *dst, unsigned long long w) {
-    memcpy(dst, &w, 8);
-    return dst + 8;
+  memcpy(dst, &w, 8);
+  return dst + 8;
 }
 #ifndef SINFL_NO_SIMD
 static unsigned char*
 sinfl_write128(unsigned char *dst, sinfl_char16 w) {
-    sinfl_char16_str(dst, w);
-    return dst + 8;
+  sinfl_char16_str(dst, w);
+  return dst + 8;
 }
 static void
 sinfl_copy128(unsigned char **dst, unsigned char **src) {
-    sinfl_char16 n = sinfl_char16_ld(*src);
-    sinfl_char16_str(*dst, n);
-    *dst += 16, *src += 16;
+  sinfl_char16 n = sinfl_char16_ld(*src);
+  sinfl_char16_str(*dst, n);
+  *dst += 16, *src += 16;
 }
 #endif
 static void
 sinfl_refill(struct sinfl *s) {
-    s->bitbuf |= sinfl_read64(s->bitptr) << s->bitcnt;
-    s->bitptr += (63 - s->bitcnt) >> 3;
-    s->bitcnt |= 56; /* bitcount in range [56,63] */
+  s->bitbuf |= sinfl_read64(s->bitptr) << s->bitcnt;
+  s->bitptr += (63 - s->bitcnt) >> 3;
+  s->bitcnt |= 56; /* bitcount in range [56,63] */
 }
 static int
 sinfl_peek(struct sinfl *s, int cnt) {
-    assert(cnt >= 0 && cnt <= 56);
-    assert(cnt <= s->bitcnt);
-    return s->bitbuf & ((1ull << cnt) - 1);
+  assert(cnt >= 0 && cnt <= 56);
+  assert(cnt <= s->bitcnt);
+  return s->bitbuf & ((1ull << cnt) - 1);
 }
 static void
 sinfl_eat(struct sinfl *s, int cnt) {
-    assert(cnt <= s->bitcnt);
-    s->bitbuf >>= cnt;
-    s->bitcnt -= cnt;
+  assert(cnt <= s->bitcnt);
+  s->bitbuf >>= cnt;
+  s->bitcnt -= cnt;
 }
 static int
 sinfl__get(struct sinfl *s, int cnt) {
-    int res = sinfl_peek(s, cnt);
-    sinfl_eat(s, cnt);
-    return res;
+  int res = sinfl_peek(s, cnt);
+  sinfl_eat(s, cnt);
+  return res;
 }
 static int
 sinfl_get(struct sinfl *s, int cnt) {
-    sinfl_refill(s);
-    return sinfl__get(s, cnt);
+  sinfl_refill(s);
+  return sinfl__get(s, cnt);
 }
 struct sinfl_gen {
-    int len;
-    int cnt;
-    int word;
-    short* sorted;
+  int len;
+  int cnt;
+  int word;
+  short* sorted;
 };
 static int
 sinfl_build_tbl(struct sinfl_gen *gen, unsigned *tbl, int tbl_bits,
-                                const int *cnt) {
-    int tbl_end = 0;
-    while (!(gen->cnt = cnt[gen->len])) {
-        ++gen->len;
-    }
-    tbl_end = 1 << gen->len;
-    while (gen->len <= tbl_bits) {
-        do {unsigned bit = 0;
-            tbl[gen->word] = (*gen->sorted++ << 16) | gen->len;
-            if (gen->word == tbl_end - 1) {
-                for (; gen->len < tbl_bits; gen->len++) {
-                    memcpy(&tbl[tbl_end], tbl, (size_t)tbl_end * sizeof(tbl[0]));
-                    tbl_end <<= 1;
-                }
-                return 1;
-            }
-            bit = 1 << sinfl_bsr((unsigned)(gen->word ^ (tbl_end - 1)));
-            gen->word &= bit - 1;
-            gen->word |= bit;
-        } while (--gen->cnt);
-        do {
-            if (++gen->len <= tbl_bits) {
-                memcpy(&tbl[tbl_end], tbl, (size_t)tbl_end * sizeof(tbl[0]));
-                tbl_end <<= 1;
-            }
-        } while (!(gen->cnt = cnt[gen->len]));
-    }
-    return 0;
+                const int *cnt) {
+  int tbl_end = 0;
+  while (!(gen->cnt = cnt[gen->len])) {
+    ++gen->len;
+  }
+  tbl_end = 1 << gen->len;
+  while (gen->len <= tbl_bits) {
+    do {unsigned bit = 0;
+      tbl[gen->word] = (*gen->sorted++ << 16) | gen->len;
+      if (gen->word == tbl_end - 1) {
+        for (; gen->len < tbl_bits; gen->len++) {
+          memcpy(&tbl[tbl_end], tbl, (size_t)tbl_end * sizeof(tbl[0]));
+          tbl_end <<= 1;
+        }
+        return 1;
+      }
+      bit = 1 << sinfl_bsr((unsigned)(gen->word ^ (tbl_end - 1)));
+      gen->word &= bit - 1;
+      gen->word |= bit;
+    } while (--gen->cnt);
+    do {
+      if (++gen->len <= tbl_bits) {
+        memcpy(&tbl[tbl_end], tbl, (size_t)tbl_end * sizeof(tbl[0]));
+        tbl_end <<= 1;
+      }
+    } while (!(gen->cnt = cnt[gen->len]));
+  }
+  return 0;
 }
 static void
 sinfl_build_subtbl(struct sinfl_gen *gen, unsigned *tbl, int tbl_bits,
-                                     const int *cnt) {
-    int sub_bits = 0;
-    int sub_start = 0;
-    int sub_prefix = -1;
-    int tbl_end = 1 << tbl_bits;
-    while (1) {
-        unsigned entry;
-        int bit, stride, i;
-        /* start new sub-table */
-        if ((gen->word & ((1 << tbl_bits)-1)) != sub_prefix) {
-            int used = 0;
-            sub_prefix = gen->word & ((1 << tbl_bits)-1);
-            sub_start = tbl_end;
-            sub_bits = gen->len - tbl_bits;
-            used = gen->cnt;
-            while (used < (1 << sub_bits)) {
-                sub_bits++;
-                used = (used << 1) + cnt[tbl_bits + sub_bits];
-            }
-            tbl_end = sub_start + (1 << sub_bits);
-            tbl[sub_prefix] = (sub_start << 16) | 0x10 | (sub_bits & 0xf);
-        }
-        /* fill sub-table */
-        entry = (*gen->sorted << 16) | ((gen->len - tbl_bits) & 0xf);
-        gen->sorted++;
-        i = sub_start + (gen->word >> tbl_bits);
-        stride = 1 << (gen->len - tbl_bits);
-        do {
-            tbl[i] = entry;
-            i += stride;
-        } while (i < tbl_end);
-        if (gen->word == (1 << gen->len)-1) {
-            return;
-        }
-        bit = 1 << sinfl_bsr(gen->word ^ ((1 << gen->len) - 1));
-        gen->word &= bit - 1;
-        gen->word |= bit;
-        gen->cnt--;
-        while (!gen->cnt) {
-            gen->cnt = cnt[++gen->len];
-        }
+                   const int *cnt) {
+  int sub_bits = 0;
+  int sub_start = 0;
+  int sub_prefix = -1;
+  int tbl_end = 1 << tbl_bits;
+  while (1) {
+    unsigned entry;
+    int bit, stride, i;
+    /* start new sub-table */
+    if ((gen->word & ((1 << tbl_bits)-1)) != sub_prefix) {
+      int used = 0;
+      sub_prefix = gen->word & ((1 << tbl_bits)-1);
+      sub_start = tbl_end;
+      sub_bits = gen->len - tbl_bits;
+      used = gen->cnt;
+      while (used < (1 << sub_bits)) {
+        sub_bits++;
+        used = (used << 1) + cnt[tbl_bits + sub_bits];
+      }
+      tbl_end = sub_start + (1 << sub_bits);
+      tbl[sub_prefix] = (sub_start << 16) | 0x10 | (sub_bits & 0xf);
     }
+    /* fill sub-table */
+    entry = (*gen->sorted << 16) | ((gen->len - tbl_bits) & 0xf);
+    gen->sorted++;
+    i = sub_start + (gen->word >> tbl_bits);
+    stride = 1 << (gen->len - tbl_bits);
+    do {
+      tbl[i] = entry;
+      i += stride;
+    } while (i < tbl_end);
+    if (gen->word == (1 << gen->len)-1) {
+      return;
+    }
+    bit = 1 << sinfl_bsr(gen->word ^ ((1 << gen->len) - 1));
+    gen->word &= bit - 1;
+    gen->word |= bit;
+    gen->cnt--;
+    while (!gen->cnt) {
+      gen->cnt = cnt[++gen->len];
+    }
+  }
 }
 static void
 sinfl_build(unsigned *tbl, unsigned char *lens, int tbl_bits, int maxlen,
-                        int symcnt) {
-    int i, used = 0;
-    short sort[288];
-    int cnt[16] = {0}, off[16]= {0};
-    struct sinfl_gen gen = {0};
-    gen.sorted = sort;
-    gen.len = 1;
+            int symcnt) {
+  int i, used = 0;
+  short sort[288];
+  int cnt[16] = {0}, off[16]= {0};
+  struct sinfl_gen gen = {0};
+  gen.sorted = sort;
+  gen.len = 1;
 
-    for (i = 0; i < symcnt; ++i)
-        cnt[lens[i]]++;
-    off[1] = cnt[0];
-    for (i = 1; i < maxlen; ++i) {
-        off[i + 1] = off[i] + cnt[i];
-        used = (used << 1) + cnt[i];
-    }
+  for (i = 0; i < symcnt; ++i)
+    cnt[lens[i]]++;
+  off[1] = cnt[0];
+  for (i = 1; i < maxlen; ++i) {
+    off[i + 1] = off[i] + cnt[i];
     used = (used << 1) + cnt[i];
-    for (i = 0; i < symcnt; ++i)
-        gen.sorted[off[lens[i]]++] = (short)i;
-    gen.sorted += off[0];
+  }
+  used = (used << 1) + cnt[i];
+  for (i = 0; i < symcnt; ++i)
+    gen.sorted[off[lens[i]]++] = (short)i;
+  gen.sorted += off[0];
 
-    if (used < (1 << maxlen)){
-        for (i = 0; i < 1 << tbl_bits; ++i)
-            tbl[i] = (0 << 16u) | 1;
-        return;
-    }
-    if (!sinfl_build_tbl(&gen, tbl, tbl_bits, cnt)){
-        sinfl_build_subtbl(&gen, tbl, tbl_bits, cnt);
-    }
+  if (used < (1 << maxlen)){
+    for (i = 0; i < 1 << tbl_bits; ++i)
+      tbl[i] = (0 << 16u) | 1;
+    return;
+  }
+  if (!sinfl_build_tbl(&gen, tbl, tbl_bits, cnt)){
+    sinfl_build_subtbl(&gen, tbl, tbl_bits, cnt);
+  }
 }
 static int
 sinfl_decode(struct sinfl *s, const unsigned *tbl, int bit_len) {
-    int idx = sinfl_peek(s, bit_len);
-    unsigned key = tbl[idx];
-    if (key & 0x10) {
-        /* sub-table lookup */
-        int len = key & 0x0f;
-        sinfl_eat(s, bit_len);
-        idx = sinfl_peek(s, len);
-        key = tbl[((key >> 16) & 0xffff) + (unsigned)idx];
-    }
-    sinfl_eat(s, key & 0x0f);
-    return (key >> 16) & 0x0fff;
+  int idx = sinfl_peek(s, bit_len);
+  unsigned key = tbl[idx];
+  if (key & 0x10) {
+    /* sub-table lookup */
+    int len = key & 0x0f;
+    sinfl_eat(s, bit_len);
+    idx = sinfl_peek(s, len);
+    key = tbl[((key >> 16) & 0xffff) + (unsigned)idx];
+  }
+  sinfl_eat(s, key & 0x0f);
+  return (key >> 16) & 0x0fff;
 }
 static int
 sinfl_decompress(unsigned char *out, int cap, const unsigned char *in, int size) {
-    static const unsigned char order[] = {16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15};
-    static const short dbase[30+2] = {1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,
-            257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577};
-    static const unsigned char dbits[30+2] = {0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,
-            10,10,11,11,12,12,13,13,0,0};
-    static const short lbase[29+2] = {3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,
-            43,51,59,67,83,99,115,131,163,195,227,258,0,0};
-    static const unsigned char lbits[29+2] = {0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,
-            4,4,4,5,5,5,5,0,0,0};
+  static const unsigned char order[] = {16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15};
+  static const short dbase[30+2] = {1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,
+      257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577};
+  static const unsigned char dbits[30+2] = {0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,
+      10,10,11,11,12,12,13,13,0,0};
+  static const short lbase[29+2] = {3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,
+      43,51,59,67,83,99,115,131,163,195,227,258,0,0};
+  static const unsigned char lbits[29+2] = {0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,
+      4,4,4,5,5,5,5,0,0,0};
 
-    const unsigned char *oe = out + cap;
-    const unsigned char *e = in + size, *o = out;
-    enum sinfl_states {hdr,stored,fixed,dyn,blk};
-    enum sinfl_states state = hdr;
-    struct sinfl s = {0};
-    int last = 0;
+  const unsigned char *oe = out + cap;
+  const unsigned char *e = in + size, *o = out;
+  enum sinfl_states {hdr,stored,fixed,dyn,blk};
+  enum sinfl_states state = hdr;
+  struct sinfl s = {0};
+  int last = 0;
 
-    s.bitptr = in;
-    while (1) {
-        switch (state) {
-        case hdr: {
-            /* block header */
-            int type = 0;
-            sinfl_refill(&s);
-            last = sinfl__get(&s,1);
-            type = sinfl__get(&s,2);
+  s.bitptr = in;
+  while (1) {
+    switch (state) {
+    case hdr: {
+      /* block header */
+      int type = 0;
+      sinfl_refill(&s);
+      last = sinfl__get(&s,1);
+      type = sinfl__get(&s,2);
 
-            switch (type) {default: return (int)(out-o);
-            case 0x00: state = stored; break;
-            case 0x01: state = fixed; break;
-            case 0x02: state = dyn; break;}
-        } break;
-        case stored: {
-            /* uncompressed block */
-            int len, nlen;
-            sinfl_refill(&s);
-            sinfl__get(&s,s.bitcnt & 7);
-            len = sinfl__get(&s,16);
-            nlen = sinfl__get(&s,16);
-            in -= 2; s.bitcnt = 0;
+      switch (type) {default: return (int)(out-o);
+      case 0x00: state = stored; break;
+      case 0x01: state = fixed; break;
+      case 0x02: state = dyn; break;}
+    } break;
+    case stored: {
+      /* uncompressed block */
+      unsigned len, nlen;
+      sinfl__get(&s,s.bitcnt & 7);
+      len = (unsigned short)sinfl__get(&s,16);
+      nlen = (unsigned short)sinfl__get(&s,16);
+      s.bitptr -= s.bitcnt / 8;
+      s.bitbuf = s.bitcnt = 0;
 
-            if (len > (e-in) || !len)
-                return (int)(out-o);
-            memcpy(out, in, (size_t)len);
-            in += len, out += len;
-            state = hdr;
-        } break;
-        case fixed: {
-            /* fixed huffman codes */
-            int n; unsigned char lens[288+32];
-            for (n = 0; n <= 143; n++) lens[n] = 8;
-            for (n = 144; n <= 255; n++) lens[n] = 9;
-            for (n = 256; n <= 279; n++) lens[n] = 7;
-            for (n = 280; n <= 287; n++) lens[n] = 8;
-            for (n = 0; n < 32; n++) lens[288+n] = 5;
+      if ((unsigned short)len != (unsigned short)~nlen)
+        return (int)(out-o);
+      if (len > (e - s.bitptr) || !len)
+        return (int)(out-o);
 
-            /* build lit/dist tables */
-            sinfl_build(s.lits, lens, 10, 15, 288);
-            sinfl_build(s.dsts, lens + 288, 8, 15, 32);
-            state = blk;
-        } break;
-        case dyn: {
-            /* dynamic huffman codes */
-            int n, i;
-            unsigned hlens[SINFL_PRE_TBL_SIZE];
-            unsigned char nlens[19] = {0}, lens[288+32];
+      memcpy(out, s.bitptr, (size_t)len);
+      s.bitptr += len, out += len;
+      if (last) return (int)(out-o);
+      state = hdr;
+    } break;
+    case fixed: {
+      /* fixed huffman codes */
+      int n; unsigned char lens[288+32];
+      for (n = 0; n <= 143; n++) lens[n] = 8;
+      for (n = 144; n <= 255; n++) lens[n] = 9;
+      for (n = 256; n <= 279; n++) lens[n] = 7;
+      for (n = 280; n <= 287; n++) lens[n] = 8;
+      for (n = 0; n < 32; n++) lens[288+n] = 5;
 
-            sinfl_refill(&s);
-            {int nlit = 257 + sinfl__get(&s,5);
-            int ndist = 1 + sinfl__get(&s,5);
-            int nlen = 4 + sinfl__get(&s,4);
-            for (n = 0; n < nlen; n++)
-                nlens[order[n]] = (unsigned char)sinfl_get(&s,3);
-            sinfl_build(hlens, nlens, 7, 7, 19);
+      /* build lit/dist tables */
+      sinfl_build(s.lits, lens, 10, 15, 288);
+      sinfl_build(s.dsts, lens + 288, 8, 15, 32);
+      state = blk;
+    } break;
+    case dyn: {
+      /* dynamic huffman codes */
+      int n, i;
+      unsigned hlens[SINFL_PRE_TBL_SIZE];
+      unsigned char nlens[19] = {0}, lens[288+32];
 
-            /* decode code lengths */
-            for (n = 0; n < nlit + ndist;) {
-                sinfl_refill(&s);
-                int sym = sinfl_decode(&s, hlens, 7);
-                switch (sym) {default: lens[n++] = (unsigned char)sym; break;
-                case 16: for (i=3+sinfl_get(&s,2);i;i--,n++) lens[n]=lens[n-1]; break;
-                case 17: for (i=3+sinfl_get(&s,3);i;i--,n++) lens[n]=0; break;
-                case 18: for (i=11+sinfl_get(&s,7);i;i--,n++) lens[n]=0; break;}
-            }
-            /* build lit/dist tables */
-            sinfl_build(s.lits, lens, 10, 15, nlit);
-            sinfl_build(s.dsts, lens + nlit, 8, 15, ndist);
-            state = blk;}
-        } break;
-        case blk: {
-            /* decompress block */
-            while (1) {
-                sinfl_refill(&s);
-                int sym = sinfl_decode(&s, s.lits, 10);
-                if (sym < 256) {
-                    /* literal */
-                    if (sinfl_unlikely(out >= oe)) {
-                        return (int)(out-o);
-                    }
-                    *out++ = (unsigned char)sym;
-                    sym = sinfl_decode(&s, s.lits, 10);
-                    if (sym < 256) {
-                        *out++ = (unsigned char)sym;
-                        continue;
-                    }
-                }
-                if (sinfl_unlikely(sym == 256)) {
-                    /* end of block */
-                    if (last) return (int)(out-o);
-                    state = hdr;
-                    break;
-                }
-                /* match */
-                if (sym >= 286) {
-                    /* length codes 286 and 287 must not appear in compressed data */
-                    return (int)(out-o);
-                }
-                sym -= 257;
-                {int len = sinfl__get(&s, lbits[sym]) + lbase[sym];
-                int dsym = sinfl_decode(&s, s.dsts, 8);
-                int offs = sinfl__get(&s, dbits[dsym]) + dbase[dsym];
-                unsigned char *dst = out, *src = out - offs;
-                if (sinfl_unlikely(offs > (int)(out-o))) {
-                    return (int)(out-o);
-                }
-                out = out + len;
+      sinfl_refill(&s);
+      {int nlit = 257 + sinfl__get(&s,5);
+      int ndist = 1 + sinfl__get(&s,5);
+      int nlen = 4 + sinfl__get(&s,4);
+      for (n = 0; n < nlen; n++)
+        nlens[order[n]] = (unsigned char)sinfl_get(&s,3);
+      sinfl_build(hlens, nlens, 7, 7, 19);
+
+      /* decode code lengths */
+      for (n = 0; n < nlit + ndist;) {
+        int sym = 0;
+        sinfl_refill(&s);
+        sym = sinfl_decode(&s, hlens, 7);
+        switch (sym) {default: lens[n++] = (unsigned char)sym; break;
+        case 16: for (i=3+sinfl_get(&s,2);i;i--,n++) lens[n]=lens[n-1]; break;
+        case 17: for (i=3+sinfl_get(&s,3);i;i--,n++) lens[n]=0; break;
+        case 18: for (i=11+sinfl_get(&s,7);i;i--,n++) lens[n]=0; break;}
+      }
+      /* build lit/dist tables */
+      sinfl_build(s.lits, lens, 10, 15, nlit);
+      sinfl_build(s.dsts, lens + nlit, 8, 15, ndist);
+      state = blk;}
+    } break;
+    case blk: {
+      /* decompress block */
+      while (1) {
+        int sym;
+        sinfl_refill(&s);
+        sym = sinfl_decode(&s, s.lits, 10);
+        if (sym < 256) {
+          /* literal */
+          if (sinfl_unlikely(out >= oe)) {
+            return (int)(out-o);
+          }
+          *out++ = (unsigned char)sym;
+          sym = sinfl_decode(&s, s.lits, 10);
+          if (sym < 256) {
+            *out++ = (unsigned char)sym;
+            continue;
+          }
+        }
+        if (sinfl_unlikely(sym == 256)) {
+          /* end of block */
+          if (last) return (int)(out-o);
+          state = hdr;
+          break;
+        }
+        /* match */
+        if (sym >= 286) {
+          /* length codes 286 and 287 must not appear in compressed data */
+          return (int)(out-o);
+        }
+        sym -= 257;
+        {int len = sinfl__get(&s, lbits[sym]) + lbase[sym];
+        int dsym = sinfl_decode(&s, s.dsts, 8);
+        int offs = sinfl__get(&s, dbits[dsym]) + dbase[dsym];
+        unsigned char *dst = out, *src = out - offs;
+        if (sinfl_unlikely(offs > (int)(out-o))) {
+          return (int)(out-o);
+        }
+        out = out + len;
 
 #ifndef SINFL_NO_SIMD
-                if (sinfl_likely(oe - out >= 16 * 3)) {
-                    if (offs >= 16) {
-                        /* simd copy match */
-                        sinfl_copy128(&dst, &src);
-                        sinfl_copy128(&dst, &src);
-                        do sinfl_copy128(&dst, &src);
-                        while (dst < out);
-                    } else if (offs >= 8) {
-                        /* word copy match */
-                        sinfl_copy64(&dst, &src);
-                        sinfl_copy64(&dst, &src);
-                        do sinfl_copy64(&dst, &src);
-                        while (dst < out);
-                    } else if (offs == 1) {
-                        /* rle match copying */
-                        sinfl_char16 w = sinfl_char16_char(src[0]);
-                        dst = sinfl_write128(dst, w);
-                        dst = sinfl_write128(dst, w);
-                        do dst = sinfl_write128(dst, w);
-                        while (dst < out);
-                    } else {
-                        /* byte copy match */
-                        *dst++ = *src++;
-                        *dst++ = *src++;
-                        do *dst++ = *src++;
-                        while (dst < out);
-                    }
-                }
+        if (sinfl_likely(oe - out >= 16 * 3)) {
+          if (offs >= 16) {
+            /* simd copy match */
+            sinfl_copy128(&dst, &src);
+            sinfl_copy128(&dst, &src);
+            do sinfl_copy128(&dst, &src);
+            while (dst < out);
+          } else if (offs >= 8) {
+            /* word copy match */
+            sinfl_copy64(&dst, &src);
+            sinfl_copy64(&dst, &src);
+            do sinfl_copy64(&dst, &src);
+            while (dst < out);
+          } else if (offs == 1) {
+            /* rle match copying */
+            sinfl_char16 w = sinfl_char16_char(src[0]);
+            dst = sinfl_write128(dst, w);
+            dst = sinfl_write128(dst, w);
+            do dst = sinfl_write128(dst, w);
+            while (dst < out);
+          } else {
+            /* byte copy match */
+            *dst++ = *src++;
+            *dst++ = *src++;
+            do *dst++ = *src++;
+            while (dst < out);
+          }
+        }
 #else
-                if (sinfl_likely(oe - out >= 3 * 8 - 3)) {
-                    if (offs >= 8) {
-                        /* word copy match */
-                        sinfl_copy64(&dst, &src);
-                        sinfl_copy64(&dst, &src);
-                        do sinfl_copy64(&dst, &src);
-                        while (dst < out);
-                    } else if (offs == 1) {
-                        /* rle match copying */
-                        unsigned int c = src[0];
-                        unsigned int hw = (c << 24u) | (c << 16u) | (c << 8u) | (unsigned)c;
-                        unsigned long long w = (unsigned long long)hw << 32llu | hw;
-                        dst = sinfl_write64(dst, w);
-                        dst = sinfl_write64(dst, w);
-                        do dst = sinfl_write64(dst, w);
-                        while (dst < out);
-                    } else {
-                        /* byte copy match */
-                        *dst++ = *src++;
-                        *dst++ = *src++;
-                        do *dst++ = *src++;
-                        while (dst < out);
-                    }
-                }
+        if (sinfl_likely(oe - out >= 3 * 8 - 3)) {
+          if (offs >= 8) {
+            /* word copy match */
+            sinfl_copy64(&dst, &src);
+            sinfl_copy64(&dst, &src);
+            do sinfl_copy64(&dst, &src);
+            while (dst < out);
+          } else if (offs == 1) {
+            /* rle match copying */
+            unsigned int c = src[0];
+            unsigned int hw = (c << 24u) | (c << 16u) | (c << 8u) | (unsigned)c;
+            unsigned long long w = (unsigned long long)hw << 32llu | hw;
+            dst = sinfl_write64(dst, w);
+            dst = sinfl_write64(dst, w);
+            do dst = sinfl_write64(dst, w);
+            while (dst < out);
+          } else {
+            /* byte copy match */
+            *dst++ = *src++;
+            *dst++ = *src++;
+            do *dst++ = *src++;
+            while (dst < out);
+          }
+        }
 #endif
-                else {
-                    *dst++ = *src++;
-                    *dst++ = *src++;
-                    do *dst++ = *src++;
-                    while (dst < out);
-                }}
-            }
-        } break;}
-    }
-    return (int)(out-o);
+        else {
+          *dst++ = *src++;
+          *dst++ = *src++;
+          do *dst++ = *src++;
+          while (dst < out);
+        }}
+      }
+    } break;}
+  }
+  return (int)(out-o);
 }
 extern int
 sinflate(void *out, int cap, const void *in, int size) {
-    return sinfl_decompress((unsigned char*)out, cap, (const unsigned char*)in, size);
+  return sinfl_decompress((unsigned char*)out, cap, (const unsigned char*)in, size);
 }
 static unsigned
 sinfl_adler32(unsigned adler32, const unsigned char *in, int in_len) {
-    const unsigned ADLER_MOD = 65521;
-    unsigned s1 = adler32 & 0xffff;
-    unsigned s2 = adler32 >> 16;
-    unsigned blk_len, i;
+  const unsigned ADLER_MOD = 65521;
+  unsigned s1 = adler32 & 0xffff;
+  unsigned s2 = adler32 >> 16;
+  unsigned blk_len, i;
 
-    blk_len = in_len % 5552;
-    while (in_len) {
-        for (i=0; i + 7 < blk_len; i += 8) {
-            s1 += in[0]; s2 += s1;
-            s1 += in[1]; s2 += s1;
-            s1 += in[2]; s2 += s1;
-            s1 += in[3]; s2 += s1;
-            s1 += in[4]; s2 += s1;
-            s1 += in[5]; s2 += s1;
-            s1 += in[6]; s2 += s1;
-            s1 += in[7]; s2 += s1;
-            in += 8;
-        }
-        for (; i < blk_len; ++i)
-            s1 += *in++, s2 += s1;
-        s1 %= ADLER_MOD; s2 %= ADLER_MOD;
-        in_len -= blk_len;
-        blk_len = 5552;
-    } return (unsigned)(s2 << 16) + (unsigned)s1;
+  blk_len = in_len % 5552;
+  while (in_len) {
+    for (i=0; i + 7 < blk_len; i += 8) {
+      s1 += in[0]; s2 += s1;
+      s1 += in[1]; s2 += s1;
+      s1 += in[2]; s2 += s1;
+      s1 += in[3]; s2 += s1;
+      s1 += in[4]; s2 += s1;
+      s1 += in[5]; s2 += s1;
+      s1 += in[6]; s2 += s1;
+      s1 += in[7]; s2 += s1;
+      in += 8;
+    }
+    for (; i < blk_len; ++i)
+      s1 += *in++, s2 += s1;
+    s1 %= ADLER_MOD; s2 %= ADLER_MOD;
+    in_len -= blk_len;
+    blk_len = 5552;
+  } return (unsigned)(s2 << 16) + (unsigned)s1;
 }
 extern int
 zsinflate(void *out, int cap, const void *mem, int size) {
-    const unsigned char *in = (const unsigned char*)mem;
-    if (size >= 6) {
-        const unsigned char *eob = in + size - 4;
-        int n = sinfl_decompress((unsigned char*)out, cap, in + 2u, size);
-        unsigned a = sinfl_adler32(1u, (unsigned char*)out, n);
-        unsigned h = eob[0] << 24 | eob[1] << 16 | eob[2] << 8 | eob[3] << 0;
-        return a == h ? n : -1;
-    } else {
-        return -1;
-    }
+  const unsigned char *in = (const unsigned char*)mem;
+  if (size >= 6) {
+    const unsigned char *eob = in + size - 4;
+    int n = sinfl_decompress((unsigned char*)out, cap, in + 2u, size);
+    unsigned a = sinfl_adler32(1u, (unsigned char*)out, n);
+    unsigned h = eob[0] << 24 | eob[1] << 16 | eob[2] << 8 | eob[3] << 0;
+    return a == h ? n : -1;
+  } else {
+    return -1;
+  }
 }
 
 #endif  /* SINFL_IMPLEMENTATION */
