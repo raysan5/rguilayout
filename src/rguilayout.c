@@ -198,7 +198,7 @@ bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib
 
 #define ANCHOR_RADIUS               20      // Default anchor radius
 #define MIN_CONTROL_SIZE            10      // Minimum control size
-#define SCALE_BOX_CORNER_SIZE       10      // Scale box bottom-right corner square size
+#define SCALE_BOX_CORNER_SIZE       12      // Scale box bottom-right corner square size
 
 #define MOVEMENT_FRAME_SPEED         2      // Controls movement speed in pixels per frame
 
@@ -606,6 +606,8 @@ int main(int argc, char *argv[])
         // WARNING: ASINCIFY requires this line,
         // it contains the call to emscripten_sleep() for PLATFORM_WEB
         if (WindowShouldClose()) windowExitActive = true;
+
+        mouse = GetMousePosition();
 
         // Undo layout change logic
         //----------------------------------------------------------------------------------
@@ -1072,8 +1074,6 @@ int main(int argc, char *argv[])
 
         // Basic program flow logic
         //----------------------------------------------------------------------------------
-        mouse = GetMousePosition();
-
         if (IsWindowResized())
         {
             workArea.width = GetScreenWidth();
@@ -1353,8 +1353,8 @@ int main(int argc, char *argv[])
                         rec.y += layout->controls[selectedControl].ap->y;
                     }
 
-                    if (CheckCollisionPointRec(mouse, rec) &&
-                        CheckCollisionPointRec(mouse, (Rectangle){ rec.x + rec.width - SCALE_BOX_CORNER_SIZE,
+                    if (CheckCollisionPointRec(GetMousePosition(), rec) &&
+                        CheckCollisionPointRec(GetMousePosition(), (Rectangle){ rec.x + rec.width - SCALE_BOX_CORNER_SIZE,
                                                                    rec.y + rec.height - SCALE_BOX_CORNER_SIZE,
                                                                    SCALE_BOX_CORNER_SIZE, SCALE_BOX_CORNER_SIZE }))
                     {
@@ -2353,9 +2353,9 @@ int main(int argc, char *argv[])
                     {
                         case GUI_WINDOWBOX:
                         {
-                            GuiFade(0.7f);
+                            GuiSetAlpha(0.7f);
                             GuiWindowBox(rec, layout->controls[i].text);
-                            GuiFade(1.0f);
+                            GuiSetAlpha(1.0f);
                         } break;
                         case GUI_GROUPBOX: GuiGroupBox(rec, layout->controls[i].text); break;
                         case GUI_LINE:
@@ -2365,9 +2365,9 @@ int main(int argc, char *argv[])
                         } break;
                         case GUI_PANEL:
                         {
-                            GuiFade(0.7f);
+                            GuiSetAlpha(0.7f);
                             GuiPanel(rec, (layout->controls[i].text[0] == '\0')? NULL : layout->controls[i].text);
-                            GuiFade(1.0f);
+                            GuiSetAlpha(1.0f);
                         } break;
                         case GUI_LABEL: GuiLabel(rec, layout->controls[i].text); break;
                         case GUI_BUTTON: GuiButton(rec, layout->controls[i].text); break;
@@ -2387,9 +2387,9 @@ int main(int argc, char *argv[])
                         case GUI_STATUSBAR: GuiStatusBar(rec, layout->controls[i].text); break;
                         case GUI_SCROLLPANEL:
                         {
-                            GuiFade(0.7f);
+                            GuiSetAlpha(0.7f);
                             GuiScrollPanel(rec, (layout->controls[i].text[0] == '\0') ? NULL : layout->controls[i].text, rec, NULL, NULL);
-                            GuiFade(1.0f);
+                            GuiSetAlpha(1.0f);
                         } break;
                         case GUI_LISTVIEW: GuiListView(rec, layout->controls[i].text, &listViewScrollIndex, &listViewActive); break;
                         case GUI_COLORPICKER: GuiColorPicker(rec, (layout->controls[i].text[0] == '\0') ? NULL : layout->controls[i].text, NULL); break;
@@ -2506,7 +2506,7 @@ int main(int argc, char *argv[])
                             {
                                 // Draw the default rectangle of the control selected
                                 GuiLock();
-                                GuiFade(0.5f);
+                                GuiSetAlpha(0.5f);
 
                                 switch (selectedType)
                                 {
@@ -2541,7 +2541,7 @@ int main(int argc, char *argv[])
                                     default: break;
                                 }
 
-                                GuiFade(1.0f);
+                                GuiSetAlpha(1.0f);
                                 if (!showWindowActive) GuiUnlock();
 
                                 // Draw default cursor
@@ -2906,20 +2906,26 @@ int main(int argc, char *argv[])
                 }
 
                 // Draw control scale mode selector
-                if (mouseScaleReady && (selectedControl >= 0))
+                if ((selectedControl >= 0) && mouseScaleReady)
                 {
-                    Rectangle selectedRec = layout->controls[selectedControl].rec;
+                    Rectangle rec = layout->controls[selectedControl].rec;
 
+                    // NOTE: We must consider anchor offset!
                     if (layout->controls[selectedControl].ap->id > 0)
                     {
-                        selectedRec.x += layout->controls[selectedControl].ap->x;
-                        selectedRec.y += layout->controls[selectedControl].ap->y;
+                        rec.x += layout->controls[selectedControl].ap->x;
+                        rec.y += layout->controls[selectedControl].ap->y;
                     }
 
-                    DrawRectangleLinesEx(selectedRec, 2, colControlSelected);
-                    DrawTriangle((Vector2) { selectedRec.x + selectedRec.width - SCALE_BOX_CORNER_SIZE, selectedRec.y + selectedRec.height },
-                                 (Vector2) { selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height },
-                                 (Vector2) { selectedRec.x + selectedRec.width, selectedRec.y + selectedRec.height - SCALE_BOX_CORNER_SIZE }, colControlSelected);
+                    DrawRectangleRec(rec, Fade(MAROON, 0.5f));
+
+                    DrawRectangleLinesEx(rec, 2, colControlSelected);
+                    DrawTriangle((Vector2) { rec.x + rec.width - SCALE_BOX_CORNER_SIZE, rec.y + rec.height },
+                                 (Vector2) { rec.x + rec.width, rec.y + rec.height },
+                                 (Vector2) { rec.x + rec.width, rec.y + rec.height - SCALE_BOX_CORNER_SIZE }, colControlSelected);
+                
+                    //DrawCircleV(GetMousePosition(), 4, MAROON);
+                    //DrawRectangleRec((Rectangle){ rec.x + rec.width - SCALE_BOX_CORNER_SIZE, rec.y + rec.height - SCALE_BOX_CORNER_SIZE, SCALE_BOX_CORNER_SIZE, SCALE_BOX_CORNER_SIZE }, RED);
                 }
 
                 // Draw reference window lines
