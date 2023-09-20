@@ -132,8 +132,8 @@ GuiWindowSponsorState InitGuiWindowSponsor(void)
 {
     GuiWindowSponsorState state = { 0 };
 
-    state.windowActive = true;
-    state.welcomeMode = true;
+    state.windowActive = false;
+    state.welcomeMode = false;
     state.supportDrag = false;
     state.borderless = false;
     
