@@ -998,7 +998,7 @@ int main(int argc, char *argv[])
 
         // Main toolbar logic
         //----------------------------------------------------------------------------------
-        windowControlsPaletteState.windowActive = mainToolbarState.showControlPanelActive;
+        windowControlsPaletteState.panelActive = mainToolbarState.showControlPanelActive;
 
         // Visual options logic
         if (mainToolbarState.visualStyleActive != mainToolbarState.prevVisualStyleActive)
@@ -1078,9 +1078,6 @@ int main(int argc, char *argv[])
         {
             workArea.width = GetScreenWidth();
             workArea.height = GetScreenHeight() - 40 - 24;
-            windowControlsPaletteState.windowBounds.x = workArea.width - windowControlsPaletteState.windowBounds.width;
-            windowControlsPaletteState.windowBounds.y = 40;
-            windowControlsPaletteState.windowBounds.height = workArea.height;
         }
 
         // Layout edition logic
