@@ -15,16 +15,21 @@
 *       - Export layout directly as plain C code, ready to edit and compile
 *       - Multiple GUI styles available with support for custom ones (.rgs)
 *
-*   LIMITATIONS:
-*       - Limitation 01
-*       - Limitation 02
+*   LIMITATIONS/NOTES:
+*       - Code is old and comboluted, it uses multiple flags to identify states (edit control, edit anchor, edit text...)
+*         and controls/anchors are selected by index, probably a control pointer would simplify some parts of the code
+*       - Anchors can not reference other anchors, one control can only reference one anchor
+*       - Reference window is set to anchors[0] but not selectable at the moment, 
+*         it was intended to define a global reference for all anchors and controls
+*       - workArea variable is used as the main reference for anchors/controls, considering the work area (no maintoolbar/statusbar)
+*         and its used to define the (0, 0) of the world, it's computed over anchors/controls on load/save data
 *
 *   POSSIBLE IMPROVEMENTS:
 *       - Support multiple controls selection -> Requires changing from creation <--> select mode
-*       - ISSUE: Adding/removing workArea offset on load/save/export layout does not seem a good approach
-*       - ISSUE: Review refWindow use case, really required?
-*       - EXPORT: Layout as an image, including layout info as PNG chunk
-*       - CLI: Support codegen options: exportAnchors, defineRecs, fullComments...
+*       - Adding/removing workArea offset on load/save/export layout does not seem the best approach -> Use refWindow?
+*       - refWindow refers to anchor[0] but it's not selectable/customizable at the moment
+*       - Allow exporting layout as an image, including layout info as a PNG chunk
+*       - CLI: Support additional codegen options: exportAnchors, defineRecs, fullComments...
 *
 *   CONFIGURATION:
 *       #define CUSTOM_MODAL_DIALOGS
@@ -33,8 +38,10 @@
 *
 *   VERSIONS HISTORY:
 *       4.0  (xx-Sep-2023)  ADDED: Support macOS builds (x86_64 + arm64)
-*                           REDESIGNED: Using raygui 4.0    
+*                           REVIEWED: Controls palette panel
+*                           REVIEWED: Controls code export
 *                           REVIEWED: Regenerated tool imagery
+*                           UPDATED: Using raygui 4.0 and latest raylib 4.6-dev
 *
 *       3.1  (13-Dec-2022)  ADDED: Welcome window with sponsors info
 *                           REDESIGNED: Main toolbar to add tooltips
@@ -141,8 +148,8 @@
 
 #include "rguilayout.h"                     // Gui layout types definition
 
-#define GUI_WINDOW_CONTROLS_PALETTE_IMPLEMENTATION
-#include "gui_window_controls_palette.h"    // GUI: Controls Palette
+#define GUI_PANEL_CONTROLS_PALETTE_IMPLEMENTATION
+#include "gui_panel_controls_palette.h"    // GUI: Controls Palette
 
 #define CODEGEN_IMPLEMENTATION
 #include "codegen.h"                        // Code generation functions
@@ -559,7 +566,7 @@ int main(int argc, char *argv[])
 
     // GUI: Controls Selection Palette
     //-----------------------------------------------------------------------------------
-    GuiWindowControlsPaletteState windowControlsPaletteState = InitGuiWindowControlsPalette();
+    GuiPanelControlsPaletteState windowControlsPaletteState = InitGuiPanelControlsPalette();
 
     // Rectangles used on controls preview drawing, copied from palette
     // NOTE: [x, y] position is set on mouse movement and considering snap mode
@@ -1818,7 +1825,7 @@ int main(int argc, char *argv[])
                             refWindowEditMode = false;
                         }
                     }
-                    else
+                    else    // Not refWindowEditMode
                     {
                         if (dragMoveMode)
                         {
@@ -1891,7 +1898,7 @@ int main(int argc, char *argv[])
                                 dragMoveMode = false;
                             }
                         }
-                        else
+                        else    // Not anchor drag-move mode
                         {
                             if (resizeMode)     // Anchor cannot resize
                             {
@@ -1915,7 +1922,7 @@ int main(int argc, char *argv[])
                                     }
                                 }
                             }
-                            else
+                            else    // Not anchor resize mode
                             {
                                 int offsetX = (int)layout->anchors[selectedAnchor].x%gridSnapDelta;
                                 int offsetY = (int)layout->anchors[selectedAnchor].y%gridSnapDelta;
@@ -2927,7 +2934,7 @@ int main(int argc, char *argv[])
             // GUI: Controls Selection Palette
             // NOTE: It uses GuiLock() to lock controls behaviour and just limit them to selection
             //----------------------------------------------------------------------------------------
-            GuiWindowControlsPalette(&windowControlsPaletteState);
+            GuiPanelControlsPalette(&windowControlsPaletteState);
 
             mainToolbarState.showControlPanelActive = windowControlsPaletteState.panelActive;
 

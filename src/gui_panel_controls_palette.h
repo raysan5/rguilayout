@@ -3,11 +3,11 @@
 *   rGuiLayout - Controls Palette Panel
 *
 *   MODULE USAGE:
-*       #define GUI_WINDOW_CONTROLS_PALETTE_IMPLEMENTATION
-*       #include "gui_controls_palette.h"
+*       #define GUI_PANEL_CONTROLS_PALETTE_IMPLEMENTATION
+*       #include "gui_panel_palette.h"
 *
-*       INIT: GuiWindowControlsPaletteState state = InitGuiWindowControlsPalette();
-*       DRAW: GuiWindowControlsPalette(&state);
+*       INIT: GuiPanelControlsPaletteState state = InitGuiPanelControlsPalette();
+*       DRAW: GuiPanelControlsPalette(&state);
 *
 *   LICENSE: zlib/libpng
 *
@@ -36,12 +36,12 @@
 #undef RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
-#ifndef GUI_WINDOW_CONTROLS_PALETTE_H
-#define GUI_WINDOW_CONTROLS_PALETTE_H
+#ifndef GUI_PANEL_CONTROLS_PALETTE_H
+#define GUI_PANEL_CONTROLS_PALETTE_H
 
 #define CONTROLS_PALETTE_COUNT  24
 
-typedef struct GuiWindowControlsPaletteState {
+typedef struct GuiPanelControlsPaletteState {
 
     bool panelActive;
     Rectangle panelBounds;
@@ -80,7 +80,7 @@ typedef struct GuiWindowControlsPaletteState {
     bool dropdownBoxEditMode;               // GuiDropdownBox()
     int dropdownBoxActive;
 
-} GuiWindowControlsPaletteState;
+} GuiPanelControlsPaletteState;
 
 #ifdef __cplusplus
 extern "C" {            // Prevents name mangling of functions
@@ -109,28 +109,28 @@ extern "C" {            // Prevents name mangling of functions
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
-GuiWindowControlsPaletteState InitGuiWindowControlsPalette(void);
-void GuiWindowControlsPalette(GuiWindowControlsPaletteState *state);
-void UpdateControlsPaletteRecs(GuiWindowControlsPaletteState *state);
+GuiPanelControlsPaletteState InitGuiPanelControlsPalette(void);
+void GuiPanelControlsPalette(GuiPanelControlsPaletteState *state);
+void UpdateControlsPaletteRecs(GuiPanelControlsPaletteState *state);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // GUI_WINDOW_CONTROLS_PALETTE_H
+#endif // GUI_PANEL_CONTROLS_PALETTE_H
 
 /***********************************************************************************
 *
-*   GUI_CONTROLS_PALETTE IMPLEMENTATION
+*   GUI_PANEL_CONTROLS_PALETTE IMPLEMENTATION
 *
 ************************************************************************************/
-#if defined(GUI_WINDOW_CONTROLS_PALETTE_IMPLEMENTATION)
+#if defined(GUI_PANEL_CONTROLS_PALETTE_IMPLEMENTATION)
 
 #include "raygui.h"
 
-GuiWindowControlsPaletteState InitGuiWindowControlsPalette(void)
+GuiPanelControlsPaletteState InitGuiPanelControlsPalette(void)
 {
-    GuiWindowControlsPaletteState state = { 0 };
+    GuiPanelControlsPaletteState state = { 0 };
 
     state.panelActive = true;
     state.panelBounds = (Rectangle){ GetScreenWidth() - 168, 40, 168, GetScreenHeight() - 40 - 24 };
@@ -170,7 +170,7 @@ GuiWindowControlsPaletteState InitGuiWindowControlsPalette(void)
     return state;
 }
 
-void GuiWindowControlsPalette(GuiWindowControlsPaletteState *state)
+void GuiPanelControlsPalette(GuiPanelControlsPaletteState *state)
 {
     if (state->panelActive)
     {
@@ -282,7 +282,7 @@ void GuiWindowControlsPalette(GuiWindowControlsPaletteState *state)
     }
 }
 
-void UpdateControlsPaletteRecs(GuiWindowControlsPaletteState *state)
+void UpdateControlsPaletteRecs(GuiPanelControlsPaletteState *state)
 {
     state->controlRecs[GUI_WINDOWBOX] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 16, 120, 48 };
     state->controlRecs[GUI_GROUPBOX] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 76, 120, 32 };
