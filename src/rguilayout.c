@@ -104,7 +104,7 @@
 #define TOOL_VERSION            "4.0"
 #define TOOL_DESCRIPTION        "A simple and easy-to-use raygui layouts editor"
 #define TOOL_DESCRIPTION_BREAK  "A simple and easy-to-use\nraygui layouts editor"
-#define TOOL_RELEASE_DATE       "May.2023"
+#define TOOL_RELEASE_DATE       "Sep.2023"
 #define TOOL_LOGO_COLOR         0x7da9b9ff
 
 #include "raylib.h"
