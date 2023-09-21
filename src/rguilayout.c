@@ -1105,7 +1105,7 @@ int main(int argc, char *argv[])
 
             // Palette selected control logic
             //----------------------------------------------------------------------------------------------
-            if (!CheckCollisionPointRec(mouse, windowControlsPaletteState.scrollPanelBounds))
+            if (!CheckCollisionPointRec(mouse, windowControlsPaletteState.panelBounds))
             {
                 if (focusedControl == -1) windowControlsPaletteState.selectedControl -= GetMouseWheelMove();
 
@@ -1135,7 +1135,7 @@ int main(int argc, char *argv[])
 
             // Work area logic (controls placement and selection)
             if (CheckCollisionPointRec(mouse, workArea) &&
-                !CheckCollisionPointRec(mouse, windowControlsPaletteState.windowBounds))
+                !CheckCollisionPointRec(mouse, windowControlsPaletteState.panelBounds))
             {
                 if (!dragMoveMode)
                 {
@@ -2496,7 +2496,7 @@ int main(int argc, char *argv[])
                 // Control selected from panel drawing
                 // NOTE: It uses default control rectangle for selected type
                 if (CheckCollisionPointRec(mouse, workArea) &&
-                    !CheckCollisionPointRec(mouse, windowControlsPaletteState.windowBounds))
+                    !CheckCollisionPointRec(mouse, windowControlsPaletteState.panelBounds))
                 {
                     if ((focusedAnchor == -1) && (focusedControl == -1) && !tracemap.focused && !refWindowEditMode)
                     {
@@ -2917,15 +2917,10 @@ int main(int argc, char *argv[])
                         rec.y += layout->controls[selectedControl].ap->y;
                     }
 
-                    DrawRectangleRec(rec, Fade(MAROON, 0.5f));
-
                     DrawRectangleLinesEx(rec, 2, colControlSelected);
                     DrawTriangle((Vector2) { rec.x + rec.width - SCALE_BOX_CORNER_SIZE, rec.y + rec.height },
                                  (Vector2) { rec.x + rec.width, rec.y + rec.height },
                                  (Vector2) { rec.x + rec.width, rec.y + rec.height - SCALE_BOX_CORNER_SIZE }, colControlSelected);
-                
-                    //DrawCircleV(GetMousePosition(), 4, MAROON);
-                    //DrawRectangleRec((Rectangle){ rec.x + rec.width - SCALE_BOX_CORNER_SIZE, rec.y + rec.height - SCALE_BOX_CORNER_SIZE, SCALE_BOX_CORNER_SIZE, SCALE_BOX_CORNER_SIZE }, RED);
                 }
 
                 // Draw reference window lines
@@ -2937,10 +2932,7 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
             GuiWindowControlsPalette(&windowControlsPaletteState);
 
-            mainToolbarState.showControlPanelActive = windowControlsPaletteState.windowActive;
-
-            // Update ScrollPanel bounds in case window is resized
-            windowControlsPaletteState.scrollPanelBounds = (Rectangle){ GetScreenWidth() - 170, workArea.y, 170, GetScreenHeight() - workArea.y - 24 };
+            mainToolbarState.showControlPanelActive = windowControlsPaletteState.panelActive;
 
             if (showWindowActive) GuiLock();
             else GuiUnlock();

@@ -43,13 +43,12 @@
 
 typedef struct GuiWindowControlsPaletteState {
 
-    bool windowActive;
-    Rectangle windowBounds;
+    bool panelActive;
+    Rectangle panelBounds;
     Vector2 panOffset;
     bool dragMode;
     bool supportDrag;
 
-    Rectangle scrollPanelBounds;
     Vector2 containerScrollOffset;
 
     Rectangle controlRecs[CONTROLS_PALETTE_COUNT];   // WARNING: Do not go out of bounds!
@@ -64,8 +63,6 @@ typedef struct GuiWindowControlsPaletteState {
     bool checkBoxChecked;                   // GuiCheckBox()
     bool textBoxEditMode;                   // GuiTextBox()
     unsigned char textBoxText[64];
-    bool multitextBoxEditMode;              // GuiTextBoxMulti()
-    unsigned char multitextBoxText[64];
     bool valueBoxEditMode;                  // GuiValueBox()
     int valueBoxValue;
     bool spinnerEditMode;                   // GuiSpinner()
@@ -135,13 +132,13 @@ GuiWindowControlsPaletteState InitGuiWindowControlsPalette(void)
 {
     GuiWindowControlsPaletteState state = { 0 };
 
-    state.windowActive = true;
-    state.windowBounds = (Rectangle){ GetScreenWidth() - 180, 40, 180, GetScreenHeight() - 40 - 24 };
+    state.panelActive = true;
+    state.panelBounds = (Rectangle){ GetScreenWidth() - 168, 40, 168, GetScreenHeight() - 40 - 24 };
     state.selectedControl = GUI_WINDOWBOX;
 
     state.panOffset = (Vector2){ 0, 0 };
     state.dragMode = false;
-    state.supportDrag = true;
+    state.supportDrag = false;
 
     // Controls default states
     state.windowBoxActive = true;
@@ -151,8 +148,6 @@ GuiWindowControlsPaletteState InitGuiWindowControlsPalette(void)
     state.checkBoxChecked = false;
     state.textBoxEditMode = false;
     strcpy((char *)state.textBoxText, "TextBox");
-    state.multitextBoxEditMode = false;
-    strcpy((char *)state.multitextBoxText, "MultiTextBox");
     state.valueBoxEditMode = false;
     state.valueBoxValue = 0;
     state.spinnerEditMode = false;
@@ -177,41 +172,49 @@ GuiWindowControlsPaletteState InitGuiWindowControlsPalette(void)
 
 void GuiWindowControlsPalette(GuiWindowControlsPaletteState *state)
 {
-    if (state->windowActive)
+    if (state->panelActive)
     {
+        // Update ScrollPanel bounds in case window is resized
+        int screenHeight = GetScreenHeight();
+        state->panelBounds.width = ((GetScreenHeight() - 64) < (944 + 12))? 170 : 158;     // Check if scroll bar is needed
+        state->panelBounds.y = 40; //workArea.y
+        state->panelBounds.height = GetScreenHeight() - 24 - 40 + 2;
+
         // Update window dragging
         //----------------------------------------------------------------------------------------
         if (state->supportDrag)
         {
+            // NOTE: Only drag on X-axis supported
+
             Vector2 mousePosition = GetMousePosition();
 
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             {
                 // Window can be dragged from the top window bar
-                if (CheckCollisionPointRec(mousePosition, (Rectangle){ state->windowBounds.x, state->windowBounds.y, state->windowBounds.width, RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT }))
+                if (CheckCollisionPointRec(mousePosition, (Rectangle){ state->panelBounds.x, state->panelBounds.y, state->panelBounds.width, RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT }))
                 {
                     state->dragMode = true;
-                    state->panOffset.x = mousePosition.x - state->windowBounds.x;
-                    state->panOffset.y = mousePosition.y - state->windowBounds.y;
+                    state->panOffset.x = mousePosition.x - state->panelBounds.x;
+                    //state->panOffset.y = mousePosition.y - state->panelBounds.y;
                 }
             }
 
             if (state->dragMode)
             {
-                state->windowBounds.x = (mousePosition.x - state->panOffset.x);
-                state->windowBounds.y = (mousePosition.y - state->panOffset.y);
+                state->panelBounds.x = (mousePosition.x - state->panOffset.x);
+                //state->panelBounds.y = (mousePosition.y - state->panOffset.y);
 
                 // Check screen limits to avoid moving out of screen
-                if (state->windowBounds.x < 0) state->windowBounds.x = 0;
-                else if (state->windowBounds.x > (GetScreenWidth() - state->windowBounds.width)) state->windowBounds.x = GetScreenWidth() - state->windowBounds.width;
-
-                if (state->windowBounds.y < 40) state->windowBounds.y = 40;
-                else if (state->windowBounds.y > (GetScreenHeight() - state->windowBounds.height - 24)) state->windowBounds.y = GetScreenHeight() - state->windowBounds.height - 24;
+                if (state->panelBounds.x < 0) state->panelBounds.x = 0;
+                else if (state->panelBounds.x > (GetScreenWidth() - state->panelBounds.width)) state->panelBounds.x = GetScreenWidth() - state->panelBounds.width;
+                
+                //if (state->panelBounds.y < 40) state->panelBounds.y = 40;
+                //else if (state->panelBounds.y > (GetScreenHeight() - state->panelBounds.height - 24 - 2)) state->panelBounds.y = GetScreenHeight() - state->panelBounds.height - 24;
 
                 if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) state->dragMode = false;
             }
         }
-        else state->windowBounds = (Rectangle){ GetScreenWidth() - 200, 60, 180, GetScreenHeight() - 60 - 30 };
+        else state->panelBounds.x = GetScreenWidth() - state->panelBounds.width;
         //----------------------------------------------------------------------------------------
         
         // Update selected control palette panel logic
@@ -233,12 +236,10 @@ void GuiWindowControlsPalette(GuiWindowControlsPaletteState *state)
 
         // Draw window and controls
         //----------------------------------------------------------------------------------------
-        //state->windowBounds = (Rectangle){ GetScreenWidth() - 200, 60, state->scrollPanelBounds.width, GetScreenHeight() - 60 - 30 };
-        state->windowActive = !GuiWindowBox(state->windowBounds, "#101#Controls Palette");
-
-        state->scrollPanelBounds = (Rectangle){ state->windowBounds.x, state->windowBounds.y + 24 - 1, state->windowBounds.width, state->windowBounds.height - 24 };
         Rectangle scissorRec = { 0 };
-        GuiScrollPanel(state->scrollPanelBounds, NULL, (Rectangle){ state->windowBounds.x, state->windowBounds.y, state->windowBounds.width - 12, 984 + 12 }, &state->containerScrollOffset, &scissorRec);
+        GuiScrollPanel(state->panelBounds, "#101#Controls Palette", 
+            (Rectangle){ state->panelBounds.x, state->panelBounds.y, state->panelBounds.width - 16, 944 }, // WARNING: Hardcoded content height!
+            &state->containerScrollOffset, &scissorRec);
 
         // Limit drawing to scroll panel bounds
         // WARNING: It requires a batch processing and restart
@@ -258,14 +259,13 @@ void GuiWindowControlsPalette(GuiWindowControlsPaletteState *state)
             GuiToggleGroup((Rectangle) { state->controlRecs[GUI_TOGGLEGROUP].x, state->controlRecs[GUI_TOGGLEGROUP].y, (state->controlRecs[GUI_TOGGLEGROUP].width - GuiGetStyle(TOGGLE, GROUP_PADDING)*2.0f)/3.0f, state->controlRecs[GUI_TOGGLEGROUP].height }, "ONE;TWO;THREE", &state->toggleGroupActive);
             GuiComboBox(state->controlRecs[GUI_COMBOBOX], "ONE;TWO;THREE", &state->comboBoxActive);
             if (GuiTextBox(state->controlRecs[GUI_TEXTBOX], state->textBoxText, 64, state->textBoxEditMode)) state->textBoxEditMode = !state->textBoxEditMode;
-            //if (GuiTextBoxMulti(state->controlRecs[GUI_TEXTBOXMULTI], state->multitextBoxText, 64, state->multitextBoxEditMode)) state->multitextBoxEditMode = !state->multitextBoxEditMode;
             if (GuiValueBox(state->controlRecs[GUI_VALUEBOX], NULL, &state->valueBoxValue, 0, 100, state->valueBoxEditMode)) state->valueBoxEditMode = !state->valueBoxEditMode;
             if (GuiSpinner(state->controlRecs[GUI_SPINNER], NULL, &state->spinnerValue, 0, 100, state->spinnerEditMode)) state->spinnerEditMode = !state->spinnerEditMode;
             GuiSlider(state->controlRecs[GUI_SLIDER], NULL, NULL, &state->sliderValue, 0, 100);
             GuiSliderBar(state->controlRecs[GUI_SLIDERBAR], NULL, NULL, &state->sliderBarValue, 0, 100);
             GuiProgressBar(state->controlRecs[GUI_PROGRESSBAR], NULL, NULL, &state->progressBarValue, 0, 100);
             GuiStatusBar(state->controlRecs[GUI_STATUSBAR], "StatusBar");
-            GuiScrollPanel((Rectangle){ state->controlRecs[GUI_SCROLLPANEL].x, state->controlRecs[GUI_SCROLLPANEL].y, state->controlRecs[GUI_SCROLLPANEL].width - state->scrollPanelBoundsOffset.x, state->controlRecs[GUI_SCROLLPANEL].height - state->scrollPanelBoundsOffset.y }, NULL, state->controlRecs[GUI_SCROLLPANEL], &state->scrollPanelScrollOffset, &state->scrollPanelView);
+            GuiScrollPanel(state->controlRecs[GUI_SCROLLPANEL], NULL, state->controlRecs[GUI_SCROLLPANEL], &state->scrollPanelScrollOffset, &state->scrollPanelView);
             GuiListView(state->controlRecs[GUI_LISTVIEW], "ONE;TWO", &state->listViewScrollIndex, &state->listViewActive);
             GuiColorPicker(state->controlRecs[GUI_COLORPICKER], NULL, &state->colorPickerValue);
             GuiDummyRec(state->controlRecs[GUI_DUMMYREC], "DummyRec");
@@ -284,30 +284,30 @@ void GuiWindowControlsPalette(GuiWindowControlsPaletteState *state)
 
 void UpdateControlsPaletteRecs(GuiWindowControlsPaletteState *state)
 {
-    state->controlRecs[GUI_WINDOWBOX] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 16, 120, 48 };
-    state->controlRecs[GUI_GROUPBOX] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 72, 120, 32 };
-    state->controlRecs[GUI_LINE] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 112, 120, 24 };
-    state->controlRecs[GUI_PANEL] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 144, 120, 32 };
-    state->controlRecs[GUI_LABEL] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 184, 120, 24 };
-    state->controlRecs[GUI_BUTTON] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 216, 120, 24 };
-    state->controlRecs[GUI_LABELBUTTON] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 248, 120, 24 };
-    state->controlRecs[GUI_CHECKBOX] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 280, 24, 24 };      // Same line
-    state->controlRecs[GUI_TOGGLE] = (Rectangle){ state->windowBounds.x + 52, state->windowBounds.y + state->containerScrollOffset.y + 24 + 280, 88, 24 };        // Same line
-    state->controlRecs[GUI_TOGGLEGROUP] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 312, 120, 24 };
-    state->controlRecs[GUI_COMBOBOX] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 344, 120, 24 };
-    state->controlRecs[GUI_DROPDOWNBOX] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 376, 120, 24 };
-    state->controlRecs[GUI_TEXTBOX] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 408, 120, 24 };
-    state->controlRecs[GUI_TEXTBOXMULTI] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 440, 120, 72 };
-    state->controlRecs[GUI_VALUEBOX] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 520, 120, 24 };
-    state->controlRecs[GUI_SPINNER] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 552, 120, 24 };
-    state->controlRecs[GUI_SLIDER] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 584, 120, 16 };
-    state->controlRecs[GUI_SLIDERBAR] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 608, 120, 16 };
-    state->controlRecs[GUI_PROGRESSBAR] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 632, 120, 16 };
-    state->controlRecs[GUI_STATUSBAR] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 656, 120, 24 };
-    state->controlRecs[GUI_SCROLLPANEL] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 688, 120, 72 };
-    state->controlRecs[GUI_LISTVIEW] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 768, 120, 72 };
-    state->controlRecs[GUI_COLORPICKER] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 848, 96, 96 };
-    state->controlRecs[GUI_DUMMYREC] = (Rectangle){ state->windowBounds.x + 20, state->windowBounds.y + state->containerScrollOffset.y + 24 + 952, 120, 24 };
+    state->controlRecs[GUI_WINDOWBOX] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 16, 120, 48 };
+    state->controlRecs[GUI_GROUPBOX] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 76, 120, 32 };
+    state->controlRecs[GUI_LINE] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 116, 120, 16 };
+    state->controlRecs[GUI_PANEL] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 140, 120, 36 };
+    state->controlRecs[GUI_LABEL] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 184, 120, 24 };
+    state->controlRecs[GUI_BUTTON] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 216, 120, 24 };
+    state->controlRecs[GUI_LABELBUTTON] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 248, 120, 24 };
+    state->controlRecs[GUI_CHECKBOX] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 280, 24, 24 };      // Same line
+    state->controlRecs[GUI_TOGGLE] = (Rectangle){ state->panelBounds.x + 52, state->panelBounds.y + state->containerScrollOffset.y + 24 + 280, 88, 24 };        // Same line
+    state->controlRecs[GUI_TOGGLEGROUP] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 312, 120, 24 };
+    state->controlRecs[GUI_COMBOBOX] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 344, 120, 24 };
+    state->controlRecs[GUI_DROPDOWNBOX] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 376, 120, 24 };
+    state->controlRecs[GUI_TEXTBOX] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 408, 120, 24 };
+    //state->controlRecs[GUI_TEXTBOXMULTI] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 440, 120, 72 };
+    state->controlRecs[GUI_VALUEBOX] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 440, 120, 24 };
+    state->controlRecs[GUI_SPINNER] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 472, 120, 24 };
+    state->controlRecs[GUI_SLIDER] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 512, 120, 16 };
+    state->controlRecs[GUI_SLIDERBAR] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 544, 120, 16 };
+    state->controlRecs[GUI_PROGRESSBAR] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 576, 120, 16 };
+    state->controlRecs[GUI_STATUSBAR] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 608, 120, 24 };
+    state->controlRecs[GUI_SCROLLPANEL] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 640, 120, 72 };
+    state->controlRecs[GUI_LISTVIEW] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 720, 120, 72 };
+    state->controlRecs[GUI_COLORPICKER] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 800, 96, 96 };
+    state->controlRecs[GUI_DUMMYREC] = (Rectangle){ state->panelBounds.x + 20, state->panelBounds.y + state->containerScrollOffset.y + 24 + 904, 120, 24 };
 }
 
 #endif // GUI_WINDOW_CONTROLS_PALETTE_IMPLEMENTATION
