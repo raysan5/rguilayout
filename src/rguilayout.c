@@ -3788,7 +3788,7 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
 /*
     if (binary)
     {
-#define RGL_FILE_VERSION_BINARY 200
+        #define RGL_FILE_VERSION_BINARY 400
 
         FILE *rglFile = fopen(fileName, "wb");
 
@@ -3802,7 +3802,37 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
             // 4       | 2       | short      | Version: 200
             // 6       | 2       | short      | reserved
             //
-            // 8       | x       | GuiLayout  | GuiLayout data
+            // Ref window data
+            // 8       | 4       | int        | ref window x
+            // 12      | 4       | int        | ref window x
+            // 16      | 4       | int        | ref window width
+            // 20      | 4       | int        | ref window height
+            //
+            // Anchor info data:    a <id> <name> <posx> <posy> <enabled>\n");
+            // 24      | 4       | int        | Anchor count
+            // for (i = 1; i < anchorCount; i++)
+            // {
+            //    x    | 4       | int        | Anchor id
+            //    x    | 64      | char       | Anchor name
+            //    x    | 4       | int        | Anchor posX
+            //    x    | 4       | int        | Anchor posY
+            //    x    | 4       | int        | Anchor enabled?
+            // }
+            //
+            // Control info data:   c <id> <type> <name> <rectangle> <anchor_id> <text>\n#\n")
+            // x       | 4       | int        | Control count
+            // for (i = 0; i < countCount; i++)
+            // {
+            //    x    | 4       | int        | Control id
+            //    x    | 4       | int        | Control type
+            //    x    | 64      | char       | Control name
+            //    x    | 4       | int        | Control rec x
+            //    x    | 4       | int        | Control rec y
+            //    x    | 4       | int        | Control rec width
+            //    x    | 4       | int        | Control rec height
+            //    x    | 4       | int        | Control anchor id
+            //    x    | 128     | char       | Control text
+            // }
 
             char signature[5] = "rGL ";
             short version = RGL_FILE_VERSION_BINARY;
@@ -3812,7 +3842,41 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
             fwrite(&version, sizeof(short), 1, rglFile);
             fwrite(&reserved, sizeof(short), 1, rglFile);
 
-            fwrite(layout, sizeof(GuiLayout), 1, rglFile);
+            int refWindow[4] = { (int)layout->refWindow.x, (int)layout->refWindow.y, (int)layout->refWindow.width, (int)layout->refWindow.height };
+            fwrite(&refWindow[0], sizeof(int), 1, rglFile);
+            fwrite(&refWindow[1], sizeof(int), 1, rglFile);
+            fwrite(&refWindow[2], sizeof(int), 1, rglFile);
+            fwrite(&refWindow[3], sizeof(int), 1, rglFile);
+
+            fwrite(&layout->anchorCount, sizeof(int), 1, rglFile);
+
+            // WARNING: anchor[0] is already implicit in ref window
+            for (int i = 1, x = 0, y = 0, e = 0; i < anchorCount; i++)
+            {
+                fwrite(&layout->anchors[i].id, sizeof(int), 1, rglFile);        // Anchor id
+                fwrite(&layout->anchors[i].name, sizeof(char), 32, rglFile);    // Anchor name
+                x = (int)(layout->anchors[i].x - (int)layout->refWindow.x);
+                fwrite(&x, sizeof(int), 1, rglFile);    // Anchor posX
+                y = (int)(layout->anchors[i].y - (int)layout->refWindow.y),
+                fwrite(&y, sizeof(int), 1, rglFile);    // Anchor posY
+                e = (layout->anchors[i].enabled? 1 : 0);
+                fwrite(&e, sizeof(int), 1, rglFile);    // Anchor enabled?
+            }
+
+            fwrite(&layout->controlCount, sizeof(int), 1, rglFile);
+
+            for (int i = 0; i < countCount; i++)
+            {
+                fwrite(&layout->controls[i].id, sizeof(int), 1, rglFile); // Control id
+                fwrite(&layout->controls[i].type, sizeof(int), 1, rglFile); // Control type
+                fwrite(&layout->controls[i].name, sizeof(char), 32, rglFile); // Control name
+                fwrite(&layout->controls[i].rec.x, sizeof(int), 1, rglFile); // Control rec x
+                fwrite(&layout->controls[i].rec.y, sizeof(int), 1, rglFile); // Control rec y
+                fwrite(&layout->controls[i].rec.width, sizeof(int), 1, rglFile); // Control rec width
+                fwrite(&layout->controls[i].rec.height, sizeof(int), 1, rglFile); // Control rec height
+                fwrite(&layout->controls[i].anchorId, sizeof(int), 1, rglFile); // Control anchor id
+                fwrite(&layout->controls[i].text, sizeof(char), 128, rglFile); // Control text
+            }
 
             fclose(rglFile);
         }
