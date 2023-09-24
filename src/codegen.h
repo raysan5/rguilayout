@@ -150,8 +150,8 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout *layout, Vec
     {
         if (layout->controls[i].ap->id == 0)
         {
-            layout->controls[i].rec.x -= offset.x;
-            layout->controls[i].rec.y -= offset.y;
+            layout->controls[i].rec.x -= (int)(layout->refWindow.x + offset.x);
+            layout->controls[i].rec.y -= (int)(layout->refWindow.y + offset.y);
         }
     }
 
@@ -232,8 +232,8 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout *layout, Vec
     {
         if (layout->controls[i].ap->id == 0)
         {
-            layout->controls[i].rec.x += offset.x;
-            layout->controls[i].rec.y += offset.y;
+            layout->controls[i].rec.x += (int)(layout->refWindow.y + offset.y);
+            layout->controls[i].rec.y += (int)(layout->refWindow.y + offset.y);
         }
     }
 

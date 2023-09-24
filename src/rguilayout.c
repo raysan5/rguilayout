@@ -17,14 +17,12 @@
 *
 *   DESIGN DECISIONS:
 *       - Anchors can not reference other anchors, one control can only reference one anchor
-*       - refAnchor variable is used as the main reference anchor for all the controls/anchors
-*         it is used to define the [0, 0] of the app, it's computed over every anchors/controls on loading and saving
+*       - refWindow variable is used as the main reference anchor (layout.anchor[0]) for all the controls and other anchors
+*         it is used to define the [0, 0] of the application, a global offset, it's computed on every anchor/control on loading and saving
 *
 *   LIMITATIONS/NOTES:
 *       - Code is old and comboluted, it uses multiple flags to identify states (edit control, edit anchor, edit text...)
 *         and controls/anchors are selected by index, probably using pointer would simplify some parts of the code
-*       - Reference window (layout.refWindow) is set to anchors[0] but not selectable at the moment, 
-*         it was intended to define the base reference position (and expected window size) for all anchors and controls
 *
 *   POSSIBLE IMPROVEMENTS:
 *       - Support multiple controls selection -> Requires changing from creation <--> select mode
@@ -314,7 +312,7 @@ int main(int argc, char *argv[])
     // Gui reference anchor for controls and other anchors placement
     // NOTE: Reference anchor becomes the [0, 0] for everything placed on the screen,
     // and it is considered on anchors/controls loading and saving
-    Vector2 refAnchor = { 0, 40 };
+    //Vector2 refAnchor = { 0, 40 };
 
     bool showWindowActive = false;          // Check for any blocking window active
 
@@ -454,17 +452,18 @@ int main(int argc, char *argv[])
 
     if (inFileName[0] != '\0')          // Load dropped file if provided
     {
+        // NOTE: Anchors and control screen offset is already considered by refWindow (anchor[0])
         layout = LoadLayout(inFileName);
-
-        // Add refAnchor offset to controls/anchors
+        /*
+        // Add refWindow.x/.y offset to all controls/anchors
         //-----------------------------------------------------------------------------------
         // Offset anchors with refAnchor offset
         for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
         {
             if (layout->anchors[a].enabled)
             {
-                layout->anchors[a].x += refAnchor.x;
-                layout->anchors[a].y += refAnchor.y;
+                layout->anchors[a].x += layout->refWindow.x;
+                layout->anchors[a].y += layout->refWindow.y;
             }
         }
 
@@ -478,7 +477,7 @@ int main(int argc, char *argv[])
             }
         }
         //-----------------------------------------------------------------------------------
-
+        */
         SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
     }
     else layout = LoadLayout(NULL);     // Load empty layout
@@ -709,6 +708,7 @@ int main(int argc, char *argv[])
                 {
                     memcpy(layout, tempLayout, sizeof(GuiLayout));
 
+                    /*
                     // Add refAnchor offset to controls/anchors
                     //-----------------------------------------------------------------------------------
                     // Offset anchors with refAnchor offset
@@ -731,7 +731,7 @@ int main(int argc, char *argv[])
                         }
                     }
                     //-----------------------------------------------------------------------------------
-
+                    */
                     // WARNING: When layout is loaded, anchor object references are not set, they must be reset manually
                     for (int i = 0; i < layout->controlCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
 
@@ -749,7 +749,7 @@ int main(int argc, char *argv[])
             {
                 if (tracemap.texture.id > 0) UnloadTexture(tracemap.texture);
                 tracemap.texture = LoadTexture(droppedFiles.paths[0]);
-                tracemap.rec = (Rectangle){ 48 + refAnchor.x, 48 + refAnchor.y, tracemap.texture.width, tracemap.texture.height };
+                tracemap.rec = (Rectangle){ 48 + layout->refWindow.x, 48 + layout->refWindow.y, tracemap.texture.width, tracemap.texture.height };
                 tracemap.visible = true;
                 tracemap.alpha = 0.7f;
 
@@ -790,8 +790,8 @@ int main(int argc, char *argv[])
                 {
                     if (outLayout.anchors[a].enabled)
                     {
-                        outLayout.anchors[a].x -= (int)(outLayout.refWindow.x + refAnchor.x);
-                        outLayout.anchors[a].y -= (int)(outLayout.refWindow.y + refAnchor.y);
+                        outLayout.anchors[a].x -= (int)(outLayout.refWindow.x);// + refAnchor.x);
+                        outLayout.anchors[a].y -= (int)(outLayout.refWindow.y);// + refAnchor.y);
                     }
                 }
 
@@ -800,8 +800,8 @@ int main(int argc, char *argv[])
                 {
                     if (outLayout.controls[i].ap->id == 0)
                     {
-                        outLayout.controls[i].rec.x -= refAnchor.x;
-                        outLayout.controls[i].rec.y -= refAnchor.y;
+                        outLayout.controls[i].rec.x -= (int)(outLayout.refWindow.x);//refAnchor.x;
+                        outLayout.controls[i].rec.y -= (int)(outLayout.refWindow.x);//refAnchor.y;
                     }
                 }
                 //-----------------------------------------------------------------------------------
@@ -834,7 +834,7 @@ int main(int argc, char *argv[])
 
             // Clear current codeText and generate new layout code
             RL_FREE(windowCodegenState.codeText);
-            if (config.template != NULL) windowCodegenState.codeText = GenLayoutCode(config.template, layout, (Vector2){ refAnchor.x, refAnchor.y }, config);
+            if (config.template != NULL) windowCodegenState.codeText = GenLayoutCode(config.template, layout, (Vector2){ 0.0f, 0.0f }, config);
 
             // Store current config as prevConfig
             memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
@@ -868,7 +868,7 @@ int main(int argc, char *argv[])
             {
                 // Clear current codeText and generate new layout code
                 RL_FREE(windowCodegenState.codeText);
-                windowCodegenState.codeText = GenLayoutCode(config.template, layout, (Vector2){ refAnchor.x, refAnchor.y }, config);
+                windowCodegenState.codeText = GenLayoutCode(config.template, layout, (Vector2){ 0.0f, 0.0f }, config);
 
                 // Store current config as prevConfig
                 memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
@@ -1863,13 +1863,6 @@ int main(int argc, char *argv[])
                             // Exit anchor position edit mode
                             if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
                             {
-                                // TODO: All anchors positions and not-anchored controls should be referenced to refWindow!
-                                if (selectedAnchor == 0)
-                                {
-                                    refAnchor.x = layout->anchors[0].x;
-                                    refAnchor.y = layout->anchors[0].y;
-                                }
-
                                 // If moving only the anchor, relink with controls
                                 if (anchorMoveMode)
                                 {
@@ -2330,8 +2323,8 @@ int main(int argc, char *argv[])
                         if (!dragMoveMode && precisionEditMode) colPositionText = colControlRecTextPrecision;
 
                         DrawText(TextFormat("[%i, %i, %i, %i]",
-                                            (int)tracemap.rec.x - (int)refAnchor.x,
-                                            (int)tracemap.rec.y - (int)refAnchor.y,
+                                            (int)tracemap.rec.x - (int)layout->refWindow.x,
+                                            (int)tracemap.rec.y - (int)layout->refWindow.y,
                                             (int)tracemap.rec.width,
                                             (int)tracemap.rec.height), tracemap.rec.x, tracemap.rec.y - 20, 20, colPositionText);
                     }
@@ -2597,11 +2590,11 @@ int main(int argc, char *argv[])
                                 if (mainToolbarState.snapModeActive) colPositionText = colControlRecTextSnap;
 
                                 DrawText(TextFormat("[%i, %i, %i, %i]",
-                                    (int)defaultRec[selectedType].x - (int)refAnchor.x,
-                                    (int)defaultRec[selectedType].y - (int)refAnchor.y,
+                                    (int)defaultRec[selectedType].x - (int)layout->refWindow.x,
+                                    (int)defaultRec[selectedType].y - (int)layout->refWindow.y,
                                     (int)defaultRec[selectedType].width,
                                     (int)defaultRec[selectedType].height),
-                                    (int)defaultRec[selectedType].x, ((int)defaultRec[selectedType].y < ((int)refAnchor.y + 8))? (int)defaultRec[selectedType].y + 30 : (int)defaultRec[selectedType].y - 30, 20, Fade(colPositionText, 0.5f));
+                                    (int)defaultRec[selectedType].x, ((int)defaultRec[selectedType].y < ((int)layout->refWindow.y + 8))? (int)defaultRec[selectedType].y + 30 : (int)defaultRec[selectedType].y - 30, 20, Fade(colPositionText, 0.5f));
                             }
                         }
                         else
@@ -2688,8 +2681,8 @@ int main(int argc, char *argv[])
                                 selectedRec.x, selectedRec.y - 30, 20, colPositionText);
                         }
                         else DrawText(TextFormat("[%i, %i, %i, %i]",
-                            (int)(selectedRec.x - layout->refWindow.x - refAnchor.x),
-                            (int)(selectedRec.y - layout->refWindow.y - refAnchor.y),
+                            (int)(selectedRec.x - layout->refWindow.x),
+                            (int)(selectedRec.y - layout->refWindow.y),
                             (int)layout->controls[selectedControl].rec.width,
                             (int)layout->controls[selectedControl].rec.height),
                             selectedRec.x, selectedRec.y - 30, 20, colPositionText);
@@ -2697,8 +2690,8 @@ int main(int argc, char *argv[])
                     else
                     {
                         DrawText(TextFormat("[%i, %i, %i, %i]",
-                            (int)(selectedRec.x - layout->refWindow.x - refAnchor.x),
-                            (int)(selectedRec.y - layout->refWindow.y - refAnchor.y),
+                            (int)(selectedRec.x - layout->refWindow.x),
+                            (int)(selectedRec.y - layout->refWindow.y),
                             (int)layout->controls[selectedControl].rec.width,
                             (int)layout->controls[selectedControl].rec.height),
                             selectedRec.x, selectedRec.y - 30, 20, colPositionText);
@@ -3130,14 +3123,14 @@ int main(int argc, char *argv[])
 
                 GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 },
                     TextFormat("SELECTED ANCHOR: %02i  (%i, %i) | CONTROLS: %03i | %s", selectedAnchor,
-                        (int)layout->anchors[selectedAnchor].x - (int)refAnchor.x, (int)layout->anchors[selectedAnchor].y - (int)refAnchor.y, count,
+                        (int)layout->anchors[selectedAnchor].x - (int)layout->refWindow.x, (int)layout->anchors[selectedAnchor].y - (int)layout->refWindow.y, count,
                         (int)layout->anchors[selectedAnchor].hidding? "HIDDEN MODE" : "VISIBLE"));
             }
             else if (tracemap.selected)
             {
                 GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 },
                     TextFormat("SELECTED TRACEMAP: (%i, %i, %i, %i) | OPACITY: %i %% | %s",
-                        (int)tracemap.rec.x - (int)refAnchor.x, (int)tracemap.rec.y - (int)refAnchor.y, (int)tracemap.rec.width, (int)tracemap.rec.height,
+                        (int)tracemap.rec.x - (int)layout->refWindow.x, (int)tracemap.rec.y - (int)layout->refWindow.y, (int)tracemap.rec.width, (int)tracemap.rec.height,
                         (int)(tracemap.alpha*100.0f), tracemap.locked? "LOCKED" : "UNLOCKED"));
             }
             else GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 }, "NO CONTROL | ANCHOR | TRACEMAP SELECTED");
@@ -3270,29 +3263,6 @@ int main(int argc, char *argv[])
                     {
                         memcpy(layout, tempLayout, sizeof(GuiLayout));
 
-                        // Add refAnchor offset to controls/anchors
-                        //-----------------------------------------------------------------------------------
-                        // Offset anchors with refAnchor offset
-                        for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
-                        {
-                            if (layout->anchors[a].enabled)
-                            {
-                                layout->anchors[a].x += refAnchor.x;
-                                layout->anchors[a].y += refAnchor.y;
-                            }
-                        }
-
-                        // Offset controls with no anchor, refAnchor offset must be applied to control position
-                        for (int i = 0; i < layout->controlCount; i++)
-                        {
-                            if (layout->controls[i].ap->id == 0)
-                            {
-                                layout->controls[i].rec.x += refAnchor.x;
-                                layout->controls[i].rec.y += refAnchor.y;
-                            }
-                        }
-                        //-----------------------------------------------------------------------------------
-
                         // WARNING: When layout is loaded, anchor object references are not set, they must be reset manually
                         for (int i = 0; i < layout->controlCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
 
@@ -3329,33 +3299,8 @@ int main(int argc, char *argv[])
                     // Check for valid extension and make sure it is
                     if ((GetFileExtension(outFileName) == NULL) || !IsFileExtension(outFileName, ".rgl")) strcat(outFileName, ".rgl\0");
 
-                    // Remove refAnchor offset from controls/anchors
-                    // TODO: Adding/removing refAnchor offset on load/save/export layout does not seem a good approach,
-                    // it should be considered internally by the tool... but it requires a complete redesign...
-                    //-----------------------------------------------------------------------------------
                     GuiLayout outLayout = { 0 };
                     memcpy(&outLayout, layout, sizeof(GuiLayout));
-
-                    // Offset all enabled anchors from reference window and offset
-                    for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
-                    {
-                        if (outLayout.anchors[a].enabled)
-                        {
-                            outLayout.anchors[a].x -= (int)(outLayout.refWindow.x + refAnchor.x);
-                            outLayout.anchors[a].y -= (int)(outLayout.refWindow.y + refAnchor.y);
-                        }
-                    }
-
-                    // In case of controls with no anchor, offset must be applied to control position
-                    for (int i = 0; i < outLayout.controlCount; i++)
-                    {
-                        if (outLayout.controls[i].ap->id == 0)
-                        {
-                            outLayout.controls[i].rec.x -= refAnchor.x;
-                            outLayout.controls[i].rec.y -= refAnchor.y;
-                        }
-                    }
-                    //-----------------------------------------------------------------------------------
 
                     SaveLayout(&outLayout, outFileName);
 
@@ -3428,7 +3373,7 @@ int main(int argc, char *argv[])
                     {
                         if (tracemap.texture.id > 0) UnloadTexture(tracemap.texture);
                         tracemap.texture = texture;
-                        tracemap.rec = (Rectangle){ 48 + refAnchor.x, 48 + refAnchor.y, tracemap.texture.width, tracemap.texture.height };
+                        tracemap.rec = (Rectangle){ 48 + layout->refWindow.x, 48 + layout->refWindow.y, tracemap.texture.width, tracemap.texture.height };
                         tracemap.visible = true;
                         tracemap.alpha = 0.7f;
 
@@ -3665,6 +3610,7 @@ static GuiLayout *LoadLayout(const char *fileName)
                 {
                 case 'r':
                 {
+                    // NOTE: Reference window position must match anchor[0].x/.y
                     sscanf(buffer, "r %f %f %f %f", &layout->refWindow.x, &layout->refWindow.y, &layout->refWindow.width, &layout->refWindow.height);
                 } break;
                 case 'a':
