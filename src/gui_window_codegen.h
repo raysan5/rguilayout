@@ -218,7 +218,7 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
                     if (nextLine) *nextLine = '\0';     // Temporaly terminating the current line
 
                     // Only draw lines inside text panel
-                    if (((state->codePanelScrollOffset.y + 20*linesCounter) >= 0) &&
+                    if (((state->codePanelScrollOffset.y + 20*linesCounter) >= -40) &&
                         ((state->codePanelScrollOffset.y + 20*linesCounter) < (codePanel.height - 2)))
                     {
                         DrawTextEx(state->codeFont, currentLine, (Vector2) { codePanel.x + state->codePanelScrollOffset.x + 10, codePanel.y + state->codePanelScrollOffset.y + 20*linesCounter + 8 }, state->codeFont.baseSize, 1, GetColor(GuiGetStyle(TEXTBOX, TEXT_COLOR_NORMAL)));
