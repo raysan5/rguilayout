@@ -243,7 +243,7 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout *layout, Vec
     {
         if (layout->anchors[a].enabled)
         {
-            layout->anchors[a].x += (int)(layout->refWindow.y + offset.y);
+            layout->anchors[a].x += (int)(layout->refWindow.x + offset.x);
             layout->anchors[a].y += (int)(layout->refWindow.y + offset.y);
         }
     }
