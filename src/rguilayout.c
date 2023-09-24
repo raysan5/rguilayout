@@ -2506,14 +2506,11 @@ int main(int argc, char *argv[])
                                 GuiSetAlpha(1.0f);
                                 if (!showWindowActive) GuiUnlock();
 
-                                // Draw default cursor
-                                //DrawRectangle(mouse.x - 8, mouse.y, 17, 1, colControlCreationCursor);
-                                //DrawRectangle(mouse.x, mouse.y - 8, 1, 17, colControlCreationCursor);
-
                                 // Draw cursor position
                                 Color colPositionText = colControlRecTextDefault;
                                 if (mainToolbarState.snapModeActive) colPositionText = colControlRecTextSnap;
 
+                                // Draw anchor position
                                 DrawText(TextFormat("[%i, %i, %i, %i]",
                                     (int)defaultRec[selectedType].x - (int)layout->refWindow.x,
                                     (int)defaultRec[selectedType].y - (int)layout->refWindow.y,
@@ -2559,7 +2556,7 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                // Draw selected control from palette
+                // Draw selected control
                 if (selectedControl != -1)
                 {
                     // Selection rectangle
@@ -2588,7 +2585,7 @@ int main(int argc, char *argv[])
                     // Linking
                     if (anchorLinkMode) DrawLine(selectedRec.x, selectedRec.y, mouse.x, mouse.y, colAnchorLinkLine);
 
-                    // Control Coordinates
+                    // Draw control text coordinates
                     Color colPositionText = colControlRecTextDefault;
                     if (showGlobalPosition) colPositionText = colControlRecTextGlobal;
                     if (mainToolbarState.snapModeActive) colPositionText = colControlRecTextSnap;
@@ -2599,26 +2596,26 @@ int main(int argc, char *argv[])
                         if (layout->controls[selectedControl].ap->id > 0)
                         {
                             DrawText(TextFormat("[%i, %i, %i, %i]",
-                                (int)(layout->controls[selectedControl].rec.x),
-                                (int)(layout->controls[selectedControl].rec.y),
-                                (int)layout->controls[selectedControl].rec.width,
-                                (int)layout->controls[selectedControl].rec.height),
+                                (int)(selectedRec.x),
+                                (int)(selectedRec.y),
+                                (int)selectedRec.width,
+                                (int)selectedRec.height),
                                 selectedRec.x, selectedRec.y - 30, 20, colPositionText);
                         }
                         else DrawText(TextFormat("[%i, %i, %i, %i]",
-                            (int)(selectedRec.x - layout->refWindow.x),
-                            (int)(selectedRec.y - layout->refWindow.y),
-                            (int)layout->controls[selectedControl].rec.width,
-                            (int)layout->controls[selectedControl].rec.height),
+                            (int)(selectedRec.x - (int)layout->refWindow.x),
+                            (int)(selectedRec.y - (int)layout->refWindow.y),
+                            (int)selectedRec.width,
+                            (int)selectedRec.height),
                             selectedRec.x, selectedRec.y - 30, 20, colPositionText);
                     }
                     else
                     {
                         DrawText(TextFormat("[%i, %i, %i, %i]",
-                            (int)(selectedRec.x - layout->refWindow.x),
-                            (int)(selectedRec.y - layout->refWindow.y),
-                            (int)layout->controls[selectedControl].rec.width,
-                            (int)layout->controls[selectedControl].rec.height),
+                            (int)(selectedRec.x - (int)layout->refWindow.x),
+                            (int)(selectedRec.y - (int)layout->refWindow.y),
+                            (int)selectedRec.width,
+                            (int)selectedRec.height),
                             selectedRec.x, selectedRec.y - 30, 20, colPositionText);
                     }
 
@@ -2706,28 +2703,62 @@ int main(int argc, char *argv[])
                 if (focusedControl != -1)
                 {
                     // Draw focused rectangle
-                    Rectangle focusRec = layout->controls[focusedControl].rec;
+                    Rectangle focusedRec = layout->controls[focusedControl].rec;
 
-                    if (layout->controls[focusedControl].type == GUI_WINDOWBOX) focusRec.height = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT;  // Defined inside raygui.h!
+                    if (layout->controls[focusedControl].type == GUI_WINDOWBOX) focusedRec.height = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT;  // Defined inside raygui.h!
                     else if (layout->controls[focusedControl].type == GUI_GROUPBOX)
                     {
-                        focusRec.y -= 10;
-                        focusRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE)*2.0f;
+                        focusedRec.y -= 10;
+                        focusedRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE)*2.0f;
                     }
 
                     if (layout->controls[focusedControl].ap->id > 0)
                     {
-                        focusRec.x += layout->controls[focusedControl].ap->x;
-                        focusRec.y += layout->controls[focusedControl].ap->y;
+                        focusedRec.x += layout->controls[focusedControl].ap->x;
+                        focusedRec.y += layout->controls[focusedControl].ap->y;
                     }
 
-                    if (focusedControl != selectedControl) DrawRectangleRec(focusRec, Fade(colControlFocused, 0.1f));
+                    if (focusedControl != selectedControl) DrawRectangleRec(focusedRec, Fade(colControlFocused, 0.1f));
 
-                    DrawRectangleLinesEx(focusRec, 1, colControlFocused);
+                    DrawRectangleLinesEx(focusedRec, 1, colControlFocused);
 
                     if (layout->controls[focusedControl].ap->id > 0)
                     {
-                        DrawLine(layout->controls[focusedControl].ap->x, layout->controls[focusedControl].ap->y, focusRec.x, focusRec.y, colAnchorLinkLine);
+                        DrawLine(layout->controls[focusedControl].ap->x, layout->controls[focusedControl].ap->y, focusedRec.x, focusedRec.y, colAnchorLinkLine);
+                    }
+
+                    // Draw control focused text coordinates
+                    Color colPositionText = colControlRecTextDefault;
+                    if (showGlobalPosition) colPositionText = colControlRecTextGlobal;
+                    if (mainToolbarState.snapModeActive) colPositionText = colControlRecTextSnap;
+                    if (!dragMoveMode && precisionEditMode) colPositionText = colControlRecTextPrecision;
+
+                    if (!showGlobalPosition)
+                    {
+                        if (layout->controls[focusedControl].ap->id > 0)
+                        {
+                            DrawText(TextFormat("[%i, %i, %i, %i]",
+                                (int)(focusedRec.x),
+                                (int)(focusedRec.y),
+                                (int)focusedRec.width,
+                                (int)focusedRec.height),
+                                focusedRec.x, focusedRec.y - 30, 20, colPositionText);
+                        }
+                        else DrawText(TextFormat("[%i, %i, %i, %i]",
+                            (int)(focusedRec.x - (int)layout->refWindow.x),
+                            (int)(focusedRec.y - (int)layout->refWindow.y),
+                            (int)focusedRec.width,
+                            (int)focusedRec.height),
+                            focusedRec.x, focusedRec.y - 30, 20, colPositionText);
+                    }
+                    else
+                    {
+                        DrawText(TextFormat("[%i, %i, %i, %i]",
+                            (int)(focusedRec.x - (int)layout->refWindow.x),
+                            (int)(focusedRec.y - (int)layout->refWindow.y),
+                            (int)focusedRec.width,
+                            (int)focusedRec.height),
+                            focusedRec.x, focusedRec.y - 30, 20, colPositionText);
                     }
                 }
 
@@ -3645,31 +3676,51 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
         fprintf(rglFile, "# Anchor info:    a <id> <name> <posx> <posy> <enabled>\n");
         fprintf(rglFile, "# Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>\n#\n");
 
+        // Write reference window and reference anchor (anchor[0])
         fprintf(rglFile, "r %i %i %i %i\n", (int)layout->refWindow.x, (int)layout->refWindow.y, (int)layout->refWindow.width, (int)layout->refWindow.height);
         fprintf(rglFile, "a %03i %s %i %i %i\n", layout->anchors[0].id, layout->anchors[0].name, layout->anchors[0].x, layout->anchors[0].y, layout->anchors[0].enabled);
 
         for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
         {
-            fprintf(rglFile, "a %03i %s %i %i %i\n",
-                                layout->anchors[i].id,
-                                layout->anchors[i].name,
-                                (int)(layout->anchors[i].x - layout->refWindow.x),
-                                (int)(layout->anchors[i].y - layout->refWindow.y),
-                                layout->anchors[i].enabled);
+            if (layout->anchors[i].enabled)
+            {
+                fprintf(rglFile, "a %03i %s %i %i %i\n",
+                    layout->anchors[i].id,
+                    layout->anchors[i].name,
+                    (int)(layout->anchors[i].x - (int)layout->refWindow.x),
+                    (int)(layout->anchors[i].y - (int)layout->refWindow.y),
+                    layout->anchors[i].enabled);
+            }
         }
 
         for (int i = 0; i < layout->controlCount; i++)
         {
-            fprintf(rglFile, "c %03i %i %s %i %i %i %i %i %s\n",
-                                layout->controls[i].id,
-                                layout->controls[i].type,
-                                layout->controls[i].name,
-                                (int)layout->controls[i].rec.x,
-                                (int)layout->controls[i].rec.y,
-                                (int)layout->controls[i].rec.width,
-                                (int)layout->controls[i].rec.height,
-                                layout->controls[i].ap->id,
-                                layout->controls[i].text);
+            if (layout->controls[i].ap->id == 0)
+            {
+                fprintf(rglFile, "c %03i %i %s %i %i %i %i %i %s\n",
+                    layout->controls[i].id,
+                    layout->controls[i].type,
+                    layout->controls[i].name,
+                    (int)layout->controls[i].rec.x - (int)layout->refWindow.x,
+                    (int)layout->controls[i].rec.y - (int)layout->refWindow.y,
+                    (int)layout->controls[i].rec.width,
+                    (int)layout->controls[i].rec.height,
+                    layout->controls[i].ap->id,
+                    layout->controls[i].text);
+            }
+            else
+            {
+                fprintf(rglFile, "c %03i %i %s %i %i %i %i %i %s\n",
+                    layout->controls[i].id,
+                    layout->controls[i].type,
+                    layout->controls[i].name,
+                    (int)layout->controls[i].rec.x,
+                    (int)layout->controls[i].rec.y,
+                    (int)layout->controls[i].rec.width,
+                    (int)layout->controls[i].rec.height,
+                    layout->controls[i].ap->id,
+                    layout->controls[i].text);
+            }
         }
 
         fclose(rglFile);
