@@ -17,17 +17,16 @@
 *
 *   DESIGN DECISIONS:
 *       - Anchors can not reference other anchors, one control can only reference one anchor
-*       - refWindow variable is used as the main reference anchor (layout.anchor[0]) for all the controls and other anchors
+*       - layout.anchor[0] is used as the refWindow reference position for all the controls and other anchors
 *         it is used to define the [0, 0] of the application, a global offset, it's computed on every anchor/control on loading and saving
 *
 *   LIMITATIONS/NOTES:
-*       - Code is old and comboluted, it uses multiple flags to identify states (edit control, edit anchor, edit text...)
+*       - Code is a bit old and comboluted, it uses multiple flags to identify states (edit control, edit anchor, edit text...)
 *         and controls/anchors are selected by index, probably using pointer would simplify some parts of the code
 *       - Show global position for controls is not documented in help (KEY_FIVE)
 *
 *   POSSIBLE IMPROVEMENTS:
 *       - Support multiple controls selection -> Requires changing from creation <--> select mode
-*       - layout.refWindow refers to anchor[0] but it's not selectable/customizable at the moment
 *       - Allow exporting layout as an image, including layout info as a PNG chunk?
 *       - CLI: Support additional codegen options: exportAnchors, defineRecs, fullComments...
 *
@@ -579,10 +578,6 @@ int main(int argc, char *argv[])
     bool showLoadTemplateDialog = false;
     //-----------------------------------------------------------------------------------
 
-    layout->anchors[0].x = 10;
-    layout->anchors[0].y = 60;
-    layout->anchors[0].enabled = true;
-
     SetTargetFPS(60);       // Set our game desired framerate
     //--------------------------------------------------------------------------------------
 
@@ -698,7 +693,7 @@ int main(int argc, char *argv[])
             {
                 if (tracemap.texture.id > 0) UnloadTexture(tracemap.texture);
                 tracemap.texture = LoadTexture(droppedFiles.paths[0]);
-                tracemap.rec = (Rectangle){ 48 + layout->refWindow.x, 48 + layout->refWindow.y, tracemap.texture.width, tracemap.texture.height };
+                tracemap.rec = (Rectangle){ GetMouseX() - tracemap.texture.width/2, GetMouseY() - tracemap.texture.height/2, tracemap.texture.width, tracemap.texture.height};
                 tracemap.visible = true;
                 tracemap.alpha = 0.7f;
 
@@ -2294,8 +2289,8 @@ int main(int argc, char *argv[])
                         case GUI_LABELBUTTON: GuiLabelButton(rec, layout->controls[i].text); break;
                         case GUI_CHECKBOX: GuiCheckBox(rec, layout->controls[i].text, NULL); break;
                         case GUI_TOGGLE: GuiToggle(rec, layout->controls[i].text, NULL); break;
-                        case GUI_TOGGLEGROUP: GuiToggleGroup(rec, layout->controls[i].text, 1); break;
-                        case GUI_COMBOBOX: GuiComboBox(rec, layout->controls[i].text, 1); break;
+                        case GUI_TOGGLEGROUP: GuiToggleGroup(rec, layout->controls[i].text, NULL); break;
+                        case GUI_COMBOBOX: GuiComboBox(rec, layout->controls[i].text, NULL); break;
                         case GUI_DROPDOWNBOX: GuiDropdownBox(rec, layout->controls[i].text, &dropdownBoxActive, false); break;
                         case GUI_TEXTBOX: GuiTextBox(rec, layout->controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
                         //case GUI_TEXTBOXMULTI: GuiTextBoxMulti(rec, layout->controls[i].text, MAX_CONTROL_TEXT_LENGTH, false); break;
@@ -3557,8 +3552,6 @@ static GuiLayout *LoadLayout(const char *fileName)
         if (rglFile != NULL)
         {
             char buffer[256] = { 0 };
-
-            int anchorCounter = 0;
             char anchorName[MAX_ANCHOR_NAME_LENGTH] = { 0 };
 
             fgets(buffer, 256, rglFile);
@@ -3569,25 +3562,35 @@ static GuiLayout *LoadLayout(const char *fileName)
                 {
                 case 'r':
                 {
-                    // NOTE: Reference window position must match anchor[0].x/.y
                     sscanf(buffer, "r %f %f %f %f", &layout->refWindow.x, &layout->refWindow.y, &layout->refWindow.width, &layout->refWindow.height);
 
+                    // NOTE: Reference window defines anchor[0]
+                    layout->anchors[0].id = 0;
+                    layout->anchors[0].ap = NULL;
+                    layout->anchors[0].x = layout->refWindow.x;
+                    layout->anchors[0].y = layout->refWindow.y;
+                    layout->anchors[0].enabled = true;
+                    strcpy(layout->anchors[0].name, "refPoint");
+
+                    layout->anchorCount++;
                 } break;
                 case 'a':
                 {
                     int enabled = 0;
                     sscanf(buffer, "a %d %s %d %d %d",
-                        &layout->anchors[anchorCounter].id,
+                        &layout->anchors[layout->anchorCount].id,
                         anchorName,
-                        &layout->anchors[anchorCounter].x,
-                        &layout->anchors[anchorCounter].y,
+                        &layout->anchors[layout->anchorCount].x,
+                        &layout->anchors[layout->anchorCount].y,
                         &enabled);
 
-                    layout->anchors[anchorCounter].enabled = (enabled? true : false);
-                    strcpy(layout->anchors[anchorCounter].name, anchorName);
+                    if (layout->anchors[layout->anchorCount].id > 0)
+                    {
+                        layout->anchors[layout->anchorCount].enabled = (enabled? true : false);
+                        strcpy(layout->anchors[layout->anchorCount].name, anchorName);
 
-                    if (layout->anchors[anchorCounter].enabled) layout->anchorCount++;
-                    anchorCounter++;
+                        layout->anchorCount++;
+                    }
                 } break;
                 case 'c':
                 {
@@ -3629,6 +3632,16 @@ static GuiLayout *LoadLayout(const char *fileName)
                 layout->anchors[i].y += layout->refWindow.y;
             }
         }
+    }
+    else
+    {
+        // Define reference anchor
+        layout->anchors[0].x = 0;
+        layout->anchors[0].y = 40;
+        layout->anchors[0].enabled = true;
+        layout->refWindow.x = 0;
+        layout->refWindow.y = 40;
+        layout->anchorCount = 1;
     }
 
     return layout;
@@ -3691,7 +3704,7 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
 
         // Write reference window and reference anchor (anchor[0])
         fprintf(rglFile, "r %i %i %i %i\n", (int)layout->refWindow.x, (int)layout->refWindow.y, (int)layout->refWindow.width, (int)layout->refWindow.height);
-        fprintf(rglFile, "a %03i %s %i %i %i\n", layout->anchors[0].id, layout->anchors[0].name, layout->anchors[0].x, layout->anchors[0].y, layout->anchors[0].enabled);
+        //fprintf(rglFile, "a %03i %s %i %i %i\n", layout->anchors[0].id, layout->anchors[0].name, layout->anchors[0].x, layout->anchors[0].y, layout->anchors[0].enabled);
 
         for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
         {
