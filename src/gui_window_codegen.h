@@ -172,32 +172,32 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         state->windowBounds = (Rectangle){ GetScreenWidth()/2.0f - 1024/2, GetScreenHeight()/2.0f - 640/2, 1024, 640 };
         state->windowActive = !GuiWindowBox(state->windowBounds, "#7#Code Generation Window");
 
-        GuiGroupBox((Rectangle){ state->windowBounds.x + 765, state->windowBounds.y + 40, 248, 242 }, "#101#Layout Info");
-        GuiLabel((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 54, 100, 24 }, "Name:");
-        if (GuiTextBox((Rectangle){ state->windowBounds.x + 845, state->windowBounds.y + 54, 158, 24 }, state->toolNameText, 64, state->toolNameEditMode)) state->toolNameEditMode = !state->toolNameEditMode;
-        GuiLabel((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 84, 100, 24 }, "Version:");
-        if (GuiTextBox((Rectangle){ state->windowBounds.x + 845, state->windowBounds.y + 84, 158, 24 }, state->toolVersionText, 64, state->toolVersionEditMode)) state->toolVersionEditMode = !state->toolVersionEditMode;
-        GuiLabel((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 114, 100, 24 }, "Company:");
-        if (GuiTextBox((Rectangle){ state->windowBounds.x + 845, state->windowBounds.y + 114, 158, 24 }, state->companyText, 64, state->companyEditMode)) state->companyEditMode = !state->companyEditMode;
-        GuiLabel((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 144, 160, 24 }, "Short Description:");
-        if (GuiTextBox((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 170, 228, 100 }, state->toolDescriptionText, 64, state->toolDescriptionEditMode)) state->toolDescriptionEditMode = !state->toolDescriptionEditMode;
+        GuiGroupBox((Rectangle){ state->windowBounds.x + 765, state->windowBounds.y + 40, 248, 178 }, "#101#Layout Info");
+        GuiLabel((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 58, 100, 24 }, "Name:");
+        if (GuiTextBox((Rectangle){ state->windowBounds.x + 845, state->windowBounds.y + 58, 158, 24 }, state->toolNameText, 64, state->toolNameEditMode)) state->toolNameEditMode = !state->toolNameEditMode;
+        GuiLabel((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 88, 100, 24 }, "Version:");
+        if (GuiTextBox((Rectangle){ state->windowBounds.x + 845, state->windowBounds.y + 88, 158, 24 }, state->toolVersionText, 64, state->toolVersionEditMode)) state->toolVersionEditMode = !state->toolVersionEditMode;
+        GuiLabel((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 118, 100, 24 }, "Company:");
+        if (GuiTextBox((Rectangle){ state->windowBounds.x + 845, state->windowBounds.y + 118, 158, 24 }, state->companyText, 64, state->companyEditMode)) state->companyEditMode = !state->companyEditMode;
+        GuiLabel((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 148, 160, 24 }, "Short Description:");
+        if (GuiTextBox((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 172, 228, 28 }, state->toolDescriptionText, 64, state->toolDescriptionEditMode)) state->toolDescriptionEditMode = !state->toolDescriptionEditMode;
         
-        GuiGroupBox((Rectangle){ state->windowBounds.x + 765, state->windowBounds.y + 300, 248, 220 }, "#142#Code Generation Options");
-        GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 356, 16, 16 }, "Export anchors", &state->exportAnchorsChecked);
-        GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 356 + 24, 16, 16 }, "Define Rectangles", &state->defineRecsChecked);
-        GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 356 + 48, 16, 16 }, "Define text as const", &state->defineTextsChecked);
-        GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 356 + 72, 16, 16 }, "Include detailed comments", &state->fullCommentsChecked);
-        GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 356 + 96, 16, 16 }, "Generate button functions", &state->genButtonFuncsChecked);
+        GuiGroupBox((Rectangle){ state->windowBounds.x + 765, state->windowBounds.y + 236, 248, 226 }, "#142#Code Generation Options");
+        GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 292, 16, 16 }, "Export anchors", &state->exportAnchorsChecked);
+        GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 292 + 24, 16, 16 }, "Define Rectangles", &state->defineRecsChecked);
+        GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 292 + 48, 16, 16 }, "Define text as const", &state->defineTextsChecked);
+        GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 292 + 72, 16, 16 }, "Include detailed comments", &state->fullCommentsChecked);
+        GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 292 + 96, 16, 16 }, "Generate button functions", &state->genButtonFuncsChecked);
 
         if (state->codeTemplateActive != 2) GuiDisable();
-        state->btnLoadCustomTemplatePressed = GuiButton((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 356 + 128, 228, 24 }, state->customTemplateLoaded? "#9#Unload Custom Template" : "#5#Load Custom Template");
+        state->btnLoadCustomTemplatePressed = GuiButton((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 292 + 128, 228, 24 }, state->customTemplateLoaded? "#9#Unload Custom Template" : "#5#Load Custom Template");
         GuiEnable();
 
         // Export generated code button
-        state->btnExportCodePressed = GuiButton((Rectangle){ state->windowBounds.x + 765, state->windowBounds.y + 336 + 184 + 16, 248, 28 }, "#7#Export Generated Code");
+        state->btnExportCodePressed = GuiButton((Rectangle){ state->windowBounds.x + 765, state->windowBounds.y + 278 + 184 + 16, 248, 28 }, "#7#Export Generated Code");
 
         // Select desired code template to fill
-        if (GuiDropdownBox((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 319, 228, 24 }, 
+        if (GuiDropdownBox((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 256, 228, 24 }, 
                 "STANDARD TEMPLATE (.c);PORTABLE TEMPLATE (.h); CUSTOM TEMPLATE (.c/.h)",
                 &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
 
