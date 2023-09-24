@@ -607,8 +607,9 @@ int main(int argc, char *argv[])
     bool showLoadTemplateDialog = false;
     //-----------------------------------------------------------------------------------
 
-    layout->anchors[0].x = refAnchor.x;
-    layout->anchors[0].y = refAnchor.y;
+    layout->anchors[0].x = 10;
+    layout->anchors[0].y = 60;
+    layout->anchors[0].enabled = true;
 
     SetTargetFPS(60);       // Set our game desired framerate
     //--------------------------------------------------------------------------------------
@@ -1424,25 +1425,6 @@ int main(int argc, char *argv[])
                         {
                             if (resizeMode)
                             {
-                                if (IsKeyPressed(KEY_R) && (layout->controls[selectedControl].type == GUI_WINDOWBOX))
-                                {
-                                    // TODO: Review refWindow setup functionality --> Use case?
-                                    /*
-                                    Rectangle rec = layout->controls[selectedControl].rec;
-
-                                    if (layout->controls[selectedControl].ap->id > 0)
-                                    {
-                                        rec.x += layout->controls[selectedControl].ap->x;
-                                        rec.y += layout->controls[selectedControl].ap->y;
-                                    }
-
-                                    // What happens when we set a ref window?
-                                    layout->anchors[0].x = rec.x;
-                                    layout->anchors[0].y = rec.y;
-                                    layout->refWindow = (Rectangle){layout->anchors[0].x, layout->anchors[0].y, rec.width, rec.height};
-                                    */
-                                }
-
                                 // Duplicate control
                                 if (IsKeyPressed(KEY_D))
                                 {
@@ -1756,6 +1738,7 @@ int main(int argc, char *argv[])
             {
                 focusedAnchor = -1;
 
+                // NOTE: Allowing selection of reference anchor[0]
                 for (int i = 0; i < MAX_ANCHOR_POINTS; i++)
                 {
                     if (layout->anchors[i].enabled)
@@ -1781,6 +1764,7 @@ int main(int argc, char *argv[])
                 {
                     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                     {
+                        // NOTE: layout.anchor[0] is reference point
                         layout->anchorCount++;
                         for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
                         {
@@ -1799,7 +1783,7 @@ int main(int argc, char *argv[])
             }
 
             // Select/unselect focused anchor logic
-            if (!CheckCollisionPointRec(mouse, (Rectangle){ 0, 0, GetScreenWidth(), 40 }) &&            // Avoid top bar
+            if (!CheckCollisionPointRec(mouse, (Rectangle){ 0, 0, GetScreenWidth(), 40 }) &&            // Avoid maintoolbar
                 (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)))
             {
                 selectedAnchor = focusedAnchor;
@@ -1814,10 +1798,11 @@ int main(int argc, char *argv[])
                 {
                     if (refWindowEditMode)
                     {
+                        // NOTE: In the case of ref-window, we don't link to controls, just define size
                         layout->refWindow.width = mouse.x - layout->refWindow.x;
                         layout->refWindow.height = mouse.y  - layout->refWindow.y;
 
-                        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+                        if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON))
                         {
                             if (layout->refWindow.width < 0) layout->refWindow.width = -1;
                             if (layout->refWindow.height < 0) layout->refWindow.height = -1;
@@ -1828,7 +1813,7 @@ int main(int argc, char *argv[])
                     {
                         if (dragMoveMode)
                         {
-                            if (selectedAnchor == 0) anchorEditMode = false;
+                            //if (selectedAnchor == 0) anchorEditMode = false;
 
                             // Move anchor without moving controls
                             if (anchorMoveMode && !anchorEditMode)
@@ -1865,6 +1850,7 @@ int main(int argc, char *argv[])
                                     }
                                 }
                             }
+
                             layout->anchors[selectedAnchor].x = mouse.x;
                             layout->anchors[selectedAnchor].y = mouse.y;
 
@@ -1877,6 +1863,13 @@ int main(int argc, char *argv[])
                             // Exit anchor position edit mode
                             if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
                             {
+                                // TODO: All anchors positions and not-anchored controls should be referenced to refWindow!
+                                if (selectedAnchor == 0)
+                                {
+                                    refAnchor.x = layout->anchors[0].x;
+                                    refAnchor.y = layout->anchors[0].y;
+                                }
+
                                 // If moving only the anchor, relink with controls
                                 if (anchorMoveMode)
                                 {
@@ -1890,10 +1883,10 @@ int main(int argc, char *argv[])
                                             layout->controls[i].rec.x -= layout->anchors[selectedAnchor].x;
                                             layout->controls[i].rec.y -= layout->anchors[selectedAnchor].y;
                                         }
-
                                     }
                                     anchorMoveMode = false;
                                 }
+
                                 dragMoveMode = false;
                             }
                         }
@@ -1973,12 +1966,12 @@ int main(int argc, char *argv[])
                                 if (selectedAnchor == 0) layout->refWindow = (Rectangle){ layout->anchors[0].x, layout->anchors[0].y, layout->refWindow.width, layout->refWindow.height };
 
                                 // Activate anchor position edit mode
-                                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) dragMoveMode = true;
+                                else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON))
                                 {
-                                    if ((selectedAnchor == 0) && anchorEditMode) refWindowEditMode = true;
-                                    else dragMoveMode = true;
+                                    if (selectedAnchor == 0) refWindowEditMode = true;  // Activate ref window edit
+                                    else anchorLinkMode = true;  // Activate anchor link mode
                                 }
-                                else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) anchorLinkMode = true;  // Activate anchor link mode
                                 else if (IsKeyPressed(KEY_H)) layout->anchors[selectedAnchor].hidding = !layout->anchors[selectedAnchor].hidding;   // Hide/Unhide anchors
                                 else if (IsKeyPressed(KEY_U) && (selectedAnchor > 0))                   // Unlinks controls from selected anchor
                                 {
@@ -2053,7 +2046,6 @@ int main(int argc, char *argv[])
                                 layout->controls[focusedControl].rec.y -= layout->anchors[selectedAnchor].y;
                             }
                         }
-                        //selectedAnchor = -1;
                     }
                 }
             }
@@ -2417,47 +2409,6 @@ int main(int argc, char *argv[])
             if (!showWindowActive) GuiUnlock();
             //----------------------------------------------------------------------------------------
 
-            // Draw reference window
-            // TODO: Review refWindow use case, really required?
-            //----------------------------------------------------------------------------------------
-            // Reference window edit mode lines
-            if ((layout->refWindow.width > 0) && (layout->refWindow.height > 0))
-            {
-                if (refWindowEditMode)
-                {
-                    DrawRectangleRec(layout->refWindow, Fade(colRefWindow, 0.1f));
-
-                    DrawText(TextFormat("[%i]", (int)layout->refWindow.width),
-                        layout->refWindow.x + layout->refWindow.width - MeasureText(TextFormat("[%i]",(int)layout->refWindow.width), 20) - 5,
-                        layout->refWindow.y + layout->refWindow.height + 5, 20, colRefWindowText);
-
-                    DrawText(TextFormat("[%i]", (int)layout->refWindow.height),
-                        layout->refWindow.x + layout->refWindow.width + 5,
-                        layout->refWindow.y + layout->refWindow.height - 20, 20, colRefWindowText);
-                }
-            }
-
-            Color colAnchor = colAnchor0;
-            Color colAnchorLines = colAnchor0;
-
-            // NOTE: anchor[0] is reserved and assigned to refWindow
-            if (selectedAnchor == 0)
-            {
-                if (anchorEditMode) { colAnchor = colAnchorEditMode; colAnchorLines = colAnchorEditMode;}
-                DrawRectangle(layout->anchors[0].x - ANCHOR_RADIUS, layout->anchors[0].y - ANCHOR_RADIUS, ANCHOR_RADIUS*2, ANCHOR_RADIUS*2, Fade(colAnchor, 0.2f));
-            }
-
-            if (focusedAnchor == 0)
-            {
-                colAnchorLines = colAnchor0;
-                if (anchorEditMode) colAnchorLines = colAnchorEditMode;
-            }
-
-            DrawRectangleLines(layout->anchors[0].x - ANCHOR_RADIUS, layout->anchors[0].y - ANCHOR_RADIUS, ANCHOR_RADIUS*2, ANCHOR_RADIUS*2, Fade(colAnchorLines, 0.5f));
-            DrawRectangle(layout->anchors[0].x - ANCHOR_RADIUS - 5, layout->anchors[0].y, ANCHOR_RADIUS*2 + 10, 1, Fade(colAnchorLines, 0.8f));
-            DrawRectangle(layout->anchors[0].x, layout->anchors[0].y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, Fade(colAnchorLines, 0.8f));
-            //----------------------------------------------------------------------------------------
-
             // Draw anchors and related data
             //----------------------------------------------------------------------------------------
             // Draw anchors
@@ -2465,15 +2416,20 @@ int main(int argc, char *argv[])
             {
                 if (layout->anchors[i].enabled)
                 {
-                    if (selectedAnchor == 0)    // Reference anchor
+                    if (i == 0)    // Reference anchor
                     {
+                        Color colAnchor = colAnchor0;
+                        Color colAnchorLines = colAnchor0;
 
-
+                        if ((i == focusedAnchor) || (i == selectedAnchor)) DrawRectangle(layout->anchors[0].x - ANCHOR_RADIUS, layout->anchors[0].y - ANCHOR_RADIUS, ANCHOR_RADIUS*2, ANCHOR_RADIUS*2, Fade(colAnchor, 0.2f));
+                        DrawRectangleLines(layout->anchors[0].x - ANCHOR_RADIUS, layout->anchors[0].y - ANCHOR_RADIUS, ANCHOR_RADIUS*2, ANCHOR_RADIUS*2, Fade(colAnchor, 0.5f));
+                        DrawRectangle(layout->anchors[0].x - ANCHOR_RADIUS - 5, layout->anchors[0].y, ANCHOR_RADIUS*2 + 10, 1, Fade(colAnchor, 0.8f));
+                        DrawRectangle(layout->anchors[0].x, layout->anchors[0].y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, Fade(colAnchor, 0.8f));
                     }
                     else    // Regular anchors
                     {
                         // Logic to properly choose colors
-                        colAnchor = colAnchorDefault;
+                        Color colAnchor = colAnchorDefault;
 
                         if (i == focusedAnchor) colAnchor = colAnchorFocused;
                         else if (i == selectedAnchor) colAnchor = colAnchorSelected;
@@ -2488,6 +2444,23 @@ int main(int argc, char *argv[])
                         DrawRectangle(layout->anchors[i].x - ANCHOR_RADIUS - 5, layout->anchors[i].y, ANCHOR_RADIUS*2 + 10, 1, colAnchor);
                         DrawRectangle(layout->anchors[i].x, layout->anchors[i].y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, colAnchor);
                     }
+                }
+            }
+
+            // Reference window edit mode lines
+            if (refWindowEditMode)
+            {
+                if ((layout->refWindow.width > 0) && (layout->refWindow.height > 0))
+                {
+                    DrawRectangleRec(layout->refWindow, Fade(colRefWindow, 0.1f));
+
+                    DrawText(TextFormat("[%i]", (int)layout->refWindow.width),
+                        layout->refWindow.x + layout->refWindow.width - MeasureText(TextFormat("[%i]",(int)layout->refWindow.width), 20) - 5,
+                        layout->refWindow.y + layout->refWindow.height + 5, 20, colRefWindowText);
+
+                    DrawText(TextFormat("[%i]", (int)layout->refWindow.height),
+                        layout->refWindow.x + layout->refWindow.width + 5,
+                        layout->refWindow.y + layout->refWindow.height - 20, 20, colRefWindowText);
                 }
             }
 
@@ -2509,7 +2482,7 @@ int main(int argc, char *argv[])
             }
 
             // Draw anchor links on anchor selected
-            if (focusedAnchor != -1)
+            if (selectedAnchor != -1)
             {
                 for (int i = 0; i < layout->controlCount; i++)
                 {
@@ -2536,12 +2509,12 @@ int main(int argc, char *argv[])
                 if (selectedAnchor > 0)
                 {
                     DrawText(TextFormat("[%i, %i]",
-                        (int)(layout->anchors[selectedAnchor].x - layout->refWindow.x - (int)refAnchor.x),
-                        (int)(layout->anchors[selectedAnchor].y - layout->refWindow.y - (int)refAnchor.y)),
+                        (int)(layout->anchors[selectedAnchor].x - layout->refWindow.x),
+                        (int)(layout->anchors[selectedAnchor].y - layout->refWindow.y)),
                         layout->anchors[selectedAnchor].x + ANCHOR_RADIUS,
                         layout->anchors[selectedAnchor].y - 38, 20, colPositionText);
                 }
-                else
+                else    // anchor[0] -> reference window
                 {
                     if ((layout->refWindow.width > 0) && (layout->refWindow.height > 0))
                     {
@@ -2550,14 +2523,14 @@ int main(int argc, char *argv[])
                             (int)layout->refWindow.y,
                             (int)layout->refWindow.width,
                             (int)layout->refWindow.height),
-                            layout->anchors[selectedAnchor].x + ANCHOR_RADIUS,
-                            layout->anchors[selectedAnchor].y - 38, 20, colPositionText);
+                            layout->anchors[selectedAnchor].x - ANCHOR_RADIUS,
+                            layout->anchors[selectedAnchor].y + ANCHOR_RADIUS + 4, 20, colPositionText);
                     }
                     else DrawText(TextFormat("[%i, %i]",
                         (int)(layout->refWindow.x),
                         (int)(layout->refWindow.y)),
-                        layout->anchors[selectedAnchor].x + ANCHOR_RADIUS,
-                        layout->anchors[selectedAnchor].y - 38, 20, colPositionText);
+                        layout->anchors[selectedAnchor].x - ANCHOR_RADIUS,
+                        layout->anchors[selectedAnchor].y + ANCHOR_RADIUS + 4, 20, colPositionText);
                 }
             }
             //----------------------------------------------------------------------------------------
@@ -2646,10 +2619,10 @@ int main(int argc, char *argv[])
                 if (selectedAnchor != -1)
                 {
                     // Draw anchor link mode line to mouse
-                    if (anchorLinkMode)
+                    // NOTE: anchor[0] is the reference anchor, applies to all other anchors and controls
+                    if (anchorLinkMode && (selectedAnchor != 0))
                     {
-                        if (selectedAnchor == 0) DrawLine(layout->anchors[selectedAnchor].x, layout->anchors[selectedAnchor].y, mouse.x, mouse.y, colAnchorLinkLine0);
-                        else DrawLine(layout->anchors[selectedAnchor].x, layout->anchors[selectedAnchor].y, mouse.x, mouse.y, colAnchorLinkLine);
+                        DrawLine(layout->anchors[selectedAnchor].x, layout->anchors[selectedAnchor].y, mouse.x, mouse.y, colAnchorLinkLine);
                     }
 
                     // Draw name edit mode
@@ -2811,27 +2784,6 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                // Draw controls IDs for layout order edition
-                if (orderLayerMode)
-                {
-                    for (int i = layout->controlCount - 1; i >= 0; i--)
-                    {
-                        if (layout->controls[i].ap->id > 0)
-                        {
-                            DrawTextEx(GuiGetFont(), TextFormat("[%i]", layout->controls[i].id),
-                                (Vector2){ layout->controls[i].rec.x + layout->controls[i].ap->x + layout->controls[i].rec.width,
-                                            layout->controls[i].rec.y + layout->controls[i].ap->y - GuiGetStyle(DEFAULT, TEXT_SIZE) },
-                                GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetColor(GuiGetStyle(LABEL, TEXT_COLOR_PRESSED)));
-                        }
-                        else
-                        {
-                            DrawTextEx(GuiGetFont(), TextFormat("[%i]", layout->controls[i].id),
-                                (Vector2){ layout->controls[i].rec.x + layout->controls[i].rec.width, layout->controls[i].rec.y - GuiGetStyle(DEFAULT, TEXT_SIZE) },
-                                GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetColor(GuiGetStyle(LABEL, TEXT_COLOR_PRESSED)));
-                        }
-                    }
-                }
-
                 // Draw focused control selector
                 if (focusedControl != -1)
                 {
@@ -2880,7 +2832,31 @@ int main(int argc, char *argv[])
                 }
 
                 // Draw reference window lines
-                if ((layout->refWindow.width > 0) && (layout->refWindow.height > 0)) DrawRectangleLinesEx(layout->refWindow, 1, Fade(colRefWindow, 0.7f));
+                if ((layout->refWindow.width > 0) && (layout->refWindow.height > 0))
+                {
+                    DrawRectangleLinesEx(layout->refWindow, 1, Fade(colRefWindow, 0.7f));
+                }
+
+                // Draw controls IDs for layout order edition
+                if (orderLayerMode)
+                {
+                    for (int i = layout->controlCount - 1; i >= 0; i--)
+                    {
+                        if (layout->controls[i].ap->id > 0)
+                        {
+                            DrawTextEx(GuiGetFont(), TextFormat("[%i]", layout->controls[i].id),
+                                (Vector2){ layout->controls[i].rec.x + layout->controls[i].ap->x + layout->controls[i].rec.width,
+                                layout->controls[i].rec.y + layout->controls[i].ap->y - GuiGetStyle(DEFAULT, TEXT_SIZE) },
+                                GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetColor(GuiGetStyle(LABEL, TEXT_COLOR_PRESSED)));
+                        }
+                        else
+                        {
+                            DrawTextEx(GuiGetFont(), TextFormat("[%i]", layout->controls[i].id),
+                                (Vector2){ layout->controls[i].rec.x + layout->controls[i].rec.width, layout->controls[i].rec.y - GuiGetStyle(DEFAULT, TEXT_SIZE) },
+                                GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), GetColor(GuiGetStyle(LABEL, TEXT_COLOR_PRESSED)));
+                        }
+                    }
+                }
             
                 // Draw controls name if required
                 if (mainToolbarState.showControlNamesActive)
@@ -3062,9 +3038,9 @@ int main(int argc, char *argv[])
             {
                 if (selectedAnchor == 0)
                 {
-                    layout->anchors[selectedAnchor].x = 0;
-                    layout->anchors[selectedAnchor].y = 0;
-                    layout->refWindow = (Rectangle){ 0, 0, -1, -1 };
+                    layout->anchors[0].x = 0;
+                    layout->anchors[0].y = 40;
+                    layout->refWindow = (Rectangle){ 0, 40, -1, -1 };
                 }
                 else
                 {
@@ -3777,7 +3753,7 @@ static void ResetLayout(GuiLayout *layout)
         layout->controls[i].ap = &layout->anchors[0];  // By default, set parent anchor
     }
 
-    layout->refWindow = (Rectangle){ 0, 0, -1, -1 };
+    layout->refWindow = (Rectangle){ 0, 40, -1, -1 };
     layout->anchorCount = 0;
     layout->controlCount = 0;
 }
@@ -3785,7 +3761,7 @@ static void ResetLayout(GuiLayout *layout)
 // Save layout information as text file
 static void SaveLayout(GuiLayout *layout, const char *fileName)
 {
-    #define RGL_FILE_VERSION_TEXT "3.0"
+    #define RGL_FILE_VERSION_TEXT "4.0"
 
     FILE *rglFile = fopen(fileName, "wt");
 
