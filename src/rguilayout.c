@@ -26,7 +26,12 @@
 *       - Show global position for controls is not documented in help (KEY_FIVE)
 *
 *   POSSIBLE IMPROVEMENTS:
-*       - Support multiple controls selection -> Requires changing from creation <--> select mode
+*       - Support multiple controls selection -> Requires some redesing. Considerations:
+*           > Can anchors be selected along controls?
+*           > How to register selected elements? -> Use anchor.selected/control.selected properties?
+*           > When drawing a rectangle for selection, consider partial contained elements?
+*           > When a group of elements is selected, what can we do with it? Only move? Scale?
+*           > Moving a group of elements, how affects anchors?
 *       - Allow exporting layout as an image, including layout info as a PNG chunk?
 *       - CLI: Support additional codegen options: exportAnchors, defineRecs, fullComments...
 *
@@ -213,6 +218,8 @@ bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib
 
 #define MAX_ICONS_AVAILABLE        217      // Max raygui icons displayed on icon selector
 
+#define MAX_ELEMENTS_SELECTION      64      // Max elements selected
+
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
@@ -354,13 +361,12 @@ int main(int argc, char *argv[])
     Vector2 panOffset = { 0 };
     Vector2 prevPosition = { 0 };
 
-    // TODO: Support multiple controls selection
     // Multiselection variables
-    //bool multiSelectMode = false;           // [E] Multiselection mode
-    //Rectangle multiSelectRec = { 0 };
-    //Vector2 multiSelectStartPos = { 0 };
-    //int multiSelectControls[20] = { -1 };
-    //int multiSelectCount = 0;
+    bool multiSelectMode = false;           // [E] Multiselection mode
+    Rectangle multiSelectRec = { 0 };
+    Vector2 multiSelectStartPos = { 0 };
+    int multiSelectControls[MAX_ELEMENTS_SELECTION] = { -1 };
+    int multiSelectCount = 0;
 
     /*
     // Colors used for the different modes, states and elements actions (original design)
@@ -1103,6 +1109,7 @@ int main(int argc, char *argv[])
                     if ((focusedAnchor == -1) &&
                         (selectedAnchor == -1) &&
                         (selectedControl == -1) &&
+                        !multiSelectMode &&
                         !tracemap.focused &&
                         !tracemap.selected)
                     {
@@ -1566,9 +1573,8 @@ int main(int argc, char *argv[])
             }
             //----------------------------------------------------------------------------------------------
 
-            // Controls multi-selection and edition logic
+            // TODO: Controls multi-selection and edition logic
             //----------------------------------------------------------------------------------------------
-            /*
             if ((selectedControl == -1) && IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
             {
                 multiSelectMode = true;
@@ -1600,6 +1606,8 @@ int main(int argc, char *argv[])
                     // Check all the controls inside the selection rectangle
                     for (int i = 0; i < layout->controlCount; i++)
                     {
+                        // TODO: Check if full control rec is contained in multiSelectRec
+                        // WARNING: multiSelectRec is in screen-space, we must consider rec, anchor and refWindow!
                         if (CheckCollisionRecs(multiSelectRec, layout->controls[i].rec))
                         {
                             multiSelectControls[multiSelectCount] = i;
@@ -1607,7 +1615,28 @@ int main(int argc, char *argv[])
                         }
                     }
 
-                    multiSelectMode = false;
+                    if (multiSelectCount == 0) multiSelectMode = false;
+                    else
+                    {
+                        // Calculate multi-selection rectangle
+                        multiSelectRec = (Rectangle){ 16384, 16384, 0, 0 };
+                        Vector2 maxValue = { 0 };
+
+                        for (int i = 0; i < multiSelectCount; i++)
+                        {
+                            // Get minimum value
+                            if (layout->controls[multiSelectControls[i]].rec.x < multiSelectRec.x) multiSelectRec.x = layout->controls[multiSelectControls[i]].rec.x;
+                            if (layout->controls[multiSelectControls[i]].rec.y < multiSelectRec.y) multiSelectRec.y = layout->controls[multiSelectControls[i]].rec.y;
+
+                            // Get maximum value
+                            if ((layout->controls[multiSelectControls[i]].rec.x + layout->controls[multiSelectControls[i]].rec.width) > maxValue.x) maxValue.x = layout->controls[multiSelectControls[i]].rec.x + layout->controls[multiSelectControls[i]].rec.width;
+                            if ((layout->controls[multiSelectControls[i]].rec.y + layout->controls[multiSelectControls[i]].rec.height) > maxValue.y) maxValue.y = layout->controls[multiSelectControls[i]].rec.y + layout->controls[multiSelectControls[i]].rec.height;
+                            multiSelectRec.width = maxValue.x - multiSelectRec.x;
+                            multiSelectRec.height = maxValue.y - multiSelectRec.y;
+                        }
+
+                        multiSelectMode = false;
+                    }
                 }
             }
 
@@ -1618,7 +1647,6 @@ int main(int argc, char *argv[])
                 multiSelectCount = 0;
             }
 
-            // TODO: Multi selection move logic
             // Multi selection delete logic
             if ((multiSelectCount > 0) && IsKeyPressed(KEY_DELETE))
             {
@@ -1649,7 +1677,6 @@ int main(int argc, char *argv[])
                 focusedControl = -1;
                 selectedControl = -1;
             }
-            */
             //----------------------------------------------------------------------------------------------
 
             // Anchors selection and edition logic
@@ -2456,7 +2483,7 @@ int main(int argc, char *argv[])
                 if (CheckCollisionPointRec(mouse, (Rectangle){ 0, 40, GetScreenWidth(), GetScreenHeight() - 64 }) &&
                     !CheckCollisionPointRec(mouse, windowControlsPaletteState.panelBounds))
                 {
-                    if ((focusedAnchor == -1) && (focusedControl == -1) && !tracemap.focused && !refWindowEditMode)
+                    if ((focusedAnchor == -1) && (focusedControl == -1) && !tracemap.focused && !refWindowEditMode && !multiSelectMode)
                     {
                         if (!anchorEditMode)
                         {
@@ -2523,6 +2550,12 @@ int main(int argc, char *argv[])
                             DrawRectangle(mouse.x, mouse.y - ANCHOR_RADIUS - 5, 1, ANCHOR_RADIUS*2 + 10, colAnchorCreation);
                         }
                     }
+                }
+
+                // Draw multiselection rectangle
+                if (multiSelectMode)
+                {
+                    DrawRectangleLinesEx(multiSelectRec, 2.0f, colAnchorDefault);
                 }
 
                 // Draw anchor edit data
