@@ -3187,7 +3187,7 @@ int main(int argc, char *argv[])
 
             if (windowCodegenState.btnExportCodePressed)
             {
-                if (windowCodegenState.codeTemplateActive == 1) strcpy(outFileName, TextFormat("%s.h", config.name));
+                if (windowCodegenState.codeTemplateActive == 1) strcpy(outFileName, TextFormat("gui_%s.h", config.name));
                 else strcpy(outFileName, TextFormat("%s.c", config.name));
 
                 showExportFileDialog = true;
