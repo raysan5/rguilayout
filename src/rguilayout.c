@@ -364,9 +364,9 @@ int main(int argc, char *argv[])
     // Multiselection variables
     bool multiSelectMode = false;           // [E] Multiselection mode
     Rectangle multiSelectRec = { 0 };
-    Vector2 multiSelectStartPos = { 0 };
-    int multiSelectControls[MAX_ELEMENTS_SELECTION] = { -1 };
-    int multiSelectCount = 0;
+    //Vector2 multiSelectStartPos = { 0 };
+    //int multiSelectControls[MAX_ELEMENTS_SELECTION] = { -1 };
+    //int multiSelectCount = 0;
 
     /*
     // Colors used for the different modes, states and elements actions (original design)
@@ -1575,6 +1575,7 @@ int main(int argc, char *argv[])
 
             // TODO: Controls multi-selection and edition logic
             //----------------------------------------------------------------------------------------------
+            /*
             if ((selectedControl == -1) && IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
             {
                 multiSelectMode = true;
@@ -1677,6 +1678,7 @@ int main(int argc, char *argv[])
                 focusedControl = -1;
                 selectedControl = -1;
             }
+            */
             //----------------------------------------------------------------------------------------------
 
             // Anchors selection and edition logic
@@ -3185,7 +3187,8 @@ int main(int argc, char *argv[])
 
             if (windowCodegenState.btnExportCodePressed)
             {
-                strcpy(outFileName, TextFormat("%s.c", config.name));
+                if (windowCodegenState.codeTemplateActive == 1) strcpy(outFileName, TextFormat("%s.h", config.name));
+                else strcpy(outFileName, TextFormat("%s.c", config.name));
 
                 showExportFileDialog = true;
                 windowCodegenState.windowActive = false;
@@ -3842,25 +3845,25 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
             fwrite(&version, sizeof(short), 1, rglFile);
             fwrite(&reserved, sizeof(short), 1, rglFile);
 
-            int refWindow[4] = { (int)layout->refWindow.x, (int)layout->refWindow.y, (int)layout->refWindow.width, (int)layout->refWindow.height };
-            fwrite(&refWindow[0], sizeof(int), 1, rglFile);
-            fwrite(&refWindow[1], sizeof(int), 1, rglFile);
-            fwrite(&refWindow[2], sizeof(int), 1, rglFile);
-            fwrite(&refWindow[3], sizeof(int), 1, rglFile);
+            int rec[4] = { (int)layout->refWindow.x, (int)layout->refWindow.y, (int)layout->refWindow.width, (int)layout->refWindow.height };
+            fwrite(&rec[0], sizeof(int), 1, rglFile);
+            fwrite(&rec[1], sizeof(int), 1, rglFile);
+            fwrite(&rec[2], sizeof(int), 1, rglFile);
+            fwrite(&rec[3], sizeof(int), 1, rglFile);
 
             fwrite(&layout->anchorCount, sizeof(int), 1, rglFile);
 
             // WARNING: anchor[0] is already implicit in ref window
             for (int i = 1, x = 0, y = 0, e = 0; i < anchorCount; i++)
             {
-                fwrite(&layout->anchors[i].id, sizeof(int), 1, rglFile);        // Anchor id
-                fwrite(&layout->anchors[i].name, sizeof(char), 32, rglFile);    // Anchor name
+                fwrite(&layout->anchors[i].id, sizeof(int), 1, rglFile); // Anchor id
+                fwrite(&layout->anchors[i].name, sizeof(char), MAX_ANCHOR_NAME_LENGTH, rglFile); // Anchor name
                 x = (int)(layout->anchors[i].x - (int)layout->refWindow.x);
-                fwrite(&x, sizeof(int), 1, rglFile);    // Anchor posX
+                fwrite(&x, sizeof(int), 1, rglFile); // Anchor posX
                 y = (int)(layout->anchors[i].y - (int)layout->refWindow.y),
-                fwrite(&y, sizeof(int), 1, rglFile);    // Anchor posY
+                fwrite(&y, sizeof(int), 1, rglFile); // Anchor posY
                 e = (layout->anchors[i].enabled? 1 : 0);
-                fwrite(&e, sizeof(int), 1, rglFile);    // Anchor enabled?
+                fwrite(&e, sizeof(int), 1, rglFile); // Anchor enabled?
             }
 
             fwrite(&layout->controlCount, sizeof(int), 1, rglFile);
@@ -3869,17 +3872,30 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
             {
                 fwrite(&layout->controls[i].id, sizeof(int), 1, rglFile); // Control id
                 fwrite(&layout->controls[i].type, sizeof(int), 1, rglFile); // Control type
-                fwrite(&layout->controls[i].name, sizeof(char), 32, rglFile); // Control name
-                fwrite(&layout->controls[i].rec.x, sizeof(int), 1, rglFile); // Control rec x
-                fwrite(&layout->controls[i].rec.y, sizeof(int), 1, rglFile); // Control rec y
-                fwrite(&layout->controls[i].rec.width, sizeof(int), 1, rglFile); // Control rec width
-                fwrite(&layout->controls[i].rec.height, sizeof(int), 1, rglFile); // Control rec height
-                fwrite(&layout->controls[i].anchorId, sizeof(int), 1, rglFile); // Control anchor id
-                fwrite(&layout->controls[i].text, sizeof(char), 128, rglFile); // Control text
+                fwrite(&layout->controls[i].name, sizeof(char), MAX_CONTROL_NAME_LENGTH, rglFile); // Control name
+                rec = (Rectangle){ (int)layout->controls[i].rec.x, (int)layout->controls[i].rec.y, (int)layout->controls[i].rec.width, (int)layout->controls[i].rec.height };
+                fwrite(&rec[0], sizeof(int), 1, rglFile); // Control rec x
+                fwrite(&rec[1], sizeof(int), 1, rglFile); // Control rec y
+                fwrite(&rec[2], sizeof(int), 1, rglFile); // Control rec width
+                fwrite(&rec[3], sizeof(int), 1, rglFile); // Control rec height
+                fwrite(&layout->controls[i].ap->id, sizeof(int), 1, rglFile); // Control anchor id
+                fwrite(&layout->controls[i].text, sizeof(char), MAX_CONTROL_TEXT_LENGTH, rglFile); // Control text
             }
 
             fclose(rglFile);
         }
     }
 */
+}
+
+// Check if a rectangle is contained within another
+static bool IsRecContainedInRec(Rectangle container, Rectangle rec)
+{
+    bool result = false;
+
+    if ((rec.x >= container.x) && (rec.y >= container.y) &&
+        ((rec.x + rec.width) <= (container.x + container.width)) &&
+        ((rec.y + rec.height) <= (container.y + container.height))) result = true;
+
+    return result;
 }
