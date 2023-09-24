@@ -146,12 +146,13 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout *layout, Vec
     }
 
     // In case of controls with no anchor, offset must be applied to control position
+    // NOTE: refWindow (aka anchor[0]) is already implicit!
     for (int i = 0; i < layout->controlCount; i++)
     {
         if (layout->controls[i].ap->id == 0)
         {
-            layout->controls[i].rec.x -= (int)(layout->refWindow.x + offset.x);
-            layout->controls[i].rec.y -= (int)(layout->refWindow.y + offset.y);
+            layout->controls[i].rec.x -= offset.x;
+            layout->controls[i].rec.y -= offset.y;
         }
     }
 
@@ -232,8 +233,8 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout *layout, Vec
     {
         if (layout->controls[i].ap->id == 0)
         {
-            layout->controls[i].rec.x += (int)(layout->refWindow.y + offset.y);
-            layout->controls[i].rec.y += (int)(layout->refWindow.y + offset.y);
+            layout->controls[i].rec.x += offset.y;
+            layout->controls[i].rec.y += offset.y;
         }
     }
 
@@ -242,7 +243,7 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout *layout, Vec
     {
         if (layout->anchors[a].enabled)
         {
-            layout->anchors[a].x += (int)(layout->refWindow.x + offset.x);
+            layout->anchors[a].x += (int)(layout->refWindow.y + offset.y);
             layout->anchors[a].y += (int)(layout->refWindow.y + offset.y);
         }
     }
