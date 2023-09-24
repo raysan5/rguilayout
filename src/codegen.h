@@ -641,7 +641,7 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout *
             {
                 if (define) TextAppend(toolstr, "bool ", pos);
                 else TextAppend(toolstr, TextFormat("%s", preText), pos);
-                TextAppend(toolstr, "windowActive", pos);
+                TextAppend(toolstr, TextFormat("%sActive", control.name), pos);
                 if (initialize) TextAppend(toolstr, " = true", pos);
                 TextAppend(toolstr, ";", pos);
             } break;
