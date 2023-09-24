@@ -1,5 +1,5 @@
 #
-# rgl layout text file (v3.0) - raygui layout file generated using rGuiLayout
+# rgl layout text file (v4.0) - raygui layout file generated using rGuiLayout
 #
 # Number of controls:     16
 #
@@ -7,23 +7,8 @@
 # Anchor info:    a <id> <name> <posx> <posy> <enabled>
 # Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
-r 0 0 -1 -1
-a 000 anchor00 0 0 1
+r 0 40 -1 -1
 a 001 anchor01 72 72 1
-a 002 anchor02 0 0 0
-a 003 anchor03 0 0 0
-a 004 anchor04 0 0 0
-a 005 anchor05 0 0 0
-a 006 anchor06 0 0 0
-a 007 anchor07 0 0 0
-a 008 anchor08 72 48 0
-a 009 anchor09 72 48 0
-a 010 anchor10 72 48 0
-a 011 anchor11 72 48 0
-a 012 anchor12 72 48 0
-a 013 anchor13 72 48 0
-a 014 anchor14 72 48 0
-a 015 anchor15 72 48 0
 c 000 0 windowBox 0 0 304 392 1 #013#Audio Player
 c 001 3 time 8 32 112 56 1 
 c 002 3 info 128 32 168 32 1 

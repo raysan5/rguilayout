@@ -1,5 +1,5 @@
 #
-# rgl layout text file (v3.0) - raygui layout file generated using rGuiLayout
+# rgl layout text file (v4.0) - raygui layout file generated using rGuiLayout
 #
 # Number of controls:     19
 #
@@ -7,24 +7,9 @@
 # Anchor info:    a <id> <name> <posx> <posy> <enabled>
 # Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
 #
-r 0 0 -1 -1
-a 000 anchor00 0 0 1
+r 0 40 -1 -1
 a 001 anchor01 48 48 1
-a 002 anchor02 0 0 0
-a 003 anchor03 0 0 0
-a 004 anchor04 0 0 0
-a 005 anchor05 350 200 0
-a 006 anchor06 350 200 0
-a 007 anchor07 350 200 0
-a 008 anchor08 48 48 0
-a 009 anchor09 48 48 0
-a 010 anchor10 48 48 0
-a 011 anchor11 48 48 0
-a 012 anchor12 48 48 0
-a 013 anchor13 48 48 0
-a 014 anchor14 48 48 0
-a 015 anchor15 48 48 0
-c 000 0 WindowBox000 0 0 240 528 1 #094#Stegano Image
+c 000 0 WindowBox000 48 48 240 528 0 #094#Stegano Image
 c 001 4 Label002 8 40 88 24 1 PADDING BYTES
 c 002 15 Spinner019 104 40 128 24 1 
 c 003 4 Label011 8 80 96 16 1 STEGANO BITS
