@@ -177,7 +177,7 @@ void GuiPanelControlsPalette(GuiPanelControlsPaletteState *state)
         // Update ScrollPanel bounds in case window is resized
         int screenHeight = GetScreenHeight();
         state->panelBounds.width = ((GetScreenHeight() - 64) < (944 + 12))? 170 : 158;     // Check if scroll bar is needed
-        state->panelBounds.y = 40; //workArea.y
+        state->panelBounds.y = 40;
         state->panelBounds.height = GetScreenHeight() - 24 - 40 + 2;
 
         // Update window dragging
