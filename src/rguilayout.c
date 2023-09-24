@@ -23,6 +23,7 @@
 *   LIMITATIONS/NOTES:
 *       - Code is old and comboluted, it uses multiple flags to identify states (edit control, edit anchor, edit text...)
 *         and controls/anchors are selected by index, probably using pointer would simplify some parts of the code
+*       - Show global position for controls is not documented in help (KEY_FIVE)
 *
 *   POSSIBLE IMPROVEMENTS:
 *       - Support multiple controls selection -> Requires changing from creation <--> select mode
@@ -894,8 +895,8 @@ int main(int argc, char *argv[])
                 orderLayerMode = mainToolbarState.showControlOrderActive;
             }
 
-            // TODO: Toggle global position info (anchor reference or global reference)
-            //if (IsKeyPressed(KEY_F)) showGlobalPosition = !showGlobalPosition;
+            // Toggle global position info (anchor reference or global reference)
+            if (IsKeyPressed(KEY_FIVE)) showGlobalPosition = !showGlobalPosition;
 
             if (IsKeyPressed(KEY_H) && tracemap.selected) mainToolbarState.hideTracemapActive = true;
 
@@ -2571,6 +2572,7 @@ int main(int argc, char *argv[])
                         selectedRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE)*2.0f;
                     }
 
+                    // WARNING: Adding offset to control rectangle draw in screen coordinates
                     if (layout->controls[selectedControl].ap->id > 0)
                     {
                         selectedRec.x += layout->controls[selectedControl].ap->x;
@@ -2596,8 +2598,8 @@ int main(int argc, char *argv[])
                         if (layout->controls[selectedControl].ap->id > 0)
                         {
                             DrawText(TextFormat("[%i, %i, %i, %i]",
-                                (int)(selectedRec.x),
-                                (int)(selectedRec.y),
+                                (int)(layout->controls[selectedControl].rec.x),
+                                (int)(layout->controls[selectedControl].rec.y),
                                 (int)selectedRec.width,
                                 (int)selectedRec.height),
                                 selectedRec.x, selectedRec.y - 30, 20, colPositionText);
@@ -2712,6 +2714,7 @@ int main(int argc, char *argv[])
                         focusedRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE)*2.0f;
                     }
 
+                    // WARNING: Adding offset to control rectangle draw in screen coordinates
                     if (layout->controls[focusedControl].ap->id > 0)
                     {
                         focusedRec.x += layout->controls[focusedControl].ap->x;
@@ -2738,8 +2741,8 @@ int main(int argc, char *argv[])
                         if (layout->controls[focusedControl].ap->id > 0)
                         {
                             DrawText(TextFormat("[%i, %i, %i, %i]",
-                                (int)(focusedRec.x),
-                                (int)(focusedRec.y),
+                                (int)(layout->controls[focusedControl].rec.x),
+                                (int)(layout->controls[focusedControl].rec.y),
                                 (int)focusedRec.width,
                                 (int)focusedRec.height),
                                 focusedRec.x, focusedRec.y - 30, 20, colPositionText);
@@ -3568,6 +3571,7 @@ static GuiLayout *LoadLayout(const char *fileName)
                 {
                     // NOTE: Reference window position must match anchor[0].x/.y
                     sscanf(buffer, "r %f %f %f %f", &layout->refWindow.x, &layout->refWindow.y, &layout->refWindow.width, &layout->refWindow.height);
+
                 } break;
                 case 'a':
                 {
@@ -3579,7 +3583,7 @@ static GuiLayout *LoadLayout(const char *fileName)
                         &layout->anchors[anchorCounter].y,
                         &enabled);
 
-                    layout->anchors[anchorCounter].enabled = (enabled ? true : false);
+                    layout->anchors[anchorCounter].enabled = (enabled? true : false);
                     strcpy(layout->anchors[anchorCounter].name, anchorName);
 
                     if (layout->anchors[anchorCounter].enabled) layout->anchorCount++;
@@ -3600,6 +3604,14 @@ static GuiLayout *LoadLayout(const char *fileName)
                         layout->controls[layout->controlCount].text);
 
                     layout->controls[layout->controlCount].ap = &layout->anchors[anchorId];
+                    
+                    // NOTE: refWindow offset (anchor[0]) must be added to controls with no anchor
+                    if (anchorId == 0)
+                    {
+                        layout->controls[layout->controlCount].rec.x += layout->refWindow.x;
+                        layout->controls[layout->controlCount].rec.y += layout->refWindow.y;
+                    }
+
                     layout->controlCount++;
                 } break;
                 default: break;
@@ -3608,13 +3620,14 @@ static GuiLayout *LoadLayout(const char *fileName)
                 fgets(buffer, 256, rglFile);
             }
 
-            for (int i = 1; i < MAX_ANCHOR_POINTS; i++)
-            {
-                layout->anchors[i].x += layout->anchors[0].x;
-                layout->anchors[i].y += layout->anchors[0].y;
-            }
-
             fclose(rglFile);
+
+            // NOTE: refWindow offset (anchor[0]) must be added to all anchors
+            for (int i = 1; i < layout->anchorCount; i++)
+            {
+                layout->anchors[i].x += layout->refWindow.x;
+                layout->anchors[i].y += layout->refWindow.y;
+            }
         }
     }
 
@@ -3640,7 +3653,7 @@ static void ResetLayout(GuiLayout *layout)
         layout->anchors[i].hidding = false;
         memset(layout->anchors[i].name, 0, MAX_ANCHOR_NAME_LENGTH);
 
-        if (i == 0) strcpy(layout->anchors[i].name, "anchorMain");
+        if (i == 0) strcpy(layout->anchors[i].name, "refPoint");
         else strcpy(layout->anchors[i].name, TextFormat("anchor%02i", i));
     }
 
