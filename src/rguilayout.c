@@ -309,11 +309,6 @@ int main(int argc, char *argv[])
     // General pourpose variables
     Vector2 mouse = { 0, 0 };               // Mouse position
 
-    // Gui reference anchor for controls and other anchors placement
-    // NOTE: Reference anchor becomes the [0, 0] for everything placed on the screen,
-    // and it is considered on anchors/controls loading and saving
-    //Vector2 refAnchor = { 0, 40 };
-
     bool showWindowActive = false;          // Check for any blocking window active
 
     // Grid control variables
@@ -454,30 +449,7 @@ int main(int argc, char *argv[])
     {
         // NOTE: Anchors and control screen offset is already considered by refWindow (anchor[0])
         layout = LoadLayout(inFileName);
-        /*
-        // Add refWindow.x/.y offset to all controls/anchors
-        //-----------------------------------------------------------------------------------
-        // Offset anchors with refAnchor offset
-        for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
-        {
-            if (layout->anchors[a].enabled)
-            {
-                layout->anchors[a].x += layout->refWindow.x;
-                layout->anchors[a].y += layout->refWindow.y;
-            }
-        }
 
-        // Offset controls with no anchor, refAnchor offset must be applied to control position
-        for (int i = 0; i < layout->controlCount; i++)
-        {
-            if (layout->controls[i].ap->id == 0)
-            {
-                layout->controls[i].rec.x += refAnchor.x;
-                layout->controls[i].rec.y += refAnchor.y;
-            }
-        }
-        //-----------------------------------------------------------------------------------
-        */
         SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
     }
     else layout = LoadLayout(NULL);     // Load empty layout
@@ -708,30 +680,6 @@ int main(int argc, char *argv[])
                 {
                     memcpy(layout, tempLayout, sizeof(GuiLayout));
 
-                    /*
-                    // Add refAnchor offset to controls/anchors
-                    //-----------------------------------------------------------------------------------
-                    // Offset anchors with refAnchor offset
-                    for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
-                    {
-                        if (layout->anchors[a].enabled)
-                        {
-                            layout->anchors[a].x += refAnchor.x;
-                            layout->anchors[a].y += refAnchor.y;
-                        }
-                    }
-
-                    // Offset controls with no anchor, refAnchor offset must be applied to control position
-                    for (int i = 0; i < layout->controlCount; i++)
-                    {
-                        if (layout->controls[i].ap->id == 0)
-                        {
-                            layout->controls[i].rec.x += refAnchor.x;
-                            layout->controls[i].rec.y += refAnchor.y;
-                        }
-                    }
-                    //-----------------------------------------------------------------------------------
-                    */
                     // WARNING: When layout is loaded, anchor object references are not set, they must be reset manually
                     for (int i = 0; i < layout->controlCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
 
@@ -780,31 +728,8 @@ int main(int argc, char *argv[])
             }
             else
             {
-                // Remove refAnchor offset from controls/anchors
-                //-----------------------------------------------------------------------------------
                 GuiLayout outLayout = { 0 };
                 memcpy(&outLayout, layout, sizeof(GuiLayout));
-
-                // Offset all enabled anchors from reference window and offset
-                for (int a = 1; a < MAX_ANCHOR_POINTS; a++)
-                {
-                    if (outLayout.anchors[a].enabled)
-                    {
-                        outLayout.anchors[a].x -= (int)(outLayout.refWindow.x);// + refAnchor.x);
-                        outLayout.anchors[a].y -= (int)(outLayout.refWindow.y);// + refAnchor.y);
-                    }
-                }
-
-                // In case of controls with no anchor, offset must be applied to control position
-                for (int i = 0; i < outLayout.controlCount; i++)
-                {
-                    if (outLayout.controls[i].ap->id == 0)
-                    {
-                        outLayout.controls[i].rec.x -= (int)(outLayout.refWindow.x);//refAnchor.x;
-                        outLayout.controls[i].rec.y -= (int)(outLayout.refWindow.x);//refAnchor.y;
-                    }
-                }
-                //-----------------------------------------------------------------------------------
 
                 SaveLayout(&outLayout, inFileName);
 
