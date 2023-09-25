@@ -994,7 +994,7 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLay
             if(!config.exportButtonFunctions) TextAppend(toolstr, TextFormat("%sPressed = GuiLabelButton(%s, %s);", name, rec, text), pos);
             else TextAppend(toolstr, TextFormat("if (GuiLabelButton(%s, %s)) %s();", rec, text, TextToPascal(control.name)), pos); 
             break;
-        case GUI_CHECKBOX: TextAppend(toolstr, TextFormat("GuiCheckBox(%s, %s, &%sChecked);", name, rec, text, name), pos); break;
+        case GUI_CHECKBOX: TextAppend(toolstr, TextFormat("GuiCheckBox(%s, %s, &%sChecked);", rec, text, name), pos); break;
         case GUI_TOGGLE: TextAppend(toolstr, TextFormat("GuiToggle(%s, %s, &%sActive);", rec, text, name), pos); break;
         case GUI_TOGGLEGROUP:TextAppend(toolstr, TextFormat("GuiToggleGroup(%s, %s, &%sActive);", rec, text, name), pos); break;
         case GUI_COMBOBOX: TextAppend(toolstr, TextFormat("GuiComboBox(%s, %s, &%sActive);", rec, text, name), pos); break;
