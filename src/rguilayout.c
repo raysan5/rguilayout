@@ -32,6 +32,7 @@
 *           > When drawing a rectangle for selection, consider partial contained elements?
 *           > When a group of elements is selected, what can we do with it? Only move? Scale?
 *           > Moving a group of elements, how affects anchors?
+*       - Support multiple open layouts in TABS and/or same TAB? --> Export selected controls?
 *       - Allow exporting layout as an image, including layout info as a PNG chunk?
 *       - CLI: Support additional codegen options: exportAnchors, defineRecs, fullComments...
 *
