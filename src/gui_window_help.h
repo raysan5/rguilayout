@@ -154,6 +154,7 @@ static const char *helpLines[] = {
 
     "-Visual Options",
     "G - Toggle grid mode",
+    "F - Toggle global/relative position"
     "R - Toggle control rectangles view",
     "N - Toggle control names view",
     "L - Toggle control layer order view",
