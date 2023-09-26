@@ -3258,7 +3258,7 @@ int main(int argc, char *argv[])
                 {
                     // Save file: outFileName
                     // Check for valid extension and make sure it is
-                    if (!IsFileNameValid(outFileName)) strcpy(outFileName, "layout.rgl");
+                    if (!IsFileNameValid(GetFileName(outFileName))) strcpy(outFileName, "layout.rgl");
                     if ((GetFileExtension(outFileName) == NULL) || !IsFileExtension(outFileName, ".rgl")) strcat(outFileName, ".rgl\0");
 
                     GuiLayout outLayout = { 0 };
@@ -3297,7 +3297,7 @@ int main(int argc, char *argv[])
                 if (result == 1)
                 {
                     // Check for valid extension and make sure it is
-                    if (!IsFileNameValid(outFileName)) strcpy(outFileName, "layout_code.c");
+                    if (!IsFileNameValid(GetFileName(outFileName))) strcpy(outFileName, "layout_code.c");
                     if ((GetFileExtension(outFileName) == NULL) ||
                         (!IsFileExtension(outFileName, ".c") && !IsFileExtension(outFileName, ".h"))) strcat(outFileName, ".h\0");
 
