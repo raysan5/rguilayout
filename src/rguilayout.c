@@ -259,6 +259,7 @@ static void UnloadLayout(GuiLayout *layout);                // Unload raygui lay
 static void ResetLayout(GuiLayout *layout);                 // Reset layout to default values
 static void SaveLayout(GuiLayout *layout, const char *fileName);     // Save raygui layout as text file (.rgl)
 
+static bool IsFileNameValid(const char *fileName);          // Check if fileName is valid for the platform/OS
 
 //----------------------------------------------------------------------------------
 // Program main entry point
@@ -1065,7 +1066,7 @@ int main(int argc, char *argv[])
                 else defaultRec[selectedType].y -= offsetY;
             }
 
-            // Check mouse is in the "work screen area" and not on toolbars/panels 
+            // Check mouse is in the "work screen area" and not on toolbars/panels
             if (CheckCollisionPointRec(mouse, (Rectangle){ 0, 40, GetScreenWidth(), GetScreenHeight() - 64 }) &&
                 !CheckCollisionPointRec(mouse, windowControlsPaletteState.panelBounds))
             {
@@ -2005,7 +2006,7 @@ int main(int argc, char *argv[])
                 if (CheckCollisionPointRec(mouse, tracemap.rec) && (focusedControl == -1) && (focusedAnchor == -1)) tracemap.focused = true;
 
                 // Check if mouse is in the screen work area
-                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && 
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) &&
                     CheckCollisionPointRec(mouse, (Rectangle){ 0, 40, GetScreenWidth(), GetScreenHeight() - 64 }))  tracemap.selected = tracemap.focused;
 
                 if (tracemap.selected)
@@ -2379,7 +2380,7 @@ int main(int argc, char *argv[])
                         else if (i == selectedAnchor) colAnchor = colAnchorSelected;
 
                         if (anchorMoveMode || anchorEditMode) colAnchor = colAnchorEditMode;
-                        
+
                         if (layout->anchors[i].hidding) colAnchor = colAnchorHidden;
 
                         // Draw anchor circles and lines
@@ -2840,7 +2841,7 @@ int main(int argc, char *argv[])
                         }
                     }
                 }
-            
+
                 // Draw controls name if required
                 if (mainToolbarState.showControlNamesActive)
                 {
@@ -3288,6 +3289,7 @@ int main(int argc, char *argv[])
                 {
                     // Save file: outFileName
                     // Check for valid extension and make sure it is
+                    if (!IsFileNameValid(outFileName)) strcpy(outFileName, "layout.rgl");
                     if ((GetFileExtension(outFileName) == NULL) || !IsFileExtension(outFileName, ".rgl")) strcat(outFileName, ".rgl\0");
 
                     GuiLayout outLayout = { 0 };
@@ -3326,6 +3328,7 @@ int main(int argc, char *argv[])
                 if (result == 1)
                 {
                     // Check for valid extension and make sure it is
+                    if (!IsFileNameValid(outFileName)) strcpy(outFileName, "layout_code.c");
                     if ((GetFileExtension(outFileName) == NULL) ||
                         (!IsFileExtension(outFileName, ".c") && !IsFileExtension(outFileName, ".h"))) strcat(outFileName, ".h\0");
 
@@ -3644,7 +3647,7 @@ static GuiLayout *LoadLayout(const char *fileName)
                         layout->controls[layout->controlCount].text);
 
                     layout->controls[layout->controlCount].ap = &layout->anchors[anchorId];
-                    
+
                     // NOTE: refWindow offset (anchor[0]) must be added to controls with no anchor
                     if (anchorId == 0)
                     {
@@ -3899,4 +3902,62 @@ static bool IsRecContainedInRec(Rectangle container, Rectangle rec)
         ((rec.y + rec.height) <= (container.y + container.height))) result = true;
 
     return result;
+}
+
+// Check if fileName is valid for the platform/OS
+static bool IsFileNameValid(const char *fileName)
+{
+    bool valid = false;
+
+    if ((fileName != NULL) && (fileName[0] != '\0'))
+    {
+        int length = strlen(fileName);
+        bool allPeriods = true;
+
+        for (int i = 0; i < length; i++)
+        {
+            // Check invalid characters
+            if ((fileName[i] == '<') ||
+                (fileName[i] == '>') ||
+                (fileName[i] == ':') ||
+                (fileName[i] == '\"') ||
+                (fileName[i] == '\/') ||
+                (fileName[i] == '\\') ||
+                (fileName[i] == '|') ||
+                (fileName[i] == '?') ||
+                (fileName[i] == '*')) { valid = false; break; }
+
+            // Check non-glyph characters
+            if ((unsigned char)fileName[i] < 32) { valid = false; break; }
+
+            // TODO: Check trailing periods/spaces?
+
+            // Check if filename is not all periods
+            if (fileName[i] != '.') allPeriods = false;
+        }
+
+        if (allPeriods) valid = false;
+
+/*
+        if (valid)
+        {
+            // Check invalid DOS names
+            if (length >= 3)
+            {
+                if (((fileName[0] == 'C') && (fileName[1] == 'O') && (fileName[2] == 'N')) ||   // CON
+                    ((fileName[0] == 'P') && (fileName[1] == 'R') && (fileName[2] == 'N')) ||   // PRN
+                    ((fileName[0] == 'A') && (fileName[1] == 'U') && (fileName[2] == 'X')) ||   // AUX
+                    ((fileName[0] == 'N') && (fileName[1] == 'U') && (fileName[2] == 'L'))) valid = false; // NUL
+            }
+
+            if (length >= 4)
+            {
+                if (((fileName[0] == 'C') && (fileName[1] == 'O') && (fileName[2] == 'M') && ((fileName[3] >= '0') && (fileName[3] <= '9'))) ||  // COM0-9
+                    ((fileName[0] == 'L') && (fileName[1] == 'P') && (fileName[2] == 'T') && ((fileName[3] >= '0') && (fileName[3] <= '9')))) valid = false; // LPT0-9
+            }
+        }
+*/
+    }
+
+    return valid;
 }
