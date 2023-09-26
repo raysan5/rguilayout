@@ -48,7 +48,7 @@ Load and Save `.rgl` layout files to keep working on custom layouts.
 
 Export layouts as code, Code Generation Window offers multiple export options to generate the code. 
 
-**To compile generated code, you need `raygui v3.5-dev` library and `raylib v4.5-dev`.**
+**To compile generated code, you need `raygui v4.0` library and latest `raylib v4.6-dev`.**
 
 `rGuiLayout Standalone` comes with command-line support for batch conversion. For usage help:
 
