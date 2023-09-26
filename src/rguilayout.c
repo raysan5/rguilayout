@@ -227,6 +227,9 @@ bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
+
+// NOTE: Most of the structs are defined in "rguilayout.h"
+
 // Tracemap type
 typedef struct {
     Texture2D texture;
@@ -308,7 +311,9 @@ int main(int argc, char *argv[])
     const int screenWidth = 1280;
     const int screenHeight = 800;
 
+#if defined(PLATFORM_DESKTOP)
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // Window configuration flags
+#endif
     InitWindow(screenWidth, screenHeight, TextFormat("%s v%s | %s", toolName, toolVersion, toolDescription));
     SetWindowMinSize(1280, 720);
     SetExitKey(0);
@@ -372,45 +377,6 @@ int main(int argc, char *argv[])
     //Vector2 multiSelectStartPos = { 0 };
     //int multiSelectControls[MAX_ELEMENTS_SELECTION] = { -1 };
     //int multiSelectCount = 0;
-
-    /*
-    // Colors used for the different modes, states and elements actions (original design)
-    Color colEditControlTextOverlay = SKYBLUE;  // Control text edit mode, screen overlay (Fade: 0.2f)
-    Color colEditControlNameOverlay = GREEN;    // Control name edit mode, screen overlay (Fade: 0.2f)
-    Color colEditControlNameBackRec = WHITE;    // Control name edit mode, back rectangle
-    Color colEditAnchorNameOverlay = ORANGE;    // Anchor name edit mode, screen overlay (Fade: 0.2f)
-    Color colShowControlRecs = BLUE;            // Control rectangles mode (Fade: 0.2f / Line: Fade: 0.7f)
-
-    Color colControlCreationCursor = RED;       // Control creation cursor (NOT USED)
-    Color colControlFocused = RED;              // Control focused (mouse over it)
-    Color colControlSelected = RED;             // Control selected
-    Color colControlSelectedResize = BLUE;      // Control resize mode (keyboard, RCTRL + ARROWS)
-    Color colControlRecTextDefault = RED;       // Control position text (no snap mode)
-    Color colControlRecTextSnap = LIME;         // Control position text (snap mode)
-    Color colControlRecTextGlobal = MAROON;     // Control position text (global pos)
-    Color colControlRecTextPrecision = BLUE;    // Control position text (precision mode - RSHIFT)
-
-    Color colAnchorCreation = RED;        // Anchor creation cursor (A)
-    Color colAnchorDefault = BLUE;              // Anchor default (not focused or selected)
-    Color colAnchorFocused = PURPLE;            // Anchor focused (not filling)
-    Color colAnchorSelected = RED;              // Anchor selected (with filling)
-    Color colAnchorEditMode = ORANGE;           // Anchor selected and edit mode (A over focused anchor)
-    Color colAnchorLinkLine = RED;              // Anchor link lines
-
-    Color colAnchor0 = DARKGRAY;                // Anchor 0 (refWindow)
-    Color colAnchorLinkLine0 = LIGHTGRAY;       // Anchor 0 link lines (refWindow)
-
-    Color colAnchorHidden = GRAY;               // Anchor hidden controls mode
-    Color colAnchorLinkLineHidden = LIGHTGRAY;  // Anchor hidden control link lines
-
-    Color colRefWindow = BLACK;                 // Ref Window rectangle (Fade: 0.1f)
-    Color colRefWindowText = DARKGRAY;          // Ref Window position text
-
-    Color colTracemapFocused = MAROON;          // Tracemap focused (base + lines)
-    Color colTracemapSelected = RED;            // Tracemap selected (base + lines)
-    Color colTracemapLocked = BLACK;            // Tracemap locked (border lines)
-    Color colTracemapResize = BLUE;             // Tracemap resize mode (keyboard, RCTRL + ARROWS)
-    */
 
     // Define colors to be aligned with style selected
     // Colors used for the different modes, states and elements actions
