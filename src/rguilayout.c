@@ -23,7 +23,6 @@
 *   LIMITATIONS/NOTES:
 *       - Code is a bit old and comboluted, it uses multiple flags to identify states (edit control, edit anchor, edit text...)
 *         and controls/anchors are selected by index, probably using pointer would simplify some parts of the code
-*       - Show global position for controls is not documented in help (KEY_FIVE)
 *
 *   POSSIBLE IMPROVEMENTS:
 *       - Support multiple controls selection -> Requires some redesing. Considerations:
@@ -903,7 +902,7 @@ int main(int argc, char *argv[])
             }
 
             // Toggle global position info (anchor reference or global reference)
-            if (IsKeyPressed(KEY_FIVE)) showGlobalPosition = !showGlobalPosition;
+            if (IsKeyPressed(KEY_F)) showGlobalPosition = !showGlobalPosition;
 
             if (IsKeyPressed(KEY_H) && tracemap.selected) mainToolbarState.hideTracemapActive = true;
 
@@ -3128,13 +3127,14 @@ int main(int argc, char *argv[])
                         (int)tracemap.rec.x - (int)layout->refWindow.x, (int)tracemap.rec.y - (int)layout->refWindow.y, (int)tracemap.rec.width, (int)tracemap.rec.height,
                         (int)(tracemap.alpha*100.0f), tracemap.locked? "LOCKED" : "UNLOCKED"));
             }
-            else GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 600, 24 }, "NO CONTROL | ANCHOR | TRACEMAP SELECTED");
+            else GuiStatusBar((Rectangle){ 160 + 168 - 2, GetScreenHeight() - 24, 560, 24 }, "NO CONTROL | ANCHOR | TRACEMAP SELECTED");
 
             // Environment info, far right position anchor
             GuiSetStyle(STATUSBAR, TEXT_PADDING, 0);
             GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
-            GuiStatusBar((Rectangle){ 160 + 168 + 600 - 3, GetScreenHeight() - 24, GetScreenWidth() - 928 - 180 - 120 + 6, 24 }, NULL);
-            GuiStatusBar((Rectangle){ GetScreenWidth() - 180 - 120 + 2, GetScreenHeight() - 24, 120, 24 }, (mainToolbarState.snapModeActive? "SNAP: ON" : "SNAP: OFF"));
+            GuiStatusBar((Rectangle){ 160 + 168 + 560 - 3, GetScreenHeight() - 24, GetScreenWidth() - 928 - 180 - 100 + 6, 24 }, NULL);
+            GuiStatusBar((Rectangle){ GetScreenWidth() - 180 - 100 - 120 + 3, GetScreenHeight() - 24, 120, 24 }, (showGlobalPosition? "POS: GLOBAL" : "POS: RELATIVE"));
+            GuiStatusBar((Rectangle){ GetScreenWidth() - 180 - 100 + 2, GetScreenHeight() - 24, 100, 24 }, (mainToolbarState.snapModeActive? "SNAP: ON" : "SNAP: OFF"));
             GuiStatusBar((Rectangle){ GetScreenWidth() - 180, GetScreenHeight() - 24, 180, 24}, TextFormat("GRID: %i px | %i Divs.", gridSpacing*gridSubdivisions, gridSubdivisions));
             GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
             GuiSetStyle(STATUSBAR, TEXT_PADDING, 8);
@@ -3911,7 +3911,7 @@ static bool IsRecContainedInRec(Rectangle container, Rectangle rec)
 // Check if fileName is valid for the platform/OS
 static bool IsFileNameValid(const char *fileName)
 {
-    bool valid = false;
+    bool valid = true;
 
     if ((fileName != NULL) && (fileName[0] != '\0'))
     {
