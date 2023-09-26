@@ -42,9 +42,13 @@
 *           NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   VERSIONS HISTORY:
-*       4.0  (xx-Sep-2023)  ADDED: Support macOS builds (x86_64 + arm64)
+*       4.0  (26-Sep-2023)  ADDED: Support macOS builds (x86_64 + arm64)
+*                           REMOVED: workArea hack for screen-space controls position
+*                           REDESIGNED: Reference window definition (anchor[0])
 *                           REVIEWED: Controls palette panel
-*                           REVIEWED: Controls code export
+*                           REVIEWED: Layout code export window
+*                           REVIEWED: Layout code generator (.c/.h)
+*                           REVIEWED: Layout loading and saving (.rgl)
 *                           REVIEWED: Regenerated tool imagery
 *                           UPDATED: Using raygui 4.0 and latest raylib 4.6-dev
 *
@@ -214,10 +218,10 @@ bool __stdcall FreeConsole(void);       // Close console from code (kernel32.lib
 
 #define MOVEMENT_FRAME_SPEED         2      // Controls movement speed in pixels per frame
 
-#define MAX_UNDO_LEVELS             32      // Undo levels supported for the ring buffer
-#define UNDO_SNAPSHOT_FRAMERATE    120      // Framerate to define when a new snapshot is taken (if changes in layout)
+#define MAX_UNDO_LEVELS             64      // Undo levels supported for the ring buffer
+#define UNDO_SNAPSHOT_FRAMERATE     90      // Frames to take a new layout snapshot (if changes done), @60 fps = 1.5sec
 
-#define MAX_ICONS_AVAILABLE        217      // Max raygui icons displayed on icon selector
+#define MAX_ICONS_AVAILABLE        220      // Max raygui icons displayed on icon selector
 
 #define MAX_ELEMENTS_SELECTION      64      // Max elements selected
 
