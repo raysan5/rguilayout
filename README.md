@@ -10,7 +10,7 @@ rGuiLayout can be used for free as a [WebAssembly online tool](https://raylibtec
 
 <br>
 
-_NOTE: This tool is itended to be used with [**raygui 3.5-dev**](https://github.com/raysan5/raygui)_
+**NOTE: Latest `rGuiLayout 4.0` release is intended to be used with [`raygui 4.0`](https://github.com/raysan5/raygui/releases/tag/4.0) release.**
 
 ## rGuiLayout Features
 
@@ -48,7 +48,7 @@ Load and Save `.rgl` layout files to keep working on custom layouts.
 
 Export layouts as code, Code Generation Window offers multiple export options to generate the code. 
 
-**To compile generated code, you need `raygui v3.5-dev` library and `raylib v4.5-dev`.**
+**To compile generated code, you need `raygui v4.0` library and latest `raylib v4.6-dev`.**
 
 `rGuiLayout Standalone` comes with command-line support for batch conversion. For usage help:
 
