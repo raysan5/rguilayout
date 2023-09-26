@@ -1082,8 +1082,8 @@ static char *GetControlTextParam(GuiLayoutControl control, bool defineText)
     if (defineText) strcpy(text, TextFormat("%sText", control.name));
     else 
     {
-        // In case (text == "") we use NULL value directly
-        if ((control.text == NULL) || (control.text[0] == '\0')) strcpy(text, "NULL");
+        // NOTE: control.text will never be NULL
+        if (control.text[0] == '\0') strcpy(text, "NULL");
         else strcpy(text, TextFormat("\"%s\"", control.text));
     }
 

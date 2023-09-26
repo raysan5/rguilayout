@@ -71,7 +71,7 @@ typedef struct GuiPanelControlsPaletteState {
     float sliderBarValue;                   // GuiSliderbar()
     float progressBarValue;                 // GuiProgressBar()
     Vector2 scrollPanelScrollOffset;        // GuiScrollPanel()
-    Vector2 scrollPanelView;
+    Rectangle scrollPanelView;
     Vector2 scrollPanelBoundsOffset;
     int listViewScrollIndex;                // GuiListView()
     int listViewActive;
@@ -175,7 +175,6 @@ void GuiPanelControlsPalette(GuiPanelControlsPaletteState *state)
     if (state->panelActive)
     {
         // Update ScrollPanel bounds in case window is resized
-        int screenHeight = GetScreenHeight();
         state->panelBounds.width = ((GetScreenHeight() - 64) < (944 + 12))? 170 : 158;     // Check if scroll bar is needed
         state->panelBounds.y = 40;
         state->panelBounds.height = GetScreenHeight() - 24 - 40 + 2;

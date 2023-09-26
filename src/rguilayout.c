@@ -2367,7 +2367,6 @@ int main(int argc, char *argv[])
                     if (i == 0)    // Reference anchor
                     {
                         Color colAnchor = colAnchor0;
-                        Color colAnchorLines = colAnchor0;
 
                         if ((i == focusedAnchor) || (i == selectedAnchor)) DrawRectangle(layout->anchors[0].x - ANCHOR_RADIUS, layout->anchors[0].y - ANCHOR_RADIUS, ANCHOR_RADIUS*2, ANCHOR_RADIUS*2, Fade(colAnchor, 0.2f));
                         DrawRectangleLines(layout->anchors[0].x - ANCHOR_RADIUS, layout->anchors[0].y - ANCHOR_RADIUS, ANCHOR_RADIUS*2, ANCHOR_RADIUS*2, Fade(colAnchor, 0.5f));
@@ -2695,7 +2694,7 @@ int main(int argc, char *argv[])
                             showIconPanel = true;
 
                             // Draw icons selector
-                            selectedIcon = GuiToggleGroup((Rectangle){ (int)textboxRec.x, (int)textboxRec.y + (int)textboxRec.height + 10, 18, 18 }, toggleIconsText, selectedIcon);
+                            GuiToggleGroup((Rectangle){ (int)textboxRec.x, (int)textboxRec.y + (int)textboxRec.height + 10, 18, 18 }, toggleIconsText, &selectedIcon);
                             if (selectedIcon > 0)
                             {
                                 strcpy(layout->controls[selectedControl].text, TextFormat("#%03i#\0", selectedIcon));
@@ -3925,7 +3924,7 @@ static bool IsFileNameValid(const char *fileName)
                 (fileName[i] == '>') ||
                 (fileName[i] == ':') ||
                 (fileName[i] == '\"') ||
-                (fileName[i] == '\/') ||
+                (fileName[i] == '/') ||
                 (fileName[i] == '\\') ||
                 (fileName[i] == '|') ||
                 (fileName[i] == '?') ||
