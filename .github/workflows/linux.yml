@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
-    
+
     env:
       PROJECT_NAME: ${{ github.event.repository.name }}
       PROJECT_BUILD_PATH: ${{ github.event.repository.name }}/src
@@ -16,33 +16,33 @@ jobs:
       PROJECT_SOURCES: "'${{ github.event.repository.name }}.c external/tinyfiledialogs.c'"
       PROJECT_CUSTOM_FLAGS: ""
       RAYLIB_CONFIG_FLAGS: "'-DSUPPORT_MODULE_RSHAPES -DSUPPORT_MODULE_RTEXTURES -DSUPPORT_MODULE_RTEXT -DSUPPORT_EVENTS_WAITING -DSUPPORT_COMPRESSION_API -DSUPPORT_QUADS_DRAW_MODE -DSUPPORT_IMAGE_MANIPULATION -DSUPPORT_FILEFORMAT_PNG -DSUPPORT_IMAGE_EXPORT -DSUPPORT_DEFAULT_FONT -DSUPPORT_TEXT_MANIPULATION -DSUPPORT_STANDARD_FILEIO -DSUPPORT_TRACELOG'"
-    
+
     steps:
     - name: Checkout this repo
       uses: actions/checkout@master
       with:
         path: ${{ env.PROJECT_NAME }}
-      
+
     - name: Checkout raylib repo
       uses: actions/checkout@v3
       with:
         repository: raysan5/raylib
         path: raylib
-        
+
     - name: Setup Release Paths
       run: |
         echo "PROJECT_RELEASE_PATH=${{ env.PROJECT_NAME }}_v${{ github.event.release.tag_name }}_linux_x64" >> $GITHUB_ENV
       shell: bash
       if: github.event_name == 'release' && github.event.action == 'published'
-    
+
     - name: Setup Environment
-      run: | 
+      run: |
         sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev
         mkdir ${{ env.PROJECT_RELEASE_PATH }}
         ls
       shell: bash
-        
+
     - name: Build raylib Library
       run: |
         cd raylib/src
@@ -61,8 +61,8 @@ jobs:
         cp ${{ env.PROJECT_NAME }}/README.md ${{ env.PROJECT_RELEASE_PATH }}
         cp ${{ env.PROJECT_NAME }}/USAGE.md ${{ env.PROJECT_RELEASE_PATH }}
         mkdir ${{ env.PROJECT_RELEASE_PATH }}/layouts
-        cp ${{ env.PROJECT_NAME }}/layouts/audio_player.rgl ${{ env.PROJECT_RELEASE_PATH }}/layouts
-        cp ${{ env.PROJECT_NAME }}/layouts/file_dialog.rgl ${{ env.PROJECT_RELEASE_PATH }}/layouts
+        cp ${{ env.PROJECT_NAME }}/layouts/window_audio_player.rgl ${{ env.PROJECT_RELEASE_PATH }}/layouts
+        cp ${{ env.PROJECT_NAME }}/layouts/window_file_dialog.rgl ${{ env.PROJECT_RELEASE_PATH }}/layouts
         cp ${{ env.PROJECT_NAME }}/layouts/window_image_edit.rgl ${{ env.PROJECT_RELEASE_PATH }}/layouts
         cp ${{ env.PROJECT_NAME }}/layouts/window_image_export.rgl ${{ env.PROJECT_RELEASE_PATH }}/layouts
         cp ${{ env.PROJECT_NAME }}/layouts/window_image_import_raw.rgl ${{ env.PROJECT_RELEASE_PATH }}/layouts
@@ -77,7 +77,7 @@ jobs:
       with:
         name: ${{ env.PROJECT_RELEASE_PATH }}.zip
         path: ./${{ env.PROJECT_RELEASE_PATH }}.zip
-        
+
     # Alternative: https://github.com/marketplace/actions/gh-release
     - name: Upload Artifact to Release
       uses: actions/upload-release-asset@v1.0.1
