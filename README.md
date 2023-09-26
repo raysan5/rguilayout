@@ -10,7 +10,7 @@ rGuiLayout can be used for free as a [WebAssembly online tool](https://raylibtec
 
 <br>
 
-_NOTE: This tool is itended to be used with [**raygui 3.5-dev**](https://github.com/raysan5/raygui)_
+**NOTE: Latest `rGuiLayout 4.0` release is intended to be used with [`raygui 4.0`](https://github.com/raysan5/raygui/releases/tag/4.0) release.**
 
 ## rGuiLayout Features
 
