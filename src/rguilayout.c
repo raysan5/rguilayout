@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
     Color colAnchorCreation = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));  // Anchor creation cursor (A)
     Color colAnchorDefault = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));         // Anchor default (not focused or selected)
     Color colAnchorFocused = GetColor(GuiGetStyle(BUTTON, TEXT_COLOR_PRESSED));           // Anchor focused (not filling)
-    Color colAnchorSelected = GetColor(GuiGetStyle(BUTTON, BASE_COLOR_PRESSED));;         // Anchor selected (with filling)
+    Color colAnchorSelected = GetColor(GuiGetStyle(BUTTON, BASE_COLOR_PRESSED));          // Anchor selected (with filling)
     Color colAnchorEditMode = ORANGE;           // Anchor selected and edit mode (A over focused anchor)
     Color colAnchorLinkLine = GetColor(GuiGetStyle(BUTTON, TEXT_COLOR_PRESSED));          // Anchor link lines
 
@@ -554,6 +554,8 @@ int main(int argc, char *argv[])
     bool showLoadTracemapDialog = false;
     bool showLoadTemplateDialog = false;
     //-----------------------------------------------------------------------------------
+    
+    int styleFrameCounter = 0;
 
     SetTargetFPS(60);       // Set our game desired framerate
     //--------------------------------------------------------------------------------------
@@ -561,11 +563,15 @@ int main(int argc, char *argv[])
     // Main game loop
     while (!closeWindow)    // Detect window close button
     {
+        // Basic program flow logic
+        //----------------------------------------------------------------------------------
+        //framesCounter++;                // General usage frames counter
+        mouse = GetMousePosition();     // Get mouse position each frame
+
         // WARNING: ASINCIFY requires this line,
         // it contains the call to emscripten_sleep() for PLATFORM_WEB
         if (WindowShouldClose()) windowExitActive = true;
-
-        mouse = GetMousePosition();
+        //----------------------------------------------------------------------------------
 
         // Undo layout change logic
         //----------------------------------------------------------------------------------
@@ -908,10 +914,15 @@ int main(int argc, char *argv[])
                 gridSnapDelta = gridSpacing;
             }
         }
+        //----------------------------------------------------------------------------------
 
         // Main toolbar logic
         //----------------------------------------------------------------------------------
         windowControlsPaletteState.panelActive = mainToolbarState.showControlPanelActive;
+        
+        //styleFrameCounter++;
+        //if ((styleFrameCounter%120) == 0) mainToolbarState.visualStyleActive++;
+        //if (mainToolbarState.visualStyleActive > 11) mainToolbarState.visualStyleActive = 0;
 
         // Visual options logic
         if (mainToolbarState.visualStyleActive != mainToolbarState.prevVisualStyleActive)
@@ -2172,7 +2183,10 @@ int main(int argc, char *argv[])
 
             resetLayout = false;
         }
+        //----------------------------------------------------------------------------------------------
 
+        // Window locks logic
+        //----------------------------------------------------------------------------------------------
         // WARNING: If any window is shown, cancel any edition mode
         if (windowHelpState.windowActive ||
             windowAboutState.windowActive ||
@@ -3659,7 +3673,7 @@ static GuiLayout *LoadLayout(const char *fileName)
 // Unload layout
 static void UnloadLayout(GuiLayout *layout)
 {
-    free(layout);
+    RL_FREE(layout);
 }
 
 // Reset layout to default values
