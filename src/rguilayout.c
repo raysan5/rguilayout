@@ -249,6 +249,10 @@ static const char *toolName = TOOL_NAME;
 static const char *toolVersion = TOOL_VERSION;
 static const char *toolDescription = TOOL_DESCRIPTION;
 
+// NOTE: Max length depends on OS, in Windows MAX_PATH = 256
+static char inFileName[512] = { 0 };        // Input file name (required in case of drag & drop over executable)
+static char outFileName[512] = { 0 };       // Output file name (required for file save/export)
+
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
 
 //----------------------------------------------------------------------------------
@@ -272,9 +276,6 @@ static bool IsFileNameValid(const char *fileName);          // Check if fileName
 //----------------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
-    char inFileName[512] = { 0 };       // Input file name (required in case of drag & drop over executable)
-    char outFileName[512] = { 0 };      // Output file name (required for file save/export)
-
 #if !defined(_DEBUG)
     SetTraceLogLevel(LOG_NONE);         // Disable raylib trace log messsages
 #endif
@@ -554,7 +555,7 @@ int main(int argc, char *argv[])
     bool showLoadTracemapDialog = false;
     bool showLoadTemplateDialog = false;
     //-----------------------------------------------------------------------------------
-    
+
     int styleFrameCounter = 0;
 
     SetTargetFPS(60);       // Set our game desired framerate
@@ -919,7 +920,7 @@ int main(int argc, char *argv[])
         // Main toolbar logic
         //----------------------------------------------------------------------------------
         windowControlsPaletteState.panelActive = mainToolbarState.showControlPanelActive;
-        
+
         //styleFrameCounter++;
         //if ((styleFrameCounter%120) == 0) mainToolbarState.visualStyleActive++;
         //if (mainToolbarState.visualStyleActive > 11) mainToolbarState.visualStyleActive = 0;
@@ -3449,8 +3450,6 @@ static void ProcessCommandLine(int argc, char *argv[])
     // CLI required variables
     bool showUsageInfo = false;         // Toggle command line usage info
 
-    char inFileName[512] = { 0 };       // Input file name
-    char outFileName[512] = { 0 };      // Output file name
     char templateFile[512] = { 0 };     // Template file name
 
     int outputFormat = 0;               // Supported output formats
