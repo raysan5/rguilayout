@@ -2318,11 +2318,11 @@ int main(int argc, char *argv[])
                         case GUI_SCROLLPANEL:
                         {
                             GuiSetAlpha(0.7f);
-                            GuiScrollPanel(rec, (layout->controls[i].text[0] == '\0') ? NULL : layout->controls[i].text, rec, NULL, NULL);
+                            GuiScrollPanel(rec, (layout->controls[i].text[0] == '\0')? NULL : layout->controls[i].text, rec, NULL, NULL);
                             GuiSetAlpha(1.0f);
                         } break;
                         case GUI_LISTVIEW: GuiListView(rec, layout->controls[i].text, &listViewScrollIndex, &listViewActive); break;
-                        case GUI_COLORPICKER: GuiColorPicker(rec, (layout->controls[i].text[0] == '\0') ? NULL : layout->controls[i].text, NULL); break;
+                        case GUI_COLORPICKER: GuiColorPicker(rec, (layout->controls[i].text[0] == '\0')? NULL : layout->controls[i].text, NULL); break;
                         case GUI_DUMMYREC: GuiDummyRec(rec, layout->controls[i].text); break;
                         default: break;
                     }
