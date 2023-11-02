@@ -69,10 +69,10 @@
 *       1.0  (14-May-2018)  First release
 *
 *   DEPENDENCIES:
-*       raylib 4.6-dev          - Windowing/input management and drawing
-*       raygui 4.0              - Immediate-mode GUI controls with custom styling and icons
-*       rpng 1.1                - PNG chunks management
-*       tinyfiledialogs 3.13.3  - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
+*       raylib 4.6-dev      - Windowing/input management and drawing
+*       raygui 4.0          - Immediate-mode GUI controls with custom styling and icons
+*       rpng 1.1            - PNG chunks management
+*       tinyfiledialogs 3.13.3 - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
 *
 *   BUILDING:
 *     - Windows (MinGW-w64):
@@ -3582,64 +3582,64 @@ static GuiLayout *LoadLayout(const char *fileName)
             {
                 switch (buffer[0])
                 {
-                case 'r':
-                {
-                    sscanf(buffer, "r %f %f %f %f", &layout->refWindow.x, &layout->refWindow.y, &layout->refWindow.width, &layout->refWindow.height);
-
-                    // NOTE: Reference window defines anchor[0]
-                    layout->anchors[0].id = 0;
-                    layout->anchors[0].ap = NULL;
-                    layout->anchors[0].x = layout->refWindow.x;
-                    layout->anchors[0].y = layout->refWindow.y;
-                    layout->anchors[0].enabled = true;
-                    strcpy(layout->anchors[0].name, "refPoint");
-
-                    layout->anchorCount++;
-                } break;
-                case 'a':
-                {
-                    int enabled = 0;
-                    sscanf(buffer, "a %d %s %d %d %d",
-                        &layout->anchors[layout->anchorCount].id,
-                        anchorName,
-                        &layout->anchors[layout->anchorCount].x,
-                        &layout->anchors[layout->anchorCount].y,
-                        &enabled);
-
-                    if (layout->anchors[layout->anchorCount].id > 0)
+                    case 'r':
                     {
-                        layout->anchors[layout->anchorCount].enabled = (enabled? true : false);
-                        strcpy(layout->anchors[layout->anchorCount].name, anchorName);
+                        sscanf(buffer, "r %f %f %f %f", &layout->refWindow.x, &layout->refWindow.y, &layout->refWindow.width, &layout->refWindow.height);
+
+                        // NOTE: Reference window defines anchor[0]
+                        layout->anchors[0].id = 0;
+                        layout->anchors[0].ap = NULL;
+                        layout->anchors[0].x = layout->refWindow.x;
+                        layout->anchors[0].y = layout->refWindow.y;
+                        layout->anchors[0].enabled = true;
+                        strcpy(layout->anchors[0].name, "refPoint");
 
                         layout->anchorCount++;
-                    }
-                } break;
-                case 'c':
-                {
-                    int anchorId = 0;
-                    sscanf(buffer, "c %d %d %s %f %f %f %f %d %[^\n]s",
-                        &layout->controls[layout->controlCount].id,
-                        &layout->controls[layout->controlCount].type,
-                        layout->controls[layout->controlCount].name,
-                        &layout->controls[layout->controlCount].rec.x,
-                        &layout->controls[layout->controlCount].rec.y,
-                        &layout->controls[layout->controlCount].rec.width,
-                        &layout->controls[layout->controlCount].rec.height,
-                        &anchorId,
-                        layout->controls[layout->controlCount].text);
-
-                    layout->controls[layout->controlCount].ap = &layout->anchors[anchorId];
-
-                    // NOTE: refWindow offset (anchor[0]) must be added to controls with no anchor
-                    if (anchorId == 0)
+                    } break;
+                    case 'a':
                     {
-                        layout->controls[layout->controlCount].rec.x += layout->refWindow.x;
-                        layout->controls[layout->controlCount].rec.y += layout->refWindow.y;
-                    }
+                        int enabled = 0;
+                        sscanf(buffer, "a %d %s %d %d %d",
+                            &layout->anchors[layout->anchorCount].id,
+                            anchorName,
+                            &layout->anchors[layout->anchorCount].x,
+                            &layout->anchors[layout->anchorCount].y,
+                            &enabled);
 
-                    layout->controlCount++;
-                } break;
-                default: break;
+                        if (layout->anchors[layout->anchorCount].id > 0)
+                        {
+                            layout->anchors[layout->anchorCount].enabled = (enabled? true : false);
+                            strcpy(layout->anchors[layout->anchorCount].name, anchorName);
+
+                            layout->anchorCount++;
+                        }
+                    } break;
+                    case 'c':
+                    {
+                        int anchorId = 0;
+                        sscanf(buffer, "c %d %d %s %f %f %f %f %d %[^\n]s",
+                            &layout->controls[layout->controlCount].id,
+                            &layout->controls[layout->controlCount].type,
+                            layout->controls[layout->controlCount].name,
+                            &layout->controls[layout->controlCount].rec.x,
+                            &layout->controls[layout->controlCount].rec.y,
+                            &layout->controls[layout->controlCount].rec.width,
+                            &layout->controls[layout->controlCount].rec.height,
+                            &anchorId,
+                            layout->controls[layout->controlCount].text);
+
+                        layout->controls[layout->controlCount].ap = &layout->anchors[anchorId];
+
+                        // NOTE: refWindow offset (anchor[0]) must be added to controls with no anchor
+                        if (anchorId == 0)
+                        {
+                            layout->controls[layout->controlCount].rec.x += layout->refWindow.x;
+                            layout->controls[layout->controlCount].rec.y += layout->refWindow.y;
+                        }
+
+                        layout->controlCount++;
+                    } break;
+                    default: break;
                 }
 
                 fgets(buffer, 256, rglFile);
