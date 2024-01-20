@@ -122,6 +122,9 @@
 #define TOOL_RELEASE_DATE       "Sep.2023"
 #define TOOL_LOGO_COLOR         0x7da9b9ff
 
+#define SUPPORT_MODULE_RTEXTURES
+#define SUPPORT_MODULE_RTEXT
+
 #include "raylib.h"
 
 #if defined(PLATFORM_WEB)
@@ -344,6 +347,7 @@ int main(int argc, char *argv[])
     bool mouseScaleReady = false;           // Mouse is on position to start control scaling
     bool textEditMode = false;              // [E] Control text edit mode (KEY_T)
     bool nameEditMode = false;              // [E] Control name edit mode (KEY_N)
+    bool valuesEditMode = false;            // [E] Control values edit mode (KEY_V)
     bool orderLayerMode = false;            // Control order edit mode ((focusedControl != -1) + KEY_LEFT_ALT)
     bool precisionEditMode = false;         // Control precision edit mode (KEY_LEFT_SHIFT)
 
@@ -382,8 +386,9 @@ int main(int argc, char *argv[])
     // Define colors to be aligned with style selected
     // Colors used for the different modes, states and elements actions
     //-------------------------------------------------------------------------------------------------
-    Color colEditControlTextOverlay = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));  // Control text edit mode, screen overlay (Fade: 0.2f)
-    Color colEditControlNameOverlay = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));  // Control name edit mode, screen overlay (Fade: 0.2f)
+    Color colEditControlTextOverlay = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));   // Control text edit mode, screen overlay (Fade: 0.2f)
+    Color colEditControlNameOverlay = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));   // Control name edit mode, screen overlay (Fade: 0.2f)
+    Color colEditControlValuesOverlay = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED)); // Control values edit mode, screen overlay (Fade: 0.2f)
     Color colEditControlNameBackRec = WHITE;    // Control name edit mode, back rectangle
     Color colEditAnchorNameOverlay = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));   // Anchor name edit mode, screen overlay (Fade: 0.2f)
     Color colShowControlRecs = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));         // Control rectangles mode (Fade: 0.2f / Line: Fade: 0.7f)
@@ -435,6 +440,7 @@ int main(int argc, char *argv[])
     // Previous text/name, required when cancel editing
     char prevText[MAX_CONTROL_TEXT_LENGTH] = { 0 };
     char prevName[MAX_CONTROL_NAME_LENGTH] = { 0 };
+    char prevValues[MAX_CONTROL_VALUES_LENGTH] = { 0 };
     //-------------------------------------------------------------------------
 
     // Undo/redo system variables
@@ -577,7 +583,7 @@ int main(int argc, char *argv[])
         // Undo layout change logic
         //----------------------------------------------------------------------------------
         // Every second check if current layout has changed and record a new undo state
-        if (!dragMoveMode && !orderLayerMode && !resizeMode && !refWindowEditMode &&
+        if (!dragMoveMode && !orderLayerMode && !resizeMode && !refWindowEditMode && !valuesEditMode &&
             !textEditMode && !showIconPanel && !nameEditMode && !anchorEditMode && !anchorLinkMode && !anchorMoveMode)
         {
             undoFrameCounter++;
@@ -819,6 +825,15 @@ int main(int argc, char *argv[])
                     strcpy(layout->anchors[selectedAnchor].name, prevName);
                 }
             }
+            else if (valuesEditMode) // Cancel values edit mode
+            {
+                valuesEditMode = false;
+                if (selectedControl != -1)
+                {
+                    memset(layout->controls[selectedControl].values, 0, MAX_CONTROL_VALUES_LENGTH);
+                    strcpy(layout->controls[selectedControl].values, prevValues);
+                }
+            }
             else    // Close windows logic
             {
                 if (windowAboutState.windowActive) windowAboutState.windowActive = false;
@@ -840,7 +855,7 @@ int main(int argc, char *argv[])
 
         // Check no blocking mode enabled (active window | text edition | name edition)
         // to check the main keyboard shortcuts
-        if (!showWindowActive && !textEditMode && !nameEditMode)
+        if (!showWindowActive && !textEditMode && !nameEditMode && !valuesEditMode)
         {
             // Toggle Grid mode
             if (IsKeyPressed(KEY_G)) mainToolbarState.showGridActive = !mainToolbarState.showGridActive;
@@ -1000,7 +1015,7 @@ int main(int argc, char *argv[])
         // Layout edition logic
         //----------------------------------------------------------------------------------------------
         // Check no blocking mode enabled (active window | text edition | name edition)
-        if (!showWindowActive && !nameEditMode && !textEditMode)
+        if (!showWindowActive && !nameEditMode && !textEditMode && !valuesEditMode)
         {
             // Mouse snap logic
             //----------------------------------------------------------------------------------------------
@@ -1138,6 +1153,18 @@ int main(int argc, char *argv[])
                                     || (layout->controls[layout->controlCount].type == GUI_LISTVIEW))
                                 {
                                     strcpy(layout->controls[layout->controlCount].text, "ONE;TWO;THREE");
+                                }
+
+                                if ((layout->controls[layout->controlCount].type == GUI_VALUEBOX
+                                 || layout->controls[layout->controlCount].type == GUI_SPINNER
+                                 || layout->controls[layout->controlCount].type == GUI_SLIDER
+                                 || layout->controls[layout->controlCount].type == GUI_SLIDERBAR))
+                                {
+                                    strcpy(layout->controls[layout->controlCount].values, "0;100");
+                                }
+                                else if (layout->controls[layout->controlCount].type == GUI_PROGRESSBAR)
+                                {
+                                    strcpy(layout->controls[layout->controlCount].values, "0;1");
                                 }
 
                                 // Control name definition (type + count)
@@ -1529,6 +1556,12 @@ int main(int argc, char *argv[])
                                     strcpy(prevName, layout->controls[selectedControl].name);
                                     textBoxCursorIndex = (int)strlen(layout->controls[selectedControl].name);
                                     nameEditMode = true;
+                                }
+                                else if (IsKeyReleased(KEY_V))
+                                {
+                                    strcpy(prevValues, layout->controls[selectedControl].values);
+                                    textBoxCursorIndex = (int)strlen(layout->controls[selectedControl].values);
+                                    valuesEditMode = true;
                                 }
                             }
                         }
@@ -2171,6 +2204,7 @@ int main(int argc, char *argv[])
             precisionEditMode = false;
             nameEditMode = false;
             textEditMode = false;
+            valuesEditMode = false;
             showIconPanel = false;
 
             ResetLayout(layout);
@@ -2203,6 +2237,7 @@ int main(int argc, char *argv[])
         {
             nameEditMode = false;
             textEditMode = false;
+            valuesEditMode = false;
             resizeMode = false;
             dragMoveMode = false;
             precisionEditMode = false;
@@ -2714,6 +2749,34 @@ int main(int argc, char *argv[])
 
                         if (GuiTextBox(textboxRec, layout->controls[selectedControl].name, MAX_CONTROL_NAME_LENGTH, nameEditMode)) nameEditMode = !nameEditMode;
                     }
+
+                    // Values edit
+                    if (valuesEditMode)
+                    {
+                        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(colEditControlValuesOverlay, 0.2f));
+
+                        Rectangle textboxRec = layout->controls[selectedControl].rec;
+
+                        int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
+                        int textWidth = MeasureText(layout->controls[selectedControl].values, fontSize);
+                        if (textboxRec.width < textWidth + 40) textboxRec.width = textWidth + 40;
+                        if (textboxRec.height < fontSize) textboxRec.height += fontSize;
+
+                        if (layout->controls[selectedControl].type == GUI_WINDOWBOX) textboxRec.height = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT;  // Defined inside raygui.h
+                        else if (layout->controls[selectedControl].type == GUI_GROUPBOX)
+                        {
+                            textboxRec.y -= 10;
+                            textboxRec.height = GuiGetStyle(DEFAULT, TEXT_SIZE)*2.0f;
+                        }
+
+                        if (layout->controls[selectedControl].ap->id > 0)
+                        {
+                            textboxRec.x += layout->controls[selectedControl].ap->x;
+                            textboxRec.y += layout->controls[selectedControl].ap->y;
+                        }
+
+                        if (GuiTextBox(textboxRec, layout->controls[selectedControl].values, MAX_CONTROL_VALUES_LENGTH, valuesEditMode)) valuesEditMode = !valuesEditMode;
+                    }
                 }
 
                 // Draw focused control selector
@@ -2924,6 +2987,14 @@ int main(int argc, char *argv[])
                 strcpy(prevName, layout->controls[selectedControl].name);
                 textBoxCursorIndex = (int)strlen(layout->controls[selectedControl].name);
                 nameEditMode = true;
+            }
+
+            // Control: Enable values edit mode if required
+            if (mainToolbarState.btnEditValuesPressed)
+            {
+                strcpy(prevValues, layout->controls[selectedControl].values);
+                textBoxCursorIndex = (int)strlen(layout->controls[selectedControl].values);
+                valuesEditMode = true;
             }
 
             // Control: Duplicate selected control if required
@@ -3617,10 +3688,11 @@ static GuiLayout *LoadLayout(const char *fileName)
                     case 'c':
                     {
                         int anchorId = 0;
-                        sscanf(buffer, "c %d %d %s %f %f %f %f %d %[^\n]s",
+                        sscanf(buffer, "c %d %d %s %s %f %f %f %f %d %[^\n]s",
                             &layout->controls[layout->controlCount].id,
                             &layout->controls[layout->controlCount].type,
                             layout->controls[layout->controlCount].name,
+                            layout->controls[layout->controlCount].values,
                             &layout->controls[layout->controlCount].rec.x,
                             &layout->controls[layout->controlCount].rec.y,
                             &layout->controls[layout->controlCount].rec.width,
@@ -3700,6 +3772,7 @@ static void ResetLayout(GuiLayout *layout)
         layout->controls[i].rec = (Rectangle){ 0, 0, 0, 0 };
         memset(layout->controls[i].text, 0, MAX_CONTROL_TEXT_LENGTH);
         memset(layout->controls[i].name, 0, MAX_CONTROL_NAME_LENGTH);
+        memset(layout->controls[i].values, 0, MAX_CONTROL_VALUES_LENGTH);
         layout->controls[i].ap = &layout->anchors[0];  // By default, set parent anchor
     }
 
@@ -3745,10 +3818,11 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
         {
             if (layout->controls[i].ap->id == 0)
             {
-                fprintf(rglFile, "c %03i %i %s %i %i %i %i %i %s\n",
+                fprintf(rglFile, "c %03i %i %s %s %i %i %i %i %i %s\n",
                     layout->controls[i].id,
                     layout->controls[i].type,
                     layout->controls[i].name,
+                    layout->controls[i].values,
                     (int)layout->controls[i].rec.x - (int)layout->refWindow.x,
                     (int)layout->controls[i].rec.y - (int)layout->refWindow.y,
                     (int)layout->controls[i].rec.width,
@@ -3758,10 +3832,11 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
             }
             else
             {
-                fprintf(rglFile, "c %03i %i %s %i %i %i %i %i %s\n",
+                fprintf(rglFile, "c %03i %i %s %s %i %i %i %i %i %s\n",
                     layout->controls[i].id,
                     layout->controls[i].type,
                     layout->controls[i].name,
+                    layout->controls[i].values,
                     (int)layout->controls[i].rec.x,
                     (int)layout->controls[i].rec.y,
                     (int)layout->controls[i].rec.width,

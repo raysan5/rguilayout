@@ -114,6 +114,7 @@ static char *GetControlRectangleText(int index, GuiLayoutControl control, bool d
 static char *GetScrollPanelContainerRecText(int index, GuiLayoutControl control, bool defineRecs, bool exportAnchors, const char *preText);
 static char *GetControlTextParam(GuiLayoutControl control, bool defineText);
 static char *GetControlNameParam(char *controlName, const char *preText);
+static int  *GetControlValuesParam(GuiLayoutControl control);
 
 //----------------------------------------------------------------------------------
 // Module Functions Definition
@@ -977,6 +978,7 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLay
     char *rec = GetControlRectangleText(index, control, config.defineRecs, config.exportAnchors, preText);
     char *text = GetControlTextParam(control, config.defineTexts);
     char *name = GetControlNameParam(control.name, preText);
+	int  *values = GetControlValuesParam(control);
 
     // TODO: Define text for window, groupbox, buttons, toggles and dummyrecs
     switch (control.type)
@@ -1001,11 +1003,11 @@ static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLay
         case GUI_DROPDOWNBOX: TextAppend(toolstr, TextFormat("if (GuiDropdownBox(%s, %s, &%sActive, %sEditMode)) %sEditMode = !%sEditMode;", rec, text, name, name, name, name), pos); break;
         case GUI_TEXTBOX: TextAppend(toolstr, TextFormat("if (GuiTextBox(%s, %sText, %i, %sEditMode)) %sEditMode = !%sEditMode;", rec, name, MAX_CONTROL_TEXT_LENGTH, name, name, name), pos); break;
         case GUI_TEXTBOXMULTI: TextAppend(toolstr, TextFormat("if (GuiTextBoxMulti(%s, %sText, %i, %sEditMode)) %sEditMode = !%sEditMode;", rec, name, MAX_CONTROL_TEXT_LENGTH, name, name, name), pos); break;
-        case GUI_VALUEBOX: TextAppend(toolstr, TextFormat("if (GuiValueBox(%s, %s, &%sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;", rec, text, name, name, name, name), pos); break;
-        case GUI_SPINNER: TextAppend(toolstr, TextFormat("if (GuiSpinner(%s, %s, &%sValue, 0, 100, %sEditMode)) %sEditMode = !%sEditMode;", rec, text, name, name, name, name), pos); break;
-        case GUI_SLIDER: TextAppend(toolstr, TextFormat("GuiSlider(%s, %s, NULL, &%sValue, 0, 100);", rec, text, name), pos); break;
-        case GUI_SLIDERBAR: TextAppend(toolstr, TextFormat("GuiSliderBar(%s, %s, NULL, &%sValue, 0, 100);", rec, text, name), pos); break;
-        case GUI_PROGRESSBAR: TextAppend(toolstr, TextFormat("GuiProgressBar(%s, %s, NULL, &%sValue, 0, 1);", rec, text, name), pos); break;
+        case GUI_VALUEBOX: TextAppend(toolstr, TextFormat("if (GuiValueBox(%s, %s, &%sValue, %d, %d, %sEditMode)) %sEditMode = !%sEditMode;", rec, text, name, values[0], values[1], name, name, name), pos); break;
+        case GUI_SPINNER: TextAppend(toolstr, TextFormat("if (GuiSpinner(%s, %s, &%sValue, %d, %d, %sEditMode)) %sEditMode = !%sEditMode;", rec, text, name, values[0], values[1], name, name, name), pos); break;
+        case GUI_SLIDER: TextAppend(toolstr, TextFormat("GuiSlider(%s, %s, NULL, &%sValue, %d, %d);", rec, text, name, values[0], values[1]), pos); break;
+        case GUI_SLIDERBAR: TextAppend(toolstr, TextFormat("GuiSliderBar(%s, %s, NULL, &%sValue, %d, %d);", rec, text, name, values[0], values[1]), pos); break;
+        case GUI_PROGRESSBAR: TextAppend(toolstr, TextFormat("GuiProgressBar(%s, %s, NULL, &%sValue, %d, %d);", rec, text, name, values[0], values[1]), pos); break;
         case GUI_STATUSBAR: TextAppend(toolstr, TextFormat("GuiStatusBar(%s, %s);", rec, text), pos); break;
         case GUI_SCROLLPANEL:
         {
@@ -1099,6 +1101,20 @@ static char *GetControlNameParam(char *controlName, const char *preText)
     strcpy(text, TextFormat("%s%s", preText, controlName));
 
     return text;
+}
+
+// Get controls parameters values
+static int* GetControlValuesParam(GuiLayoutControl control)
+{
+    static int values[2];
+    const int maxDefault = control.type == GUI_PROGRESSBAR ? 1 : 100;
+
+    int count;
+    char** valuesText = TextSplit(control.values, ';', &count);
+    values[0] = count == 0 ? 0 : TextToInteger(valuesText[0]);
+    values[1] = count <= 1 ? maxDefault : TextToInteger(valuesText[1]);
+
+    return values;
 }
 
 #endif // CODEGEN_IMPLEMENTATION
