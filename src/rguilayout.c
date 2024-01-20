@@ -116,7 +116,7 @@
 
 #define TOOL_NAME               "rGuiLayout"
 #define TOOL_SHORT_NAME         "rGL"
-#define TOOL_VERSION            "4.0"
+#define TOOL_VERSION            "4.1"
 #define TOOL_DESCRIPTION        "A simple and easy-to-use raygui layouts editor"
 #define TOOL_DESCRIPTION_BREAK  "A simple and easy-to-use\nraygui layouts editor"
 #define TOOL_RELEASE_DATE       "Sep.2023"
@@ -1165,6 +1165,10 @@ int main(int argc, char *argv[])
                                 else if (layout->controls[layout->controlCount].type == GUI_PROGRESSBAR)
                                 {
                                     strcpy(layout->controls[layout->controlCount].values, "0;1");
+                                }
+                                else
+                                {
+                                    strcpy(layout->controls[layout->controlCount].values, ";");
                                 }
 
                                 // Control name definition (type + count)
@@ -3784,7 +3788,7 @@ static void ResetLayout(GuiLayout *layout)
 // Save layout information as text file
 static void SaveLayout(GuiLayout *layout, const char *fileName)
 {
-    #define RGL_FILE_VERSION_TEXT "4.0"
+    #define RGL_FILE_VERSION_TEXT "4.1"
 
     FILE *rglFile = fopen(fileName, "wt");
 
@@ -3795,7 +3799,7 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
         fprintf(rglFile, "# Number of controls:     %i\n#\n", layout->controlCount);
         fprintf(rglFile, "# Ref. window:    r <x> <y> <width> <height>\n");
         fprintf(rglFile, "# Anchor info:    a <id> <name> <posx> <posy> <enabled>\n");
-        fprintf(rglFile, "# Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>\n#\n");
+        fprintf(rglFile, "# Control info:   c <id> <type> <name> <values> <rectangle> <anchor_id> <text>\n#\n");
 
         // Write reference window and reference anchor (anchor[0])
         fprintf(rglFile, "r %i %i %i %i\n", (int)layout->refWindow.x, (int)layout->refWindow.y, (int)layout->refWindow.width, (int)layout->refWindow.height);
