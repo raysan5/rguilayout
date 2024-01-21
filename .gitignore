@@ -60,7 +60,7 @@ dkms.conf
 .vs
 
 # Visual Studio Code files
-.vscode
+/.vscode
 
 # Clangd files
 .cache
