@@ -309,14 +309,14 @@ int main(int argc, char *argv[])
 
     // GUI usage mode - Initialization
     //--------------------------------------------------------------------------------------
-    const int screenWidth = GetScreenWidth();
-    const int screenHeight = GetScreenHeight();
+    const int screenWidth = 1280;
+    const int screenHeight = 800;
 
 #if defined(PLATFORM_DESKTOP)
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // Window configuration flags
 #endif
     InitWindow(screenWidth, screenHeight, TextFormat("%s v%s | %s", toolName, toolVersion, toolDescription));
-    // SetWindowMinSize(1280, 720);
+    SetWindowMinSize(1280, 720);
     SetExitKey(0);
 
     // Code font generation for embedding
@@ -827,19 +827,15 @@ int main(int argc, char *argv[])
                 else if (windowResetActive) windowResetActive = false;
                 else if (windowExitActive) windowExitActive = false;
 #if !defined(PLATFORM_WEB)
-                // else if ((layout->controlCount <= 0) && (layout->anchorCount <= 1)) closeWindow = true;
+                else if ((layout->controlCount <= 0) && (layout->anchorCount <= 1)) closeWindow = true;
                 else
                 {
-                    // windowExitActive = !windowExitActive;
+                    windowExitActive = !windowExitActive;
                     selectedControl = -1;
                     selectedAnchor = -1;
                 }
 #endif
             }
-        }
-
-        if(IsKeyPressed(KEY_ENTER)){
-            if(windowExitActive) closeWindow = true;
         }
 
         // Check no blocking mode enabled (active window | text edition | name edition)
