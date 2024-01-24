@@ -1377,6 +1377,7 @@ int main(int argc, char *argv[])
                                     layout->controls[layout->controlCount].rec.y += 10;
                                     strcpy(layout->controls[layout->controlCount].text, layout->controls[selectedControl].text);
                                     strcpy(layout->controls[layout->controlCount].name, TextFormat("%s%03i", controlTypeName[layout->controls[layout->controlCount].type], layout->controlCount));
+									strcpy(layout->controls[layout->controlCount].values, layout->controls[selectedControl].values);
                                     layout->controls[layout->controlCount].ap = layout->controls[selectedControl].ap;            // Default anchor point (0, 0)
 
                                     layout->controlCount++;
@@ -3938,6 +3939,7 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
                 fwrite(&layout->controls[i].id, sizeof(int), 1, rglFile); // Control id
                 fwrite(&layout->controls[i].type, sizeof(int), 1, rglFile); // Control type
                 fwrite(&layout->controls[i].name, sizeof(char), MAX_CONTROL_NAME_LENGTH, rglFile); // Control name
+                fwrite(&layout->controls[i].values, sizeof(char), MAX_CONTROL_VALUES_LENGTH, rglFile); // Control values
                 rec = (Rectangle){ (int)layout->controls[i].rec.x, (int)layout->controls[i].rec.y, (int)layout->controls[i].rec.width, (int)layout->controls[i].rec.height };
                 fwrite(&rec[0], sizeof(int), 1, rglFile); // Control rec x
                 fwrite(&rec[1], sizeof(int), 1, rglFile); // Control rec y
