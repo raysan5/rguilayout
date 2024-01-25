@@ -33,6 +33,7 @@
 
 #define MAX_ANCHOR_NAME_LENGTH           64      // Maximum length of anchor name
 #define MAX_CONTROL_NAME_LENGTH          64      // Maximum length of control name
+#define MAX_CONTROL_VALUES_LENGTH        64      // Maximum length of control values
 #define MAX_CONTROL_TEXT_LENGTH         128      // Maximum length of control text
 
 //----------------------------------------------------------------------------------
@@ -88,8 +89,9 @@ typedef struct {
     int id;
     int type;
     Rectangle rec;
-    unsigned char name[MAX_CONTROL_NAME_LENGTH];    // 64 bytes
-    unsigned char text[MAX_CONTROL_TEXT_LENGTH];    // 128 bytes
+    unsigned char name[MAX_CONTROL_NAME_LENGTH];     // 64 bytes
+    unsigned char text[MAX_CONTROL_TEXT_LENGTH];     // 128 bytes
+	unsigned char values[MAX_CONTROL_VALUES_LENGTH]; // 63 bytes
     GuiAnchorPoint *ap;
 } GuiLayoutControl;
 

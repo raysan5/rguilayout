@@ -62,6 +62,7 @@ typedef struct {
     // Selected control options
     bool btnEditTextPressed;            // Edit control text
     bool btnEditNamePressed;            // Edit control name
+    bool btnEditValuesPressed;          // Edit control values
     bool btnDuplicateControlPressed;    // Duplicate control
     bool btnUnlinkControlPressed;       // Unlink control from anchor
 
@@ -175,6 +176,7 @@ GuiMainToolbarState InitGuiMainToolbar(void)
     // Selected control edit options
     state.btnEditTextPressed = false;           // Edit control text
     state.btnEditNamePressed = false;           // Edit control name
+    state.btnEditValuesPressed = false;         // Edit control values
     state.btnDuplicateControlPressed = false;   // Duplicate control
     state.btnUnlinkControlPressed = false;      // Unlink control from anchor
     state.btnDeleteControlPressed = false;      // Delete selected control
@@ -253,49 +255,51 @@ void GuiMainToolbar(GuiMainToolbarState *state)
 
     // Selected control options
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_RIGHT);
-    GuiLabel((Rectangle){ state->anchorTools.x, state->anchorTools.y + 8, 64, 24 }, "Control:");
+    GuiLabel((Rectangle){ state->anchorTools.x - 5, state->anchorTools.y + 8, 64, 24 }, "Control:");
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     if (state->controlSelected == -1) GuiDisable();
     GuiSetTooltip("Edit selected control text (T)");
-    state->btnEditTextPressed = GuiButton((Rectangle){ state->anchorTools.x + 68, state->anchorTools.y + 8, 24, 24 }, "#30#");
+    state->btnEditTextPressed = GuiButton((Rectangle){ state->anchorTools.x + 68 - 5, state->anchorTools.y + 8, 24, 24 }, "#30#");
     GuiSetTooltip("Edit selected control name (N)");
-    state->btnEditNamePressed = GuiButton((Rectangle){ state->anchorTools.x + 92 + 4, state->anchorTools.y + 8, 24, 24 }, "#31#");
+    state->btnEditNamePressed = GuiButton((Rectangle){ state->anchorTools.x + 92 + 4 - 5, state->anchorTools.y + 8, 24, 24 }, "#31#");
+    GuiSetTooltip("Edit selected control values (V)");
+    state->btnEditValuesPressed = GuiButton((Rectangle){ state->anchorTools.x + 116 + 8 - 5, state->anchorTools.y + 8, 24, 24 }, "#200#");
     GuiSetTooltip("Duplicate selected control (LCTRL + D)");
-    state->btnDuplicateControlPressed = GuiButton((Rectangle){ state->anchorTools.x + 116 + 8, state->anchorTools.y + 8, 24, 24 }, "#16#");
+    state->btnDuplicateControlPressed = GuiButton((Rectangle){ state->anchorTools.x + 140 + 12 - 5, state->anchorTools.y + 8, 24, 24 }, "#16#");
     GuiSetTooltip("Unlink selected control from anchor (U)");
-    state->btnUnlinkControlPressed = GuiButton((Rectangle){ state->anchorTools.x + 140 + 12, state->anchorTools.y + 8, 24, 24 }, "#175#");
+    state->btnUnlinkControlPressed = GuiButton((Rectangle){ state->anchorTools.x + 164 + 16 - 5, state->anchorTools.y + 8, 24, 24 }, "#175#");
     GuiSetTooltip("Delete selected control (DEL)");
-    state->btnDeleteControlPressed = GuiButton((Rectangle){ state->anchorTools.x + 164 + 16, state->anchorTools.y + 8, 24, 24 }, "#143#");
+    state->btnDeleteControlPressed = GuiButton((Rectangle){ state->anchorTools.x + 186 + 20 - 5, state->anchorTools.y + 8, 24, 24 }, "#143#");
     GuiEnable();
 
     // Selected anchor options
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_RIGHT);
-    GuiLabel((Rectangle){ state->anchorTools.x + 202, state->anchorTools.y + 8, 64, 24 }, "Anchor:");
+    GuiLabel((Rectangle){ state->anchorTools.x + 212, state->anchorTools.y + 8, 64, 24 }, "Anchor:");
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     if (state->anchorSelected == -1) GuiDisable();
     GuiSetTooltip("Edit selected anchor name (N)");
-    state->btnEditAnchorNamePressed = GuiButton((Rectangle){ state->anchorTools.x + 198 + 72, state->anchorTools.y + 8, 24, 24 }, "#31#");
+    state->btnEditAnchorNamePressed = GuiButton((Rectangle){ state->anchorTools.x + 212 + 72, state->anchorTools.y + 8, 24, 24 }, "#31#");
     GuiSetTooltip("Hide all controls for selected anchor (H)");
-    GuiToggle((Rectangle){ state->anchorTools.x + 198 + 72 + 24 + 4, state->anchorTools.y + 8, 24, 24 }, state->hideAnchorControlsActive? "#45#" : "#44#", &state->hideAnchorControlsActive);
+    GuiToggle((Rectangle){ state->anchorTools.x + 212 + 72 + 24 + 4, state->anchorTools.y + 8, 24, 24 }, state->hideAnchorControlsActive? "#45#" : "#44#", &state->hideAnchorControlsActive);
     GuiSetTooltip("Unlink all controls for selected anchor (U)");
-    state->btnUnlinkAnchorControlsPressed = GuiButton((Rectangle){ state->anchorTools.x + 198 + 72 + 48 + 8, state->anchorTools.y + 8, 24, 24 }, "#175#");
+    state->btnUnlinkAnchorControlsPressed = GuiButton((Rectangle){ state->anchorTools.x + 212 + 72 + 48 + 8, state->anchorTools.y + 8, 24, 24 }, "#175#");
     GuiSetTooltip("Delete selected anchor (DEL)");
-    state->btnDeleteAnchorPressed = GuiButton((Rectangle){ state->anchorTools.x + 198 + 72 + 72 + 12, state->anchorTools.y + 8, 24, 24 }, "#143#");
+    state->btnDeleteAnchorPressed = GuiButton((Rectangle){ state->anchorTools.x + 212 + 72 + 72 + 12, state->anchorTools.y + 8, 24, 24 }, "#143#");
     GuiEnable();
     
     // Selected tracemap options
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_RIGHT);
-    GuiLabel((Rectangle){ state->anchorTools.x + 390, state->anchorTools.y + 8, 64, 24 }, "Tracemap:");
+    GuiLabel((Rectangle){ state->anchorTools.x + 395, state->anchorTools.y + 8, 64, 24 }, "Tracemap:");
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     GuiSetTooltip("Load tracemap image");
-    state->btnLoadTracemapPressed = GuiButton((Rectangle){ state->anchorTools.x + 390 + 70, state->anchorTools.y + 8, 24, 24 }, "#12#");
+    state->btnLoadTracemapPressed = GuiButton((Rectangle){ state->anchorTools.x + 395 + 70, state->anchorTools.y + 8, 24, 24 }, "#12#");
     if (!state->tracemapLoaded) GuiDisable();
     GuiSetTooltip("Hide/show selected tracemap (H)");
-    GuiToggle((Rectangle){ state->anchorTools.x + 390 + 70 + 24 + 4, state->anchorTools.y + 8, 24, 24 }, state->hideTracemapActive? "#45#" : "#44#", &state->hideTracemapActive);
+    GuiToggle((Rectangle){ state->anchorTools.x + 395 + 70 + 24 + 4, state->anchorTools.y + 8, 24, 24 }, state->hideTracemapActive? "#45#" : "#44#", &state->hideTracemapActive);
     GuiSetTooltip("Toggle lock selected tracemap (SPACE)");
-    GuiToggle((Rectangle){ state->anchorTools.x + 390 + 70 + 48 + 8, state->anchorTools.y + 8, 24, 24 }, state->lockTracemapActive? "#137#" : "#138#", &state->lockTracemapActive);
+    GuiToggle((Rectangle){ state->anchorTools.x + 395 + 70 + 48 + 8, state->anchorTools.y + 8, 24, 24 }, state->lockTracemapActive? "#137#" : "#138#", &state->lockTracemapActive);
     GuiSetTooltip("Delete selected tracemap (DEL)");
-    state->btnDeleteTracemapPressed = GuiButton((Rectangle){ state->anchorTools.x + 390 + 70 + 72 + 12, state->anchorTools.y + 8, 24, 24 }, "#143#");
+    state->btnDeleteTracemapPressed = GuiButton((Rectangle){ state->anchorTools.x + 395 + 70 + 72 + 12, state->anchorTools.y + 8, 24, 24 }, "#143#");
     //state->tracemapAlphaValue = 0.8f;            // TODO: Adjust tracemap opacity
     GuiEnable();
 
