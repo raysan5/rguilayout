@@ -2580,6 +2580,7 @@ int main(int argc, char *argv[])
                     if (!dragMoveMode && resizeMode) colControl = colControlSelectedResize;
 
                     Rectangle selectedRec = layout->controls[selectedControl].rec;
+                    float reportedRecHeight = selectedRec.height;
                     if (layout->controls[selectedControl].type == GUI_WINDOWBOX) selectedRec.height = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT;  // Defined inside raygui.h!
                     else if (layout->controls[selectedControl].type == GUI_GROUPBOX)
                     {
@@ -2616,14 +2617,14 @@ int main(int argc, char *argv[])
                                 (int)(layout->controls[selectedControl].rec.x),
                                 (int)(layout->controls[selectedControl].rec.y),
                                 (int)selectedRec.width,
-                                (int)selectedRec.height),
+                                (int)reportedRecHeight),
                                 selectedRec.x, selectedRec.y - 30, 20, colPositionText);
                         }
                         else DrawText(TextFormat("[%i, %i, %i, %i]",
                             (int)(selectedRec.x - (int)layout->refWindow.x),
                             (int)(selectedRec.y - (int)layout->refWindow.y),
                             (int)selectedRec.width,
-                            (int)selectedRec.height),
+                            (int)reportedRecHeight),
                             selectedRec.x, selectedRec.y - 30, 20, colPositionText);
                     }
                     else
@@ -2632,7 +2633,7 @@ int main(int argc, char *argv[])
                             (int)(selectedRec.x - (int)layout->refWindow.x),
                             (int)(selectedRec.y - (int)layout->refWindow.y),
                             (int)selectedRec.width,
-                            (int)selectedRec.height),
+                            (int)reportedRecHeight),
                             selectedRec.x, selectedRec.y - 30, 20, colPositionText);
                     }
 
@@ -2721,6 +2722,7 @@ int main(int argc, char *argv[])
                 {
                     // Draw focused rectangle
                     Rectangle focusedRec = layout->controls[focusedControl].rec;
+                    float reportedRecHeight = focusedRec.height;
 
                     if (layout->controls[focusedControl].type == GUI_WINDOWBOX) focusedRec.height = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT;  // Defined inside raygui.h!
                     else if (layout->controls[focusedControl].type == GUI_GROUPBOX)
@@ -2759,14 +2761,14 @@ int main(int argc, char *argv[])
                                 (int)(layout->controls[focusedControl].rec.x),
                                 (int)(layout->controls[focusedControl].rec.y),
                                 (int)focusedRec.width,
-                                (int)focusedRec.height),
+                                (int)reportedRecHeight),
                                 focusedRec.x, focusedRec.y - 30, 20, colPositionText);
                         }
                         else DrawText(TextFormat("[%i, %i, %i, %i]",
                             (int)(focusedRec.x - (int)layout->refWindow.x),
                             (int)(focusedRec.y - (int)layout->refWindow.y),
                             (int)focusedRec.width,
-                            (int)focusedRec.height),
+                            (int)reportedRecHeight),
                             focusedRec.x, focusedRec.y - 30, 20, colPositionText);
                     }
                     else
@@ -2775,7 +2777,7 @@ int main(int argc, char *argv[])
                             (int)(focusedRec.x - (int)layout->refWindow.x),
                             (int)(focusedRec.y - (int)layout->refWindow.y),
                             (int)focusedRec.width,
-                            (int)focusedRec.height),
+                            (int)reportedRecHeight),
                             focusedRec.x, focusedRec.y - 30, 20, colPositionText);
                     }
                 }
