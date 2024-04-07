@@ -1,6 +1,6 @@
 /*******************************************************************************************
 *
-*   rGuiLayout v4.0 - A simple and easy-to-use raygui layouts editor
+*   rGuiLayout v4.1 - A simple and easy-to-use raygui layouts editor
 *
 *   FEATURES:
 *       - 25 gui controls to define your immmediate-mode gui layout
@@ -41,6 +41,11 @@
 *           NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   VERSIONS HISTORY:
+*       4.1  (06-Apr-2024)  ADDED: Issue report window
+*                           REMOVED: Sponsors window
+*                           REVIEWED: Main toolbar and help window
+*                           UPDATED: Using raylib 5.1-dev and raygui 4.1-dev
+* 
 *       4.0  (26-Sep-2023)  ADDED: Support macOS builds (x86_64 + arm64)
 *                           REMOVED: workArea hack for screen-space controls position
 *                           REDESIGNED: Reference window definition (anchor[0])
@@ -69,10 +74,10 @@
 *       1.0  (14-May-2018)  First release
 *
 *   DEPENDENCIES:
-*       raylib 4.6-dev      - Windowing/input management and drawing
-*       raygui 4.0          - Immediate-mode GUI controls with custom styling and icons
-*       rpng 1.1            - PNG chunks management
-*       tinyfiledialogs 3.13.3 - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
+*       raylib 5.1-dev          - Windowing/input management and drawing
+*       raygui 4.1-dev          - Immediate-mode GUI controls with custom styling and icons
+*       rpng 1.1                - PNG chunks management
+*       tinyfiledialogs 3.13.3  - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
 *
 *   BUILDING:
 *     - Windows (MinGW-w64):
@@ -116,10 +121,10 @@
 
 #define TOOL_NAME               "rGuiLayout"
 #define TOOL_SHORT_NAME         "rGL"
-#define TOOL_VERSION            "4.0"
+#define TOOL_VERSION            "4.1"
 #define TOOL_DESCRIPTION        "A simple and easy-to-use raygui layouts editor"
 #define TOOL_DESCRIPTION_BREAK  "A simple and easy-to-use\nraygui layouts editor"
-#define TOOL_RELEASE_DATE       "Sep.2023"
+#define TOOL_RELEASE_DATE       "Apr.2024"
 #define TOOL_LOGO_COLOR         0x7da9b9ff
 
 #include "raylib.h"
@@ -147,9 +152,6 @@
 
 #define GUI_WINDOW_ABOUT_IMPLEMENTATION
 #include "gui_window_about.h"               // GUI: About Window
-
-#define GUI_WINDOW_SPONSOR_IMPLEMENTATION
-#include "gui_window_sponsor.h"             // GUI: Sponsor Window
 
 #define GUI_FILE_DIALOGS_IMPLEMENTATION
 #include "gui_file_dialogs.h"               // GUI: File Dialogs
@@ -511,9 +513,9 @@ int main(int argc, char *argv[])
     GuiWindowAboutState windowAboutState = InitGuiWindowAbout();
     //-----------------------------------------------------------------------------------
 
-    // GUI: Sponsor Window
+    // GUI: Issue Report Window
     //-----------------------------------------------------------------------------------
-    GuiWindowSponsorState windowSponsorState = InitGuiWindowSponsor();
+    bool showIssueReportWindow = false;
     //-----------------------------------------------------------------------------------
 
     // GUI: Controls Selection Palette
@@ -537,13 +539,13 @@ int main(int argc, char *argv[])
 
     // GUI: Exit Window
     //-----------------------------------------------------------------------------------
-    bool windowExitActive = false;
+    bool showExitWindow = false;
     bool closeWindow = false;
     //-----------------------------------------------------------------------------------
 
     // GUI: Reset Layout Window
     //-----------------------------------------------------------------------------------
-    bool windowResetActive = false;
+    bool showResetWindow = false;
     bool resetLayout = false;
     //-----------------------------------------------------------------------------------
 
@@ -571,7 +573,7 @@ int main(int argc, char *argv[])
 
         // WARNING: ASINCIFY requires this line,
         // it contains the call to emscripten_sleep() for PLATFORM_WEB
-        if (WindowShouldClose()) windowExitActive = true;
+        if (WindowShouldClose()) showExitWindow = true;
         //----------------------------------------------------------------------------------
 
         // Undo layout change logic
@@ -692,7 +694,7 @@ int main(int argc, char *argv[])
         // Keyboard shortcuts
         //----------------------------------------------------------------------------------
         // Show window: load layout
-        if (mainToolbarState.btnNewFilePressed || mainToolbarState.btnCloseFilePressed) windowResetActive = true;
+        if (mainToolbarState.btnNewFilePressed || mainToolbarState.btnCloseFilePressed) showResetWindow = true;
 
         // Show window: load layout
         if ((IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O)) || mainToolbarState.btnLoadFilePressed) showLoadFileDialog = true;
@@ -789,8 +791,8 @@ int main(int argc, char *argv[])
         // Toggle window: about
         if (IsKeyPressed(KEY_F2)) windowAboutState.windowActive = !windowAboutState.windowActive;
 
-        // Toggle window: sponsor
-        if (IsKeyPressed(KEY_F3)) windowSponsorState.windowActive = !windowSponsorState.windowActive;
+        // Toggle window: issue report
+        if (IsKeyPressed(KEY_F3)) showIssueReportWindow = !showIssueReportWindow;
 
         // Show closing window on ESC
         if (IsKeyPressed(KEY_ESCAPE))
@@ -822,15 +824,15 @@ int main(int argc, char *argv[])
             else    // Close windows logic
             {
                 if (windowAboutState.windowActive) windowAboutState.windowActive = false;
-                if (windowSponsorState.windowActive) windowSponsorState.windowActive = false;
+                if (showIssueReportWindow) showIssueReportWindow = false;
                 else if (windowCodegenState.windowActive) windowCodegenState.windowActive = false;
-                else if (windowResetActive) windowResetActive = false;
-                else if (windowExitActive) windowExitActive = false;
+                else if (showResetWindow) showResetWindow = false;
+                else if (showExitWindow) showExitWindow = false;
 #if !defined(PLATFORM_WEB)
                 else if ((layout->controlCount <= 0) && (layout->anchorCount <= 1)) closeWindow = true;
                 else
                 {
-                    windowExitActive = !windowExitActive;
+                    showExitWindow = !showExitWindow;
                     selectedControl = -1;
                     selectedAnchor = -1;
                 }
@@ -899,7 +901,7 @@ int main(int argc, char *argv[])
             if (IsKeyDown(KEY_LEFT_CONTROL))
             {
                 // Open reset window
-                if (IsKeyPressed(KEY_N)) windowResetActive = true;
+                if (IsKeyPressed(KEY_N)) showResetWindow = true;
             }
 
             // Grid spacing customization
@@ -992,9 +994,9 @@ int main(int argc, char *argv[])
         }
 
         // Help options logic
-        if (mainToolbarState.btnHelpPressed) windowHelpState.windowActive = true;           // Help button logic
-        if (mainToolbarState.btnAboutPressed) windowAboutState.windowActive = true;         // About window button logic
-        if (mainToolbarState.btnSponsorPressed) windowSponsorState.windowActive = true;     // User sponsor logic
+        if (mainToolbarState.btnHelpPressed) windowHelpState.windowActive = true;
+        if (mainToolbarState.btnAboutPressed) windowAboutState.windowActive = true;
+        if (mainToolbarState.btnIssuePressed) showIssueReportWindow = true;
         //----------------------------------------------------------------------------------
 
         // Layout edition logic
@@ -2191,10 +2193,10 @@ int main(int argc, char *argv[])
         // WARNING: If any window is shown, cancel any edition mode
         if (windowHelpState.windowActive ||
             windowAboutState.windowActive ||
-            windowSponsorState.windowActive ||
+            showIssueReportWindow ||
             windowCodegenState.windowActive ||
-            windowExitActive ||
-            windowResetActive ||
+            showExitWindow ||
+            showResetWindow ||
             showLoadFileDialog ||
             showSaveFileDialog ||
             showExportFileDialog ||
@@ -3124,10 +3126,10 @@ int main(int argc, char *argv[])
             //if (GuiIsLocked())    // WARNING: It takes one extra frame to process, so we just check required conditions
             if (windowHelpState.windowActive ||
                 windowAboutState.windowActive ||
-                windowSponsorState.windowActive ||
                 windowCodegenState.windowActive ||
-                windowExitActive ||
-                windowResetActive ||
+                showExitWindow ||
+                showResetWindow ||
+                showIssueReportWindow ||
                 showLoadFileDialog ||
                 showSaveFileDialog ||
                 showExportFileDialog ||
@@ -3151,9 +3153,21 @@ int main(int argc, char *argv[])
             GuiWindowAbout(&windowAboutState);
             //----------------------------------------------------------------------------------------
 
-            // GUI: Sponsor Window
+            // GUI: Issue Report Window
             //----------------------------------------------------------------------------------------
-            GuiWindowSponsor(&windowSponsorState);
+            if (showIssueReportWindow)
+            {
+                Rectangle messageBox = { (float)GetScreenWidth()/2 - 300/2, (float)GetScreenHeight()/2 - 190/2 - 20, 300, 190 };
+                int result = GuiMessageBox(messageBox, "#220#Report Issue", 
+                    "Do you want to report any issue or\nfeature request for this program?\n\ngithub.com/raysan5/rguilayout", "#186#Report on GitHub");
+
+                if (result == 1)    // Report issue pressed
+                {
+                    OpenURL("https://github.com/raysan5/rguilayout/issues");
+                    showIssueReportWindow = false;
+                }
+                else if (result == 0) showIssueReportWindow = false;
+            }
             //----------------------------------------------------------------------------------------
 
             // GUI: Layout Code Generation Window
@@ -3184,21 +3198,21 @@ int main(int argc, char *argv[])
 
             // GUI: New Layout Window (save)
             //----------------------------------------------------------------------------------------
-            if (windowResetActive)
+            if (showResetWindow)
             {
                 int message = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 320/2, GetScreenHeight()/2 - 120/2, 320, 120 }, "#8# Creating new layout", "Do you want to save the current layout?", "Yes;No");
 
-                if (message == 0) windowResetActive = false;
+                if (message == 0) showResetWindow = false;
                 else if (message == 1)  // Yes
                 {
                     strcpy(outFileName, "layout_name.rgl");
                     showSaveFileDialog = true;
-                    windowResetActive = false;
+                    showResetWindow = false;
                     resetLayout = true;
                 }
                 else if (message == 2)  // No
                 {
-                    windowResetActive = false;
+                    showResetWindow = false;
                     resetLayout = true;
                 }
             }
@@ -3206,17 +3220,17 @@ int main(int argc, char *argv[])
 
             // GUI: Exit Window
             //----------------------------------------------------------------------------------------
-            if (windowExitActive)
+            if (showExitWindow)
             {
                 int result = GuiMessageBox((Rectangle){ GetScreenWidth()/2 - 320/2, GetScreenHeight()/2 - 120/2, 320, 120 }, "#159#Closing rGuiLayout", "Do you want to close without saving?", "Yes;No");
 
-                if (result == 0) windowExitActive = false;
+                if (result == 0) showExitWindow = false;
                 else if (result == 1) closeWindow = true;
                 else if (result == 2)
                 {
                     strcpy(outFileName, "layout_name.rgl");
                     showSaveFileDialog = true;
-                    windowExitActive = false;
+                    showExitWindow = false;
                 }
             }
             //----------------------------------------------------------------------------------------
