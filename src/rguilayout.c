@@ -1289,7 +1289,8 @@ int main(int argc, char *argv[])
 
                         if (rec.width < SCALE_BOX_CORNER_SIZE) rec.width = SCALE_BOX_CORNER_SIZE;
                         if (rec.height < SCALE_BOX_CORNER_SIZE) rec.height = SCALE_BOX_CORNER_SIZE;
-                        if (layout->controls[selectedControl].type == GUI_WINDOWBOX && rec.height < RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT*2) rec.height = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT*2;
+                        if ((layout->controls[selectedControl].type == GUI_WINDOWBOX) && 
+                            (rec.height < RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT*2)) rec.height = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT*2;
 
                         // NOTE: We must consider anchor offset!
                         if (layout->controls[selectedControl].ap->id > 0)
