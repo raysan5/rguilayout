@@ -312,7 +312,7 @@ int main(int argc, char *argv[])
     // GUI usage mode - Initialization
     //--------------------------------------------------------------------------------------
     const int screenWidth = 1280;
-    const int screenHeight = 800;
+    const int screenHeight = 720;
 
 #if defined(PLATFORM_DESKTOP)
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // Window configuration flags
