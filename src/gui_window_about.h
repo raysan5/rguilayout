@@ -1,7 +1,7 @@
 /*******************************************************************************************
 *
 *   Window About
-* 
+*
 *   NOTES:
 *       This module is generic for all tools, so, tools info should be customized
 *       just defining some tool info before including this file:
@@ -110,7 +110,7 @@ void GuiWindowAbout(GuiWindowAboutState *state);
     #define TOOL_NAME           "rTool"
 #endif
 #if !defined(TOOL_SHORT_NAME)
-    #define TOOL_SHORT_NAME     "rTN"    
+    #define TOOL_SHORT_NAME     "rTN"
 #endif
 #if !defined(TOOL_VERSION)
     #define TOOL_VERSION        "1.0"
@@ -151,7 +151,7 @@ static const char *linkraylibtechText = "[@raylibtech]";
 static const char *lblMoreInfoText = "More info:";
 static const char *linkMailText = "ray@raylibtech.com";
 static const char *lblSupportText = "Support:";
-static const char* btnDonateText = "#146#Donate";
+static const char *btnSponsorText = "#146#Sponsor";
 static const char *btnCloseText = "#159#Close";
 
 //----------------------------------------------------------------------------------
@@ -162,7 +162,7 @@ static void DrawTechIcon(int posX, int posY, int size, const char *text, int tex
 {
     float borderSize = ceilf((float)size/16.0f);
     bool offsetY = true;
-    
+
     // Make sure there is no character with pixels down the text baseline for a perfect y-aligned icon
     for (int i = 0; text[i] != '\0'; i++) if ((text[i] == 'q') || (text[i] == 'y') || (text[i] == 'p') || (text[i] == 'j') || (text[i] == 'g')) { offsetY = false; break; }
 
@@ -247,7 +247,7 @@ void GuiWindowAbout(GuiWindowAboutState *state)
         int labelTextAlign = GuiGetStyle(LABEL, TEXT_ALIGNMENT);
         GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
         DrawTechIcon((int)state->windowBounds.x + 10, (int)state->windowBounds.y + 35, 64, TOOL_SHORT_NAME, 20, true, GetColor(TOOL_LOGO_COLOR));
-        
+
         bool singleLine = false;
         GuiLabel((Rectangle){ state->windowBounds.x + 85, state->windowBounds.y + (singleLine? 55 : 35), 200, 30 }, TextFormat("%s %s (%s)", TOOL_NAME, TOOL_VERSION, TOOL_RELEASE_DATE));
         GuiLabel((Rectangle){ state->windowBounds.x + 85, state->windowBounds.y + (singleLine? 78 : 64), (float)state->windowBounds.width, 40 }, singleLine? TOOL_DESCRIPTION : TOOL_DESCRIPTION_BREAK);
@@ -284,7 +284,7 @@ void GuiWindowAbout(GuiWindowAboutState *state)
         int buttonTextAlign = GuiGetStyle(BUTTON, TEXT_ALIGNMENT);
         GuiSetStyle(BUTTON, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
 
-        if (GuiButton((Rectangle){ state->windowBounds.x + state->windowBounds.width - 80 - 90, state->windowBounds.y + 305, 80, 24 }, btnDonateText)) { OpenURL(TextFormat("https://raylibtech.itch.io/%s/purchase", TOOL_NAME)); }
+        if (GuiButton((Rectangle){ state->windowBounds.x + state->windowBounds.width - 80 - 90, state->windowBounds.y + 305, 80, 24 }, btnSponsorText)) { OpenURL("https://github.com/sponsors/raysan5"); }
         if (GuiButton((Rectangle){ state->windowBounds.x + state->windowBounds.width - 80, state->windowBounds.y + 305, 70, 24 }, btnCloseText)) state->windowActive = false;
         GuiSetStyle(BUTTON, TEXT_ALIGNMENT, buttonTextAlign);
         //----------------------------------------------------------------------------------------
