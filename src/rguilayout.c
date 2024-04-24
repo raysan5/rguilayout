@@ -45,7 +45,7 @@
 *                           REMOVED: Sponsors window
 *                           REVIEWED: Main toolbar and help window
 *                           UPDATED: Using raylib 5.1-dev and raygui 4.1-dev
-* 
+*
 *       4.0  (26-Sep-2023)  ADDED: Support macOS builds (x86_64 + arm64)
 *                           REMOVED: workArea hack for screen-space controls position
 *                           REDESIGNED: Reference window definition (anchor[0])
@@ -1289,7 +1289,7 @@ int main(int argc, char *argv[])
 
                         if (rec.width < SCALE_BOX_CORNER_SIZE) rec.width = SCALE_BOX_CORNER_SIZE;
                         if (rec.height < SCALE_BOX_CORNER_SIZE) rec.height = SCALE_BOX_CORNER_SIZE;
-                        if ((layout->controls[selectedControl].type == GUI_WINDOWBOX) && 
+                        if ((layout->controls[selectedControl].type == GUI_WINDOWBOX) &&
                             (rec.height < RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT*2)) rec.height = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT*2;
 
                         // NOTE: We must consider anchor offset!
@@ -3162,7 +3162,7 @@ int main(int argc, char *argv[])
             if (showIssueReportWindow)
             {
                 Rectangle messageBox = { (float)GetScreenWidth()/2 - 300/2, (float)GetScreenHeight()/2 - 190/2 - 20, 300, 190 };
-                int result = GuiMessageBox(messageBox, "#220#Report Issue", 
+                int result = GuiMessageBox(messageBox, "#220#Report Issue",
                     "Do you want to report any issue or\nfeature request for this program?\n\ngithub.com/raysan5/rguilayout", "#186#Report on GitHub");
 
                 if (result == 1)    // Report issue pressed
