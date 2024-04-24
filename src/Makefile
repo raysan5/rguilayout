@@ -29,9 +29,12 @@
 PLATFORM              ?= PLATFORM_DESKTOP
 
 # Define project variables
-PROJECT_NAME          ?= rtoolname
+PROJECT_NAME          ?= rguilayout
 PROJECT_VERSION       ?= 1.0
 PROJECT_BUILD_PATH    ?= .
+PROJECT_SOURCE_FILES  ?= \
+    rguilayout.c \
+    external/tinyfiledialogs.c
 
 RAYLIB_PATH           ?= C:/GitHub/raylib
 RAYLIB_INCLUDE_PATH   ?= $(RAYLIB_PATH)/src
@@ -191,7 +194,7 @@ LDFLAGS = -L. -L$(RAYLIB_LIB_PATH)
 
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
     ifeq ($(PLATFORM_OS),WINDOWS)
-        # resource file contains windows executable icon and properties
+        # NOTE: The resource .rc file contains windows executable icon and properties
         LDFLAGS += $(RAYLIB_PATH)/src/raylib.rc.data
         # -Wl,--subsystem,windows hides the console window
         ifeq ($(BUILD_MODE), RELEASE)
@@ -229,12 +232,12 @@ ifeq ($(PLATFORM),PLATFORM_WEB)
     ifeq ($(BUILD_WEB_ASYNCIFY),TRUE)
         LDFLAGS += -s ASYNCIFY -s ASYNCIFY_STACK_SIZE=$(BUILD_WEB_ASYNCIFY_STACK_SIZE)
     endif
-    
+
     # Add resources building if required
     ifeq ($(BUILD_WEB_RESOURCES),TRUE)
         LDFLAGS += --preload-file $(BUILD_WEB_RESOURCES_PATH)
     endif
-    
+
     # Add debug mode flags if required
     ifeq ($(BUILD_MODE),DEBUG)
         LDFLAGS += -s ASSERTIONS=1 --profiling
@@ -300,19 +303,13 @@ ifeq ($(PLATFORM),PLATFORM_DRM)
 endif
 
 
-# Define source code files required
-#------------------------------------------------------------------------------------------------
-PROJECT_SOURCE_FILES ?= \
-    rtoolname.c \
-    external/tinyfiledialogs.c
-
 # Define all object files from source files
+#------------------------------------------------------------------------------------------------
 OBJS = $(patsubst %.c, %.o, $(PROJECT_SOURCE_FILES))
 
 # Define processes to execute
 #------------------------------------------------------------------------------------------------
 # Default target entry
-# NOTE: We call this Makefile target or Makefile.Android target
 all:
 	$(MAKE) $(PROJECT_NAME)
 
