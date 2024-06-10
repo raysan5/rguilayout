@@ -430,7 +430,7 @@ int main(int argc, char *argv[])
         // NOTE: Anchors and control screen offset is already considered by refWindow (anchor[0])
         layout = LoadLayout(inFileName);
 
-        SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
+        SetWindowTitle(TextFormat("%s v%s | File: %s", toolName, toolVersion, GetFileName(inFileName)));
     }
     else layout = LoadLayout(NULL);     // Load empty layout
 
@@ -601,7 +601,7 @@ int main(int argc, char *argv[])
                     // Set a '*' mark on loaded file name to notice save requirement
                     if ((inFileName[0] != '\0') && !saveChangesRequired)
                     {
-                        SetWindowTitle(TextFormat("%s v%s - %s*", toolName, toolVersion, GetFileName(inFileName)));
+                        SetWindowTitle(TextFormat("%s v%s | File: %s*", toolName, toolVersion, GetFileName(inFileName)));
                         saveChangesRequired = true;
                     }
                 }
@@ -666,7 +666,7 @@ int main(int argc, char *argv[])
                     for (int i = 0; i < layout->controlCount; i++) layout->controls[i].ap = &layout->anchors[tempLayout->controls[i].ap->id];
 
                     strcpy(inFileName, droppedFiles.paths[0]);
-                    SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
+                    SetWindowTitle(TextFormat("%s v%s | File: %s", toolName, toolVersion, GetFileName(inFileName)));
 
                     for (int i = 0; i < MAX_UNDO_LEVELS; i++) memcpy(&undoLayouts[i], layout, sizeof(GuiLayout));
                     currentUndoIndex = 0;
@@ -715,7 +715,7 @@ int main(int argc, char *argv[])
 
                 SaveLayout(&outLayout, inFileName);
 
-                SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
+                SetWindowTitle(TextFormat("%s v%s | File: %s", toolName, toolVersion, GetFileName(inFileName)));
                 saveChangesRequired = false;
             }
         }
@@ -3267,7 +3267,7 @@ int main(int argc, char *argv[])
 
                         UnloadLayout(tempLayout);
 
-                        SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
+                        SetWindowTitle(TextFormat("%s v%s | File: %s", toolName, toolVersion, GetFileName(inFileName)));
                         saveChangesRequired = false;
                     }
                     else inFileName[0] = '\0';
@@ -3300,7 +3300,7 @@ int main(int argc, char *argv[])
                     SaveLayout(&outLayout, outFileName);
 
                     strcpy(inFileName, outFileName);
-                    SetWindowTitle(TextFormat("%s v%s - %s", toolName, toolVersion, GetFileName(inFileName)));
+                    SetWindowTitle(TextFormat("%s v%s | File: %s", toolName, toolVersion, GetFileName(inFileName)));
                     saveChangesRequired = false;
 
                 #if defined(PLATFORM_WEB)
