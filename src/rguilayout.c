@@ -74,10 +74,10 @@
 *       1.0  (14-May-2018)  First release
 *
 *   DEPENDENCIES:
-*       raylib 5.1-dev          - Windowing/input management and drawing
-*       raygui 4.1-dev          - Immediate-mode GUI controls with custom styling and icons
+*       raylib 5.5-dev          - Windowing/input management and drawing
+*       raygui 4.5-dev          - Immediate-mode GUI controls with custom styling and icons
 *       rpng 1.1                - PNG chunks management
-*       tinyfiledialogs 3.13.3  - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
+*       tinyfiledialogs 3.18    - Open/save file dialogs, it requires linkage with comdlg32 and ole32 libs
 *
 *   BUILDING:
 *     - Windows (MinGW-w64):
@@ -971,7 +971,7 @@ int main(int argc, char *argv[])
             colAnchorCreation = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));  // Anchor creation cursor (A)
             colAnchorDefault = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));         // Anchor default (not focused or selected)
             colAnchorFocused = GetColor(GuiGetStyle(BUTTON, BASE_COLOR_PRESSED));           // Anchor focused (not filling)
-            colAnchorSelected = GetColor(GuiGetStyle(BUTTON, TEXT_COLOR_PRESSED));;         // Anchor selected (with filling)
+            colAnchorSelected = GetColor(GuiGetStyle(BUTTON, TEXT_COLOR_PRESSED));          // Anchor selected (with filling)
             colAnchorEditMode = ORANGE;           // Anchor selected and edit mode (A over focused anchor)
             colAnchorLinkLine = GetColor(GuiGetStyle(BUTTON, TEXT_COLOR_PRESSED));          // Anchor link lines
 
