@@ -1,18 +1,14 @@
-<img align="left" src="logo/rguilayout_256x256.png" width=256>
-
-# rGuiLayout
+# `rGuiLayout`
 
 A simple and easy-to-use [raygui](https://github.com/raysan5/raygui) **layouts** editor.
 
 Useful for custom tools layout creation. The best tool companion for [rGuiStyler](https://raylibtech.itch.io/rguistyler) and [rGuiIcons](https://raylibtech.itch.io/rguiicons).
 
-rGuiLayout can be used for free as a [WebAssembly online tool](https://raylibtech.itch.io/rguilayout) and it can also be downloaded as a **standalone tool** for _Windows_ and _Linux_.
-
-<br>
+`rGuiLayout` can be used for free as a [WebAssembly online tool](https://raylibtech.itch.io/rguilayout) and it can also be downloaded as a **standalone tool** for _Windows_ and _Linux_.
 
 **NOTE: Latest `rGuiLayout 4.0` release is intended to be used with [`raygui 4.0`](https://github.com/raysan5/raygui/releases/tag/4.0) release.**
 
-## rGuiLayout Features
+## Features
 
  - **25 gui controls to define your immmediate-mode gui layout**
  - Place controls and move/scale them freely
@@ -25,18 +21,15 @@ rGuiLayout can be used for free as a [WebAssembly online tool](https://raylibtec
  - Support for **custom code templates** to generate your controls code
  - **Export layout directly as plain C code, ready to edit and compile**
  - Multiple GUI styles available with support for custom ones (`.rgs`)
- - **Free and open-source**
-
-### rGuiLayout Standalone Additional Features
-
  - Command-line support for `.rgl` to `.c`/`.h` conversion
  - **Completely portable (single-file, no-dependencies)**
+ - **Free and open-source**
  
-## rGuiLayout Screenshot
+## Screenshot
 
 ![rGuiLayout](screenshots/rguilayout_v300_shot01.png)
  
-## rGuiLayout Usage
+## Usage
 
 For detailed usage information, check provided [USAGE.md](https://github.com/raysan5/rguilayout/blob/master/USAGE.md) file.
 
@@ -54,7 +47,7 @@ Export layouts as code, Code Generation Window offers multiple export options to
 
  > rguilayout.exe --help
 
-## rGuiLayout License
+## License
 
 `rGuiLayout` source code is distributed as **open source**, licensed under an unmodified [zlib/libpng license](LICENSE). 
 
