@@ -30,8 +30,12 @@
     <!-- Favicon -->
     <link rel="shortcut icon" href="https://www.raylibtech.com/images/tools/rguilayout.ico">
     <style>
-        body { margin: 0px; }
-        canvas.emscripten { border: 0px none; background-color: black; }
+        body { font-family: arial; margin: 0px; background-color: black; padding: none; overflow: hidden; }
+        .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
+        div.emscripten { text-align: center; }
+
+        /* NOTE: Canvas *must not* have any border or padding, or mouse coords will be wrong */
+        canvas.emscripten { border: 0px none; background: black; height: 100vh; width: 100vw; }
     </style>
     <script type='text/javascript' src="https://cdn.jsdelivr.net/gh/eligrey/FileSaver.js/dist/FileSaver.min.js"> </script>
     <script type='text/javascript'>
