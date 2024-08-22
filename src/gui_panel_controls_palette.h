@@ -62,7 +62,7 @@ typedef struct GuiPanelControlsPaletteState {
     int toggleGroupActive;                  // GuiToggleGroup()
     bool checkBoxChecked;                   // GuiCheckBox()
     bool textBoxEditMode;                   // GuiTextBox()
-    unsigned char textBoxText[64];
+    char textBoxText[64];
     bool valueBoxEditMode;                  // GuiValueBox()
     int valueBoxValue;
     bool spinnerEditMode;                   // GuiSpinner()

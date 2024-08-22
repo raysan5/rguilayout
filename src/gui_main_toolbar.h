@@ -86,6 +86,7 @@ typedef struct {
     bool showControlOrderActive;        // Toggle all control drawing order (layers)
     bool showControlPanelActive;        // Toggle control panel window
     bool showGridActive;                // Show/hide work grid
+    bool showTooltips;                  // Show controls tooltips on mouse hover
 
     int visualStyleActive;
     int prevVisualStyleActive;
@@ -198,6 +199,7 @@ GuiMainToolbarState InitGuiMainToolbar(void)
     state.showControlOrderActive = false;       // Show controls drawing order
     state.showControlPanelActive = true;        // Toggle control panel window
     state.showGridActive = true;                // Show/hide work grid
+    state.showTooltips = true;                  // Show controls tooltips on mouse hover
 
     state.visualStyleActive = 0;
     state.prevVisualStyleActive = 0;
@@ -222,7 +224,7 @@ GuiMainToolbarState InitGuiMainToolbar(void)
 void GuiMainToolbar(GuiMainToolbarState *state)
 {
     // Toolbar panels
-    state->anchorRight.x = GetScreenWidth() - 104;       // Update right-anchor panel
+    state->anchorRight.x = (float)GetScreenWidth() - 104;       // Update right-anchor panel
     state->anchorVisuals.x = state->anchorRight.x - 324 + 1;    // Update right-anchor panel
 
     GuiPanel((Rectangle){ state->anchorFile.x, state->anchorFile.y, 160, 40 }, NULL);
@@ -300,7 +302,7 @@ void GuiMainToolbar(GuiMainToolbarState *state)
     GuiEnable();
 
     // Draw separation line rectangle for convenience
-    DrawRectangle(state->anchorTools.x + 380 + 72 + 96 + 35, state->anchorTools.y, 1, 40, GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
+    DrawRectangleRec((Rectangle){ state->anchorTools.x + 380 + 72 + 96 + 35, state->anchorTools.y, 1, 40 }, GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
 
     // Visuals options
     GuiSetTooltip("Toggle control rectangles view (R)");

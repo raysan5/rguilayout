@@ -45,13 +45,13 @@ typedef struct {
     Rectangle windowBounds;
 
     bool toolNameEditMode;
-    unsigned char toolNameText[64];
+    char toolNameText[64];
     bool toolVersionEditMode;
-    unsigned char toolVersionText[64];
+    char toolVersionText[64];
     bool companyEditMode;
-    unsigned char companyText[64];
+    char companyText[64];
     bool toolDescriptionEditMode;
-    unsigned char toolDescriptionText[64];
+    char toolDescriptionText[64];
 
     bool codeTemplateEditMode;
     int codeTemplateActive;
@@ -69,11 +69,11 @@ typedef struct {
     Vector2 codePanelScrollOffset;
 
     // Custom state variables
-    unsigned char *codeText;        // Generated code string
+    char *codeText;                 // Generated code string
     unsigned int codeHeight;        // Maximum height of code block (computed at drawing)
     Font codeFont;                  // Font used for text drawing
 
-    unsigned char *customTemplate;  // Custom template loaded
+    char *customTemplate;           // Custom template loaded
     bool customTemplateLoaded;      // Custom template loaded flag
 
 } GuiWindowCodegenState;
@@ -210,12 +210,12 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
         {
             BeginScissorMode((int)view.x, (int)view.y, (int)view.width, (int)view.height);
                 unsigned int linesCounter = 0;
-                unsigned char *currentLine = state->codeText;
+                char *currentLine = state->codeText;
 
                 while (currentLine)
                 {
                     char *nextLine = strchr(currentLine, '\n');
-                    if (nextLine) *nextLine = '\0';     // Temporaly terminating the current line
+                    if (nextLine) *nextLine = '\0'; // Temporaly terminating the current line
 
                     // Only draw lines inside text panel
                     if (((state->codePanelScrollOffset.y + 20*linesCounter) >= -40) &&

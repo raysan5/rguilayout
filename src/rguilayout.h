@@ -79,7 +79,7 @@ struct GuiAnchorPoint {
     int y;
     bool enabled;
     bool hidding;
-    unsigned char name[MAX_ANCHOR_NAME_LENGTH];     // 64 bytes
+    char name[MAX_ANCHOR_NAME_LENGTH];     // 64 bytes
     GuiAnchorPoint *ap;
 };
 
@@ -88,8 +88,8 @@ typedef struct {
     int id;
     int type;
     Rectangle rec;
-    unsigned char name[MAX_CONTROL_NAME_LENGTH];    // 64 bytes
-    unsigned char text[MAX_CONTROL_TEXT_LENGTH];    // 128 bytes
+    char name[MAX_CONTROL_NAME_LENGTH];    // 64 bytes
+    char text[MAX_CONTROL_TEXT_LENGTH];    // 128 bytes
     GuiAnchorPoint *ap;
 } GuiLayoutControl;
 
@@ -104,10 +104,10 @@ typedef struct {
 
 // Gui layout configuration for code exportation
 typedef struct {
-    unsigned char name[64];
-    unsigned char version[32];
-    unsigned char company[128];
-    unsigned char description[256];
+    char name[64];
+    char version[32];
+    char company[128];
+    char description[256];
     const char *template;                     // Code template
     bool exportAnchors;
     bool defineRecs;

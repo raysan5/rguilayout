@@ -52,7 +52,7 @@
 **********************************************************************************************/
 
 // Standard C file template
-static const unsigned char *guiTemplateStandardCode = "\
+static const char *guiTemplateStandardCode = "\
 /*******************************************************************************************\n\
 *\n\
 *   $(GUILAYOUT_NAME_PASCALCASE) v$(GUILAYOUT_VERSION) - $(GUILAYOUT_DESCRIPTION)\n\
@@ -135,7 +135,7 @@ $(GUILAYOUT_FUNCTION_DEFINITION_C)\n\
 ";
 
 // Header-only code file template
-static const unsigned char *guiTemplateHeaderOnly = "\
+static const char *guiTemplateHeaderOnly = "\
 /*******************************************************************************************\n\
 *\n\
 *   $(GUILAYOUT_NAME_PASCALCASE) v$(GUILAYOUT_VERSION) - $(GUILAYOUT_DESCRIPTION)\n\

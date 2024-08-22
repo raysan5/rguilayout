@@ -62,7 +62,7 @@ extern "C" {            // Prevents name mangling of functions
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
-unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout *layout, Vector2 offset, GuiLayoutConfig config);
+char *GenLayoutCode(const char *buffer, GuiLayout *layout, Vector2 offset, GuiLayoutConfig config);
 
 #ifdef __cplusplus
 }
@@ -90,24 +90,24 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout *layout, Vec
 //----------------------------------------------------------------------------------
 
 // .C Writting code functions (.c)
-static void WriteFunctionsDeclarationC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
-static void WriteInitializationC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
-static void WriteDrawingC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
-static void WriteFunctionsDefinitionC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteFunctionsDeclarationC(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteInitializationC(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteDrawingC(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteFunctionsDefinitionC(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
 
 // .H Writting code functions (.h)
-static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
-static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
-static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
-static void WriteFunctionDrawingH(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteStruct(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteFunctionsDeclarationH(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteFunctionInitializeH(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteFunctionDrawingH(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
 
 // Generic writting code functions (.c/.h)
-static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiLayoutControl control, bool exportAnchors, bool fullComments, const char *preText, int tabs, bool exportH);
-static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs);
-static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
-static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs);
-static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, const char *preText, int tabs);
-static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLayoutControl control, GuiLayoutConfig config, const char *preText);
+static void WriteRectangleVariables(char *toolstr, int *pos, GuiLayoutControl control, bool exportAnchors, bool fullComments, const char *preText, int tabs, bool exportH);
+static void WriteAnchors(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs);
+static void WriteConstText(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs);
+static void WriteControlsVariables(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs);
+static void WriteControlsDrawing(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, const char *preText, int tabs);
+static void WriteControlDraw(char *toolstr, int *pos, int index, GuiLayoutControl control, GuiLayoutConfig config, const char *preText);
 
 // Get controls specific texts functions
 static char *GetControlRectangleText(int index, GuiLayoutControl control, bool defineRecs, bool exportAnchors,  const char *preText);
@@ -121,15 +121,15 @@ static char *GetControlNameParam(char *controlName, const char *preText);
 
 // Generate layout code string
 // TODO: WARNING: layout is passed as value, probably not a good idea considering the size of the object
-unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout *layout, Vector2 offset, GuiLayoutConfig config)
+char *GenLayoutCode(const char *buffer, GuiLayout *layout, Vector2 offset, GuiLayoutConfig config)
 {
     #define MAX_CODE_SIZE            1024*1024       // Max code size: 1MB
     #define MAX_VARIABLE_NAME_SIZE     64
 
     if (buffer == NULL) return NULL;
 
-    unsigned char *toolstr = (unsigned char *)RL_CALLOC(MAX_CODE_SIZE, sizeof(unsigned char));
-    unsigned const char *substr = NULL;
+    char *toolstr = (char *)RL_CALLOC(MAX_CODE_SIZE, sizeof(char));
+    const char *substr = NULL;
 
     int bufferPos = 0;
     int codePos = 0;
@@ -256,7 +256,7 @@ unsigned char *GenLayoutCode(const unsigned char *buffer, GuiLayout *layout, Vec
 //----------------------------------------------------------------------------------
 
 // Write functions declaration code (.c)
-static void WriteFunctionsDeclarationC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
+static void WriteFunctionsDeclarationC(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
     if(config.exportButtonFunctions)
     {
@@ -283,7 +283,7 @@ static void WriteFunctionsDeclarationC(unsigned char *toolstr, int *pos, GuiLayo
 }
 
 // Write variables initialization code (.c)
-static void WriteInitializationC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
+static void WriteInitializationC(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
     // Const text
     if (config.defineTexts) WriteConstText(toolstr, pos, layout, config, tabs);
@@ -322,13 +322,13 @@ static void WriteInitializationC(unsigned char *toolstr, int *pos, GuiLayout *la
 }
 
 // Write drawing code (.c)
-static void WriteDrawingC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
+static void WriteDrawingC(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
     if (layout->controlCount > 0) WriteControlsDrawing(toolstr, pos, layout, config, "", tabs);
 }
 
 // Write functions definition code (.c)
-static void WriteFunctionsDefinitionC(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
+static void WriteFunctionsDefinitionC(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
     if(config.exportButtonFunctions)
     {
@@ -362,7 +362,7 @@ static void WriteFunctionsDefinitionC(unsigned char *toolstr, int *pos, GuiLayou
 //----------------------------------------------------------------------------------
 
 // Write state structure code (.h)
-static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
+static void WriteStruct(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
     TABAPPEND(toolstr, pos, tabs);
     TextAppend(toolstr, "typedef struct {", pos);
@@ -399,7 +399,7 @@ static void WriteStruct(unsigned char *toolstr, int *pos, GuiLayout *layout, Gui
 }
 
 // Write variables declaration code (.h)
-static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
+static void WriteFunctionsDeclarationH(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
     TextAppend(toolstr, TextFormat("Gui%sState InitGui%s(void);", TextToPascal(config.name), TextToPascal(config.name)), pos);
     ENDLINEAPPEND(toolstr, pos); TABAPPEND(toolstr, pos, tabs);
@@ -414,7 +414,7 @@ static void WriteFunctionsDeclarationH(unsigned char *toolstr, int *pos, GuiLayo
 }
 
 // Write initialization function code (.h)
-static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
+static void WriteFunctionInitializeH(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
      // Export InitGuiLayout function definition
     TextAppend(toolstr, TextFormat("Gui%sState InitGui%s(void)", TextToPascal(config.name), TextToPascal(config.name)), pos);
@@ -482,7 +482,7 @@ static void WriteFunctionInitializeH(unsigned char *toolstr, int *pos, GuiLayout
 }
 
 // Write functions drawing code (.h)
-static void WriteFunctionDrawingH(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
+static void WriteFunctionDrawingH(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
     // Export GuiLayout draw function
     TextAppend(toolstr, TextFormat("void Gui%s(Gui%sState *state)", TextToPascal(config.name), TextToPascal(config.name)), pos);
@@ -506,7 +506,7 @@ static void WriteFunctionDrawingH(unsigned char *toolstr, int *pos, GuiLayout *l
 //----------------------------------------------------------------------------------
 
 // Write rectangle variables code (.c/.h)
-static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiLayoutControl control, bool exportAnchors, bool fullComments, const char *preText, int tabs, bool exportH)
+static void WriteRectangleVariables(char *toolstr, int *pos, GuiLayoutControl control, bool exportAnchors, bool fullComments, const char *preText, int tabs, bool exportH)
 {
     if (exportAnchors && control.ap->id > 0)
     {
@@ -529,7 +529,7 @@ static void WriteRectangleVariables(unsigned char *toolstr, int *pos, GuiLayoutC
 }
 
 // Write anchors code (.c/.h)
-static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs)
+static void WriteAnchors(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs)
 {
     if (config.fullComments)
     {
@@ -569,7 +569,7 @@ static void WriteAnchors(unsigned char *toolstr, int *pos, GuiLayout *layout, Gu
 }
 
 // Write controls "text as const" code (.c/.h)
-static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
+static void WriteConstText(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, int tabs)
 {
     // Const variables and define text
     if (config.fullComments)
@@ -621,7 +621,7 @@ static void WriteConstText(unsigned char *toolstr, int *pos, GuiLayout *layout, 
 }
 
 // Write controls variables code (.c/.h)
-static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs)
+static void WriteControlsVariables(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, bool define, bool initialize, const char *preText, int tabs)
 {
     if (config.fullComments)
     {
@@ -836,7 +836,7 @@ static void WriteControlsVariables(unsigned char *toolstr, int *pos, GuiLayout *
 }
 
 // Write controls drawing code (full block) (.c/.h)
-static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, const char *preText, int tabs)
+static void WriteControlsDrawing(char *toolstr, int *pos, GuiLayout *layout, GuiLayoutConfig config, const char *preText, int tabs)
 {
     if (config.fullComments)
     {
@@ -972,7 +972,7 @@ static void WriteControlsDrawing(unsigned char *toolstr, int *pos, GuiLayout *la
 }
 
 // Write control drawing code (individual controls) (.c/.h)
-static void WriteControlDraw(unsigned char *toolstr, int *pos, int index, GuiLayoutControl control, GuiLayoutConfig config, const char *preText)
+static void WriteControlDraw(char *toolstr, int *pos, int index, GuiLayoutControl control, GuiLayoutConfig config, const char *preText)
 {
     char *rec = GetControlRectangleText(index, control, config.defineRecs, config.exportAnchors, preText);
     char *text = GetControlTextParam(control, config.defineTexts);

@@ -41,6 +41,9 @@
 *           NOTE: Avoids including tinyfiledialogs depencency library
 *
 *   VERSIONS HISTORY:
+*       4.2  (xx-Nov-2024)  ADDED: New welcome/about window
+*                           ADDED: Configuration file support: config.ini
+* 
 *       4.1  (06-Apr-2024)  ADDED: Issue report window
 *                           REMOVED: Sponsors window
 *                           REVIEWED: Main toolbar and help window
@@ -190,6 +193,9 @@
 //#define RPNG_DEFLATE_IMPLEMENTATION
 #include "external/rpng.h"                  // PNG chunks management
 
+#define RINI_IMPLEMENTATION
+#include "external/rini.h"                  // Config file values reader/writer
+
 // Standard C libraries
 #include <stdlib.h>                         // Required for: calloc(), free()
 #include <stdarg.h>                         // Required for: va_list, va_start(), vfprintf(), va_end()
@@ -270,8 +276,6 @@ static GuiLayout *LoadLayout(const char *fileName);         // Load raygui layou
 static void UnloadLayout(GuiLayout *layout);                // Unload raygui layout
 static void ResetLayout(GuiLayout *layout);                 // Reset layout to default values
 static void SaveLayout(GuiLayout *layout, const char *fileName);     // Save raygui layout as text file (.rgl)
-
-static bool IsFileNameValid(const char *fileName);          // Check if fileName is valid for the platform/OS
 
 //----------------------------------------------------------------------------------
 // Program main entry point
@@ -390,7 +394,7 @@ int main(int argc, char *argv[])
     Color colEditAnchorNameOverlay = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));   // Anchor name edit mode, screen overlay (Fade: 0.2f)
     Color colShowControlRecs = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));         // Control rectangles mode (Fade: 0.2f / Line: Fade: 0.7f)
 
-    Color colControlCreationCursor = RED;       // Control creation cursor (NOT USED)
+    //Color colControlCreationCursor = RED;       // Control creation cursor (NOT USED)
     Color colControlFocused = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));        // Control focused (mouse over it)
     Color colControlSelected = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));       // Control selected
     Color colControlSelectedResize = BLUE;      // Control resize mode (keyboard, RCTRL + ARROWS)
@@ -558,7 +562,40 @@ int main(int argc, char *argv[])
     bool showLoadTemplateDialog = false;
     //-----------------------------------------------------------------------------------
 
-    int styleFrameCounter = 0;
+#if defined(PLATFORM_DESKTOP)
+    // Read application config.ini (if available)
+    //-------------------------------------------------------------------------------------
+    int windowMaximized = 0;
+    if (FileExists(TextFormat("%s/config.ini", GetApplicationDirectory())))
+    {
+        rini_config appConfig = rini_load_config(TextFormat("%s/config.ini", GetApplicationDirectory()));
+
+        // Load required config variables
+        // NOTE: Keys not found default to 0 value, unless fallback is requested
+        //windowAboutState.showSplash = rini_get_config_value(config, "SHOW_WINDOW_WELCOME");
+        mainToolbarState.showControlPanelActive = rini_get_config_value(appConfig, "SHOW_WINDOW_CONTROLS");
+        mainToolbarState.showTooltips = rini_get_config_value_fallback(appConfig, "SHOW_CONTROL_TOOLTIPS", 1); // Default to 1 if key not found
+        mainToolbarState.showGridActive = rini_get_config_value(appConfig, "SHOW_IMAGE_GRID");
+        gridSpacing = rini_get_config_value(appConfig, "GRID_LINES_SPACING");
+        windowMaximized = rini_get_config_value(appConfig, "INIT_WINDOW_MAXIMIZED");
+        mainToolbarState.visualStyleActive = rini_get_config_value(appConfig, "GUI_VISUAL_STYLE");
+        //mainToolbarState.cleanModeActive = rini_get_config_value(config, "CLEAN_WINDOW_MODE");
+
+        rini_unload_config(&appConfig);
+
+        // NOTE: Config is automatically saved when application is closed
+    }
+
+    // Setup application using config values (or default)
+    //if (windowAboutState.showSplash) { windowAboutState.welcomeMode = true; windowAboutState.windowActive = true; }
+    //else { windowAboutState.welcomeMode = false; windowAboutState.windowActive = false; }
+    if (mainToolbarState.showTooltips) GuiEnableTooltip();
+    else GuiDisableTooltip();
+
+    if (gridSpacing == 0) gridSpacing = 16;
+    if (windowMaximized == 1) MaximizeWindow();
+    //-------------------------------------------------------------------------------------
+#endif
 
     SetTargetFPS(60);       // Set our game desired framerate
     //--------------------------------------------------------------------------------------
@@ -959,7 +996,7 @@ int main(int argc, char *argv[])
             colEditAnchorNameOverlay = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));   // Anchor name edit mode, screen overlay (Fade: 0.2f)
             colShowControlRecs = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));         // Control rectangles mode (Fade: 0.2f / Line: Fade: 0.7f)
 
-            colControlCreationCursor = RED;       // Control creation cursor (NOT USED)
+            //colControlCreationCursor = RED;       // Control creation cursor (NOT USED)
             colControlFocused = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_FOCUSED));        // Control focused (mouse over it)
             colControlSelected = GetColor(GuiGetStyle(BUTTON, BORDER_COLOR_PRESSED));       // Control selected
             colControlSelectedResize = BLUE;      // Control resize mode (keyboard, RCTRL + ARROWS)
@@ -2471,7 +2508,7 @@ int main(int argc, char *argv[])
             {
                 // Control selected from panel drawing
                 // NOTE: It uses default control rectangle for selected type
-                if (CheckCollisionPointRec(mouse, (Rectangle){ 0, 40, GetScreenWidth(), GetScreenHeight() - 64 }) &&
+                if (CheckCollisionPointRec(mouse, (Rectangle){ 0, 40, (float)GetScreenWidth(), (float)GetScreenHeight() - 64 }) &&
                     !CheckCollisionPointRec(mouse, windowControlsPaletteState.panelBounds))
                 {
                     if ((focusedAnchor == -1) && (focusedControl == -1) && !tracemap.focused && !refWindowEditMode && !multiSelectMode)
@@ -2569,7 +2606,7 @@ int main(int argc, char *argv[])
                         int textWidth = MeasureText(layout->anchors[selectedAnchor].name, fontSize);
                         Rectangle textboxRec = (Rectangle){ layout->anchors[selectedAnchor].x, layout->anchors[selectedAnchor].y, textWidth + 40, fontSize + 5 };
 
-                        if (textboxRec.width < (textWidth + 40)) textboxRec.width = textWidth + 40;
+                        if (textboxRec.width < (textWidth + 40)) textboxRec.width = (float)textWidth + 40;
                         if (textboxRec.height < fontSize) textboxRec.height += fontSize;
 
                         if (GuiTextBox(textboxRec, layout->anchors[selectedAnchor].name, MAX_ANCHOR_NAME_LENGTH, nameEditMode)) nameEditMode = !nameEditMode;
@@ -3421,6 +3458,34 @@ int main(int argc, char *argv[])
     RL_FREE(undoLayouts);                   // Free undo layouts array (allocated with RL_CALLOC)
     RL_FREE(windowCodegenState.codeText);   // Free loaded codeText memory
 
+#if defined(PLATFORM_DESKTOP)
+    // Save application config.ini for next run
+    //--------------------------------------------------------------------------------------
+    rini_config appConfig = rini_load_config(NULL);   // Create empty config with 32 entries (RINI_MAX_CONFIG_CAPACITY)
+
+    windowMaximized = (int)IsWindowMaximized();
+
+    //rini_set_config_value(&config, "SHOW_WINDOW_WELCOME", (int)windowAboutState.showSplash, "Show welcome window at initialization");
+    rini_set_config_value(&appConfig, "SHOW_WINDOW_INFO", (int)mainToolbarState.showControlPanelActive, "Show control panel");
+    rini_set_config_value(&appConfig, "SHOW_CONTROL_TOOLTIPS", (int)mainToolbarState.showTooltips, "Show controls tooltips on mouse hover");
+    rini_set_config_value(&appConfig, "INIT_WINDOW_MAXIMIZED", (int)windowMaximized, "Initialize window maximized");
+    rini_set_config_value(&appConfig, "SHOW_IMAGE_GRID", (int)mainToolbarState.showGridActive, "Show image grid");
+    rini_set_config_value(&appConfig, "GRID_LINES_SPACING", (int)gridSpacing, "Grid lines spacing");
+    rini_set_config_value(&appConfig, "GUI_VISUAL_STYLE", (int)mainToolbarState.visualStyleActive, "UI visual style selected");
+    //rini_set_config_value(&config, "CLEAN_WINDOW_MODE", (int)mainToolbarState.cleanModeActive, "Clean window mode enabled");
+
+    const char *iniHeader = "#\n"
+        "# rImageShield initialization configuration options\n"
+        "#\n"
+        "# NOTE: This file is loaded at application startup,\n"
+        "# if file is not found, default values are applied\n"
+        "#\n";
+
+    rini_save_config(appConfig, TextFormat("%s/config.ini", GetApplicationDirectory()), iniHeader);
+    rini_unload_config(&appConfig);
+    //--------------------------------------------------------------------------------------
+#endif
+
     CloseWindow();              // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
 
@@ -3470,7 +3535,7 @@ static void ProcessCommandLine(int argc, char *argv[])
 
     char templateFile[512] = { 0 };     // Template file name
 
-    int outputFormat = 0;               // Supported output formats
+    //int outputFormat = 0;               // Supported output formats
 
     // Process command line arguments
     for (int i = 1; i < argc; i++)
@@ -3554,7 +3619,7 @@ static void ProcessCommandLine(int argc, char *argv[])
         char *guiTemplateCustom = NULL;
         if (templateFile[0] != '\0') guiTemplateCustom = LoadFileText(templateFile);
 
-        unsigned char *toolstr = NULL;
+        char *toolstr = NULL;
         if (guiTemplateCustom != NULL)
         {
             toolstr = GenLayoutCode(guiTemplateCustom, layout, (Vector2){ 0, 0 }, config);
@@ -3892,6 +3957,7 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
 */
 }
 
+/*
 // Check if a rectangle is contained within another
 static bool IsRecContainedInRec(Rectangle container, Rectangle rec)
 {
@@ -3903,61 +3969,4 @@ static bool IsRecContainedInRec(Rectangle container, Rectangle rec)
 
     return result;
 }
-
-// Check if fileName is valid for the platform/OS
-static bool IsFileNameValid(const char *fileName)
-{
-    bool valid = true;
-
-    if ((fileName != NULL) && (fileName[0] != '\0'))
-    {
-        int length = strlen(fileName);
-        bool allPeriods = true;
-
-        for (int i = 0; i < length; i++)
-        {
-            // Check invalid characters
-            if ((fileName[i] == '<') ||
-                (fileName[i] == '>') ||
-                (fileName[i] == ':') ||
-                (fileName[i] == '\"') ||
-                (fileName[i] == '/') ||
-                (fileName[i] == '\\') ||
-                (fileName[i] == '|') ||
-                (fileName[i] == '?') ||
-                (fileName[i] == '*')) { valid = false; break; }
-
-            // Check non-glyph characters
-            if ((unsigned char)fileName[i] < 32) { valid = false; break; }
-
-            // TODO: Check trailing periods/spaces?
-
-            // Check if filename is not all periods
-            if (fileName[i] != '.') allPeriods = false;
-        }
-
-        if (allPeriods) valid = false;
-
-/*
-        if (valid)
-        {
-            // Check invalid DOS names
-            if (length >= 3)
-            {
-                if (((fileName[0] == 'C') && (fileName[1] == 'O') && (fileName[2] == 'N')) ||   // CON
-                    ((fileName[0] == 'P') && (fileName[1] == 'R') && (fileName[2] == 'N')) ||   // PRN
-                    ((fileName[0] == 'A') && (fileName[1] == 'U') && (fileName[2] == 'X')) ||   // AUX
-                    ((fileName[0] == 'N') && (fileName[1] == 'U') && (fileName[2] == 'L'))) valid = false; // NUL
-            }
-
-            if (length >= 4)
-            {
-                if (((fileName[0] == 'C') && (fileName[1] == 'O') && (fileName[2] == 'M') && ((fileName[3] >= '0') && (fileName[3] <= '9'))) ||  // COM0-9
-                    ((fileName[0] == 'L') && (fileName[1] == 'P') && (fileName[2] == 'T') && ((fileName[3] >= '0') && (fileName[3] <= '9')))) valid = false; // LPT0-9
-            }
-        }
 */
-    }
-
-    return valid;
-}
