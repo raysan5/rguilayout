@@ -203,9 +203,12 @@ RINIAPI rini_config rini_load_config(const char *file_name);            // Load 
 RINIAPI void rini_unload_config(rini_config *config);                   // Unload config data from memory
 RINIAPI void rini_save_config(rini_config config, const char *file_name, const char *header); // Save config to file, with custom header
 
-RINIAPI int rini_get_config_value(rini_config config, const char *key); // Get config value int for provided key, returns -1 if not found
+RINIAPI int rini_get_config_value(rini_config config, const char *key); // Get config value int for provided key, returns 0 if not found
 RINIAPI const char *rini_get_config_value_text(rini_config config, const char *key); // Get config value text for provided key
 RINIAPI const char *rini_get_config_value_description(rini_config config, const char *key); // Get config value description for provided key
+
+RINIAPI int rini_get_config_value_fallback(rini_config config, const char *key, int fallback); // Get config value for provided key with default value fallback if not found or not valid
+RINIAPI const char *rini_get_config_value_text_fallback(rini_config config, const char *key, const char *fallback); // Get config value text for provided key with fallback if not found or not valid
 
 // Set config value int/text and description for existing key or create a new entry
 // NOTE: When setting a text value, if id does not exist, a new entry is automatically created
@@ -329,7 +332,7 @@ void rini_save_config(rini_config config, const char *file_name, const char *hea
 
     if (rini_file != NULL)
     {
-        if (header != NULL) fprintf(rini_file, header);
+        if (header != NULL) fprintf(rini_file, "%s", header);
 
         for (unsigned int i = 0; i < config.count; i++)
         {
@@ -355,13 +358,31 @@ void rini_unload_config(rini_config *config)
 // Get config value for provided key, returns 0 if not found or not valid
 int rini_get_config_value(rini_config config, const char *key)
 {
-    int value = -1;
+    int value = 0;
 
     for (unsigned int i = 0; i < config.count; i++)
     {
         if (strcmp(key, config.values[i].key) == 0)
         {
-            value = rini_text_to_int(config.values[i].text);    // Returns 0 if conversion fails
+            value = rini_text_to_int(config.values[i].text);
+            break;
+        }
+    }
+
+    return value;
+}
+
+// Get config value for provided key with default value fallback if not found or not valid
+int rini_get_config_value_fallback(rini_config config, const char *key, int fallback)
+{
+    int value = fallback;
+
+    for (unsigned int i = 0; i < config.count; i++)
+    {
+        if (strcmp(key, config.values[i].key) == 0) // Key found
+        {
+            // TODO: Detect if conversion fails...
+            value = rini_text_to_int(config.values[i].text);
             break;
         }
     }
@@ -377,6 +398,23 @@ const char *rini_get_config_value_text(rini_config config, const char *key)
     for (unsigned int i = 0; i < config.count; i++)
     {
         if (strcmp(key, config.values[i].key) == 0)
+        {
+            text = config.values[i].text;
+            break;
+        }
+    }
+
+    return text;
+}
+
+// Get config value text for provided key with fallback if not found or not valid
+RINIAPI const char *rini_get_config_value_text_fallback(rini_config config, const char *key, const char *fallback)
+{
+    const char *text = fallback;
+
+    for (unsigned int i = 0; i < config.count; i++)
+    {
+        if (strcmp(key, config.values[i].key) == 0) // Key found
         {
             text = config.values[i].text;
             break;
