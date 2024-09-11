@@ -22,7 +22,7 @@
 *   POSSIBLE IMPROVEMENTS:
 *       - Support config [sections]
 *       - Support disabled entries recognition
-*       - Config values update over existing files
+*       - Support comment lines and empty lines
 *
 *   CONFIGURATION:
 *       #define RINI_IMPLEMENTATION
@@ -200,8 +200,10 @@ extern "C" {                    // Prevents name mangling of functions
 // Functions declaration
 //------------------------------------------------------------------------------------
 RINIAPI rini_config rini_load_config(const char *file_name);            // Load config from file (*.ini) or create a new config object (pass NULL)
-RINIAPI void rini_unload_config(rini_config *config);                   // Unload config data from memory
+RINIAPI rini_config rini_load_config_from_memory(const char *text);     // Load config from text buffer
 RINIAPI void rini_save_config(rini_config config, const char *file_name, const char *header); // Save config to file, with custom header
+RINIAPI char *rini_save_config_to_memory(rini_config config, const char *header); // Save config to text buffer ('\0' EOL)
+RINIAPI void rini_unload_config(rini_config *config);                   // Unload config data from memory
 
 RINIAPI int rini_get_config_value(rini_config config, const char *key); // Get config value int for provided key, returns 0 if not found
 RINIAPI const char *rini_get_config_value_text(rini_config config, const char *key); // Get config value text for provided key
@@ -325,6 +327,74 @@ rini_config rini_load_config(const char *file_name)
     return config;
 }
 
+// Load config from text buffer
+rini_config rini_load_config_from_memory(const char *text)
+{
+    #define RINI_MAX_TEXT_LINES RINI_MAX_VALUE_CAPACITY*2       // Consider possible comments and empty lines
+
+    rini_config config = { 0 };
+    unsigned int value_counter = 0;
+
+    // Init config data to max capacity
+    config.capacity = RINI_MAX_VALUE_CAPACITY;
+    config.values = (rini_config_value *)RINI_CALLOC(RINI_MAX_VALUE_CAPACITY, sizeof(rini_config_value));
+
+    if (text != NULL)
+    {
+        // Split text by line-breaks
+        const char *lines[RINI_MAX_TEXT_LINES] = { 0 };
+        int textSize = (int)strlen(text);
+        lines[0] = text;
+        int line_counter = 1;
+
+        for (int i = 0, k = 1; (i < textSize) && (line_counter < RINI_MAX_TEXT_LINES); i++)
+        {
+            if (text[i] == '\n')
+            {
+                lines[k] = &text[i + 1]; // WARNING: next value is valid?
+                line_counter += 1;
+                k++;
+            }
+        }
+
+        // Count possible values in lines
+        for (int l = 0; l < line_counter; l++)
+        {
+            // Skip commented lines and empty lines
+            // NOTE: We are also skipping sections delimiters
+            if ((lines[l][0] != RINI_LINE_COMMENT_DELIMITER) &&
+                (lines[l][0] != RINI_LINE_SECTION_DELIMITER) &&
+                (lines[l][0] != '\n') && (lines[l][0] != '\0')) value_counter++;
+        }
+
+        // WARNING: We can't store more values than its max capacity
+        config.count = (value_counter > RINI_MAX_VALUE_CAPACITY)? RINI_MAX_VALUE_CAPACITY : value_counter;
+
+        // Process lines to get keys and values
+        if (config.count > 0)
+        {
+            value_counter = 0;
+
+            // Second pass to read config data
+            for (int l = 0; l < line_counter; l++)
+            {
+                // Skip commented lines and empty lines
+                if ((lines[l][0] != '#') && (lines[l][0] != ';') && (lines[l][0] != '\n') && (lines[l][0] != '\0'))
+                {
+                    // Get keyentifier string
+                    memset(config.values[value_counter].key, 0, RINI_MAX_KEY_SIZE);
+                    rini_read_config_key(lines[l], config.values[value_counter].key);
+                    rini_read_config_value_text(lines[l], config.values[value_counter].text, config.values[value_counter].desc);
+
+                    value_counter++;
+                }
+            }
+        }
+    }
+
+    return config;
+}
+
 // Save config to file (*.ini)
 void rini_save_config(rini_config config, const char *file_name, const char *header)
 {
@@ -343,6 +413,29 @@ void rini_save_config(rini_config config, const char *file_name, const char *hea
 
         fclose(rini_file);
     }
+}
+
+// Save config to text buffer ('\0' EOL)
+char *rini_save_config_to_memory(rini_config config, const char *header)
+{
+    #define RINI_MAX_TEXT_FILE_SIZE  512
+
+    static char text[RINI_MAX_TEXT_FILE_SIZE] = { 0 };
+    memset(text, 0, RINI_MAX_TEXT_FILE_SIZE);
+    int offset = 0;
+
+    if (header != NULL)
+    {
+        offset = sprintf(text, "%s", header);
+    }
+
+    for (unsigned int i = 0; i < config.count; i++)
+    {
+        // TODO: If text is not a number value, append text-quotes?
+        offset += sprintf(text + offset, "%-22s %c %6s      %c %s\n", config.values[i].key, RINI_VALUE_DELIMITER, config.values[i].text, RINI_VALUE_COMMENTS_DELIMITER, config.values[i].desc);
+    }
+
+    return text;
 }
 
 // Unload config data
