@@ -3475,7 +3475,7 @@ int main(int argc, char *argv[])
     //rini_set_config_value(&config, "CLEAN_WINDOW_MODE", (int)mainToolbarState.cleanModeActive, "Clean window mode enabled");
 
     const char *iniHeader = "#\n"
-        "# rImageShield initialization configuration options\n"
+        "# rGuiLayout initialization configuration options\n"
         "#\n"
         "# NOTE: This file is loaded at application startup,\n"
         "# if file is not found, default values are applied\n"
@@ -3970,3 +3970,4 @@ static bool IsRecContainedInRec(Rectangle container, Rectangle rec)
     return result;
 }
 */
+
