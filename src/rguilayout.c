@@ -1918,7 +1918,6 @@ int main(int argc, char *argv[])
                                             layout->anchors[selectedAnchor].x -= offsetX;
                                         }
 
-
                                         if (IsKeyDown(KEY_DOWN)) layout->anchors[selectedAnchor].y +=(gridSnapDelta - offsetY);
                                         else if (IsKeyDown(KEY_UP))
                                         {
@@ -3281,7 +3280,7 @@ int main(int argc, char *argv[])
             if (showLoadFileDialog)
             {
 #if defined(CUSTOM_MODAL_DIALOGS)
-                int result = GuiFileDialog(DIALOG_MESSAGE, "#5#Load raygui layout file ...", inFileName, "Ok", "Just drag and drop your .rgl layout file!");
+                int result = GuiFileDialog(DIALOG_MESSAGE, "#5#Load raygui layout file", inFileName, "Ok", "Just drag and drop your .rgl layout file!");
 #else
                 int result = GuiFileDialog(DIALOG_OPEN_FILE, "Load raygui layout file", inFileName, "*.rgl", "raygui Layout Files (*.rgl)");
 #endif
