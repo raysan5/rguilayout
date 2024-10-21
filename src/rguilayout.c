@@ -43,7 +43,7 @@
 *   VERSIONS HISTORY:
 *       4.2  (xx-Nov-2024)  ADDED: New welcome/about window
 *                           ADDED: Configuration file support: config.ini
-* 
+*
 *       4.1  (06-Apr-2024)  ADDED: Issue report window
 *                           REMOVED: Sponsors window
 *                           REVIEWED: Main toolbar and help window
