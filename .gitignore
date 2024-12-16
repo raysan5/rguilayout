@@ -61,3 +61,9 @@ dkms.conf
 
 # Build folder
 [Bb]uild
+
+# WebAssembly release files
+*.data
+*.wasm
+*.html
+*.js
