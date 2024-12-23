@@ -80,7 +80,7 @@
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2023 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2023-2024 Ramon Santamaria (@raysan5)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -258,7 +258,7 @@ static int rini_read_config_value_text(const char *buffer, char *text, char *des
 static int rini_text_to_int(const char *text); // Convert text to int value (if possible), same as atoi()
 
 //----------------------------------------------------------------------------------
-// Module functions declaration
+// Module functions definition
 //----------------------------------------------------------------------------------
 // Load config from file (.ini)
 rini_config rini_load_config(const char *file_name)
@@ -279,11 +279,10 @@ rini_config rini_load_config(const char *file_name)
             char buffer[RINI_MAX_LINE_SIZE] = { 0 };    // Buffer to read every text line
 
             // First pass to count valid config lines
-            while (!feof(rini_file))
+            while (fgets(buffer, RINI_MAX_LINE_SIZE, rini_file))
             {
                 // WARNING: fgets() keeps line endings, doesn't have any special options for converting line endings,
                 // but on Windows, when reading file 'rt', line endings are converted from \r\n to just \n
-                fgets(buffer, RINI_MAX_LINE_SIZE, rini_file);
 
                 // Skip commented lines and empty lines
                 // NOTE: We are also skipping sections delimiters
@@ -301,21 +300,25 @@ rini_config rini_load_config(const char *file_name)
                 value_counter = 0;
 
                 // Second pass to read config data
-                while (!feof(rini_file))
+                while (fgets(buffer, RINI_MAX_LINE_SIZE, rini_file))
                 {
                     // WARNING: fgets() keeps line endings, doesn't have any special options for converting line endings,
                     // but on Windows, when reading file 'rt', line endings are converted from \r\n to just \n
-                    fgets(buffer, RINI_MAX_LINE_SIZE, rini_file);
-
+                    
                     // Skip commented lines and empty lines
-                    if ((buffer[0] != '#') && (buffer[0] != ';') && (buffer[0] != '\n') && (buffer[0] != '\0'))
+                    if ((buffer[0] != RINI_LINE_COMMENT_DELIMITER) &&
+                        (buffer[0] != RINI_LINE_SECTION_DELIMITER) &&
+                        (buffer[0] != '\n') && (buffer[0] != '\0'))
                     {
-                        // Get keyentifier string
+                        // Get key identifier string
                         memset(config.values[value_counter].key, 0, RINI_MAX_KEY_SIZE);
                         rini_read_config_key(buffer, config.values[value_counter].key);
                         rini_read_config_value_text(buffer, config.values[value_counter].text, config.values[value_counter].desc);
 
                         value_counter++;
+
+                        // Stop reading if first count reached to avoid overflow in case count == RINI_MAX_VALUE_CAPACITY
+                        if (value_counter >= config.count) break;
                     }
                 }
             }
@@ -328,9 +331,10 @@ rini_config rini_load_config(const char *file_name)
 }
 
 // Load config from text buffer
+// NOTE: Comments and empty lines are ignored
 rini_config rini_load_config_from_memory(const char *text)
 {
-    #define RINI_MAX_TEXT_LINES RINI_MAX_VALUE_CAPACITY*2       // Consider possible comments and empty lines
+    #define RINI_MAX_TEXT_LINES     RINI_MAX_VALUE_CAPACITY*2       // Consider possible comments and empty lines
 
     rini_config config = { 0 };
     unsigned int value_counter = 0;
@@ -379,14 +383,19 @@ rini_config rini_load_config_from_memory(const char *text)
             for (int l = 0; l < line_counter; l++)
             {
                 // Skip commented lines and empty lines
-                if ((lines[l][0] != '#') && (lines[l][0] != ';') && (lines[l][0] != '\n') && (lines[l][0] != '\0'))
+                if ((lines[l][0] != RINI_LINE_COMMENT_DELIMITER) &&
+                    (lines[l][0] != RINI_LINE_SECTION_DELIMITER) &&
+                    (lines[l][0] != '\n') && (lines[l][0] != '\0'))
                 {
-                    // Get keyentifier string
+                    // Get key identifier string
                     memset(config.values[value_counter].key, 0, RINI_MAX_KEY_SIZE);
                     rini_read_config_key(lines[l], config.values[value_counter].key);
                     rini_read_config_value_text(lines[l], config.values[value_counter].text, config.values[value_counter].desc);
 
                     value_counter++;
+
+                    // Stop reading if first count reached to avoid overflow in case count == RINI_MAX_VALUE_CAPACITY
+                    if (value_counter >= config.count) break;
                 }
             }
         }
@@ -406,7 +415,10 @@ void rini_save_config(rini_config config, const char *file_name, const char *hea
 
         for (unsigned int i = 0; i < config.count; i++)
         {
-            // TODO: If text is not a number value, append text-quotes?
+            // TODO: If text is not a number value, append text-quotes? --> YES
+            // i.e. --->PRODUCT_NAME "raylib"
+            //int value = atoi(config.values[i].text);  // Returns 0 if input not valid --> Check if (config.values[i].text len == 1 && config.values[i].text[0] == '0')
+            //float valuef = (float)atof(config.values[i].text); // Returns 0.0 if input not valid --> Check if (config.values[i].text len == 1 && config.values[i].text[0] == '0')
 
             fprintf(rini_file, "%-22s %c %6s      %c %s\n", config.values[i].key, RINI_VALUE_DELIMITER, config.values[i].text, RINI_VALUE_COMMENTS_DELIMITER, config.values[i].desc);
         }
@@ -418,8 +430,14 @@ void rini_save_config(rini_config config, const char *file_name, const char *hea
 // Save config to text buffer ('\0' EOL)
 char *rini_save_config_to_memory(rini_config config, const char *header)
 {
-    #define RINI_MAX_TEXT_FILE_SIZE  512
+    #define RINI_MAX_TEXT_FILE_SIZE  4096       
+    
+    // Verify required config size is smaller than memory buffer size
+    int requiredSize = 0;
+    for (int i = 0; i < config.count; i++) requiredSize += (strlen(config.values[i].key) + strlen(config.values[i].text) + strlen(config.values[i].desc));
+    if (requiredSize > RINI_MAX_TEXT_FILE_SIZE) RINI_LOG("WARNING: Required config.ini size is bigger than max supported memory size, increase RINI_MAX_TEXT_FILE_SIZE\n");
 
+    // NOTE: Using a static buffer to avoid de-allocation requirement on user side 
     static char text[RINI_MAX_TEXT_FILE_SIZE] = { 0 };
     memset(text, 0, RINI_MAX_TEXT_FILE_SIZE);
     int offset = 0;
