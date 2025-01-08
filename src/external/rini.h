@@ -420,7 +420,7 @@ void rini_save_config(rini_config config, const char *file_name, const char *hea
             //int value = atoi(config.values[i].text);  // Returns 0 if input not valid --> Check if (config.values[i].text len == 1 && config.values[i].text[0] == '0')
             //float valuef = (float)atof(config.values[i].text); // Returns 0.0 if input not valid --> Check if (config.values[i].text len == 1 && config.values[i].text[0] == '0')
 
-            fprintf(rini_file, "%-22s %c %6s      %c %s\n", config.values[i].key, RINI_VALUE_DELIMITER, config.values[i].text, RINI_VALUE_COMMENTS_DELIMITER, config.values[i].desc);
+            fprintf(rini_file, "%-28s %c %6s      %c %s\n", config.values[i].key, RINI_VALUE_DELIMITER, config.values[i].text, RINI_VALUE_COMMENTS_DELIMITER, config.values[i].desc);
         }
 
         fclose(rini_file);
