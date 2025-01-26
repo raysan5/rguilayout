@@ -3464,6 +3464,14 @@ int main(int argc, char *argv[])
 
     windowMaximized = (int)IsWindowMaximized();
 
+    // Define header comment lines
+    rini_set_config_comment_line(&config, NULL);   // Empty comment line, but including comment prefix delimiter
+    rini_set_config_comment_line(&config, "rGuiLayout initialization configuration options");
+    rini_set_config_comment_line(&config, NULL);
+    rini_set_config_comment_line(&config, "NOTE: This file is loaded at application startup,");
+    rini_set_config_comment_line(&config, "if file is not found, default values are applied");
+    rini_set_config_comment_line(&config, NULL);
+
     //rini_set_config_value(&config, "SHOW_WINDOW_WELCOME", (int)windowAboutState.showSplash, "Show welcome window at initialization");
     rini_set_config_value(&appConfig, "SHOW_WINDOW_INFO", (int)mainToolbarState.showControlPanelActive, "Show control panel");
     rini_set_config_value(&appConfig, "SHOW_CONTROL_TOOLTIPS", (int)mainToolbarState.showTooltips, "Show controls tooltips on mouse hover");
@@ -3472,13 +3480,6 @@ int main(int argc, char *argv[])
     rini_set_config_value(&appConfig, "GRID_LINES_SPACING", (int)gridSpacing, "Grid lines spacing");
     rini_set_config_value(&appConfig, "GUI_VISUAL_STYLE", (int)mainToolbarState.visualStyleActive, "UI visual style selected");
     //rini_set_config_value(&config, "CLEAN_WINDOW_MODE", (int)mainToolbarState.cleanModeActive, "Clean window mode enabled");
-
-    const char *iniHeader = "#\n"
-        "# rGuiLayout initialization configuration options\n"
-        "#\n"
-        "# NOTE: This file is loaded at application startup,\n"
-        "# if file is not found, default values are applied\n"
-        "#\n";
 
     rini_save_config(appConfig, TextFormat("%s/config.ini", GetApplicationDirectory()));
     rini_unload_config(&appConfig);
