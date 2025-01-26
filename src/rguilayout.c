@@ -3480,7 +3480,7 @@ int main(int argc, char *argv[])
         "# if file is not found, default values are applied\n"
         "#\n";
 
-    rini_save_config(appConfig, TextFormat("%s/config.ini", GetApplicationDirectory()), iniHeader);
+    rini_save_config(appConfig, TextFormat("%s/config.ini", GetApplicationDirectory()));
     rini_unload_config(&appConfig);
     //--------------------------------------------------------------------------------------
 #endif
