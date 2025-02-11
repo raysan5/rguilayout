@@ -486,20 +486,20 @@ int main(int argc, char *argv[])
 
     // Layout code generation configuration
     //------------------------------------------------------------------------------------
-    GuiLayoutConfig config = { 0 };
-    strcpy(config.name, "window_codegen");
-    strcpy(config.version, toolVersion);
-    strcpy(config.company, "raylib technologies");
-    strcpy(config.description, "tool description");
-    config.template = NULL;
-    config.exportAnchors = false;
-    config.defineRecs = false;
-    config.defineTexts = false;
-    config.fullComments = false;
-    config.exportButtonFunctions = false;
+    GuiLayoutConfig guiConfig = { 0 };
+    strcpy(guiConfig.name, "window_codegen");
+    strcpy(guiConfig.version, toolVersion);
+    strcpy(guiConfig.company, "raylib technologies");
+    strcpy(guiConfig.description, "tool description");
+    guiConfig.template = NULL;
+    guiConfig.exportAnchors = false;
+    guiConfig.defineRecs = false;
+    guiConfig.defineTexts = false;
+    guiConfig.fullComments = false;
+    guiConfig.exportButtonFunctions = false;
 
-    GuiLayoutConfig prevConfig = { 0 };
-    memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
+    GuiLayoutConfig prevGuiConfig = { 0 };
+    memcpy(&prevGuiConfig, &guiConfig, sizeof(GuiLayoutConfig));
     //------------------------------------------------------------------------------------
 
     // GUI: Main toolbar panel (file and visualization)
@@ -761,27 +761,27 @@ int main(int argc, char *argv[])
         if ((IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E)) || mainToolbarState.btnExportFilePressed)
         {
             // Setup code generation config parameters
-            strcpy(config.name, windowCodegenState.toolNameText);
-            strcpy(config.version, windowCodegenState.toolVersionText);
-            strcpy(config.company, windowCodegenState.companyText);
-            strcpy(config.description, windowCodegenState.toolDescriptionText);
-            config.exportAnchors = windowCodegenState.exportAnchorsChecked;
-            config.defineRecs = windowCodegenState.defineRecsChecked;
-            config.defineTexts = windowCodegenState.defineTextsChecked;
-            config.fullComments = windowCodegenState.fullCommentsChecked;
-            config.exportButtonFunctions = windowCodegenState.genButtonFuncsChecked;
+            strcpy(guiConfig.name, windowCodegenState.toolNameText);
+            strcpy(guiConfig.version, windowCodegenState.toolVersionText);
+            strcpy(guiConfig.company, windowCodegenState.companyText);
+            strcpy(guiConfig.description, windowCodegenState.toolDescriptionText);
+            guiConfig.exportAnchors = windowCodegenState.exportAnchorsChecked;
+            guiConfig.defineRecs = windowCodegenState.defineRecsChecked;
+            guiConfig.defineTexts = windowCodegenState.defineTextsChecked;
+            guiConfig.fullComments = windowCodegenState.fullCommentsChecked;
+            guiConfig.exportButtonFunctions = windowCodegenState.genButtonFuncsChecked;
 
             // Select desired code template for generation
-            if (windowCodegenState.codeTemplateActive == 0) config.template = guiTemplateStandardCode;
-            else if (windowCodegenState.codeTemplateActive == 1) config.template = guiTemplateHeaderOnly;
-            else if (windowCodegenState.codeTemplateActive == 2) config.template = windowCodegenState.customTemplate;
+            if (windowCodegenState.codeTemplateActive == 0) guiConfig.template = guiTemplateStandardCode;
+            else if (windowCodegenState.codeTemplateActive == 1) guiConfig.template = guiTemplateHeaderOnly;
+            else if (windowCodegenState.codeTemplateActive == 2) guiConfig.template = windowCodegenState.customTemplate;
 
             // Clear current codeText and generate new layout code
             RL_FREE(windowCodegenState.codeText);
-            if (config.template != NULL) windowCodegenState.codeText = GenLayoutCode(config.template, layout, (Vector2){ 0.0f, 0.0f }, config);
+            if (guiConfig.template != NULL) windowCodegenState.codeText = GenLayoutCode(guiConfig.template, layout, (Vector2){ 0.0f, 0.0f }, guiConfig);
 
             // Store current config as prevConfig
-            memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
+            memcpy(&prevGuiConfig, &guiConfig, sizeof(GuiLayoutConfig));
 
             // Activate code generation export window
             windowCodegenState.codePanelScrollOffset = (Vector2){ 0, 0 };
@@ -792,30 +792,30 @@ int main(int argc, char *argv[])
         if (windowCodegenState.windowActive)
         {
             // Setup code generation config parameters
-            strcpy(config.name, windowCodegenState.toolNameText);
-            strcpy(config.version, windowCodegenState.toolVersionText);
-            strcpy(config.company, windowCodegenState.companyText);
-            strcpy(config.description, windowCodegenState.toolDescriptionText);
-            config.exportAnchors = windowCodegenState.exportAnchorsChecked;
-            config.defineRecs = windowCodegenState.defineRecsChecked;
-            config.defineTexts = windowCodegenState.defineTextsChecked;
-            config.fullComments = windowCodegenState.fullCommentsChecked;
-            config.exportButtonFunctions = windowCodegenState.genButtonFuncsChecked;
+            strcpy(guiConfig.name, windowCodegenState.toolNameText);
+            strcpy(guiConfig.version, windowCodegenState.toolVersionText);
+            strcpy(guiConfig.company, windowCodegenState.companyText);
+            strcpy(guiConfig.description, windowCodegenState.toolDescriptionText);
+            guiConfig.exportAnchors = windowCodegenState.exportAnchorsChecked;
+            guiConfig.defineRecs = windowCodegenState.defineRecsChecked;
+            guiConfig.defineTexts = windowCodegenState.defineTextsChecked;
+            guiConfig.fullComments = windowCodegenState.fullCommentsChecked;
+            guiConfig.exportButtonFunctions = windowCodegenState.genButtonFuncsChecked;
 
             // Select desired code template for generation
-            if (windowCodegenState.codeTemplateActive == 0) config.template = guiTemplateStandardCode;
-            else if (windowCodegenState.codeTemplateActive == 1) config.template = guiTemplateHeaderOnly;
-            else if (windowCodegenState.codeTemplateActive == 2) config.template = windowCodegenState.customTemplate;
+            if (windowCodegenState.codeTemplateActive == 0) guiConfig.template = guiTemplateStandardCode;
+            else if (windowCodegenState.codeTemplateActive == 1) guiConfig.template = guiTemplateHeaderOnly;
+            else if (windowCodegenState.codeTemplateActive == 2) guiConfig.template = windowCodegenState.customTemplate;
 
             // Check if config parameter have changed while codegen window is open to regenerate code
-            if (memcmp(&prevConfig, &config, sizeof(GuiLayoutConfig)) != 0)
+            if (memcmp(&prevGuiConfig, &guiConfig, sizeof(GuiLayoutConfig)) != 0)
             {
                 // Clear current codeText and generate new layout code
                 RL_FREE(windowCodegenState.codeText);
-                windowCodegenState.codeText = GenLayoutCode(config.template, layout, (Vector2){ 0.0f, 0.0f }, config);
+                windowCodegenState.codeText = GenLayoutCode(guiConfig.template, layout, (Vector2){ 0.0f, 0.0f }, guiConfig);
 
                 // Store current config as prevConfig
-                memcpy(&prevConfig, &config, sizeof(GuiLayoutConfig));
+                memcpy(&prevGuiConfig, &guiConfig, sizeof(GuiLayoutConfig));
             }
         }
 
@@ -3227,8 +3227,8 @@ int main(int argc, char *argv[])
 
             if (windowCodegenState.btnExportCodePressed)
             {
-                if (windowCodegenState.codeTemplateActive == 1) strcpy(outFileName, TextFormat("gui_%s.h", config.name));
-                else strcpy(outFileName, TextFormat("%s.c", config.name));
+                if (windowCodegenState.codeTemplateActive == 1) strcpy(outFileName, TextFormat("gui_%s.h", guiConfig.name));
+                else strcpy(outFileName, TextFormat("%s.c", guiConfig.name));
 
                 showExportFileDialog = true;
                 windowCodegenState.windowActive = false;
@@ -3465,12 +3465,12 @@ int main(int argc, char *argv[])
     windowMaximized = (int)IsWindowMaximized();
 
     // Define header comment lines
-    rini_set_config_comment_line(&config, NULL);   // Empty comment line, but including comment prefix delimiter
-    rini_set_config_comment_line(&config, "rGuiLayout initialization configuration options");
-    rini_set_config_comment_line(&config, NULL);
-    rini_set_config_comment_line(&config, "NOTE: This file is loaded at application startup,");
-    rini_set_config_comment_line(&config, "if file is not found, default values are applied");
-    rini_set_config_comment_line(&config, NULL);
+    rini_set_config_comment_line(&appConfig, NULL);   // Empty comment line, but including comment prefix delimiter
+    rini_set_config_comment_line(&appConfig, "rGuiLayout initialization configuration options");
+    rini_set_config_comment_line(&appConfig, NULL);
+    rini_set_config_comment_line(&appConfig, "NOTE: This file is loaded at application startup,");
+    rini_set_config_comment_line(&appConfig, "if file is not found, default values are applied");
+    rini_set_config_comment_line(&appConfig, NULL);
 
     //rini_set_config_value(&config, "SHOW_WINDOW_WELCOME", (int)windowAboutState.showSplash, "Show welcome window at initialization");
     rini_set_config_value(&appConfig, "SHOW_WINDOW_INFO", (int)mainToolbarState.showControlPanelActive, "Show control panel");
@@ -3605,15 +3605,15 @@ static void ProcessCommandLine(int argc, char *argv[])
         // Support .rlg layout processing to generate .c
         GuiLayout *layout = LoadLayout(inFileName);
 
-        GuiLayoutConfig config = { 0 };
-        memset(&config, 0, sizeof(GuiLayoutConfig));
-        strcpy(config.name, "window_codegen");
-        strcpy(config.version, toolVersion);
-        strcpy(config.company, "raylib technologies");
-        strcpy(config.description, "tool description");
-        config.exportAnchors = true;
-        config.defineRecs = false;
-        config.fullComments = true;
+        GuiLayoutConfig guiConfig = { 0 };
+        memset(&guiConfig, 0, sizeof(GuiLayoutConfig));
+        strcpy(guiConfig.name, "window_codegen");
+        strcpy(guiConfig.version, toolVersion);
+        strcpy(guiConfig.company, "raylib technologies");
+        strcpy(guiConfig.description, "tool description");
+        guiConfig.exportAnchors = true;
+        guiConfig.defineRecs = false;
+        guiConfig.fullComments = true;
 
         // Generate C code for gui layout->controls
         char *guiTemplateCustom = NULL;
@@ -3622,10 +3622,10 @@ static void ProcessCommandLine(int argc, char *argv[])
         char *toolstr = NULL;
         if (guiTemplateCustom != NULL)
         {
-            toolstr = GenLayoutCode(guiTemplateCustom, layout, (Vector2){ 0, 0 }, config);
+            toolstr = GenLayoutCode(guiTemplateCustom, layout, (Vector2){ 0, 0 }, guiConfig);
             RL_FREE(guiTemplateCustom);
         }
-        else toolstr = GenLayoutCode(guiTemplateStandardCode, layout, (Vector2){ 0, 0 }, config);
+        else toolstr = GenLayoutCode(guiTemplateStandardCode, layout, (Vector2){ 0, 0 }, guiConfig);
 
         FILE *ftool = fopen(outFileName, "wt");
         fprintf(ftool, toolstr);    // Write code string to file
