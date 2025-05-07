@@ -129,6 +129,7 @@
 #define TOOL_DESCRIPTION_BREAK  "A simple and easy-to-use\nraygui layouts editor"
 #define TOOL_RELEASE_DATE       "Apr.2024"
 #define TOOL_LOGO_COLOR         0x7da9b9ff
+#define TOOL_CONFIG_FILENAME    "rguilayout.ini"
 
 #include "raylib.h"
 
@@ -563,12 +564,12 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------------------------------
 
 #if defined(PLATFORM_DESKTOP)
-    // Read application config.ini (if available)
+    // Read application init configuration (if available)
     //-------------------------------------------------------------------------------------
     int windowMaximized = 0;
-    if (FileExists(TextFormat("%s/config.ini", GetApplicationDirectory())))
+    if (FileExists(TextFormat("%s/%s", GetApplicationDirectory(), TOOL_CONFIG_FILENAME)))
     {
-        rini_config appConfig = rini_load_config(TextFormat("%s/config.ini", GetApplicationDirectory()));
+        rini_config appConfig = rini_load_config(TextFormat("%s/%s", GetApplicationDirectory(), TOOL_CONFIG_FILENAME));
 
         // Load required config variables
         // NOTE: Keys not found default to 0 value, unless fallback is requested
@@ -3458,7 +3459,7 @@ int main(int argc, char *argv[])
     RL_FREE(windowCodegenState.codeText);   // Free loaded codeText memory
 
 #if defined(PLATFORM_DESKTOP)
-    // Save application config.ini for next run
+    // Save application init configuration for next run
     //--------------------------------------------------------------------------------------
     rini_config appConfig = rini_load_config(NULL);   // Create empty config with 32 entries (RINI_MAX_CONFIG_CAPACITY)
 
@@ -3481,7 +3482,7 @@ int main(int argc, char *argv[])
     rini_set_config_value(&appConfig, "GUI_VISUAL_STYLE", (int)mainToolbarState.visualStyleActive, "UI visual style selected");
     //rini_set_config_value(&config, "CLEAN_WINDOW_MODE", (int)mainToolbarState.cleanModeActive, "Clean window mode enabled");
 
-    rini_save_config(appConfig, TextFormat("%s/config.ini", GetApplicationDirectory()));
+    rini_save_config(appConfig, TextFormat("%s/%s", GetApplicationDirectory(), TOOL_CONFIG_FILENAME));
     rini_unload_config(&appConfig);
     //--------------------------------------------------------------------------------------
 #endif
