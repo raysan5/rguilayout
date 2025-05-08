@@ -3523,6 +3523,13 @@ static void ShowCommandLineInfo(void)
     printf("                                      Supported extensions: .c, .h\n");
     printf("    -t, --template <filename.ext>   : Define code template for output.\n");
     printf("                                      Supported extensions: .c, .h\n\n");
+    printf("    -n, --name <value>              : Define the output name.\n");
+    printf("    -v, --version <value>           : Define the version.\n");
+    printf("    -c, --company <value>           : Define the company.\n");
+    printf("    -d, --description <value>       : Define the description.\n");
+    printf("        --no-anchors                : Do not export anchors.\n");
+    printf("        --rectangles                : Export rectangles.\n");
+    printf("        --no-comments               : Do not export full comments.\n");
 
     printf("\nEXAMPLES:\n\n");
     printf("    > rguilayout --input mytool.rgl --output mytools.h\n");
@@ -3537,6 +3544,14 @@ static void ProcessCommandLine(int argc, char *argv[])
     char templateFile[512] = { 0 };     // Template file name
 
     //int outputFormat = 0;               // Supported output formats
+
+    const char *cliName = NULL;
+    const char *cliVersion = NULL;
+    const char *cliCompany = NULL;
+    const char *cliDescription = NULL;
+    bool cliNoAnchors = false;
+    bool cliRecs = false;
+    bool cliNoComments = false;
 
     // Process command line arguments
     for (int i = 1; i < argc; i++)
@@ -3590,8 +3605,50 @@ static void ProcessCommandLine(int argc, char *argv[])
             }
             else LOG("WARNING: No template file provided\n");
         }
-
-        // TODO: CLI: Support codegen options: exportAnchors, defineRecs, fullComments...
+        else if ((strcmp(argv[i], "-n") == 0) || (strcmp(argv[i], "--name") == 0))
+        {
+            if (((i + 1) < argc) && (argv[i + 1][0] != '-'))
+            {
+                cliName = argv[i + 1];
+                i++;
+            }
+        }
+        else if ((strcmp(argv[i], "-v") == 0) || (strcmp(argv[i], "--version") == 0))
+        {
+            if (((i + 1) < argc) && (argv[i + 1][0] != '-'))
+            {
+                cliVersion = argv[i + 1];
+                i++;
+            }
+        }
+        else if ((strcmp(argv[i], "-c") == 0) || (strcmp(argv[i], "--company") == 0))
+        {
+            if (((i + 1) < argc) && (argv[i + 1][0] != '-'))
+            {
+                cliCompany = argv[i + 1];
+                i++;
+            }
+        }
+        else if ((strcmp(argv[i], "-d") == 0) || (strcmp(argv[i], "--description") == 0))
+        {
+            if (((i + 1) < argc) && (argv[i + 1][0] != '-'))
+            {
+                cliDescription = argv[i + 1];
+                i++;
+            }
+        }
+        else if ((strcmp(argv[i], "--no-anchors") == 0))
+        {
+            cliNoAnchors = true;
+        }
+        else if ((strcmp(argv[i], "--rectangles") == 0))
+        {
+            cliRecs = true;
+        }
+        else if ((strcmp(argv[i], "--no-comments") == 0))
+        {
+            cliNoComments = true;
+        }
     }
 
     // Process input file
@@ -3608,13 +3665,13 @@ static void ProcessCommandLine(int argc, char *argv[])
 
         GuiLayoutConfig guiConfig = { 0 };
         memset(&guiConfig, 0, sizeof(GuiLayoutConfig));
-        strcpy(guiConfig.name, "window_codegen");
-        strcpy(guiConfig.version, toolVersion);
-        strcpy(guiConfig.company, "raylib technologies");
-        strcpy(guiConfig.description, "tool description");
-        guiConfig.exportAnchors = true;
-        guiConfig.defineRecs = false;
-        guiConfig.fullComments = true;
+        strcpy(guiConfig.name, cliName ? cliName : "window_codegen");
+        strcpy(guiConfig.version, cliVersion ? cliVersion : toolVersion);
+        strcpy(guiConfig.company, cliCompany ? cliCompany : "raylib technologies");
+        strcpy(guiConfig.description, cliDescription ? cliDescription : "tool description");
+        guiConfig.exportAnchors = !cliNoAnchors;
+        guiConfig.defineRecs = cliRecs;
+        guiConfig.fullComments = !cliNoComments;
 
         // Generate C code for gui layout->controls
         char *guiTemplateCustom = NULL;
