@@ -319,9 +319,7 @@ int main(int argc, char *argv[])
     const int screenWidth = 1280;
     const int screenHeight = 720;
 
-#if defined(PLATFORM_DESKTOP)
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // Window configuration flags
-#endif
     InitWindow(screenWidth, screenHeight, TextFormat("%s v%s | %s", toolName, toolVersion, toolDescription));
     SetWindowMinSize(1280, 720);
     SetExitKey(0);
