@@ -567,20 +567,20 @@ int main(int argc, char *argv[])
     int windowMaximized = 0;
     if (FileExists(TextFormat("%s/%s", GetApplicationDirectory(), TOOL_CONFIG_FILENAME)))
     {
-        rini_config appConfig = rini_load_config(TextFormat("%s/%s", GetApplicationDirectory(), TOOL_CONFIG_FILENAME));
+        rini_data appConfig = rini_load(TextFormat("%s/%s", GetApplicationDirectory(), TOOL_CONFIG_FILENAME));
 
         // Load required config variables
         // NOTE: Keys not found default to 0 value, unless fallback is requested
-        //windowAboutState.showSplash = rini_get_config_value(config, "SHOW_WINDOW_WELCOME");
-        mainToolbarState.showControlPanelActive = rini_get_config_value(appConfig, "SHOW_WINDOW_CONTROLS");
-        mainToolbarState.showTooltips = rini_get_config_value_fallback(appConfig, "SHOW_CONTROL_TOOLTIPS", 1); // Default to 1 if key not found
-        mainToolbarState.showGridActive = rini_get_config_value(appConfig, "SHOW_IMAGE_GRID");
-        gridSpacing = rini_get_config_value(appConfig, "GRID_LINES_SPACING");
-        windowMaximized = rini_get_config_value(appConfig, "INIT_WINDOW_MAXIMIZED");
-        mainToolbarState.visualStyleActive = rini_get_config_value(appConfig, "GUI_VISUAL_STYLE");
-        //mainToolbarState.cleanModeActive = rini_get_config_value(config, "CLEAN_WINDOW_MODE");
+        //windowAboutState.showSplash = rini_get_value(config, "SHOW_WINDOW_WELCOME");
+        mainToolbarState.showControlPanelActive = rini_get_value(appConfig, "SHOW_WINDOW_CONTROLS");
+        mainToolbarState.showTooltips = rini_get_value_fallback(appConfig, "SHOW_CONTROL_TOOLTIPS", 1); // Default to 1 if key not found
+        mainToolbarState.showGridActive = rini_get_value(appConfig, "SHOW_IMAGE_GRID");
+        gridSpacing = rini_get_value(appConfig, "GRID_LINES_SPACING");
+        windowMaximized = rini_get_value(appConfig, "INIT_WINDOW_MAXIMIZED");
+        mainToolbarState.visualStyleActive = rini_get_value(appConfig, "GUI_VISUAL_STYLE");
+        //mainToolbarState.cleanModeActive = rini_get_value(config, "CLEAN_WINDOW_MODE");
 
-        rini_unload_config(&appConfig);
+        rini_unload(&appConfig);
 
         // NOTE: Config is automatically saved when application is closed
     }
@@ -3459,29 +3459,29 @@ int main(int argc, char *argv[])
 #if defined(PLATFORM_DESKTOP)
     // Save application init configuration for next run
     //--------------------------------------------------------------------------------------
-    rini_config appConfig = rini_load_config(NULL);   // Create empty config with 32 entries (RINI_MAX_CONFIG_CAPACITY)
+    rini_data appConfig = rini_load(NULL);   // Create empty config with 32 entries (RINI_MAX_CONFIG_CAPACITY)
 
     windowMaximized = (int)IsWindowMaximized();
 
     // Define header comment lines
-    rini_set_config_comment_line(&appConfig, NULL);   // Empty comment line, but including comment prefix delimiter
-    rini_set_config_comment_line(&appConfig, "rGuiLayout initialization configuration options");
-    rini_set_config_comment_line(&appConfig, NULL);
-    rini_set_config_comment_line(&appConfig, "NOTE: This file is loaded at application startup,");
-    rini_set_config_comment_line(&appConfig, "if file is not found, default values are applied");
-    rini_set_config_comment_line(&appConfig, NULL);
+    rini_set_comment_line(&appConfig, NULL);   // Empty comment line, but including comment prefix delimiter
+    rini_set_comment_line(&appConfig, "rGuiLayout initialization configuration options");
+    rini_set_comment_line(&appConfig, NULL);
+    rini_set_comment_line(&appConfig, "NOTE: This file is loaded at application startup,");
+    rini_set_comment_line(&appConfig, "if file is not found, default values are applied");
+    rini_set_comment_line(&appConfig, NULL);
 
-    //rini_set_config_value(&config, "SHOW_WINDOW_WELCOME", (int)windowAboutState.showSplash, "Show welcome window at initialization");
-    rini_set_config_value(&appConfig, "SHOW_WINDOW_INFO", (int)mainToolbarState.showControlPanelActive, "Show control panel");
-    rini_set_config_value(&appConfig, "SHOW_CONTROL_TOOLTIPS", (int)mainToolbarState.showTooltips, "Show controls tooltips on mouse hover");
-    rini_set_config_value(&appConfig, "INIT_WINDOW_MAXIMIZED", (int)windowMaximized, "Initialize window maximized");
-    rini_set_config_value(&appConfig, "SHOW_IMAGE_GRID", (int)mainToolbarState.showGridActive, "Show image grid");
-    rini_set_config_value(&appConfig, "GRID_LINES_SPACING", (int)gridSpacing, "Grid lines spacing");
-    rini_set_config_value(&appConfig, "GUI_VISUAL_STYLE", (int)mainToolbarState.visualStyleActive, "UI visual style selected");
-    //rini_set_config_value(&config, "CLEAN_WINDOW_MODE", (int)mainToolbarState.cleanModeActive, "Clean window mode enabled");
+    //rini_set_value(&config, "SHOW_WINDOW_WELCOME", (int)windowAboutState.showSplash, "Show welcome window at initialization");
+    rini_set_value(&appConfig, "SHOW_WINDOW_INFO", (int)mainToolbarState.showControlPanelActive, "Show control panel");
+    rini_set_value(&appConfig, "SHOW_CONTROL_TOOLTIPS", (int)mainToolbarState.showTooltips, "Show controls tooltips on mouse hover");
+    rini_set_value(&appConfig, "INIT_WINDOW_MAXIMIZED", (int)windowMaximized, "Initialize window maximized");
+    rini_set_value(&appConfig, "SHOW_IMAGE_GRID", (int)mainToolbarState.showGridActive, "Show image grid");
+    rini_set_value(&appConfig, "GRID_LINES_SPACING", (int)gridSpacing, "Grid lines spacing");
+    rini_set_value(&appConfig, "GUI_VISUAL_STYLE", (int)mainToolbarState.visualStyleActive, "UI visual style selected");
+    //rini_set_value(&config, "CLEAN_WINDOW_MODE", (int)mainToolbarState.cleanModeActive, "Clean window mode enabled");
 
-    rini_save_config(appConfig, TextFormat("%s/%s", GetApplicationDirectory(), TOOL_CONFIG_FILENAME));
-    rini_unload_config(&appConfig);
+    rini_save(appConfig, TextFormat("%s/%s", GetApplicationDirectory(), TOOL_CONFIG_FILENAME));
+    rini_unload(&appConfig);
     //--------------------------------------------------------------------------------------
 #endif
 
