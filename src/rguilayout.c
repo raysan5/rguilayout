@@ -3465,7 +3465,7 @@ int main(int argc, char *argv[])
 
     // Define header comment lines
     rini_set_comment_line(&appConfig, NULL);   // Empty comment line, but including comment prefix delimiter
-    rini_set_comment_line(&appConfig, "rGuiLayout initialization configuration options");
+    rini_set_comment_line(&appConfig, TextFormat("%s initialization configuration options", TOOL_NAME));
     rini_set_comment_line(&appConfig, NULL);
     rini_set_comment_line(&appConfig, "NOTE: This file is loaded at application startup,");
     rini_set_comment_line(&appConfig, "if file is not found, default values are applied");
