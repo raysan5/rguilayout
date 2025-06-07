@@ -3453,7 +3453,7 @@ int main(int argc, char *argv[])
     UnloadLayout(layout);                   // Unload raygui layout
     UnloadTexture(tracemap.texture);        // Unload tracemap texture (if loaded)
 
-    RL_FREE(undoLayouts);                   // Free undo layouts array (allocated with RL_CALLOC)
+    RL_FREE(undoLayouts);                   // Free undo layouts array
     RL_FREE(windowCodegenState.codeText);   // Free loaded codeText memory
 
 #if defined(PLATFORM_DESKTOP)
