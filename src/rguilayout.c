@@ -95,7 +95,7 @@
 *       On PLATFORM_ANDROID and PLATFORM_WEB file dialogs are not available
 *
 *   DEVELOPERS:
-*       Ramon Santamaria (@raysan5):    Supervision, review, redesign, update and maintenance.
+*       Ramon Santamaria (@raysan5):    Supervision, review, redesign, update and maintenance
 *       Sergio Martinez (@anidealgift): Developer and designer (v2.0 - Jan.2019)
 *       Adria Arranz (@Adri102):        Developer and designer (v1.0 - Jun.2018)
 *       Jordi Jorba (@KoroBli):         Developer and designer (v1.0 - Jun.2018)
