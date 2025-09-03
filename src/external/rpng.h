@@ -475,7 +475,7 @@ typedef struct {
 const unsigned char png_signature[8] = { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a }; // PNG Signature
 
 //----------------------------------------------------------------------------------
-// Module specific Functions Declaration
+// Module Internal Functions Declaration
 //----------------------------------------------------------------------------------
 // Prefilter and compress image data (image_data -> IDAT chunk.data)
 static char *rpng_inflate_image_data(char *image_data, int image_data_size, int width, int height, int pixel_size);
@@ -499,6 +499,13 @@ static bool file_exists(const char *filename);
 //                              SDEFL
 // DEFLATE COMPRESSION algorithm: https://github.com/vurtun/sdefl
 //===================================================================
+#ifndef SDEFL_H_INCLUDED
+#define SDEFL_H_INCLUDED
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SDEFL_MAX_OFF   (1 << 15)
 #define SDEFL_WIN_SIZ   SDEFL_MAX_OFF
 #define SDEFL_WIN_MSK   (SDEFL_WIN_SIZ-1)
@@ -552,10 +559,23 @@ extern int sdefl_bound(int in_len);
 extern int sdeflate(struct sdefl *s, void *o, const void *i, int n, int lvl);
 extern int zsdeflate(struct sdefl *s, void *o, const void *i, int n, int lvl);
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* SDEFL_H_INCLUDED */
+
 //=========================================================================
 //                           SINFL
 // DEFLATE DECOMPRESSION algorithm: https://github.com/vurtun/lib/sinfl.h
 //=========================================================================
+#ifndef SINFL_H_INCLUDED
+#define SINFL_H_INCLUDED
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SINFL_PRE_TBL_SIZE 128
 #define SINFL_LIT_TBL_SIZE 1334
 #define SINFL_OFF_TBL_SIZE 402
@@ -571,6 +591,12 @@ struct sinfl {
 
 extern int sinflate(void *out, int cap, const void *in, int size);
 extern int zsinflate(void *out, int cap, const void *in, int size);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* SINFL_H_INCLUDED */
 
 //----------------------------------------------------------------------------------
 // Module Functions Definition
@@ -2000,7 +2026,7 @@ char *rpng_chunk_split_image_data_from_memory(char *buffer, int split_size, int 
 }
 
 //----------------------------------------------------------------------------------
-// Module specific Functions Definition
+// Module Internal Functions Definition
 //----------------------------------------------------------------------------------
 
 // Prefilter and compress image data

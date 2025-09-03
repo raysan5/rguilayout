@@ -187,12 +187,12 @@
 // Total space reserved for Key,
 // Value starts after this spacing
 #if !defined(RINI_KEY_SPACING)
-    #define RINI_KEY_SPACING                 32
+    #define RINI_KEY_SPACING                 36
 #endif
 // Total space reserved for Value,
 // Description starts after this spacing
 #if !defined(RINI_VALUE_SPACING)
-    #define RINI_VALUE_SPACING                8
+    #define RINI_VALUE_SPACING               32
 #endif
 
 // Line comment delimiter (starting string)
@@ -301,7 +301,7 @@ RINIAPI int rini_set_value_description(rini_data *data, const char *key, const c
 // ...
 
 //----------------------------------------------------------------------------------
-// Module internal functions declaration
+// Module Internal Functions Declaration
 //----------------------------------------------------------------------------------
 static int rini_read_key(const char *buffer, char *key); // Get key from a buffer line containing key-value-(description)
 static int rini_read_value_text(const char *buffer, char *text, char *desc); // Get value text (and description) from a buffer line
@@ -309,7 +309,7 @@ static int rini_read_value_text(const char *buffer, char *text, char *desc); // 
 static int rini_text_to_int(const char *text); // Convert text to int value (if possible), same as atoi()
 
 //----------------------------------------------------------------------------------
-// Module functions definition
+// Module Functions Definition
 //----------------------------------------------------------------------------------
 // Load data from file (.ini)
 rini_data rini_load(const char *file_name)
@@ -733,7 +733,7 @@ int rini_set_value_description(rini_data *data, const char *key, const char *des
 }
 
 //----------------------------------------------------------------------------------
-// Module internal functions declaration
+// Module Internal Functions Declaration
 //----------------------------------------------------------------------------------
 // Get string id from a buffer line containing id-value pair
 static int rini_read_key(const char *buffer, char *key)
