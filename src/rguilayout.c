@@ -2834,9 +2834,9 @@ int main(int argc, char *argv[])
                     }
 
                     DrawRectangleLinesEx(rec, 2, colControlSelected);
-                    DrawTriangle((Vector2) { rec.x + rec.width - SCALE_BOX_CORNER_SIZE, rec.y + rec.height },
-                                 (Vector2) { rec.x + rec.width, rec.y + rec.height },
-                                 (Vector2) { rec.x + rec.width, rec.y + rec.height - SCALE_BOX_CORNER_SIZE }, colControlSelected);
+                    DrawTriangle((Vector2){ rec.x + rec.width - SCALE_BOX_CORNER_SIZE, rec.y + rec.height },
+                                 (Vector2){ rec.x + rec.width, rec.y + rec.height },
+                                 (Vector2){ rec.x + rec.width, rec.y + rec.height - SCALE_BOX_CORNER_SIZE }, colControlSelected);
                 }
 
                 // Draw reference window lines
