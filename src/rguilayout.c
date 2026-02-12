@@ -29,7 +29,7 @@
 *           > Can anchors be selected along controls?
 *           > How to register selected elements? -> Use anchor.selected/control.selected properties?
 *           > When drawing a rectangle for selection, consider partial contained elements?
-*           > When a group of elements is selected, what can we do with it? Only move? Scale?
+*           > When a group of elements is selected, what can be done with it? Only move? Scale?
 *           > Moving a group of elements, how affects anchors?
 *       - Support multiple open layouts in TABS and/or same TAB? --> Export selected controls?
 *       - Allow exporting layout as an image, including layout info as a PNG chunk?
@@ -1299,7 +1299,7 @@ int main(int argc, char *argv[])
                     //--------------------------------------------------------------------------
                     Rectangle rec = layout->controls[selectedControl].rec;
 
-                    // NOTE: We must consider anchor offset!
+                    // NOTE: Anchor offset must be considered
                     if (layout->controls[selectedControl].ap->id > 0)
                     {
                         rec.x += layout->controls[selectedControl].ap->x;
@@ -1328,7 +1328,7 @@ int main(int argc, char *argv[])
                         if ((layout->controls[selectedControl].type == GUI_WINDOWBOX) &&
                             (rec.height < RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT*2)) rec.height = RAYGUI_WINDOWBOX_STATUSBAR_HEIGHT*2;
 
-                        // NOTE: We must consider anchor offset!
+                        // NOTE: Anchor offset must be considered
                         if (layout->controls[selectedControl].ap->id > 0)
                         {
                             rec.x -= layout->controls[selectedControl].ap->x;
@@ -1631,7 +1631,7 @@ int main(int argc, char *argv[])
                     for (int i = 0; i < layout->controlCount; i++)
                     {
                         // TODO: Check if full control rec is contained in multiSelectRec
-                        // WARNING: multiSelectRec is in screen-space, we must consider rec, anchor and refWindow!
+                        // WARNING: multiSelectRec is in screen-space, rec must be considered, anchor and refWindow!
                         if (CheckCollisionRecs(multiSelectRec, layout->controls[i].rec))
                         {
                             multiSelectControls[multiSelectCount] = i;
@@ -1689,7 +1689,7 @@ int main(int argc, char *argv[])
 
                     layout->controlCount--;
 
-                    // As we moved all controls one position, we need to update selected
+                    // As all controls are moved one position, need to update selected
                     // controls position for next control deletion
                     for (int i = 0; i < multiSelectCount; i++) multiSelectControls[i] -= 1;
                 }
@@ -1771,7 +1771,7 @@ int main(int argc, char *argv[])
                 {
                     if (refWindowEditMode)
                     {
-                        // NOTE: In the case of ref-window, we don't link to controls, just define size
+                        // NOTE: In the case of ref-window, just define size
                         layout->refWindow.width = mouse.x - layout->refWindow.x;
                         layout->refWindow.height = mouse.y  - layout->refWindow.y;
 
@@ -2826,7 +2826,7 @@ int main(int argc, char *argv[])
                 {
                     Rectangle rec = layout->controls[selectedControl].rec;
 
-                    // NOTE: We must consider anchor offset!
+                    // NOTE: Anchor offset must be considered
                     if (layout->controls[selectedControl].ap->id > 0)
                     {
                         rec.x += layout->controls[selectedControl].ap->x;
@@ -3162,7 +3162,7 @@ int main(int argc, char *argv[])
             //----------------------------------------------------------------------------------------
 
             // NOTE: If some overlap window is open and main window is locked, draw a background rectangle
-            //if (GuiIsLocked())    // WARNING: It takes one extra frame to process, so we just check required conditions
+            //if (GuiIsLocked())    // WARNING: It takes one extra frame to process, so just checking required conditions
             if (windowHelpState.windowActive ||
                 windowAboutState.windowActive ||
                 windowCodegenState.windowActive ||
@@ -3340,7 +3340,7 @@ int main(int argc, char *argv[])
 
                 #if defined(PLATFORM_WEB)
                     // Download file from MEMFS (emscripten memory filesystem)
-                    // NOTE: Second argument must be a simple filename (we can't use directories)
+                    // NOTE: Second argument must be a simple filename (can't use directories)
                     // NOTE: Included security check to (partially) avoid malicious code on PLATFORM_WEB
                     if (strchr(outFileName, '\'') == NULL) emscripten_run_script(TextFormat("saveFileFromMEMFSToDisk('%s','%s')", outFileName, GetFileName(outFileName)));
                 #endif
@@ -3376,7 +3376,7 @@ int main(int argc, char *argv[])
 
                 #if defined(PLATFORM_WEB)
                     // Download file from MEMFS (emscripten memory filesystem)
-                    // NOTE: Second argument must be a simple filename (we can't use directories)
+                    // NOTE: Second argument must be a simple filename (can't use directories)
                     // NOTE: Included security check to (partially) avoid malicious code on PLATFORM_WEB
                     if (strchr(outFileName, '\'') == NULL) emscripten_run_script(TextFormat("saveFileFromMEMFSToDisk('%s','%s')", outFileName, GetFileName(outFileName)));
                 #endif
