@@ -1716,7 +1716,7 @@ int main(int argc, char *argv[])
                 {
                     if (layout->anchors[i].enabled)
                     {
-                        // Checks if mouse is over an anchor
+                        // Check if mouse is over an anchor
                         if (CheckCollisionPointCircle(mouse, (Vector2){ layout->anchors[i].x, layout->anchors[i].y }, ANCHOR_RADIUS))
                         {
                             focusedAnchor = i;
