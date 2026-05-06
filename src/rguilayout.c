@@ -3464,12 +3464,12 @@ int main(int argc, char *argv[])
     windowMaximized = (int)IsWindowMaximized();
 
     // Define header comment lines
-    rini_set_comment_line(&appConfig, NULL);   // Empty comment line, but including comment prefix delimiter
-    rini_set_comment_line(&appConfig, TextFormat("%s initialization configuration options", TOOL_NAME));
-    rini_set_comment_line(&appConfig, NULL);
-    rini_set_comment_line(&appConfig, "NOTE: This file is loaded at application startup,");
-    rini_set_comment_line(&appConfig, "if file is not found, default values are applied");
-    rini_set_comment_line(&appConfig, NULL);
+    rini_set_comment_line(&appConfig, " ");   // Empty comment line, but including comment prefix delimiter
+    rini_set_comment_line(&appConfig, TextFormat(" %s initialization configuration options", TOOL_NAME));
+    rini_set_comment_line(&appConfig, " ");
+    rini_set_comment_line(&appConfig, " NOTE: This file is loaded at application startup,");
+    rini_set_comment_line(&appConfig, " if file is not found, default values are applied");
+    rini_set_comment_line(&appConfig, " ");
 
     //rini_set_value(&config, "SHOW_WINDOW_WELCOME", (int)windowAboutState.showSplash, "Show welcome window at initialization");
     rini_set_value(&appConfig, "SHOW_WINDOW_INFO", (int)mainToolbarState.showControlPanelActive, "Show control panel");
