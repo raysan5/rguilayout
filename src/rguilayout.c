@@ -261,6 +261,7 @@ static const char *toolDescription = TOOL_DESCRIPTION;
 // NOTE: Max length depends on OS, in Windows MAX_PATH = 256
 static char inFileName[512] = { 0 };        // Input file name (required in case of drag & drop over executable)
 static char outFileName[512] = { 0 };       // Output file name (required for file save/export)
+static char customTemplateFileName[512] = { 0 }; // Code generation custom template file name (used to not override working layout filename stored at inFileName)
 
 static bool saveChangesRequired = false;    // Flag to notice save changes are required
 
@@ -3422,14 +3423,14 @@ int main(int argc, char *argv[])
             if (showLoadTemplateDialog)
             {
 #if defined(CUSTOM_MODAL_DIALOGS)
-                int result = GuiFileDialog(DIALOG_MESSAGE, "#12#Load code template", inFileName, "Ok", "Custom code template\nonly available on desktop version");
+                int result = GuiFileDialog(DIALOG_MESSAGE, "#12#Load code template", customTemplateFileName, "Ok", "Custom code template\nonly available on desktop version");
 #else
-                int result = GuiFileDialog(DIALOG_OPEN_FILE, "Load code template", inFileName, "*.h;*.c", "Tracemap Image (*.h, *.c)");
+                int result = GuiFileDialog(DIALOG_OPEN_FILE, "Load code template", customTemplateFileName, "*.h;*.c", "Code Template File (*.h, *.c)");
 #endif
                 if (result == 1)
                 {
                     // Load custom code template file
-                    windowCodegenState.customTemplate = LoadFileText(inFileName);
+                    windowCodegenState.customTemplate = LoadFileText(customTemplateFileName);
 
                     if (windowCodegenState.customTemplate != NULL)
                     {
@@ -3437,7 +3438,7 @@ int main(int argc, char *argv[])
 
                         windowCodegenState.customTemplateLoaded = true;
                     }
-                    else inFileName[0] = '\0';
+                    else customTemplateFileName[0] = '\0';
                 }
 
                 if (result >= 0) showLoadTemplateDialog = false;
