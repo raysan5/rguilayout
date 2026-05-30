@@ -1,8 +1,8 @@
 #**************************************************************************************************
 #
-#   raylib makefile for Desktop platforms, Raspberry Pi and Web Assembly
+#   raylib makefile for Desktop platforms, Web Assembly (Wasm) and Raspberry Pi (DRM mode)
 #
-#   Copyright (c) 2021-2026 Ramon Santamaria (@raysan5)
+#   Copyright (c) 2013-2026 Ramon Santamaria (@raysan5)
 #
 #   This software is provided "as-is", without any express or implied warranty. In no event
 #   will the authors be held liable for any damages arising from the use of this software.
@@ -37,9 +37,12 @@ ifneq ($(PLATFORM),PLATFORM_WEB)
 PROJECT_SOURCE_FILES  += external/tinyfiledialogs.c
 endif
 
-RAYLIB_PATH           ?= C:/GitHub/raylib
+# raylib library variables
+RAYLIB_PATH           ?= ../../raylib
 RAYLIB_INCLUDE_PATH   ?= $(RAYLIB_PATH)/src
 RAYLIB_LIB_PATH       ?= $(RAYLIB_PATH)/src
+# Library type used for raylib: STATIC (.a) or SHARED (.so/.dll)
+RAYLIB_LIBTYPE        ?= STATIC
 
 # Build mode for project: DEBUG or RELEASE
 BUILD_MODE            ?= RELEASE
@@ -95,7 +98,9 @@ ifeq ($(PLATFORM),PLATFORM_WEB)
     CLANG_PATH          = $(EMSDK_PATH)/upstream/bin
     PYTHON_PATH         = $(EMSDK_PATH)/python/3.13.3_64bit
     NODE_PATH           = $(EMSDK_PATH)/node/22.16.0_64bit/bin
-    export PATH         = $(EMSDK_PATH);$(EMSCRIPTEN_PATH);$(CLANG_PATH);$(NODE_PATH);$(PYTHON_PATH):$$(PATH)
+    # NOTE: Using := instead of = so Make expands it immediately and avoids 
+    # creating a recursively-expanded variable that references itself
+    export PATH        := $(EMSDK_PATH);$(EMSCRIPTEN_PATH);$(CLANG_PATH);$(NODE_PATH);$(PYTHON_PATH);$(PATH)
 endif
 
 # Define default C compiler: CC
@@ -180,7 +185,6 @@ endif
 
 # Define include paths for required headers: INCLUDE_PATHS
 #------------------------------------------------------------------------------------------------
-# NOTE: Several external required libraries (stb and others)
 INCLUDE_PATHS += -I. -Iexternal -I$(RAYLIB_INCLUDE_PATH)
 
 # Define additional directories containing required header files
