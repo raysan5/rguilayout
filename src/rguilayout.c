@@ -3957,7 +3957,7 @@ static void SaveLayout(GuiLayout *layout, const char *fileName)
 }
 
 /*
-// Check if a rectangle is contained within another
+// Check if rectangle is contained within another
 static bool IsRecContainedInRec(Rectangle container, Rectangle rec)
 {
     bool result = false;
