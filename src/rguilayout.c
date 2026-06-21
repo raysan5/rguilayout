@@ -142,7 +142,6 @@
 #define RAYGUI_GRID_ALPHA                 0.1f
 #define RAYGUI_TEXTSPLIT_MAX_ITEMS        256
 #define RAYGUI_TEXTSPLIT_MAX_TEXT_SIZE   4096
-#define RAYGUI_TOGGLEGROUP_MAX_ITEMS      256
 #define RAYGUI_IMPLEMENTATION
 #include "external/raygui.h"                // Required for: immediate-mode gui controls
 
