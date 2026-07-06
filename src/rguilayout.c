@@ -322,6 +322,7 @@ int main(int argc, char *argv[])
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // Window configuration flags
     InitWindow(screenWidth, screenHeight, TextFormat("%s v%s | %s", toolName, toolVersion, toolDescription));
     SetWindowMinSize(1280, 720);
+    EnableEventWaiting();
     SetExitKey(0);
 
     // Code font generation for embedding
@@ -476,8 +477,8 @@ int main(int argc, char *argv[])
     for (int i = 0; i < MAX_ICONS_AVAILABLE; i++)
     {
         // NOTE: Every icon requires 6 text characters: "#001#;"
-        if ((i + 1)%16 == 0) strncpy(toggleIconsText + 6*i, TextFormat("#%03i#\n", i), 6);
-        else strncpy(toggleIconsText + 6*i, TextFormat("#%03i#;", i), 6);
+        if ((i + 1)%16 == 0) memcpy(toggleIconsText + 6*i, TextFormat("#%03i#\n", i), 6);
+        else memcpy(toggleIconsText + 6*i, TextFormat("#%03i#;", i), 6);
     }
 
     toggleIconsText[MAX_ICONS_AVAILABLE*6 - 1] = '\0';
