@@ -3535,7 +3535,9 @@ static void ShowCommandLineInfo(void)
     printf("    -d, --description <value>       : Define the description.\n");
     printf("        --no-anchors                : Do not export anchors.\n");
     printf("        --rectangles                : Export rectangles.\n");
+    printf("        --texts                     : Export texts as const.\n");
     printf("        --no-comments               : Do not export full comments.\n");
+    printf("        --buttons                   : Export button functions.\n");
 
     printf("\nEXAMPLES:\n\n");
     printf("    > rguilayout --input mytool.rgl --output mytools.h\n");
@@ -3557,7 +3559,9 @@ static void ProcessCommandLine(int argc, char *argv[])
     const char *cliDescription = NULL;
     bool cliNoAnchors = false;
     bool cliRecs = false;
+    bool cliTexts = false;
     bool cliNoComments = false;
+    bool cliButtons = false;
 
     // Process command line arguments
     for (int i = 1; i < argc; i++)
@@ -3651,9 +3655,17 @@ static void ProcessCommandLine(int argc, char *argv[])
         {
             cliRecs = true;
         }
+        else if ((strcmp(argv[i], "--texts") == 0))
+        {
+            cliTexts = true;
+        }
         else if ((strcmp(argv[i], "--no-comments") == 0))
         {
             cliNoComments = true;
+        }
+        else if ((strcmp(argv[i], "--buttons") == 0))
+        {
+            cliButtons = true;
         }
     }
 
@@ -3677,7 +3689,9 @@ static void ProcessCommandLine(int argc, char *argv[])
         strcpy(guiConfig.description, cliDescription ? cliDescription : "tool description");
         guiConfig.exportAnchors = !cliNoAnchors;
         guiConfig.defineRecs = cliRecs;
+        guiConfig.defineTexts = cliTexts;
         guiConfig.fullComments = !cliNoComments;
+        guiConfig.exportButtonFunctions = cliButtons;
 
         // Generate C code for gui layout->controls
         char *guiTemplateCustom = NULL;
