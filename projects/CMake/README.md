@@ -11,7 +11,7 @@ mkdir build
 
 2. configure cmake
 ```bash
-cmake -Sprojects/CMAKE -Bbuild
+cmake -Sprojects/CMake -Bbuild
 ```
 
 3. compile the project
@@ -23,7 +23,7 @@ cmake --build build --config Release --target all
 
 Replace step 2 with:
 ```bash
-cmake -Sprojects/CMAKE -Bbuild  -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+cmake -Sprojects/CMake -Bbuild  -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
 ```
 
 The exact toolchain location may vary based on installation.
