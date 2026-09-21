@@ -2154,7 +2154,6 @@ int main(int argc, char *argv[])
                             //------------------------------------------------------------------
 
                             // Change tracemap alpha
-                            // TODO: Expose tracemap alpha config in a visual way
                             if (IsKeyDown(KEY_RIGHT_ALT))
                             {
                                 if (IsKeyDown(KEY_O)) tracemap.alpha += 0.05f;
