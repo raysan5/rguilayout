@@ -161,8 +161,8 @@
 
 #include "rguilayout.h"                     // Gui layout types definition
 
-#define GUI_PANEL_CONTROLS_PALETTE_IMPLEMENTATION
-#include "gui_panel_controls_palette.h"    // GUI: Controls Palette
+#define GUI_CONTROLS_PALETTE_IMPLEMENTATION
+#include "gui_controls_palette.h"           // GUI: Controls Palette
 
 #define CODEGEN_IMPLEMENTATION
 #include "codegen.h"                        // Code generation functions
@@ -524,16 +524,16 @@ int main(int argc, char *argv[])
 
     // GUI: Controls Selection Palette
     //-----------------------------------------------------------------------------------
-    GuiPanelControlsPaletteState windowControlsPaletteState = InitGuiPanelControlsPalette();
+    GuiControlsPaletteState controlsPaletteState = GUI_CONTROLS_PALETTE_STATE_DEFAULT;
+    controlsPaletteState.panelActive = true;
+    strcpy((char *)controlsPaletteState.textBoxText, "TextBox");
+
+    Rectangle controlsPaletteBounds = { 0 };
 
     // Rectangles used on controls preview drawing, copied from palette
-    // NOTE: [x, y] position is set on mouse movement and considering snap mode
-    Rectangle defaultRec[CONTROLS_PALETTE_COUNT] = { 0 };
-    for (int i = 0; i < CONTROLS_PALETTE_COUNT; i++)
-    {
-        defaultRec[i].width = windowControlsPaletteState.controlRecs[i].width;
-        defaultRec[i].height = windowControlsPaletteState.controlRecs[i].height;
-    }
+    // NOTE 1: [x, y] position is set on mouse movement and considering snap mode
+    // NOTE 2: Recalculated after GuiControlsPalette(), in case bounds change 
+    Rectangle defaultRec[GUI_CONTROLS_PALETTE_COUNT] = { 0 };
     //-----------------------------------------------------------------------------------
 
     // GUI: Layout Code Generation Window
@@ -573,7 +573,7 @@ int main(int argc, char *argv[])
         // Load required config variables
         // NOTE: Keys not found default to 0 value, unless fallback is requested
         //windowAboutState.showSplash = rini_get_value(config, "SHOW_WINDOW_WELCOME");
-        mainToolbarState.showControlPanelActive = rini_get_value(appConfig, "SHOW_WINDOW_CONTROLS");
+        //mainToolbarState.showControlPanelActive = rini_get_value(appConfig, "SHOW_WINDOW_CONTROLS");
         mainToolbarState.showTooltips = rini_get_value_fallback(appConfig, "SHOW_CONTROL_TOOLTIPS", 1); // Default to 1 if key not found
         mainToolbarState.showGridActive = rini_get_value(appConfig, "SHOW_IMAGE_GRID");
         gridSpacing = rini_get_value(appConfig, "GRID_LINES_SPACING");
@@ -958,12 +958,6 @@ int main(int argc, char *argv[])
 
         // Main toolbar logic
         //----------------------------------------------------------------------------------
-        windowControlsPaletteState.panelActive = mainToolbarState.showControlPanelActive;
-
-        //styleFrameCounter++;
-        //if ((styleFrameCounter%120) == 0) mainToolbarState.visualStyleActive++;
-        //if (mainToolbarState.visualStyleActive > 11) mainToolbarState.visualStyleActive = 0;
-
         // Visual options logic
         if (mainToolbarState.visualStyleActive != mainToolbarState.prevVisualStyleActive)
         {
@@ -1058,14 +1052,14 @@ int main(int argc, char *argv[])
 
             // Palette selected control logic
             //----------------------------------------------------------------------------------------------
-            if (!CheckCollisionPointRec(mouse, windowControlsPaletteState.panelBounds))
+            if (!CheckCollisionPointRec(mouse, controlsPaletteBounds))
             {
-                if (focusedControl == -1) windowControlsPaletteState.selectedControl -= GetMouseWheelMove();
+                if (focusedControl == -1) controlsPaletteState.selectedControl -= GetMouseWheelMove();
 
-                if (windowControlsPaletteState.selectedControl < GUI_WINDOWBOX) windowControlsPaletteState.selectedControl = GUI_WINDOWBOX;
-                else if (windowControlsPaletteState.selectedControl > GUI_DUMMYREC) windowControlsPaletteState.selectedControl = GUI_DUMMYREC;
+                if (controlsPaletteState.selectedControl < GUI_WINDOWBOX) controlsPaletteState.selectedControl = GUI_WINDOWBOX;
+                else if (controlsPaletteState.selectedControl > GUI_DUMMYREC) controlsPaletteState.selectedControl = GUI_DUMMYREC;
 
-                selectedType = windowControlsPaletteState.selectedControl;
+                selectedType = controlsPaletteState.selectedControl;
             }
             //----------------------------------------------------------------------------------------------
 
@@ -1088,7 +1082,7 @@ int main(int argc, char *argv[])
 
             // Check mouse is in the "work screen area" and not on toolbars/panels
             if (CheckCollisionPointRec(mouse, (Rectangle){ 0, 40, GetScreenWidth(), GetScreenHeight() - 64 }) &&
-                !CheckCollisionPointRec(mouse, windowControlsPaletteState.panelBounds))
+                !CheckCollisionPointRec(mouse, controlsPaletteBounds))
             {
                 if (!dragMoveMode)
                 {
@@ -2507,7 +2501,7 @@ int main(int argc, char *argv[])
                 // Control selected from panel drawing
                 // NOTE: It uses default control rectangle for selected type
                 if (CheckCollisionPointRec(mouse, (Rectangle){ 0, 40, (float)GetScreenWidth(), (float)GetScreenHeight() - 64 }) &&
-                    !CheckCollisionPointRec(mouse, windowControlsPaletteState.panelBounds))
+                    !CheckCollisionPointRec(mouse, controlsPaletteBounds))
                 {
                     if ((focusedAnchor == -1) && (focusedControl == -1) && !tracemap.focused && !refWindowEditMode && !multiSelectMode)
                     {
@@ -2918,9 +2912,17 @@ int main(int argc, char *argv[])
             // GUI: Controls Selection Palette
             // NOTE: It uses GuiLock() to lock controls behaviour and just limit them to selection
             //----------------------------------------------------------------------------------------
-            GuiPanelControlsPalette(&windowControlsPaletteState);
+            controlsPaletteBounds = (Rectangle){ GetScreenWidth() - 168, 40, ((GetScreenHeight() - 64) < (944 + 12))? 170 : 158, GetScreenHeight() - 24 - 40 + 2 };
+            GuiControlsPalette(controlsPaletteBounds, "#101#Controls Palette", &controlsPaletteState);
 
-            mainToolbarState.showControlPanelActive = windowControlsPaletteState.panelActive;
+            // NOTE: Recalculate default control rectangle size, in case bounds changed
+            for (int i = 0; i < GUI_CONTROLS_PALETTE_COUNT; i++)
+            {
+                defaultRec[i].width = controlsPaletteState.controlRecs[i].width;
+                defaultRec[i].height = controlsPaletteState.controlRecs[i].height;
+            }
+
+            //mainToolbarState.showControlPanelActive = controlsPaletteState.panelActive;
 
             if (showWindowActive) GuiLock();
             else GuiUnlock();
@@ -3199,7 +3201,7 @@ int main(int argc, char *argv[])
                 Rectangle messageBox = { (float)GetScreenWidth()/2 - 300/2, (float)GetScreenHeight()/2 - 190/2 - 20, 300, 190 };
                 int btnActive = -1;
                 GuiMessageBox(messageBox, "#220#Report Issue",
-                    "Do you want to report any issue or\nfeature request for this program?\n\ngithub.com/raysan5/raylib-project-creator", "#186#Report on GitHub", &btnActive);
+                    "Do you want to report any issue or\nfeature request for this program?\n\ngithub.com/raysan5/rguilayout", "#186#Report on GitHub", &btnActive);
 
                 if (btnActive == 1)    // Report issue pressed
                 {
@@ -3479,7 +3481,7 @@ int main(int argc, char *argv[])
     rini_set_comment_line(&appConfig, " ");
 
     //rini_set_value(&config, "SHOW_WINDOW_WELCOME", (int)windowAboutState.showSplash, "Show welcome window at initialization");
-    rini_set_value(&appConfig, "SHOW_WINDOW_INFO", (int)mainToolbarState.showControlPanelActive, "Show control panel");
+    //rini_set_value(&appConfig, "SHOW_WINDOW_INFO", (int)mainToolbarState.showControlPanelActive, "Show control panel");
     rini_set_value(&appConfig, "SHOW_CONTROL_TOOLTIPS", (int)mainToolbarState.showTooltips, "Show controls tooltips on mouse hover");
     rini_set_value(&appConfig, "INIT_WINDOW_MAXIMIZED", (int)windowMaximized, "Initialize window maximized");
     rini_set_value(&appConfig, "SHOW_IMAGE_GRID", (int)mainToolbarState.showGridActive, "Show image grid");
