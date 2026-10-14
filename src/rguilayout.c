@@ -170,6 +170,7 @@
 
 #define GUI_WINDOW_CODEGEN_IMPLEMENTATION
 #include "gui_window_codegen.h"             // GUI: Code Generation Window
+#include "font_gohufont.h"                  // Font embedded to be used by Codegen Window
 
 // raygui embedded styles
 // NOTE: Included in the same order as selector
@@ -538,7 +539,14 @@ int main(int argc, char *argv[])
 
     // GUI: Layout Code Generation Window
     //-----------------------------------------------------------------------------------
-    GuiWindowCodegenState windowCodegenState = InitGuiWindowCodegen();
+    GuiWindowCodegenState windowCodegenState = { 0 };
+
+    strcpy(windowCodegenState.toolNameText, "layout_name");
+    strcpy(windowCodegenState.toolVersionText, "1.0.0");
+    strcpy(windowCodegenState.companyText, "raylib technologies");
+    strcpy(windowCodegenState.toolDescriptionText, "Tool Description");
+
+    windowCodegenState.codeFont = LoadFont_Gohufont(); // Load font embedded (font_gohufont.h)
     //-----------------------------------------------------------------------------------
 
     // GUI: Exit Window
@@ -3214,7 +3222,8 @@ int main(int argc, char *argv[])
 
             // GUI: Layout Code Generation Window
             //----------------------------------------------------------------------------------------
-            GuiWindowCodegen(&windowCodegenState);
+            GuiWindowCodegen((Rectangle){ GetScreenWidth()/2.0f - 1024/2, GetScreenHeight()/2.0f - 640/2, 1024, 640 }, 
+                "#7#Code Generation Window", &windowCodegenState);
 
             if (windowCodegenState.btnLoadCustomTemplatePressed)
             {

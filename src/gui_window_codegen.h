@@ -6,12 +6,12 @@
 *       #define GUI_WINDOW_CODEGEN_IMPLEMENTATION
 *       #include "gui_window_codegen.h"
 *
-*       INIT: GuiWindowCodegenState state = InitGuiWindowCodegen();
+*       INIT: GuiWindowCodegenState state = GUI_WINDOW_CODEGEN_STATE_DEFAULT;
 *       DRAW: GuiWindowCodegen(&state);
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2018-2022 raylib technologies (@raylibtech) / Ramon Santamaria (@raysan5)
+*   Copyright (c) 2018-2026 raylib technologies (@raylibtech) / Ramon Santamaria (@raysan5)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -41,8 +41,16 @@
 
 typedef struct {
 
+    // Input data
+    char *codeText;                 // Generated code string
+    unsigned int codeHeight;        // Maximum height of code block (computed at drawing)
+    Font codeFont;                  // Font used for text drawing
+
+    char *customTemplate;           // Custom template loaded
+    bool customTemplateLoaded;      // Custom template loaded flag
+
+    // Control config
     bool windowActive;
-    Rectangle windowBounds;
 
     bool toolNameEditMode;
     char toolNameText[64];
@@ -68,45 +76,19 @@ typedef struct {
 
     Vector2 codePanelScrollOffset;
 
-    // Custom state variables
-    char *codeText;                 // Generated code string
-    unsigned int codeHeight;        // Maximum height of code block (computed at drawing)
-    Font codeFont;                  // Font used for text drawing
-
-    char *customTemplate;           // Custom template loaded
-    bool customTemplateLoaded;      // Custom template loaded flag
-
 } GuiWindowCodegenState;
+
+// Default control state
+#define GUI_WINDOW_CODEGEN_STATE_DEFAULT  { 0 }
 
 #ifdef __cplusplus
 extern "C" {            // Prevents name mangling of functions
 #endif
 
 //----------------------------------------------------------------------------------
-// Defines and Macros
-//----------------------------------------------------------------------------------
-//...
-
-//----------------------------------------------------------------------------------
-// Types and Structures Definition
-//----------------------------------------------------------------------------------
-// ...
-
-//----------------------------------------------------------------------------------
-// Global Variables Definition
-//----------------------------------------------------------------------------------
-//...
-
-//----------------------------------------------------------------------------------
-// Internal Module Functions Definition
-//----------------------------------------------------------------------------------
-//...
-
-//----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
-GuiWindowCodegenState InitGuiWindowCodegen(void);
-void GuiWindowCodegen(GuiWindowCodegenState *state);
+int GuiWindowCodegen(Rectangle bounds, const char *text, GuiWindowCodegenState *state);
 
 #ifdef __cplusplus
 }
@@ -123,86 +105,48 @@ void GuiWindowCodegen(GuiWindowCodegenState *state);
 
 #include "raygui.h"
 
-#include "font_gohufont.h"
-
-GuiWindowCodegenState InitGuiWindowCodegen(void)
+//----------------------------------------------------------------------------------
+// Module Functions Definition
+//----------------------------------------------------------------------------------
+int GuiWindowCodegen(Rectangle bounds, const char *text, GuiWindowCodegenState *state)
 {
-    GuiWindowCodegenState state = { 0 };
+    int result = 0;
 
-    state.windowActive = false;
-    state.windowBounds = (Rectangle){ 0, 0, 1000, 640 };
-
-    state.toolNameEditMode = false;
-    strcpy(state.toolNameText, "layout_name");
-    state.toolVersionEditMode = false;
-    strcpy(state.toolVersionText, "1.0.0");
-    state.companyEditMode = false;
-    strcpy(state.companyText, "raylib technologies");
-    state.toolDescriptionEditMode = false;
-    strcpy(state.toolDescriptionText, "Tool Description");
-
-    state.codeTemplateEditMode = false;
-    state.codeTemplateActive = 0;
-    state.exportAnchorsChecked = false;
-    state.defineRecsChecked = false;
-    state.defineTextsChecked = false;
-    state.fullCommentsChecked = false;
-    state.genButtonFuncsChecked = false;
-
-    state.btnExportCodePressed = false;
-    state.btnLoadCustomTemplatePressed = false;
-
-    state.codePanelScrollOffset = (Vector2){ 0, 0 };
-
-    // Custom variables initialization
-    state.codeText = NULL;
-    state.codeHeight = 0;
-    state.codeFont = LoadFont_Gohufont();   // Font embedded (font_gohufont.h)
-
-    state.customTemplate = NULL;            // Custom template loaded
-    state.customTemplateLoaded = false;     // Custom template loaded flag
-
-    return state;
-}
-
-void GuiWindowCodegen(GuiWindowCodegenState *state)
-{
     if (state->windowActive)
     {
-        state->windowBounds = (Rectangle){ GetScreenWidth()/2.0f - 1024/2, GetScreenHeight()/2.0f - 640/2, 1024, 640 };
-        state->windowActive = !GuiWindowBox(state->windowBounds, "#7#Code Generation Window");
+        state->windowActive = !GuiWindowBox(bounds, text);
 
-        GuiGroupBox((Rectangle){ state->windowBounds.x + 765, state->windowBounds.y + 40, 248, 178 }, "#101#Layout Info");
-        GuiLabel((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 58, 100, 24 }, "Name:");
-        if (GuiTextBox((Rectangle){ state->windowBounds.x + 845, state->windowBounds.y + 58, 158, 24 }, state->toolNameText, 64, state->toolNameEditMode)) state->toolNameEditMode = !state->toolNameEditMode;
-        GuiLabel((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 88, 100, 24 }, "Version:");
-        if (GuiTextBox((Rectangle){ state->windowBounds.x + 845, state->windowBounds.y + 88, 158, 24 }, state->toolVersionText, 64, state->toolVersionEditMode)) state->toolVersionEditMode = !state->toolVersionEditMode;
-        GuiLabel((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 118, 100, 24 }, "Company:");
-        if (GuiTextBox((Rectangle){ state->windowBounds.x + 845, state->windowBounds.y + 118, 158, 24 }, state->companyText, 64, state->companyEditMode)) state->companyEditMode = !state->companyEditMode;
-        GuiLabel((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 148, 160, 24 }, "Short Description:");
-        if (GuiTextBox((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 172, 228, 28 }, state->toolDescriptionText, 64, state->toolDescriptionEditMode)) state->toolDescriptionEditMode = !state->toolDescriptionEditMode;
+        GuiGroupBox((Rectangle){ bounds.x + 765, bounds.y + 40, 248, 178 }, "#101#Layout Info");
+        GuiLabel((Rectangle){ bounds.x + 775, bounds.y + 58, 100, 24 }, "Name:");
+        if (GuiTextBox((Rectangle){ bounds.x + 845, bounds.y + 58, 158, 24 }, state->toolNameText, 64, state->toolNameEditMode)) state->toolNameEditMode = !state->toolNameEditMode;
+        GuiLabel((Rectangle){ bounds.x + 775, bounds.y + 88, 100, 24 }, "Version:");
+        if (GuiTextBox((Rectangle){ bounds.x + 845, bounds.y + 88, 158, 24 }, state->toolVersionText, 64, state->toolVersionEditMode)) state->toolVersionEditMode = !state->toolVersionEditMode;
+        GuiLabel((Rectangle){ bounds.x + 775, bounds.y + 118, 100, 24 }, "Company:");
+        if (GuiTextBox((Rectangle){ bounds.x + 845, bounds.y + 118, 158, 24 }, state->companyText, 64, state->companyEditMode)) state->companyEditMode = !state->companyEditMode;
+        GuiLabel((Rectangle){ bounds.x + 775, bounds.y + 148, 160, 24 }, "Short Description:");
+        if (GuiTextBox((Rectangle){ bounds.x + 775, bounds.y + 172, 228, 28 }, state->toolDescriptionText, 64, state->toolDescriptionEditMode)) state->toolDescriptionEditMode = !state->toolDescriptionEditMode;
         
-        GuiGroupBox((Rectangle){ state->windowBounds.x + 765, state->windowBounds.y + 236, 248, 226 }, "#142#Code Generation Options");
-        GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 292, 16, 16 }, "Export anchors", &state->exportAnchorsChecked);
-        GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 292 + 24, 16, 16 }, "Define Rectangles", &state->defineRecsChecked);
-        GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 292 + 48, 16, 16 }, "Define text as const", &state->defineTextsChecked);
-        GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 292 + 72, 16, 16 }, "Include detailed comments", &state->fullCommentsChecked);
-        GuiCheckBox((Rectangle){ state->windowBounds.x + 785, state->windowBounds.y + 292 + 96, 16, 16 }, "Generate button functions", &state->genButtonFuncsChecked);
+        GuiGroupBox((Rectangle){ bounds.x + 765, bounds.y + 236, 248, 226 }, "#142#Code Generation Options");
+        GuiCheckBox((Rectangle){ bounds.x + 785, bounds.y + 292, 16, 16 }, "Export anchors", &state->exportAnchorsChecked);
+        GuiCheckBox((Rectangle){ bounds.x + 785, bounds.y + 292 + 24, 16, 16 }, "Define Rectangles", &state->defineRecsChecked);
+        GuiCheckBox((Rectangle){ bounds.x + 785, bounds.y + 292 + 48, 16, 16 }, "Define text as const", &state->defineTextsChecked);
+        GuiCheckBox((Rectangle){ bounds.x + 785, bounds.y + 292 + 72, 16, 16 }, "Include detailed comments", &state->fullCommentsChecked);
+        GuiCheckBox((Rectangle){ bounds.x + 785, bounds.y + 292 + 96, 16, 16 }, "Generate button functions", &state->genButtonFuncsChecked);
 
         if (state->codeTemplateActive != 2) GuiDisable();
-        state->btnLoadCustomTemplatePressed = GuiButton((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 292 + 128, 228, 24 }, state->customTemplateLoaded? "#9#Unload Custom Template" : "#5#Load Custom Template");
+        state->btnLoadCustomTemplatePressed = GuiButton((Rectangle){ bounds.x + 775, bounds.y + 292 + 128, 228, 24 }, state->customTemplateLoaded? "#9#Unload Custom Template" : "#5#Load Custom Template");
         GuiEnable();
 
         // Export generated code button
-        state->btnExportCodePressed = GuiButton((Rectangle){ state->windowBounds.x + 765, state->windowBounds.y + 278 + 184 + 16, 248, 28 }, "#7#Export Generated Code");
+        state->btnExportCodePressed = GuiButton((Rectangle){ bounds.x + 765, bounds.y + 278 + 184 + 16, 248, 28 }, "#7#Export Generated Code");
 
         // Select desired code template to fill
-        if (GuiDropdownBox((Rectangle){ state->windowBounds.x + 775, state->windowBounds.y + 256, 228, 24 }, 
+        if (GuiDropdownBox((Rectangle){ bounds.x + 775, bounds.y + 256, 228, 24 }, 
                 "STANDARD TEMPLATE (.c);PORTABLE TEMPLATE (.h); CUSTOM TEMPLATE (.c/.h)",
                 &state->codeTemplateActive, state->codeTemplateEditMode)) state->codeTemplateEditMode = !state->codeTemplateEditMode;
 
         // Draw generated code
-        Rectangle codePanel = { state->windowBounds.x + 10, state->windowBounds.y + 35, 745, 595 };
+        Rectangle codePanel = { bounds.x + 10, bounds.y + 35, 745, 595 };
         Rectangle view = { 0 };
         GuiScrollPanel(codePanel, NULL, (Rectangle){ codePanel.x, codePanel.y, codePanel.width*2, (float)state->codeHeight }, &state->codePanelScrollOffset, &view);
 
@@ -234,6 +178,8 @@ void GuiWindowCodegen(GuiWindowCodegenState *state)
             state->codeHeight = 20*linesCounter;
         }
     }
+
+    return result;
 }
 
 #endif // GUI_WINDOW_CODEGEN_IMPLEMENTATION
